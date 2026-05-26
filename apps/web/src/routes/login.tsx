@@ -92,8 +92,17 @@ function LoginPage() {
 		e.preventDefault();
 		setLoading(true);
 		try {
-			await authClient.signIn.email({ email, password });
-			navigate({ to: "/app" });
+			const res = await fetch("/api/auth/sign-in/email", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ email, password }),
+				credentials: "include",
+			});
+			if (!res.ok) {
+				setLoading(false);
+				return;
+			}
+			window.location.href = "/app";
 		} catch {
 			setLoading(false);
 		}

@@ -69,3 +69,13 @@ Living document. Updated after each major task or unexpected issue.
 17. **Better Auth `auth.api` vs `auth.handler` for seed scripts** — `auth.api.createOrganization()` requires authenticated headers (cookie-based). For seed scripts, simulate full HTTP requests via `auth.handler(new Request(...))` to get proper signed cookies from the Set-Cookie response header. Direct `auth.api` calls with raw tokens don't work.
 
 18. **Ultracite formatter mangles multiline JSX button attributes** — When `type="button"` and children with `{" "}` are on the same element, the formatter sometimes breaks `type=<span ...>` into invalid syntax. Keep button attributes on a single line to prevent this: `<button className="menu-item" onClick={...} type="button">`.
+
+19. **`SameSite=None` without `Secure` is silently rejected** — Modern browsers (Chrome 80+) drop cookies with `SameSite=None` that don't also have `Secure`. Use `SameSite=Lax` for same-origin dev, `SameSite=None; Secure` for production HTTPS only.
+
+20. **Vite dev proxy solves cross-port auth** — Configure `server.proxy` in `vite.config.ts` to forward `/api` and `/rpc` to the Hono server. Auth client uses empty baseURL (relative paths) in browser, absolute URL in SSR. Eliminates all cross-origin cookie issues.
+
+21. **SSR auth needs absolute URL, browser needs relative** — `typeof window === "undefined"` to detect SSR. SSR uses `process.env.VITE_SERVER_URL` (absolute), browser uses empty string (relative via Vite proxy).
+
+22. **`authClient.signIn.email` may hang with plugins** — Better Auth React client with Organization + Admin plugins may not resolve the sign-in promise in some configurations. Use direct `fetch` to `/api/auth/sign-in/email` with `credentials: "include"` and `window.location.href` for redirect instead.
+
+23. **CORS_ORIGIN must match actual web port** — Vite picks a fallback port (3003) if 3001 is in use. `CORS_ORIGIN` in `apps/server/.env` must match. Mismatch causes 403 CSRF errors.

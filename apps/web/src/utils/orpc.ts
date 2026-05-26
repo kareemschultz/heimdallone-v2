@@ -21,7 +21,10 @@ export const queryClient = new QueryClient({
 });
 
 const link = new RPCLink({
-	url: `${env.VITE_SERVER_URL}/rpc`,
+	url:
+		typeof window === "undefined"
+			? `${process.env.VITE_SERVER_URL || "http://localhost:3000"}/rpc`
+			: "/rpc",
 	fetch(url, options) {
 		return fetch(url, {
 			...options,
