@@ -1,0 +1,17 @@
+{
+  "expo": {
+    "scheme": "Heimdallone",
+    "userInterfaceStyle": "automatic",
+    "orientation": "default",
+    "web": {
+      "bundler": "metro"
+    },
+    "name": "Heimdallone",
+    "slug": "Heimdallone",
+    "plugins": ["expo-font"],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

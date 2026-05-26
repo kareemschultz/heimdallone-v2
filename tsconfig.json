@@ -1,0 +1,6 @@
+{
+  "extends": "@Heimdallone/config/tsconfig.base.json",
+  "compilerOptions": {
+    "strictNullChecks": true
+  }
+}
