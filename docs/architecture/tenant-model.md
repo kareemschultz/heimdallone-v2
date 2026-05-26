@@ -1,164 +1,154 @@
 # Tenant Model
 
-Multi-tenancy in Heimdallone is implemented via the Better Auth Organization plugin. An Organization is a Tenant. There is no custom tenant table separate from Better Auth's organization table.
+Multi-tenancy via Better Auth Organization plugin. Organization = Tenant.
+
+> Sources: Better Auth Organization plugin docs, Horilla multi-company patterns, HRMS industry best practices.
 
 ---
 
-## Core Principle
+## 1. Core Model
 
-Better Auth Organization plugin manages the tenant lifecycle. Heimdallone extends it with domain-specific organization settings and hierarchy, but does not replace or duplicate the auth layer.
+**Organization = Tenant.** Every business using Heimdallone is a Better Auth organization. There is no custom tenant table — the plugin's `organization` table is the source of truth.
 
----
+**User → Member → Organization.** A user can belong to multiple organizations (e.g., a consultant managing payroll for Atlas Shipping and Mahaica Group). Each membership has a role (one of the 9 tenant-level roles).
 
-## Better Auth Organization Plugin Tables
-
-These tables are created and managed by Better Auth when the `organization` plugin is enabled. They are mapped to Drizzle schema in `packages/db/src/schema/auth.ts`.
-
-| Table | Purpose |
-|---|---|
-| `organization` | The tenant record: name, slug, logo, metadata |
-| `member` | User membership in an organization, with role |
-| `invitation` | Pending invitation to join an organization |
-
-### `organization` table key fields
-
-| Field | Description |
-|---|---|
-| `id` | Unique organization identifier (UUID) |
-| `name` | Display name of the organization |
-| `slug` | URL-safe identifier (unique) |
-| `logo` | Optional logo URL |
-| `createdAt` | Creation timestamp |
-| `metadata` | JSON metadata (used for Heimdallone-specific config) |
-
-### `member` table key fields
-
-| Field | Description |
-|---|---|
-| `id` | Unique member record ID |
-| `organizationId` | FK to `organization.id` |
-| `userId` | FK to `user.id` |
-| `role` | Role within this organization (owner, admin, member) |
-| `createdAt` | When the membership was created |
-
-### `invitation` table key fields
-
-| Field | Description |
-|---|---|
-| `id` | Unique invitation ID |
-| `organizationId` | FK to `organization.id` |
-| `email` | Invited email address |
-| `role` | Role to assign on acceptance |
-| `status` | `pending`, `accepted`, `rejected`, `expired` |
-| `expiresAt` | Invitation expiry timestamp |
-| `inviterId` | FK to the inviting `user.id` |
+**Active Organization.** The session carries `activeOrganizationId` — every API call operates in the context of this organization. Switching tenants calls `auth.api.setActiveOrganization`.
 
 ---
 
-## Active Organization (Session Context)
+## 2. Session Model
 
-When a user belongs to multiple organizations, the **active organization** is tracked on the session. The Better Auth Organization plugin adds `activeOrganizationId` to the session record.
+| Field | Source | Purpose |
+|-------|--------|---------|
+| `userId` | Core | Authenticated user identity |
+| `token` | Core | Session token (cookie) |
+| `expiresAt` | Core | Session expiry |
+| `activeOrganizationId` | Organization plugin | Current tenant context |
+| `impersonatedBy` | Admin plugin | Platform admin impersonation tracking |
 
-All tenant-scoped oRPC procedures read `context.session.activeOrganizationId` to determine which tenant's data to operate on. Procedures reject requests where `activeOrganizationId` is null via the `requireActiveOrganization` middleware.
+### Auto-setting active organization
 
-Switching tenant context (the "tenant switcher" UI) calls the Better Auth organization session API to update `activeOrganizationId` — it does not require a new login.
+On first login, if a user belongs to exactly one organization, auto-set it via a `databaseHook`:
 
----
-
-## Organization Hierarchy (Heimdallone Extensions)
-
-Better Auth provides flat organization membership. Heimdallone adds a domain-level hierarchy through its own tables. All hierarchy tables carry `organization_id` as a non-nullable FK.
-
-```
-Organization (Better Auth)
-  └── Legal Entities       (Heimdallone: legal_entities)
-        └── Departments    (Heimdallone: departments)
-              └── Teams    (Heimdallone: teams, future)
+```ts
+databaseHooks: {
+  session: {
+    create: {
+      before: async (session) => {
+        const orgs = await auth.api.listOrganizations({ headers });
+        if (orgs.length === 1) {
+          return { data: { ...session, activeOrganizationId: orgs[0].id } };
+        }
+        return { data: session };
+      },
+    },
+  },
+}
 ```
 
-### `organization_settings` table
-
-Extends the Better Auth organization with Heimdallone-specific configuration:
-
-| Field | Description |
-|---|---|
-| `organizationId` | FK to `organization.id` (1:1) |
-| `defaultCurrency` | ISO 4217 currency code |
-| `defaultTimezone` | IANA timezone string |
-| `defaultCountryCode` | ISO 3166-1 alpha-2 country code |
-| `fiscalYearStartMonth` | Month number 1–12 |
-| `payrollApprovalRequired` | Boolean — requires explicit payroll approval before payslip issuance |
-
-### `legal_entities` table
-
-A company or business entity within the organization:
-
-| Field | Description |
-|---|---|
-| `id` | UUID |
-| `organizationId` | FK to `organization.id` |
-| `name` | Legal entity name |
-| `registrationNumber` | Company registration number |
-| `countryCode` | Country where entity is registered |
-| `currency` | Entity's operating currency |
-| `taxIdentifier` | Tax ID / TIN |
+If the user belongs to multiple orgs, redirect to an org selection page (`/app/select-org`).
 
 ---
 
-## Data Isolation Pattern
+## 3. Data Isolation
 
-Every domain table (employees, attendance, leave, payroll, etc.) carries a non-nullable `organization_id` column referencing `organization.id`. Data queries always include an `organization_id = activeOrganizationId` filter applied in middleware or at the procedure level.
+**Every domain table has `organizationId` (FK to organization).** Every query filters by `context.organizationId` from the authenticated session. Server enforces — never trust client-side filtering.
 
-```
-employees            organization_id → organization.id
-departments          organization_id → organization.id
-attendance_records   organization_id → organization.id
-leave_requests       organization_id → organization.id
-payroll_runs         organization_id → organization.id
-audit_events         organization_id → organization.id
+```ts
+// Pattern for all tenant-scoped queries
+const employees = await db.query.employees.findMany({
+  where: eq(schema.employees.organizationId, context.organizationId),
+});
 ```
 
-A user with access to Organization A cannot read Organization B's data — the filter is enforced at the query level, not the application layer.
+**Cross-tenant access is impossible** for tenant-level roles. Only platform admins (Admin plugin) can query across tenants.
 
 ---
 
-## Multi-Organization User Flow
+## 4. Organization Hierarchy
 
 ```
-User registers → creates or joins an Organization
-  ↓
-User logs in → session created (no activeOrganizationId yet)
-  ↓
-User selects active organization (tenant switcher)
-  ↓
-Better Auth sets activeOrganizationId on session
-  ↓
-oRPC context reads activeOrganizationId
-  ↓
-All domain queries filtered by organizationId
+Organization (Tenant)
+├── Departments
+│   └── Teams (optional, via Better Auth teams feature — deferred)
+├── Locations / Work Sites
+├── Countries (payroll country profiles)
+├── Legal Entities (future — for multi-entity consolidation)
+└── Members (users with roles)
 ```
 
-If a user belongs to only one organization, the active organization can be set automatically on login.
+Horilla reference: uses `Company` → `Department` → `JobPosition` → `JobRole` hierarchy under `base/models.py`. Heimdallone maps this to Organization → Departments → Job Positions → Job Roles, with Organization being the Better Auth organization.
 
 ---
 
-## Roles Within an Organization
+## 5. Organization Lifecycle
 
-Better Auth Organization plugin provides base roles (`owner`, `admin`, `member`). Heimdallone maps these to its role hierarchy:
+### Sign-up auto-creates org
 
-| Better Auth role | Heimdallone roles |
-|---|---|
-| `owner` | `tenant_owner` |
-| `admin` | `tenant_admin`, `hr_admin`, `payroll_admin` |
-| `member` | `manager`, `employee`, `recruiter`, `auditor`, `service_desk_agent`, `asset_manager` |
+1. User calls `authClient.signUp.email({ email, password, name })`
+2. On success, call `authClient.organization.create({ name: companyName, slug: autoSlug })`
+3. Creator gets `tenant_owner` role (per `creatorRole` config)
+4. Call `authClient.organization.setActive({ organizationId })`
+5. Redirect to onboarding wizard
 
-Fine-grained permission checking happens in oRPC middleware using the permission list defined in `docs/architecture/auth-rbac-plan.md`. The Better Auth role provides the membership tier; Heimdallone permissions add granularity.
+### Member invitation
+
+1. `tenant_owner` or `tenant_admin` calls `authClient.organization.inviteMember({ email, role })`
+2. Better Auth sends invitation email with token
+3. Invitee accepts → joins org with assigned role
+4. If invitee doesn't have an account, they sign up first, then accept
+
+### Organization switching
+
+The tenant switcher in the sidebar calls `authClient.organization.setActive({ organizationId })`. This updates `session.activeOrganizationId`. All subsequent API calls operate in the new tenant context.
 
 ---
 
-## What Is NOT Implemented at the Tenant Layer
+## 6. Platform Admin vs Tenant Owner
 
-- Row-level security at the PostgreSQL level (enforced at application layer instead)
-- Separate database per tenant (single-schema multi-tenancy with `organization_id` filter)
-- Custom session tables replacing Better Auth (Better Auth owns sessions)
-- Tenant-specific subdomains (not in current scope — may be added via routing config in a later phase)
+| Concept | Platform Admin | Tenant Owner |
+|---------|---------------|-------------|
+| **Identity** | Admin plugin `adminUserIds` | Organization member with `tenant_owner` role |
+| **Scope** | All tenants | Own organization only |
+| **Auth check** | `user.role === "admin"` (Admin plugin) | `member.role === "tenant_owner"` (Organization plugin) |
+| **Impersonation** | Can impersonate any user | Cannot impersonate |
+| **User management** | Ban/unban, force password reset | Invite/remove members, change roles |
+| **Org management** | Can view all orgs | Can update/delete own org |
+| **Data access** | Cross-tenant (for support) | Own tenant only |
+
+**These are completely separate auth layers.** A person can be both a platform admin AND a tenant owner (e.g., the Heimdallone founder who also runs their own payroll).
+
+---
+
+## 7. Organization Settings (Future)
+
+The organization's `metadata` JSON field stores:
+- `timezone` — display timezone for the tenant (e.g., "America/Guyana")
+- `country` — primary country
+- `currency` — primary currency
+- `plan` — billing plan (starter/growth/enterprise/self-hosted)
+
+For richer settings (work schedules, payroll components, branding), use a separate `organization_settings` table with `organizationId` FK — not the metadata JSON.
+
+---
+
+## 8. Teams (Deferred)
+
+Better Auth Organization plugin has a `teams` feature (sub-org grouping). Deferred until after core RBAC is proven. When enabled, adds:
+- `team` table: id, name, organizationId, createdAt
+- `teamMember` table: id, teamId, userId, createdAt
+- `session.activeTeamId` for team context
+
+The `defaultStatements` spread already includes team permissions, so enabling teams later requires only config changes.
+
+---
+
+## 9. Cross-Tenant Isolation Rules
+
+1. Every business table has `organizationId NOT NULL` FK
+2. Every query includes `WHERE organizationId = context.organizationId`
+3. Every mutation validates `organizationId` matches session context
+4. No API endpoint returns data from multiple organizations (except platform admin diagnostics)
+5. oRPC `tenantProcedure` middleware enforces this at the procedure level
+6. Database indexes should include `organizationId` for query performance
+7. Drizzle schema should use `.references(() => organization.id)` for FK integrity
