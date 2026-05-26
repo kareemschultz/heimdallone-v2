@@ -413,14 +413,21 @@ App pages have NOT been visually verified in a browser during this session. Visu
 - Left: logo, eyebrow, hero text, status card (4 rows with colored dots), SOC 2 badge
 - Right: org hint (Atlas Shipping), email/password form, 3 SSO buttons, legal text, theme toggle
 
-### App route testing limitation
+### App route verification (authenticated)
 
-App routes (`/app/*`) are protected by `beforeLoad` server function auth check. This runs during SSR — cannot be bypassed by client-side route interception or API mocking. Testing requires:
-1. Running PostgreSQL with Better Auth tables
-2. A valid user account
-3. Running Hono API server with correct `DATABASE_URL`
+All 5 app pages verified behind auth after setting up PostgreSQL + Better Auth:
 
-The database was created and tables were manually provisioned, but Better Auth's Drizzle adapter requires the schema to be pushed via `drizzle-kit push` (which needs host-to-container connectivity). The app pages compile correctly and the auth guard redirects work as expected.
+| Route | Renders | App Shell | Key Content Verified |
+|-------|---------|-----------|---------------------|
+| `/app` | Yes | Sidebar + topbar | 4 KPIs, payroll readiness (5 countries), compliance alerts, attendance heatmap, approval queue, headcount chart, cost chart |
+| `/app/payroll` | Yes | Sidebar + topbar | Runbar (Guyana · Sep 2026), country switcher, 4 pay sum cards, employee table, approval chain (6 steps), donut chart, PAYE bands |
+| `/app/employees` | Yes | Sidebar + topbar | Toolbar, filter chips, 12 employee rows with avatars/status, density toggle |
+| `/app/employees/EMP-00214` | Yes | Sidebar + topbar | Rohan Gopaul profile, 4 stat cards, attendance calendar, leave balances, activity timeline |
+| `/app/compliance` | Yes | Sidebar + topbar | 4 KPIs (98/100, 3 findings, 14,820 events, Low risk), event ledger, evidence pack, completeness bars |
+
+**Bug fixed during verification:** Employee profile route (`employees.$id.tsx`) was not rendering because TanStack Router treated `employees.tsx` as a layout parent. Fixed by restructuring to `employees/index.tsx` + `employees/$id.tsx` directory-based routes.
+
+**Note on mock data:** Current app pages use hardcoded handoff sample data (Atlas Shipping, Maya Persaud, Rohan Gopaul, GY/TT/BB/JM countries). This will be replaced with live data from oRPC + Drizzle in a future phase. The mock data is present only to preserve visual parity with the handoff during the frontend port.
 
 **Recommendation:** Visual testing of app pages should be done after the database connectivity is fully configured with `bun run db:push`.
 

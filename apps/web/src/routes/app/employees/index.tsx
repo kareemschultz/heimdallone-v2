@@ -29,7 +29,7 @@ import { useEffect, useState } from "react";
 
 import "@/styles/employees.css";
 
-export const Route = createFileRoute("/app/employees")({
+export const Route = createFileRoute("/app/employees/")({
 	component: EmployeesPage,
 });
 
