@@ -32,9 +32,54 @@ import {
 	Users,
 	Wallet,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-
+import { createContext, useContext, useEffect, useState } from "react";
 import { getUser } from "@/functions/get-user";
+import { authClient } from "@/lib/auth-client";
+
+type OrgContext = {
+	orgName: string;
+	orgSlug: string;
+	memberRole: string;
+	userName: string;
+	userEmail: string;
+};
+
+const OrgCtx = createContext<OrgContext>({
+	orgName: "Atlas Shipping",
+	orgSlug: "atlas-shipping",
+	memberRole: "employee",
+	userName: "User",
+	userEmail: "",
+});
+
+const EMPLOYEE_VISIBLE_KEYS = new Set([
+	"overview",
+	"leave",
+	"documents",
+	"settings",
+]);
+const MANAGER_VISIBLE_KEYS = new Set([
+	"overview",
+	"employees",
+	"attendance",
+	"leave",
+	"documents",
+	"settings",
+]);
+const RECRUITER_VISIBLE_KEYS = new Set([
+	"overview",
+	"employees",
+	"recruitment",
+	"onboarding",
+	"documents",
+	"settings",
+]);
+const HELPDESK_VISIBLE_KEYS = new Set([
+	"overview",
+	"helpdesk",
+	"documents",
+	"settings",
+]);
 
 export const Route = createFileRoute("/app")({
 	component: AppLayout,
@@ -204,10 +249,50 @@ function useCurrentNavKey(): string {
 	return segment || "overview";
 }
 
+function isNavItemVisible(key: string, role: string): boolean {
+	if (
+		[
+			"tenant_owner",
+			"tenant_admin",
+			"hr_admin",
+			"payroll_admin",
+			"auditor",
+		].includes(role)
+	) {
+		return true;
+	}
+	if (role === "employee") {
+		return EMPLOYEE_VISIBLE_KEYS.has(key);
+	}
+	if (role === "manager") {
+		return MANAGER_VISIBLE_KEYS.has(key);
+	}
+	if (role === "recruiter") {
+		return RECRUITER_VISIBLE_KEYS.has(key);
+	}
+	if (role === "helpdesk_agent") {
+		return HELPDESK_VISIBLE_KEYS.has(key);
+	}
+	return true;
+}
+
 function AppSidebar() {
 	const currentKey = useCurrentNavKey();
+	const org = useContext(OrgCtx);
 	const [tenantMenuOpen, setTenantMenuOpen] = useState(false);
 	const [userMenuOpen, setUserMenuOpen] = useState(false);
+	const initials = org.orgName
+		.split(" ")
+		.map((w) => w[0])
+		.join("")
+		.slice(0, 2)
+		.toUpperCase();
+	const userInitials = org.userName
+		.split(" ")
+		.map((w) => w[0])
+		.join("")
+		.slice(0, 2)
+		.toUpperCase();
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {
@@ -237,7 +322,7 @@ function AppSidebar() {
 					role="button"
 					tabIndex={0}
 				>
-					<div className="tenant-avatar">AS</div>
+					<div className="tenant-avatar">{initials}</div>
 					<div style={{ flex: 1, minWidth: 0 }}>
 						<div
 							style={{
@@ -246,7 +331,7 @@ function AppSidebar() {
 								letterSpacing: "-0.005em",
 							}}
 						>
-							Atlas Shipping
+							{org.orgName}
 						</div>
 						<div
 							style={{
@@ -363,35 +448,43 @@ function AppSidebar() {
 			</div>
 
 			{/* Nav Groups */}
-			{NAV.map((group) => (
-				<div className="sidebar-section" key={group.group}>
-					<div className="nav-group-label">{group.group}</div>
-					{group.items.map((item) => (
-						<Link
-							className={`nav-item ${item.key === currentKey ? "active" : ""}`}
-							key={item.key}
-							to={item.href}
-						>
-							<span className="nav-icon">
-								<item.icon size={16} />
-							</span>
-							<span>{item.label}</span>
-							{item.meta && (
-								<span
-									className="nav-meta"
-									style={
-										"metaAccent" in item && item.metaAccent
-											? { color: "var(--accent)" }
-											: undefined
-									}
-								>
-									{item.meta}
+			{NAV.map((group) => {
+				const visibleItems = group.items.filter((item) =>
+					isNavItemVisible(item.key, org.memberRole)
+				);
+				if (visibleItems.length === 0) {
+					return null;
+				}
+				return (
+					<div className="sidebar-section" key={group.group}>
+						<div className="nav-group-label">{group.group}</div>
+						{visibleItems.map((item) => (
+							<Link
+								className={`nav-item ${item.key === currentKey ? "active" : ""}`}
+								key={item.key}
+								to={item.href}
+							>
+								<span className="nav-icon">
+									<item.icon size={16} />
 								</span>
-							)}
-						</Link>
-					))}
-				</div>
-			))}
+								<span>{item.label}</span>
+								{item.meta && (
+									<span
+										className="nav-meta"
+										style={
+											"metaAccent" in item && item.metaAccent
+												? { color: "var(--accent)" }
+												: undefined
+										}
+									>
+										{item.meta}
+									</span>
+								)}
+							</Link>
+						))}
+					</div>
+				);
+			})}
 
 			{/* User Menu */}
 			<div
@@ -416,14 +509,14 @@ function AppSidebar() {
 					tabIndex={0}
 				>
 					<div className="avatar" style={{ width: "30px", height: "30px" }}>
-						MP
+						{userInitials}
 					</div>
 					<div style={{ flex: 1, minWidth: 0 }}>
 						<div style={{ fontSize: "12.5px", fontWeight: 500 }}>
-							Maya Persaud
+							{org.userName}
 						</div>
 						<div style={{ fontSize: "11px", color: "var(--fg-3)" }}>
-							Ops Lead · Atlas
+							{org.memberRole.replace(/_/g, " ")} · {org.orgName.split(" ")[0]}
 						</div>
 					</div>
 					<ChevronDown size={14} style={{ color: "var(--fg-3)" }} />
@@ -448,10 +541,10 @@ function AppSidebar() {
 						}}
 					>
 						<div style={{ fontSize: "12.5px", fontWeight: 500 }}>
-							Maya Persaud
+							{org.userName}
 						</div>
 						<div style={{ fontSize: "11px", color: "var(--fg-3)" }}>
-							maya@atlas-shipping.com
+							{org.userEmail}
 						</div>
 					</div>
 					<button
@@ -833,13 +926,40 @@ function AppTopbar() {
 }
 
 function AppLayout() {
+	const { session } = Route.useRouteContext();
+	const activeOrg = authClient.useActiveOrganization();
+	const [orgCtx, setOrgCtx] = useState<OrgContext>({
+		orgName: "Atlas Shipping",
+		orgSlug: "atlas-shipping",
+		memberRole: "employee",
+		userName: session?.user?.name ?? "User",
+		userEmail: session?.user?.email ?? "",
+	});
+
+	useEffect(() => {
+		if (activeOrg.data) {
+			const member = activeOrg.data.members?.find(
+				(m: { userId: string }) => m.userId === session?.user?.id
+			);
+			setOrgCtx({
+				orgName: activeOrg.data.name ?? "Atlas Shipping",
+				orgSlug: activeOrg.data.slug ?? "atlas-shipping",
+				memberRole: (member?.role as string) ?? "employee",
+				userName: session?.user?.name ?? "User",
+				userEmail: session?.user?.email ?? "",
+			});
+		}
+	}, [activeOrg.data, session?.user]);
+
 	return (
-		<div className="app">
-			<AppSidebar />
-			<main>
-				<AppTopbar />
-				<Outlet />
-			</main>
-		</div>
+		<OrgCtx.Provider value={orgCtx}>
+			<div className="app">
+				<AppSidebar />
+				<main>
+					<AppTopbar />
+					<Outlet />
+				</main>
+			</div>
+		</OrgCtx.Provider>
 	);
 }

@@ -5,6 +5,7 @@ import { expo } from "@better-auth/expo";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
+import { eq } from "drizzle-orm";
 
 import { ac, roles } from "./permissions";
 
@@ -29,9 +30,31 @@ export function createAuth() {
 		baseURL: env.BETTER_AUTH_URL,
 		advanced: {
 			defaultCookieAttributes: {
-				sameSite: env.NODE_ENV === "production" ? "none" : "lax",
-				secure: env.NODE_ENV === "production",
+				sameSite: "none",
+				secure: true,
 				httpOnly: true,
+			},
+		},
+		databaseHooks: {
+			session: {
+				create: {
+					before: async (session) => {
+						const members = await db
+							.select()
+							.from(schema.member)
+							.where(eq(schema.member.userId, session.userId))
+							.limit(1);
+						if (members.length === 1) {
+							return {
+								data: {
+									...session,
+									activeOrganizationId: members[0]!.organizationId,
+								},
+							};
+						}
+						return { data: session };
+					},
+				},
 			},
 		},
 		plugins: [
