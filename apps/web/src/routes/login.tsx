@@ -11,8 +11,6 @@ import {
 } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 
-import { authClient } from "@/lib/auth-client";
-
 export const Route = createFileRoute("/login")({
 	component: LoginPage,
 });

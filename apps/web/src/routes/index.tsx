@@ -247,7 +247,14 @@ function MarketingLanding() {
 	const [accentKey, setAccentKey] = useState("gold");
 	const [tweakVisible, setTweakVisible] = useState(false);
 
-	const spotlight = useSpotlight();
+	/* Spotlight refs — one per bento card */
+	const spotlightLg = useSpotlight<HTMLFieldSetElement>();
+	const spotlightMd1 = useSpotlight<HTMLFieldSetElement>();
+	const spotlightSm1 = useSpotlight<HTMLFieldSetElement>();
+	const spotlightSm2 = useSpotlight<HTMLFieldSetElement>();
+	const spotlightSm3 = useSpotlight<HTMLFieldSetElement>();
+	const spotlightMd2 = useSpotlight<HTMLFieldSetElement>();
+	const spotlightMd3 = useSpotlight<HTMLFieldSetElement>();
 
 	/* Count-up refs */
 	const countRefs = useRef<(HTMLSpanElement | null)[]>([]);
@@ -896,7 +903,7 @@ function MarketingLanding() {
 						{/* b-lg: Multi-country payroll engine */}
 						<fieldset
 							className="bento-card b-lg spotlight beam-host"
-							onMouseMove={spotlight}
+							ref={spotlightLg}
 							style={{ display: "flex", flexDirection: "column" }}
 						>
 							<div className="bento-icon">
@@ -936,7 +943,7 @@ function MarketingLanding() {
 						{/* b-md: Audit-grade compliance trail */}
 						<fieldset
 							className="bento-card b-md spotlight beam-host"
-							onMouseMove={spotlight}
+							ref={spotlightMd1}
 							style={{ display: "flex", flexDirection: "column" }}
 						>
 							<div className="bento-icon">
@@ -1021,10 +1028,7 @@ function MarketingLanding() {
 						</fieldset>
 
 						{/* b-sm: HR core */}
-						<fieldset
-							className="bento-card b-sm spotlight"
-							onMouseMove={spotlight}
-						>
+						<fieldset className="bento-card b-sm spotlight" ref={spotlightSm1}>
 							<div className="bento-icon">
 								<Users size={18} />
 							</div>
@@ -1036,10 +1040,7 @@ function MarketingLanding() {
 						</fieldset>
 
 						{/* b-sm: Attendance & biometric */}
-						<fieldset
-							className="bento-card b-sm spotlight"
-							onMouseMove={spotlight}
-						>
+						<fieldset className="bento-card b-sm spotlight" ref={spotlightSm2}>
 							<div className="bento-icon">
 								<Clock size={18} />
 							</div>
@@ -1051,10 +1052,7 @@ function MarketingLanding() {
 						</fieldset>
 
 						{/* b-sm: Leave & holidays */}
-						<fieldset
-							className="bento-card b-sm spotlight"
-							onMouseMove={spotlight}
-						>
+						<fieldset className="bento-card b-sm spotlight" ref={spotlightSm3}>
 							<div className="bento-icon">
 								<Calendar size={18} />
 							</div>
@@ -1066,10 +1064,7 @@ function MarketingLanding() {
 						</fieldset>
 
 						{/* b-md: Multi-tenancy */}
-						<fieldset
-							className="bento-card b-md spotlight"
-							onMouseMove={spotlight}
-						>
+						<fieldset className="bento-card b-md spotlight" ref={spotlightMd2}>
 							<div className="bento-icon">
 								<Building size={18} />
 							</div>
@@ -1084,10 +1079,7 @@ function MarketingLanding() {
 						</fieldset>
 
 						{/* b-md: Executive analytics */}
-						<fieldset
-							className="bento-card b-md spotlight"
-							onMouseMove={spotlight}
-						>
+						<fieldset className="bento-card b-md spotlight" ref={spotlightMd3}>
 							<div className="bento-icon">
 								<Activity size={18} />
 							</div>
@@ -1196,7 +1188,11 @@ function MarketingLanding() {
 									] as const
 								).map(({ cc, label }) => (
 									<button
-										className={`country-tab${activeCountry === cc ? "active" : ""}`}
+										className={
+											activeCountry === cc
+												? "country-tab active"
+												: "country-tab"
+										}
 										key={cc}
 										onClick={() => setActiveCountry(cc)}
 										type="button"
@@ -1436,7 +1432,7 @@ function MarketingLanding() {
 			</footer>
 
 			{/* ═══════════ TWEAK STRIP ═══════════ */}
-			<div className={`tweak-strip${tweakVisible ? "visible" : ""}`}>
+			<div className={tweakVisible ? "tweak-strip visible" : "tweak-strip"}>
 				<span className="tweak-label">Hero</span>
 				<div className="seg">
 					{(["centered", "split", "editorial"] as const).map((v) => (

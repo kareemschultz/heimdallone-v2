@@ -7,7 +7,6 @@ import {
 	Briefcase,
 	Calendar,
 	Check,
-	ChevronDown,
 	Clock,
 	Download,
 	ExternalLink,

@@ -1,5 +1,4 @@
 import type { AppRouter } from "@Heimdallone/api/routers/index";
-import { env } from "@Heimdallone/env/web";
 import { createORPCClient } from "@orpc/client";
 import { RPCLink } from "@orpc/client/fetch";
 import type { RouterClient } from "@orpc/server";
