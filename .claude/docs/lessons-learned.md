@@ -79,3 +79,27 @@ Living document. Updated after each major task or unexpected issue.
 22. **`authClient.signIn.email` may hang with plugins** — Better Auth React client with Organization + Admin plugins may not resolve the sign-in promise in some configurations. Use direct `fetch` to `/api/auth/sign-in/email` with `credentials: "include"` and `window.location.href` for redirect instead.
 
 23. **CORS_ORIGIN must match actual web port** — Vite picks a fallback port (3003) if 3001 is in use. `CORS_ORIGIN` in `apps/server/.env` must match. Mismatch causes 403 CSRF errors.
+
+---
+
+## Session: 2026-05-26 — Phase 4D HRMS Extraction
+
+### Patterns That Worked
+
+6. **Parallel source code reading over background agents** — Reading model files directly (~12,200 lines across 18 modules) was faster and more reliable than launching 8 background research agents (which all hit session limits). For large codebases, sequential direct reading with parallel batches beats agent delegation.
+
+7. **Systematic model-first research** — Reading `models.py` files first gives 80% of the domain knowledge needed. Views/forms/templates add workflow context but the entity model is the foundation.
+
+### Gotchas Discovered
+
+24. **Background agents share session limits** — All 8 parallel research agents hit "session limit" simultaneously and returned zero results. When spawning many agents, they may exhaust shared rate limits. Fallback: do the research directly.
+
+25. **Horilla docs URL structure is unpredictable** — `docs.horilla.com` doesn't follow standard `/doc/v2.0/functional/module.html` patterns. The root page loads but subpages return 404. Use source code as primary research and online docs as supplementary only.
+
+26. **OpenHRMS uses Odoo ORM patterns** — Models use `fields.Many2one`, `@api.model`, `mail.thread` inheritance. Translate concepts (what the model represents) not code (how Odoo implements it). Caribbean-relevant features: employee loans, salary advances, attendance regularization.
+
+### Edge Cases to Watch
+
+3. **Horilla's company scoping pattern** — Every model uses `HorillaCompanyManager` with a related field path for tenant isolation. Heimdallone uses Better Auth Organization `activeOrganizationId` instead. When translating, replace all company FK patterns with organization-scoped oRPC middleware.
+
+4. **Horilla's request→approve pattern** — Used by 8+ modules (leave, shift, work type, attendance correction, asset, reimbursement, resignation, document). Heimdallone should build a reusable approval workflow primitive rather than reimplementing per module.

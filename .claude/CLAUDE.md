@@ -140,3 +140,10 @@ Technology references for this project (researched from live docs):
 Design source of truth: `design_handoff_heimdallone/` (committed to git). Open the HTML files directly — the CSS rule is the answer.
 
 - [Lessons Learned & Gotchas](.claude/docs/lessons-learned.md) — edge cases, patterns, mistakes to avoid
+
+HRMS domain extraction (Phase 4D):
+
+- [Horilla Extraction Index](docs/horilla-extraction/README.md) — 20 module extraction docs with Heimdallone-native recommendations
+- [Module Priority Index](docs/horilla-extraction/module-index.md) — priority tiers, dependencies, implementation order
+- [UI Pattern Library](docs/horilla-extraction/ui-pattern-library-recommendations.md) — cross-module UI standards
+- [Domain Roadmap](docs/horilla-extraction/heimdallone-domain-roadmap.md) — Phases 5-15 implementation sequence
