@@ -132,6 +132,28 @@ The web app's `beforeLoad` auth check calls the API server. Make sure the API se
 
 ---
 
+## Production / Container Deployment
+
+The `socat` proxy is for **local host-dev only**. In production or when Heimdallone runs inside Docker containers:
+
+```
+# Attach the Heimdallone server container to the same Docker network as postgres-central
+docker network connect pangolin heimdallone-server
+
+# Then use Docker DNS in the server's DATABASE_URL:
+DATABASE_URL=postgresql://heimdallone:$PASSWORD@postgres-central:5432/Heimdallone
+```
+
+Docker DNS (`postgres-central:5432`) is the preferred production connection — it is stable, does not depend on container IPs, and does not require socat.
+
+| Environment | Connection | Method |
+|-------------|-----------|--------|
+| Local host dev | `localhost:5432` | socat proxy (bridges host to Docker network) |
+| Docker container | `postgres-central:5432` | Docker DNS (same network, no proxy needed) |
+| Production | `postgres-central:5432` or managed Postgres URL | Docker network or connection string |
+
+---
+
 ## What NOT to do
 
 - Do not start the scaffold's `packages/db/docker-compose.yml` postgres — use central postgres instead
