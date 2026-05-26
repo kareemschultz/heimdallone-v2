@@ -357,3 +357,82 @@ App pages have NOT been visually verified in a browser during this session. Visu
 | `bun run build` | **Passed** |
 | `bun run check` | Warnings only (a href="#" placeholders, CSS specificity in handoff CSS, a11y on interactive elements) — no files modified, no design impact |
 
+---
+
+## Phase 3D Visual Verification
+
+> Date: 2026-05-26
+> Method: Playwright at 1440×900 (handoff target resolution)
+> Screenshots: `screenshots/` directory
+
+### Bug found and fixed
+
+**Docs page `.reveal` class mismatch:** The `useRevealOnScroll` hook in `docs.tsx` was adding class `"revealed"` but the handoff CSS (`heimdall.css`) expects `.reveal.in` to trigger the animation. All 4 reveal sections (quickstart, category grid, popular+changelog, help row) were invisible. Fixed by changing `classList.add("revealed")` → `classList.add("in")`.
+
+### Route verification results
+
+| Route | Renders | Console Errors | Correct Chrome | Interactions | Status |
+|-------|---------|---------------|----------------|-------------|--------|
+| `/` | Yes — full page with all sections after scroll | favicon 404 only | Marketing nav + footer, NO app shell | Theme toggle works, hero renders, marquee animates | **PASS** |
+| `/pricing` | Yes — all 4 plan cards, comparison table, FAQ, CTA | favicon 404 only | Marketing nav + footer, NO app shell | Billing toggle works, FAQ accordion works | **PASS** |
+| `/docs` | Yes — all sections after `.reveal.in` fix | favicon 404 only | Marketing nav + footer, NO app shell | Code tabs visible, quick tags visible | **PASS** |
+| `/login` | Yes — 2-column layout, all elements visible | favicon 404 only | Standalone (no nav/footer/app shell) | Theme toggle works, form inputs work | **PASS** |
+| `/app` | Redirects to `/login` | "fetch failed" when no API server | Auth guard working correctly | N/A — requires auth | **PASS (auth works)** |
+| `/app/payroll` | Redirects to `/login` | Same | Auth guard working | N/A | **PASS (auth works)** |
+| `/app/employees` | Redirects to `/login` | Same | Auth guard working | N/A | **PASS (auth works)** |
+| `/app/employees/demo` | Redirects to `/login` | Same | Auth guard working | N/A | **PASS (auth works)** |
+| `/app/compliance` | Redirects to `/login` | Same | Auth guard working | N/A | **PASS (auth works)** |
+
+### Visual parity observations
+
+**Marketing landing (/):**
+- Hero: correct copy, gold italic accent, product preview card with dashboard mockup
+- Bento: 6 feature cards with correct titles and descriptions
+- Payroll section: country tabs with GY gross-to-net breakdown (GYD 428,000 → 327,660)
+- Compliance steps: 3 numbered cards
+- CTA: shimmer button effect visible
+- Footer: 5-column grid, correct links and branding
+
+**Pricing (/pricing):**
+- Hero: "Built for the work that *scales* with you" — correct italic accent
+- Plans: 4 cards with per-employee pricing ($6/$14/Custom/Contact)
+- Growth card: "Most popular" badge, border beam effect
+- Comparison table: all 5 sections (HR, Payroll, Compliance, Identity, Support) with check/x icons
+- FAQ: 6 collapsible items
+- CTA: shimmer button
+
+**Docs (/docs):**
+- Hero: "Everything you need to run *Heimdallone*" with search + 7 quick tags
+- Quick start: 2-column with code tabs (3 languages, syntax highlighted)
+- Categories: 9 cards with correct article counts
+- Popular + Changelog: 2-column layout with article links and dated entries
+- Help: 3 cards (Community, Support, Implementation)
+
+**Login (/login):**
+- Pixel-perfect match to handoff at 1440×900
+- Left: logo, eyebrow, hero text, status card (4 rows with colored dots), SOC 2 badge
+- Right: org hint (Atlas Shipping), email/password form, 3 SSO buttons, legal text, theme toggle
+
+### App route testing limitation
+
+App routes (`/app/*`) are protected by `beforeLoad` server function auth check. This runs during SSR — cannot be bypassed by client-side route interception or API mocking. Testing requires:
+1. Running PostgreSQL with Better Auth tables
+2. A valid user account
+3. Running Hono API server with correct `DATABASE_URL`
+
+The database was created and tables were manually provisioned, but Better Auth's Drizzle adapter requires the schema to be pushed via `drizzle-kit push` (which needs host-to-container connectivity). The app pages compile correctly and the auth guard redirects work as expected.
+
+**Recommendation:** Visual testing of app pages should be done after the database connectivity is fully configured with `bun run db:push`.
+
+### Commands run
+
+| Command | Result |
+|---------|--------|
+| `git log --oneline -5` | 5 commits on master, latest `454c6c6` |
+| `git status --short` | 1 modified file (docs.tsx fix), 1 untracked (routeTree.gen.ts) |
+| `bun run check-types` | **Passed** |
+| `bun run build` | **Passed** |
+| `bun run check` | Warnings only, no files modified |
+| `bun run dev:web` | Server started on port 3004 |
+| Playwright screenshots | 7 screenshots taken at 1440×900 |
+
