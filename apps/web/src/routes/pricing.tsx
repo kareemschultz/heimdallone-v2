@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, Check, Moon, Sun } from "lucide-react";
+import { ArrowRight, Check, Moon, Sun, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export const Route = createFileRoute("/pricing")({
@@ -66,66 +66,73 @@ function ThemeToggle() {
 	);
 }
 
-const PLANS = [
+const FAQS = [
 	{
-		name: "Starter",
-		price: "$49",
-		desc: "For small teams getting started",
-		features: [
-			"Up to 50 employees",
-			"1 country",
-			"Email support",
-			"Basic payroll",
-			"Attendance tracking",
-		],
+		q: "What counts as an employee for billing?",
+		a: "Anyone with an active employment record in the period — including contractors and part-timers if you're paying them through Heimdallone. Inactive, archived, and offboarded employees never count, even if their historical records remain.",
 	},
 	{
-		name: "Growth",
-		price: "$149",
-		desc: "For growing multi-country teams",
-		popular: true,
-		features: [
-			"Up to 500 employees",
-			"4 countries",
-			"Priority support",
-			"Full payroll engine",
-			"Compliance & audit",
-			"Biometric integration",
-			"Custom workflows",
-		],
+		q: "Can we add country tax engines as we expand?",
+		a: "Yes. Each plan includes a soft cap on countries, but you can add additional country profiles à la carte. New jurisdictions take effect on the next pay period and inherit your existing approval policy.",
 	},
 	{
-		name: "Enterprise",
-		price: "Custom",
-		desc: "For large-scale operations",
-		features: [
-			"Unlimited employees",
-			"Unlimited countries",
-			"Dedicated support",
-			"Full platform access",
-			"SLA guarantee",
-			"SSO & SAML",
-			"Custom integrations",
-			"On-prem option",
-		],
+		q: "Does the price include payroll tax calculation?",
+		a: "Yes. Every plan ships with the country tax engines included for that tier — PAYE bands, NIS rates, statutory deductions and employer contributions — versioned and updated as gazettes are published.",
 	},
 	{
-		name: "Self-hosted",
-		price: "$299/mo",
-		desc: "Run on your infrastructure",
-		features: [
-			"Unlimited employees",
-			"Unlimited countries",
-			"Source access",
-			"Full platform",
-			"Your data, your servers",
-			"Community support",
-		],
+		q: "Do we keep our existing Horilla deployment?",
+		a: "Yes. Heimdallone reads from and writes to your existing Horilla HRMS. Self-hosted plans run entirely inside your VPC. There's no migration or data export needed.",
+	},
+	{
+		q: "What happens at renewal?",
+		a: "Annual plans renew at the same per-employee rate unless we notify you of a change at least 60 days before renewal. Month-to-month plans can be cancelled any time and you only pay for the current period.",
+	},
+	{
+		q: "Is there a free trial?",
+		a: "Yes — 14 days, no credit card required, full Growth feature set. After trial, your data is preserved for 60 days while you decide. Self-hosted trials are scoped per deployment; reach out for details.",
 	},
 ];
 
 function PricingPage() {
-	const [annual, setAnnual] = useState(false);
+	const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
+	const [openFaqs, setOpenFaqs] = useState<Set<number>>(new Set());
+
+	const toggleFaq = (i: number) => {
+		setOpenFaqs((prev) => {
+			const next = new Set(prev);
+			if (next.has(i)) {
+				next.delete(i);
+			} else {
+				next.add(i);
+			}
+			return next;
+		});
+	};
+
+	const starterPrice = billing === "monthly" ? "6" : "5";
+	const growthPrice = billing === "monthly" ? "14" : "11";
+
+	useEffect(() => {
+		const revealEls = document.querySelectorAll<HTMLElement>(".reveal");
+		if (!revealEls.length) {
+			return;
+		}
+		const io = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						entry.target.classList.add("in");
+						io.unobserve(entry.target);
+					}
+				}
+			},
+			{ threshold: 0.15 }
+		);
+		for (const el of revealEls) {
+			io.observe(el);
+		}
+		return () => io.disconnect();
+	}, []);
 
 	return (
 		<div>
@@ -141,6 +148,7 @@ function PricingPage() {
 					<div className="m-nav-links">
 						<Link to="/">Product</Link>
 						<a href="#">Features</a>
+						<a href="#">Payroll</a>
 						<Link className="active" to="/pricing">
 							Pricing
 						</Link>
@@ -159,142 +167,583 @@ function PricingPage() {
 			</nav>
 
 			{/* Hero */}
-			<div className="m-page-hero">
+			<section className="m-page-hero">
 				<div className="glow" />
 				<div className="container" style={{ position: "relative", zIndex: 1 }}>
 					<div className="eyebrow">Pricing</div>
 					<h1>
-						Simple, transparent <em>pricing</em>.
+						Built for the work that <em>scales</em> with you.
 					</h1>
 					<p>
-						Start free. Scale as you grow. No hidden fees, no per-payroll
-						charges.
+						Transparent plans across every country you operate in. Start small,
+						expand without re-platforming.
 					</p>
-					<div style={{ marginTop: "28px" }}>
-						<div className="segmented">
-							<button
-								className={annual ? "" : "active"}
-								onClick={() => setAnnual(false)}
-								type="button"
+					<div className="billing-toggle">
+						<button
+							className={billing === "monthly" ? "active" : ""}
+							onClick={() => setBilling("monthly")}
+							type="button"
+						>
+							Monthly
+						</button>
+						<button
+							className={billing === "annual" ? "active" : ""}
+							onClick={() => setBilling("annual")}
+							type="button"
+						>
+							Annual <span className="save-pill">−20%</span>
+						</button>
+					</div>
+				</div>
+			</section>
+
+			{/* Plans */}
+			<section className="section" style={{ paddingTop: "56px" }}>
+				<div className="container">
+					<div className="plans">
+						{/* Starter */}
+						<div className="plan">
+							<div className="plan-head">
+								<span className="plan-name">Starter</span>
+								<span className="plan-desc">
+									For single-country teams getting out of spreadsheets.
+								</span>
+							</div>
+							<div className="plan-price">
+								<span className="cur">$</span>
+								<span className="num">{starterPrice}</span>
+								<span className="per">/ employee / mo</span>
+							</div>
+							<Link className="btn btn-outline plan-cta" to="/login">
+								Start free trial
+							</Link>
+							<div className="plan-features">
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>
+										Up to <span className="v">50</span> employees
+									</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>
+										<span className="v">1</span> country tax engine
+									</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>HR core · attendance · leave</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Single-step approvals</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Standard payslips &amp; CSV exports</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Email support · 24h SLA</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Growth (featured) */}
+						<div className="plan featured beam-host beam-always">
+							<span className="badge-strip">Most popular</span>
+							<div className="plan-head">
+								<span className="plan-name" style={{ color: "var(--accent)" }}>
+									Growth
+								</span>
+								<span className="plan-desc">
+									Multi-country operations with serious payroll needs.
+								</span>
+							</div>
+							<div className="plan-price">
+								<span className="cur">$</span>
+								<span className="num">{growthPrice}</span>
+								<span className="per">/ employee / mo</span>
+							</div>
+							<Link
+								className="btn btn-primary plan-cta btn-shimmer"
+								to="/login"
 							>
-								Monthly
-							</button>
-							<button
-								className={annual ? "active" : ""}
-								onClick={() => setAnnual(true)}
-								type="button"
-							>
-								Annual (save 20%)
-							</button>
+								<span>Start free trial</span>
+							</Link>
+							<div className="plan-features">
+								<div className="group-label">Everything in Starter, plus</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>
+										Up to <span className="v">1,500</span> employees
+									</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>
+										<span className="v">Up to 4</span> country tax engines
+									</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Multi-step approval chains</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Audit ledger &amp; reproducible runs</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Bank file exports (RBL, RBC, NCB)</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Biometric ingest &amp; exception queue</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>
+										Chat support · <span className="v">4h</span> SLA
+									</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Enterprise */}
+						<div className="plan">
+							<div className="plan-head">
+								<span className="plan-name">Enterprise</span>
+								<span className="plan-desc">
+									For groups with multiple legal entities and complex
+									governance.
+								</span>
+							</div>
+							<div className="plan-price custom">
+								<span className="num">Custom</span>
+							</div>
+							<a className="btn btn-outline plan-cta" href="#">
+								Talk to sales
+							</a>
+							<div className="plan-features">
+								<div className="group-label">Everything in Growth, plus</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Unlimited employees &amp; countries</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Multi-entity consolidation</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>SSO · SAML · SCIM · enterprise IDP</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Role-based access controls (RBAC)</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Custom country profiles</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Dedicated CSM &amp; private channel</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>
+										Custom SLA · <span className="v">99.99%</span> uptime
+									</span>
+								</div>
+							</div>
+						</div>
+
+						{/* Self-hosted */}
+						<div className="plan">
+							<div className="plan-head">
+								<span className="plan-name">Self-hosted</span>
+								<span className="plan-desc">
+									Bring-your-own infra. Same product, in your VPC, against your
+									Horilla.
+								</span>
+							</div>
+							<div className="plan-price custom">
+								<span className="num">Contact</span>
+							</div>
+							<a className="btn btn-outline plan-cta" href="#">
+								Request deployment
+							</a>
+							<div className="plan-features">
+								<div className="group-label">
+									Built for regulated environments
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Runs against your Postgres + Horilla</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Tauri desktop &amp; mobile builds</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Air-gapped friendly</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>BYO secrets / KMS / HSM</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Source-available license terms</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Annual security review</span>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
-			</div>
+			</section>
 
-			{/* Plans */}
-			<section style={{ padding: "64px 0 96px" }}>
+			{/* Comparison table */}
+			<section className="reveal container">
+				<div style={{ textAlign: "center", marginBottom: "24px" }}>
+					<div className="section-eyebrow" style={{ marginBottom: "12px" }}>
+						Side-by-side
+					</div>
+					<h2 style={{ fontSize: "clamp(28px, 4vw, 42px)", margin: "0 auto" }}>
+						Compare what's included
+					</h2>
+				</div>
+				<div className="compare-wrap">
+					<table>
+						<thead>
+							<tr>
+								<th>Feature</th>
+								<th>Starter</th>
+								<th className="col-featured">Growth</th>
+								<th>Enterprise</th>
+								<th>Self-hosted</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr className="section-row">
+								<td colSpan={5}>HR core</td>
+							</tr>
+							<tr>
+								<td className="feat">Employees included</td>
+								<td>Up to 50</td>
+								<td className="col-featured">Up to 1,500</td>
+								<td>Unlimited</td>
+								<td>Unlimited</td>
+							</tr>
+							<tr>
+								<td className="feat">Departments &amp; positions</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+							</tr>
+							<tr>
+								<td className="feat">Documents &amp; e-signatures</td>
+								<td>Basic</td>
+								<td>Advanced</td>
+								<td>+ Custom workflows</td>
+								<td>+ Custom workflows</td>
+							</tr>
+							<tr>
+								<td className="feat">Onboarding flows</td>
+								<td className="ck-off center">
+									<X size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td>+ Templates</td>
+								<td>+ Templates</td>
+							</tr>
+
+							<tr className="section-row">
+								<td colSpan={5}>Payroll</td>
+							</tr>
+							<tr>
+								<td className="feat">
+									Country tax engines
+									<div className="feat-meta">
+										GY · TT · BB · JM · US · CA · UK
+									</div>
+								</td>
+								<td>1</td>
+								<td className="col-featured">Up to 4</td>
+								<td>Unlimited</td>
+								<td>Unlimited</td>
+							</tr>
+							<tr>
+								<td className="feat">Effective-date logic</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+							</tr>
+							<tr>
+								<td className="feat">Approval chains</td>
+								<td>Single-step</td>
+								<td className="col-featured">Multi-step</td>
+								<td>Custom</td>
+								<td>Custom</td>
+							</tr>
+							<tr>
+								<td className="feat">Bank file exports</td>
+								<td className="ck-off center">
+									<X size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td>+ Custom formats</td>
+								<td>+ Custom formats</td>
+							</tr>
+							<tr>
+								<td className="feat">Reproducible historical runs</td>
+								<td className="ck-off center">
+									<X size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+							</tr>
+
+							<tr className="section-row">
+								<td colSpan={5}>Compliance &amp; audit</td>
+							</tr>
+							<tr>
+								<td className="feat">Audit ledger</td>
+								<td>30 days</td>
+								<td className="col-featured">7 years</td>
+								<td>Configurable</td>
+								<td>Configurable</td>
+							</tr>
+							<tr>
+								<td className="feat">Risk indicators</td>
+								<td>Basic</td>
+								<td>Advanced</td>
+								<td>+ Custom rules</td>
+								<td>+ Custom rules</td>
+							</tr>
+							<tr>
+								<td className="feat">SOC 2 evidence pack</td>
+								<td className="ck-off center">
+									<X size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+							</tr>
+
+							<tr className="section-row">
+								<td colSpan={5}>Identity &amp; access</td>
+							</tr>
+							<tr>
+								<td className="feat">SSO / SAML</td>
+								<td className="ck-off center">
+									<X size={16} />
+								</td>
+								<td>Google · Microsoft</td>
+								<td>Any IDP</td>
+								<td>Any IDP</td>
+							</tr>
+							<tr>
+								<td className="feat">SCIM provisioning</td>
+								<td className="ck-off center">
+									<X size={16} />
+								</td>
+								<td className="ck-off center">
+									<X size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+								<td className="ck-on center">
+									<Check size={16} />
+								</td>
+							</tr>
+							<tr>
+								<td className="feat">Custom roles &amp; RBAC</td>
+								<td>3 roles</td>
+								<td>10 roles</td>
+								<td>Unlimited</td>
+								<td>Unlimited</td>
+							</tr>
+
+							<tr className="section-row">
+								<td colSpan={5}>Support &amp; deployment</td>
+							</tr>
+							<tr>
+								<td className="feat">Support channel</td>
+								<td>Email</td>
+								<td>Chat + Email</td>
+								<td>Dedicated CSM</td>
+								<td>Dedicated CSM</td>
+							</tr>
+							<tr>
+								<td className="feat">Response SLA</td>
+								<td>24h</td>
+								<td className="col-featured">4h</td>
+								<td>1h custom</td>
+								<td>1h custom</td>
+							</tr>
+							<tr>
+								<td className="feat">Deployment</td>
+								<td>Hosted</td>
+								<td>Hosted</td>
+								<td>Hosted or VPC</td>
+								<td>Your infra</td>
+							</tr>
+							<tr>
+								<td className="feat">Uptime SLA</td>
+								<td>99.9%</td>
+								<td>99.95%</td>
+								<td>99.99%</td>
+								<td>Self-managed</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</section>
+
+			{/* FAQ */}
+			<section className="section reveal" style={{ paddingTop: 0 }}>
 				<div className="container">
 					<div
-						style={{
-							display: "grid",
-							gridTemplateColumns: "repeat(4, 1fr)",
-							gap: "16px",
-						}}
+						style={{ textAlign: "center", maxWidth: "600px", margin: "0 auto" }}
 					>
-						{PLANS.map((plan) => (
-							<div
-								className={`card card-pad ${plan.popular ? "beam-host beam-always" : ""}`}
-								key={plan.name}
-								style={{ display: "flex", flexDirection: "column" }}
+						<div className="section-eyebrow">FAQ</div>
+						<h2
+							style={{ fontSize: "clamp(32px, 4vw, 44px)", margin: "0 auto" }}
+						>
+							Common questions, answered.
+						</h2>
+					</div>
+					<div className="faq-grid">
+						{FAQS.map((faq, i) => (
+							<details
+								className="faq-item"
+								key={faq.q}
+								onClick={(e) => {
+									e.preventDefault();
+									toggleFaq(i);
+								}}
+								open={openFaqs.has(i) || undefined}
 							>
-								{plan.popular && (
-									<div
-										className="badge badge-accent"
-										style={{ alignSelf: "flex-start", marginBottom: "12px" }}
-									>
-										Most popular
-									</div>
-								)}
-								<h3 style={{ marginBottom: "4px" }}>{plan.name}</h3>
-								<p
-									style={{
-										fontSize: "13px",
-										color: "var(--fg-3)",
-										marginBottom: "16px",
-									}}
-								>
-									{plan.desc}
-								</p>
-								<div
-									style={{
-										fontFamily: '"JetBrains Mono", monospace',
-										fontSize: "32px",
-										fontWeight: 600,
-										letterSpacing: "-0.025em",
-										marginBottom: "4px",
-									}}
-								>
-									{plan.price}
-								</div>
-								{plan.price !== "Custom" && (
-									<div
-										style={{
-											fontSize: "12px",
-											color: "var(--fg-3)",
-											marginBottom: "20px",
-										}}
-									>
-										per month{annual ? ", billed annually" : ""}
-									</div>
-								)}
-								{plan.price === "Custom" && (
-									<div
-										style={{
-											fontSize: "12px",
-											color: "var(--fg-3)",
-											marginBottom: "20px",
-										}}
-									>
-										tailored to your needs
-									</div>
-								)}
-								<button
-									className={`btn ${plan.popular ? "btn-primary" : "btn-outline"}`}
-									style={{ width: "100%", marginBottom: "20px" }}
-									type="button"
-								>
-									{plan.price === "Custom"
-										? "Contact sales"
-										: "Start free trial"}
-								</button>
-								<div
-									style={{
-										display: "flex",
-										flexDirection: "column",
-										gap: "8px",
-									}}
-								>
-									{plan.features.map((f) => (
-										<div
-											key={f}
-											style={{
-												display: "flex",
-												gap: "8px",
-												alignItems: "center",
-												fontSize: "13px",
-												color: "var(--fg-2)",
-											}}
-										>
-											<Check
-												size={14}
-												style={{ color: "var(--success)", flexShrink: 0 }}
-											/>
-											{f}
-										</div>
-									))}
-								</div>
-							</div>
+								<summary>{faq.q}</summary>
+								{openFaqs.has(i) && <p>{faq.a}</p>}
+							</details>
 						))}
+					</div>
+				</div>
+			</section>
+
+			{/* CTA */}
+			<section className="container">
+				<div className="cta">
+					<div className="cta-inner">
+						<h2>Ready to run payroll the way it should be?</h2>
+						<p>
+							Spin up a sandbox tenant, import a sample roster, and see your
+							first pay run computed in under five minutes.
+						</p>
+						<div className="cta-actions">
+							<Link className="btn btn-primary btn-lg btn-shimmer" to="/login">
+								<span>Start free trial</span> <ArrowRight size={14} />
+							</Link>
+							<Link className="btn btn-outline btn-lg" to="/docs">
+								Read the docs
+							</Link>
+						</div>
 					</div>
 				</div>
 			</section>

@@ -1,9 +1,12 @@
 @import "@Heimdallone/ui/globals.css";
 @import "./styles/heimdall.css";
 @import "./styles/marketing.css";
+@import "./styles/marketing-page.css";
 @import "./styles/login.css";
 @import "./styles/dashboard.css";
 @import "./styles/compliance.css";
 @import "./styles/payroll.css";
 @import "./styles/employees.css";
 @import "./styles/employee-profile.css";
+@import "./styles/docs.css";
+@import "./styles/pricing.css";

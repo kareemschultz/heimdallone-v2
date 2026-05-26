@@ -1,21 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowRight,
-	ArrowUpRight,
+	Briefcase,
+	Building,
+	Check,
 	Clock,
+	Command,
 	Database,
 	FileText,
+	GitBranch,
 	Globe,
-	Key,
+	Info,
 	Moon,
+	Play,
 	Search,
-	Shield,
+	ShieldCheck,
 	Sun,
 	Users,
 	Wallet,
 	Zap,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export const Route = createFileRoute("/docs")({
 	component: DocsPage,
@@ -46,12 +51,14 @@ function HeimdallLogo({ size = 22 }: { size?: number }) {
 
 function ThemeToggle() {
 	const [theme, setTheme] = useState("dark");
+
 	useEffect(() => {
 		const stored = document.documentElement.getAttribute("data-theme");
 		if (stored) {
 			setTheme(stored);
 		}
 	}, []);
+
 	const toggle = (t: string) => {
 		setTheme(t);
 		document.documentElement.setAttribute("data-theme", t);
@@ -59,6 +66,7 @@ function ThemeToggle() {
 			localStorage.setItem("heimdall.theme", t);
 		} catch {}
 	};
+
 	return (
 		<div className="theme-toggle" data-theme-toggle="">
 			<button
@@ -81,78 +89,111 @@ function ThemeToggle() {
 	);
 }
 
-const CATEGORIES = [
-	{
-		icon: Zap,
-		title: "Getting Started",
-		desc: "Installation, first run, and quick start guide",
-		count: 8,
-	},
-	{
-		icon: Users,
-		title: "Employee Management",
-		desc: "Profiles, departments, roles, and employment lifecycle",
-		count: 14,
-	},
-	{
-		icon: Wallet,
-		title: "Payroll",
-		desc: "Pay runs, statutory deductions, multi-country configuration",
-		count: 22,
-	},
-	{
-		icon: Clock,
-		title: "Attendance",
-		desc: "Check-in/out, biometrics, geofencing, overtime",
-		count: 11,
-	},
-	{
-		icon: Globe,
-		title: "Countries & Tax",
-		desc: "Country profiles, PAYE, NIS, tax brackets",
-		count: 7,
-	},
-	{
-		icon: Shield,
-		title: "Compliance",
-		desc: "Audit ledger, evidence packs, hash chain, SOC 2",
-		count: 9,
-	},
-	{
-		icon: Key,
-		title: "Authentication",
-		desc: "Better Auth, SSO, SAML, passkeys, RBAC",
-		count: 12,
-	},
-	{
-		icon: Database,
-		title: "API Reference",
-		desc: "oRPC procedures, schemas, and type-safe clients",
-		count: 18,
-	},
-	{
-		icon: FileText,
-		title: "Integrations",
-		desc: "Horilla sync, accounting exports, webhooks",
-		count: 6,
-	},
-];
+// Spotlight mouse-tracking handler for .cat-card elements
+function useSpotlight() {
+	const handleMouseMove = useCallback(
+		(e: React.MouseEvent<HTMLAnchorElement>) => {
+			const rect = e.currentTarget.getBoundingClientRect();
+			e.currentTarget.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+			e.currentTarget.style.setProperty("--my", `${e.clientY - rect.top}px`);
+		},
+		[]
+	);
+	return handleMouseMove;
+}
 
-const QUICK_TAGS = [
-	"Quick start",
-	"Payroll",
-	"Attendance",
-	"API",
-	"Auth",
-	"Countries",
-	"Compliance",
-];
+// Reveal-on-scroll using IntersectionObserver
+function useRevealOnScroll() {
+	const ref = useRef<HTMLElement | null>(null);
+
+	useEffect(() => {
+		const el = ref.current;
+		if (!el) {
+			return;
+		}
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				for (const entry of entries) {
+					if (entry.isIntersecting) {
+						entry.target.classList.add("revealed");
+						observer.unobserve(entry.target);
+					}
+				}
+			},
+			{ threshold: 0.08 }
+		);
+
+		observer.observe(el);
+		return () => observer.disconnect();
+	}, []);
+
+	return ref;
+}
+
+// Code tab content (raw text for clipboard copy)
+const CODE_TEXT: Record<string, string> = {
+	ts: `// Compute a Guyana September pay run
+import { Heimdallone } from "@heimdallone/sdk";
+
+const hd = new Heimdallone({
+  tenant: "atlas-shipping",
+  apiKey: process.env.HEIMDALL_KEY,
+});
+
+const run = await hd.payroll.compute({
+  country: "GY",
+  period:  "2026-09",
+  profile: "gy.v2026.1",
+});
+
+console.log(run.net);
+// → { GYD: 184_720_400, employees: 728 }`,
+	curl: `# Compute a pay run via REST
+curl -X POST https://api.heimdallone.app/v1/payroll/compute \\
+  -H "Authorization: Bearer $HEIMDALL_KEY" \\
+  -H "X-Tenant: atlas-shipping" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "country": "GY",
+    "period":  "2026-09",
+    "profile": "gy.v2026.1"
+  }'`,
+	orpc: `// Type-safe oRPC call from TanStack Start
+import { orpc } from "~/lib/orpc";
+
+const { data: run } = await orpc.payroll.compute.$post({
+  country: "GY",
+  period:  "2026-09",
+  profile: "gy.v2026.1",
+});
+
+// run is fully typed: PayRun<"GY">
+run.employees.map(e => e.net);`,
+};
 
 function DocsPage() {
+	const [activeTab, setActiveTab] = useState<"ts" | "curl" | "orpc">("ts");
+	const [copied, setCopied] = useState(false);
+
+	const spotlightMove = useSpotlight();
+
+	const quickstartRef = useRevealOnScroll() as React.RefObject<HTMLElement>;
+	const categoriesRef = useRevealOnScroll() as React.RefObject<HTMLElement>;
+	const popularRef = useRevealOnScroll() as React.RefObject<HTMLElement>;
+	const helpRef = useRevealOnScroll() as React.RefObject<HTMLElement>;
+
+	const handleCopy = () => {
+		const text = CODE_TEXT[activeTab] ?? "";
+		navigator.clipboard?.writeText(text).catch(() => {});
+		setCopied(true);
+		setTimeout(() => setCopied(false), 1400);
+	};
+
 	return (
 		<div>
 			{/* Nav */}
-			<nav className="m-nav">
+			<nav className="m-nav" data-screen-label="Marketing Nav">
 				<div className="container m-nav-inner">
 					<Link className="h-logo" to="/">
 						<span className="h-logo-mark">
@@ -163,6 +204,7 @@ function DocsPage() {
 					<div className="m-nav-links">
 						<Link to="/">Product</Link>
 						<a href="#">Features</a>
+						<a href="#">Payroll</a>
 						<Link to="/pricing">Pricing</Link>
 						<Link className="active" to="/docs">
 							Docs
@@ -173,7 +215,7 @@ function DocsPage() {
 						<Link className="btn btn-ghost" to="/login">
 							Sign in
 						</Link>
-						<Link className="btn btn-primary" to="/app">
+						<Link className="btn btn-primary" to="/app/dashboard">
 							Get started <ArrowRight size={13} />
 						</Link>
 					</div>
@@ -181,184 +223,759 @@ function DocsPage() {
 			</nav>
 
 			{/* Hero */}
-			<div className="m-page-hero">
-				<div className="glow" />
-				<div className="container" style={{ position: "relative", zIndex: 1 }}>
+			<section className="docs-hero" data-screen-label="Docs Hero">
+				<div className="container">
 					<div className="eyebrow">Documentation</div>
 					<h1>
-						Learn to build with <em>Heimdallone</em>.
+						Everything you need
+						<br />
+						to run <em>Heimdallone</em>.
 					</h1>
 					<p>
-						Guides, references, and examples for every module in the platform.
+						Guides, API references and integration patterns for operators,
+						developers and finance teams.
 					</p>
-					<div
-						style={{
-							maxWidth: "520px",
-							margin: "32px auto 0",
-							position: "relative",
-						}}
-					>
-						<div
-							style={{
-								position: "absolute",
-								top: "50%",
-								left: "16px",
-								transform: "translateY(-50%)",
-								color: "var(--fg-4)",
-							}}
-						>
-							<Search size={16} />
-						</div>
+
+					<div className="docs-search-wrap">
+						<span className="icon-l">
+							<Search size={18} />
+						</span>
 						<input
-							className="input"
-							placeholder="Search documentation…"
-							style={{
-								paddingLeft: "40px",
-								height: "44px",
-								borderRadius: "99px",
-								fontSize: "14px",
-							}}
+							className="docs-search"
+							placeholder="Search 184 articles, API endpoints, country profiles…"
 							type="text"
 						/>
+						<span className="kbd">⌘K</span>
 					</div>
-					<div
-						style={{
-							display: "flex",
-							gap: "6px",
-							justifyContent: "center",
-							marginTop: "16px",
-							flexWrap: "wrap",
-						}}
-					>
-						{QUICK_TAGS.map((tag) => (
-							<button
-								className="filter-chip"
-								key={tag}
-								style={{ height: "26px", fontSize: "11.5px" }}
-								type="button"
-							>
-								{tag}
-							</button>
-						))}
+					<div className="docs-search-tags">
+						<button type="button">PAYE Guyana</button>
+						<button type="button">Multi-tenancy</button>
+						<button type="button">oRPC client</button>
+						<button type="button">Horilla sync</button>
+						<button type="button">NIS rates</button>
+						<button type="button">Approval chains</button>
+						<button type="button">Bank file (RBL)</button>
 					</div>
 				</div>
-			</div>
+			</section>
 
-			{/* Categories Grid */}
-			<section style={{ padding: "64px 0 96px" }}>
-				<div className="container">
-					<div
-						style={{
-							display: "grid",
-							gridTemplateColumns: "repeat(3, 1fr)",
-							gap: "16px",
-						}}
-					>
-						{CATEGORIES.map((cat) => (
-							<div
-								className="card card-pad spotlight"
-								key={cat.title}
-								style={{ cursor: "pointer" }}
+			{/* Quick start */}
+			<section
+				className="reveal container"
+				ref={quickstartRef as React.RefObject<HTMLElement>}
+				style={{ paddingTop: "56px" }}
+			>
+				<div className="quickstart">
+					<div className="quickstart-left">
+						<div className="eyebrow">Quick start</div>
+						<h3>Run your first pay run in 5 minutes</h3>
+						<p>
+							Spin up a sandbox tenant, import 12 sample employees from Horilla,
+							and compute a Guyana September pay run end-to-end.
+						</p>
+						<div className="quickstart-steps">
+							<div className="qs-step">
+								<span className="num">1</span>
+								<span className="txt">
+									<strong>Create a workspace</strong>{" "}
+									<span className="dim">
+										— pick your countries (GY / TT / BB / JM…).
+									</span>
+								</span>
+							</div>
+							<div className="qs-step">
+								<span className="num">2</span>
+								<span className="txt">
+									<strong>Connect Horilla</strong>{" "}
+									<span className="dim">
+										— paste your read-only Postgres URL.
+									</span>
+								</span>
+							</div>
+							<div className="qs-step">
+								<span className="num">3</span>
+								<span className="txt">
+									<strong>Pin a country profile</strong>{" "}
+									<span className="dim">
+										— pick the gazetted version effective for the period.
+									</span>
+								</span>
+							</div>
+							<div className="qs-step">
+								<span className="num">4</span>
+								<span className="txt">
+									<strong>Compute</strong>{" "}
+									<span className="dim">
+										— Heimdallone returns the gross-to-net breakdown per
+										employee.
+									</span>
+								</span>
+							</div>
+							<div className="qs-step">
+								<span className="num">5</span>
+								<span className="txt">
+									<strong>Approve &amp; commit</strong>{" "}
+									<span className="dim">— audit ledger seals the run.</span>
+								</span>
+							</div>
+						</div>
+						<div style={{ marginTop: "28px", display: "flex", gap: "8px" }}>
+							<a className="btn btn-primary" href="#">
+								Open quick-start guide <ArrowRight size={13} />
+							</a>
+							<a className="btn btn-outline" href="#">
+								SDK reference
+							</a>
+						</div>
+					</div>
+
+					<div className="quickstart-right">
+						<div className="code-tabs">
+							<button
+								className={activeTab === "ts" ? "active" : ""}
+								onClick={() => setActiveTab("ts")}
+								type="button"
 							>
-								<div
-									style={{
-										display: "flex",
-										alignItems: "center",
-										gap: "10px",
-										marginBottom: "10px",
-									}}
-								>
-									<div
-										style={{
-											display: "flex",
-											alignItems: "center",
-											justifyContent: "center",
-											width: "32px",
-											height: "32px",
-											background: "var(--accent-soft)",
-											borderRadius: "9px",
-											color: "var(--accent)",
-										}}
-									>
-										<cat.icon size={16} />
-									</div>
-									<h4>{cat.title}</h4>
-									<span className="badge" style={{ marginLeft: "auto" }}>
-										<span className="mono">{cat.count}</span>
+								heimdallone.ts
+							</button>
+							<button
+								className={activeTab === "curl" ? "active" : ""}
+								onClick={() => setActiveTab("curl")}
+								type="button"
+							>
+								curl
+							</button>
+							<button
+								className={activeTab === "orpc" ? "active" : ""}
+								onClick={() => setActiveTab("orpc")}
+								type="button"
+							>
+								oRPC client
+							</button>
+							<button
+								className="copy"
+								onClick={handleCopy}
+								style={copied ? { color: "var(--accent)" } : undefined}
+								type="button"
+							>
+								{copied ? (
+									<>
+										<Check size={11} /> Copied
+									</>
+								) : (
+									<>
+										<FileText size={11} /> Copy
+									</>
+								)}
+							</button>
+						</div>
+
+						{/* TypeScript panel */}
+						<pre
+							className="code-block"
+							style={{ display: activeTab === "ts" ? "block" : "none" }}
+						>
+							<code>
+								<span className="tok-comment">
+									{"// Compute a Guyana September pay run"}
+								</span>
+								{"\n"}
+								<span className="tok-keyword">import</span>
+								{" { Heimdallone } "}
+								<span className="tok-keyword">from</span>{" "}
+								<span className="tok-string">{'"@heimdallone/sdk"'}</span>
+								{";"}
+								{"\n\n"}
+								<span className="tok-keyword">const</span>
+								{" hd = "}
+								<span className="tok-keyword">new</span>{" "}
+								<span className="tok-fn">Heimdallone</span>
+								{"({"}
+								{"\n"}
+								{"  tenant: "}
+								<span className="tok-string">{'"atlas-shipping"'}</span>
+								{",\n"}
+								{"  apiKey: process.env."}
+								<span className="tok-prop">HEIMDALL_KEY</span>
+								{",\n"}
+								{"});"}
+								{"\n\n"}
+								<span className="tok-keyword">const</span>
+								{" run = "}
+								<span className="tok-keyword">await</span>
+								{" hd.payroll."}
+								<span className="tok-fn">compute</span>
+								{"({"}
+								{"\n"}
+								{"  country: "}
+								<span className="tok-string">{'"GY"'}</span>
+								{",\n"}
+								{"  period:  "}
+								<span className="tok-string">{'"2026-09"'}</span>
+								{",\n"}
+								{"  profile: "}
+								<span className="tok-string">{'"gy.v2026.1"'}</span>
+								{",\n"}
+								{"});"}
+								{"\n\n"}
+								<span className="tok-fn">console</span>
+								{"."}
+								<span className="tok-fn">log</span>
+								{"(run."}
+								<span className="tok-prop">net</span>
+								{");\n"}
+								<span className="tok-comment">
+									{"// → { GYD: "}
+									<span className="tok-num">184_720_400</span>
+									{", employees: "}
+									<span className="tok-num">728</span>
+									{" }"}
+								</span>
+							</code>
+						</pre>
+
+						{/* curl panel */}
+						<pre
+							className="code-block"
+							style={{ display: activeTab === "curl" ? "block" : "none" }}
+						>
+							<code>
+								<span className="tok-comment">
+									{"# Compute a pay run via REST"}
+								</span>
+								{"\n"}
+								<span className="tok-fn">curl</span>
+								{" -X POST https://api.heimdallone.app/v1/payroll/compute \\\n"}
+								{"  -H "}
+								<span className="tok-string">
+									{'"Authorization: Bearer $HEIMDALL_KEY"'}
+								</span>
+								{" \\\n"}
+								{"  -H "}
+								<span className="tok-string">
+									{'"X-Tenant: atlas-shipping"'}
+								</span>
+								{" \\\n"}
+								{"  -H "}
+								<span className="tok-string">
+									{'"Content-Type: application/json"'}
+								</span>
+								{" \\\n"}
+								{"  -d "}
+								<span className="tok-string">
+									{
+										'\'{\n    "country": "GY",\n    "period":  "2026-09",\n    "profile": "gy.v2026.1"\n  }\''
+									}
+								</span>
+							</code>
+						</pre>
+
+						{/* oRPC panel */}
+						<pre
+							className="code-block"
+							style={{ display: activeTab === "orpc" ? "block" : "none" }}
+						>
+							<code>
+								<span className="tok-comment">
+									{"// Type-safe oRPC call from TanStack Start"}
+								</span>
+								{"\n"}
+								<span className="tok-keyword">import</span>
+								{" { orpc } "}
+								<span className="tok-keyword">from</span>{" "}
+								<span className="tok-string">{'"~/lib/orpc"'}</span>
+								{";"}
+								{"\n\n"}
+								<span className="tok-keyword">const</span>
+								{" { data: run } = "}
+								<span className="tok-keyword">await</span>
+								{" orpc.payroll.compute."}
+								<span className="tok-fn">$post</span>
+								{"({"}
+								{"\n"}
+								{"  country: "}
+								<span className="tok-string">{'"GY"'}</span>
+								{",\n"}
+								{"  period:  "}
+								<span className="tok-string">{'"2026-09"'}</span>
+								{",\n"}
+								{"  profile: "}
+								<span className="tok-string">{'"gy.v2026.1"'}</span>
+								{",\n"}
+								{"});"}
+								{"\n\n"}
+								<span className="tok-comment">
+									{'// run is fully typed: PayRun<"GY">'}
+								</span>
+								{"\n"}
+								{"run."}
+								<span className="tok-prop">employees</span>
+								{"."}
+								<span className="tok-fn">map</span>
+								{"(e => e."}
+								<span className="tok-prop">net</span>
+								{");"}
+							</code>
+						</pre>
+					</div>
+				</div>
+			</section>
+
+			{/* Categories */}
+			<section
+				className="docs-section reveal container"
+				ref={categoriesRef as React.RefObject<HTMLElement>}
+			>
+				<div className="docs-section-head">
+					<div>
+						<h2>Browse by topic</h2>
+						<div className="sub">184 articles across 9 categories</div>
+					</div>
+					<a href="#">
+						View all topics <ArrowRight size={12} />
+					</a>
+				</div>
+				<div className="cat-grid">
+					<a
+						className="cat-card spotlight"
+						href="#"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<Play size={18} />
+						</div>
+						<div className="title">Getting started</div>
+						<div className="desc">
+							Workspace setup, importing from Horilla, your first pay run.
+						</div>
+						<div className="meta">
+							<span>14 articles</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+					<a
+						className="cat-card spotlight"
+						href="#"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<Wallet size={18} />
+						</div>
+						<div className="title">Payroll engine</div>
+						<div className="desc">
+							Country profiles, effective-date logic, approval chains,
+							reproducible runs.
+						</div>
+						<div className="meta">
+							<span>38 articles</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+					<a
+						className="cat-card spotlight"
+						href="#"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<Globe size={18} />
+						</div>
+						<div className="title">Country profiles</div>
+						<div className="desc">
+							PAYE bands, NIS rates, statutory deductions for every supported
+							jurisdiction.
+						</div>
+						<div className="meta">
+							<span>42 articles · 7 countries</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+					<a
+						className="cat-card spotlight"
+						href="#"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<Users size={18} />
+						</div>
+						<div className="title">HR &amp; people</div>
+						<div className="desc">
+							Employees, departments, contracts, leave, attendance, onboarding.
+						</div>
+						<div className="meta">
+							<span>26 articles</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+					<a
+						className="cat-card spotlight"
+						href="#"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<ShieldCheck size={18} />
+						</div>
+						<div className="title">Compliance &amp; audit</div>
+						<div className="desc">
+							Audit ledger, evidence packs, risk indicators, regulator-ready
+							exports.
+						</div>
+						<div className="meta">
+							<span>18 articles</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+					<a
+						className="cat-card spotlight"
+						href="#"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<Building size={18} />
+						</div>
+						<div className="title">Multi-tenancy</div>
+						<div className="desc">
+							Organization model, region defaults, role-scoped access,
+							switching.
+						</div>
+						<div className="meta">
+							<span>11 articles</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+					<a
+						className="cat-card spotlight"
+						href="#integrations"
+						id="integrations"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<GitBranch size={18} />
+						</div>
+						<div className="title">Integrations</div>
+						<div className="desc">
+							Horilla bridge, Postgres connectors, bank files (RBL, RBC, NCB),
+							SSO/SAML.
+						</div>
+						<div className="meta">
+							<span>17 articles</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+					<a
+						className="cat-card spotlight"
+						href="#"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<Command size={18} />
+						</div>
+						<div className="title">API &amp; SDK</div>
+						<div className="desc">
+							oRPC client, REST endpoints, webhooks, rate limits, typed schemas.
+						</div>
+						<div className="meta">
+							<span>14 articles · v0.4</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+					<a
+						className="cat-card spotlight"
+						href="#"
+						onMouseMove={spotlightMove}
+					>
+						<div className="icon">
+							<Zap size={18} />
+						</div>
+						<div className="title">Self-hosted</div>
+						<div className="desc">
+							Tauri builds, Postgres bring-your-own, Docker compose, air-gapped
+							install.
+						</div>
+						<div className="meta">
+							<span>4 articles</span>
+							<span className="go">
+								Explore <ArrowRight size={11} />
+							</span>
+						</div>
+					</a>
+				</div>
+			</section>
+
+			{/* Popular this week + Changelog */}
+			<section
+				className="docs-section reveal container"
+				ref={popularRef as React.RefObject<HTMLElement>}
+			>
+				<div className="docs-cols">
+					{/* Popular articles */}
+					<div className="docs-list">
+						<div className="docs-list-head">
+							<h3>Popular this week</h3>
+							<span className="badge">
+								<span
+									className="badge-dot"
+									style={{ background: "var(--accent)" }}
+								/>
+								updated daily
+							</span>
+						</div>
+						<a className="doc-row" href="#">
+							<div className="icon">
+								<Wallet size={13} />
+							</div>
+							<div>
+								<div className="ttl">Computing a Guyana PAYE pay run</div>
+								<div className="sub">
+									Walk-through of NIS &amp; PAYE calculation against the
+									effective profile.
+								</div>
+							</div>
+							<div className="meta">
+								6 min
+								<br />
+								read
+							</div>
+						</a>
+						<a className="doc-row" href="#">
+							<div className="icon">
+								<GitBranch size={13} />
+							</div>
+							<div>
+								<div className="ttl">Versioning country profiles safely</div>
+								<div className="sub">
+									Stage <span className="mono">v2026.2</span> while keeping{" "}
+									<span className="mono">v2026.1</span> active.
+								</div>
+							</div>
+							<div className="meta">
+								8 min
+								<br />
+								read
+							</div>
+						</a>
+						<a className="doc-row" href="#">
+							<div className="icon">
+								<Users size={13} />
+							</div>
+							<div>
+								<div className="ttl">
+									Multi-tenancy: scoping HR data per workspace
+								</div>
+								<div className="sub">
+									Row-level security and SCIM-driven role assignment.
+								</div>
+							</div>
+							<div className="meta">
+								12 min
+								<br />
+								read
+							</div>
+						</a>
+						<a className="doc-row" href="#">
+							<div className="icon">
+								<ShieldCheck size={13} />
+							</div>
+							<div>
+								<div className="ttl">
+									Audit ledger: exporting a SOC 2 evidence pack
+								</div>
+								<div className="sub">
+									One-command export · auditor-friendly PDF + JSON.
+								</div>
+							</div>
+							<div className="meta">
+								5 min
+								<br />
+								read
+							</div>
+						</a>
+						<a className="doc-row" href="#">
+							<div className="icon">
+								<Database size={13} />
+							</div>
+							<div>
+								<div className="ttl">
+									Connecting your existing Horilla deployment
+								</div>
+								<div className="sub">
+									Read-only Postgres, projection refresh, conflict resolution.
+								</div>
+							</div>
+							<div className="meta">
+								9 min
+								<br />
+								read
+							</div>
+						</a>
+						<a className="doc-row" href="#">
+							<div className="icon">
+								<Clock size={13} />
+							</div>
+							<div>
+								<div className="ttl">Biometric ingest from ZKTeco devices</div>
+								<div className="sub">
+									Real-time stream · exception queue · idempotent replay.
+								</div>
+							</div>
+							<div className="meta">
+								7 min
+								<br />
+								read
+							</div>
+						</a>
+					</div>
+
+					{/* Changelog timeline */}
+					<div className="changelog">
+						<div className="docs-list-head">
+							<h3>Changelog</h3>
+							<a
+								href="#"
+								style={{ fontSize: "11.5px", color: "var(--accent)" }}
+							>
+								View all
+							</a>
+						</div>
+						<div className="changelog-row">
+							<div className="date">Sep 27</div>
+							<div className="body">
+								<div>
+									<span className="tag new">New</span>
+									<span className="ttl">Guyana profile v2026.2 staged</span>
+								</div>
+								<div className="desc">
+									NIS rate change effective 1 Oct (5.6 → 6.0%) staged for
+									review. No active runs affected.
+								</div>
+							</div>
+						</div>
+						<div className="changelog-row">
+							<div className="date">Sep 24</div>
+							<div className="body">
+								<div>
+									<span className="tag improve">Improved</span>
+									<span className="ttl">Faster pay-run commit</span>
+								</div>
+								<div className="desc">
+									Bulk-commit window cut from 8s → 2.4s on 1,500-employee runs.
+									No schema change.
+								</div>
+							</div>
+						</div>
+						<div className="changelog-row">
+							<div className="date">Sep 22</div>
+							<div className="body">
+								<div>
+									<span className="tag new">New</span>
+									<span className="ttl">
+										Bank file: Republic Bank Trinidad (RBT)
 									</span>
 								</div>
-								<p
-									style={{
-										fontSize: "13px",
-										lineHeight: 1.5,
-										color: "var(--fg-2)",
-									}}
-								>
-									{cat.desc}
-								</p>
-								<div
-									style={{
-										marginTop: "12px",
-										fontSize: "12.5px",
-										color: "var(--accent)",
-										display: "flex",
-										alignItems: "center",
-										gap: "4px",
-									}}
-								>
-									Browse docs <ArrowUpRight size={12} />
+								<div className="desc">
+									Added native export for RBT format alongside RBL, RBC and NCB.
 								</div>
 							</div>
-						))}
-					</div>
-
-					{/* Help row */}
-					<div
-						style={{
-							display: "grid",
-							gridTemplateColumns: "repeat(3, 1fr)",
-							gap: "16px",
-							marginTop: "48px",
-						}}
-					>
-						{[
-							{
-								title: "Community",
-								desc: "Join the Discord for questions, feature requests, and discussion.",
-								action: "Join Discord",
-							},
-							{
-								title: "Support",
-								desc: "Enterprise customers get priority support with guaranteed SLAs.",
-								action: "Contact support",
-							},
-							{
-								title: "Implementation",
-								desc: "Need help migrating? Our team can guide the setup.",
-								action: "Book a call",
-							},
-						].map((item) => (
-							<div
-								className="card card-pad"
-								key={item.title}
-								style={{ textAlign: "center" }}
-							>
-								<h4 style={{ marginBottom: "6px" }}>{item.title}</h4>
-								<p
-									style={{
-										fontSize: "13px",
-										color: "var(--fg-3)",
-										marginBottom: "16px",
-									}}
-								>
-									{item.desc}
-								</p>
-								<button className="btn btn-outline btn-sm" type="button">
-									{item.action} <ArrowUpRight size={12} />
-								</button>
+						</div>
+						<div className="changelog-row">
+							<div className="date">Sep 18</div>
+							<div className="body">
+								<div>
+									<span className="tag fix">Fix</span>
+									<span className="ttl">
+										Effective-date split on mid-period hires
+									</span>
+								</div>
+								<div className="desc">
+									Resolved off-by-one in pro-rated NIS contributions when an
+									employee starts on a Sunday.
+								</div>
 							</div>
-						))}
+						</div>
+						<div className="changelog-row">
+							<div className="date">Sep 15</div>
+							<div className="body">
+								<div>
+									<span className="tag new">New</span>
+									<span className="ttl">Jamaica TRN validation API</span>
+								</div>
+								<div className="desc">
+									Validate Tax Registration Numbers at employee creation;
+									surfaces blocking pay-run errors early.
+								</div>
+							</div>
+						</div>
 					</div>
+				</div>
+			</section>
+
+			{/* Help row */}
+			<section
+				className="docs-section reveal container"
+				ref={helpRef as React.RefObject<HTMLElement>}
+				style={{ paddingBottom: "96px" }}
+			>
+				<div className="docs-section-head">
+					<div>
+						<h2>Need help?</h2>
+						<div className="sub">Skip the search — talk to a human.</div>
+					</div>
+				</div>
+				<div className="help-row">
+					<a className="help-card" href="#">
+						<div className="icon">
+							<Users size={16} />
+						</div>
+						<div className="ttl">Community</div>
+						<div className="desc">
+							Join 1,200 operators discussing payroll, multi-country setups, and
+							HR ops.
+						</div>
+						<div className="cta">
+							Open Discord <ArrowRight size={11} />
+						</div>
+					</a>
+					<a className="help-card" href="#">
+						<div className="icon">
+							<Info size={16} />
+						</div>
+						<div className="ttl">Support</div>
+						<div className="desc">
+							Email, chat or open a ticket. 4-hour SLA on Growth, 1-hour on
+							Enterprise.
+						</div>
+						<div className="cta">
+							Open a ticket <ArrowRight size={11} />
+						</div>
+					</a>
+					<a className="help-card" href="#">
+						<div className="icon">
+							<Briefcase size={16} />
+						</div>
+						<div className="ttl">Implementation</div>
+						<div className="desc">
+							Free white-glove migration from spreadsheets, Horilla-only, or
+							other HRMS.
+						</div>
+						<div className="cta">
+							Book a call <ArrowRight size={11} />
+						</div>
+					</a>
 				</div>
 			</section>
 
@@ -389,7 +1006,7 @@ function DocsPage() {
 							<a href="#">Features</a>
 							<a href="#">Payroll</a>
 							<a href="#">Compliance</a>
-							<a href="#">Integrations</a>
+							<a href="#integrations">Integrations</a>
 						</div>
 						<div className="footer-col">
 							<h5>Solutions</h5>
