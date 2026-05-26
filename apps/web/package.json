@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@Heimdallone/api": "workspace:*",
+    "@Heimdallone/auth": "workspace:*",
     "@Heimdallone/env": "workspace:*",
     "@Heimdallone/ui": "workspace:*",
     "@orpc/client": "catalog:",

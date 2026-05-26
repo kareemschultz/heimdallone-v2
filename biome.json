@@ -27,7 +27,8 @@
       "!**/.source",
       "!**/convex/_generated",
       "!design_handoff_heimdallone",
-      "!.references"
+      "!.references",
+      "!.agents"
     ]
   },
   "formatter": {
