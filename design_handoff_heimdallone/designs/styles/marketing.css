@@ -1,0 +1,173 @@
+/* Heimdallone — Marketing shared styles
+   Used by marketing.html, pricing.html, features.html, docs.html
+*/
+
+/* Top nav */
+.m-nav {
+	position: sticky;
+	top: 0;
+	z-index: 50;
+	height: 60px;
+	background: color-mix(in oklab, var(--bg) 75%, transparent);
+	border-bottom: 1px solid var(--line);
+	backdrop-filter: blur(12px) saturate(140%);
+}
+.m-nav-inner {
+	display: flex;
+	gap: 32px;
+	align-items: center;
+	height: 100%;
+}
+.m-nav-links {
+	display: flex;
+	gap: 24px;
+}
+.m-nav-links a {
+	position: relative;
+	font-size: 13.5px;
+	color: var(--fg-2);
+	transition: color 120ms ease;
+}
+.m-nav-links a:hover {
+	color: var(--fg);
+}
+.m-nav-links a.active {
+	color: var(--fg);
+}
+.m-nav-links a.active::after {
+	position: absolute;
+	right: 0;
+	bottom: -19px;
+	left: 0;
+	height: 2px;
+	content: "";
+	background: var(--accent);
+	border-radius: 2px;
+}
+.m-nav-actions {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	margin-left: auto;
+}
+
+/* Section heading */
+.section {
+	padding: 96px 0;
+}
+.section-eyebrow {
+	margin-bottom: 16px;
+	font-size: 11.5px;
+	font-weight: 500;
+	color: var(--accent);
+	text-transform: uppercase;
+	letter-spacing: 0.14em;
+}
+.section h2 {
+	max-width: 760px;
+	font-size: clamp(36px, 5vw, 56px);
+	line-height: 1.02;
+	letter-spacing: -0.035em;
+}
+.section-sub {
+	max-width: 620px;
+	margin-top: 18px;
+	font-size: 17px;
+	line-height: 1.45;
+	color: var(--fg-2);
+}
+
+/* Marketing page header (smaller hero) */
+.m-page-hero {
+	position: relative;
+	padding: 96px 0 56px;
+	overflow: hidden;
+	text-align: center;
+	border-bottom: 1px solid var(--line);
+}
+.m-page-hero .glow {
+	position: absolute;
+	top: -200px;
+	left: 50%;
+	width: 900px;
+	height: 600px;
+	pointer-events: none;
+	background: radial-gradient(
+		closest-side,
+		var(--accent-soft),
+		transparent 70%
+	);
+	opacity: 0.7;
+	transform: translateX(-50%);
+}
+.m-page-hero .container {
+	position: relative;
+	z-index: 1;
+}
+.m-page-hero h1 {
+	max-width: 880px;
+	margin: 0 auto;
+	font-size: clamp(40px, 6vw, 72px);
+	line-height: 1.02;
+	letter-spacing: -0.04em;
+}
+.m-page-hero h1 em {
+	font-family: "Inter", serif;
+	font-style: italic;
+	font-weight: 500;
+	color: var(--accent);
+}
+.m-page-hero p {
+	max-width: 580px;
+	margin: 22px auto 0;
+	font-size: 18px;
+	line-height: 1.45;
+	color: var(--fg-2);
+}
+.m-page-hero .eyebrow {
+	margin-bottom: 18px;
+}
+
+/* Footer */
+.footer {
+	padding: 64px 0 40px;
+	background: var(--bg);
+	border-top: 1px solid var(--line);
+}
+.footer-grid {
+	display: grid;
+	grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+	gap: 32px;
+}
+.footer-col h5 {
+	margin-bottom: 14px;
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--fg-3);
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+}
+.footer-col a {
+	display: block;
+	padding: 4px 0;
+	font-size: 13.5px;
+	color: var(--fg-2);
+}
+.footer-col a:hover {
+	color: var(--fg);
+}
+.footer-meta {
+	display: flex;
+	justify-content: space-between;
+	padding-top: 24px;
+	margin-top: 56px;
+	font-size: 12.5px;
+	color: var(--fg-3);
+	border-top: 1px solid var(--line);
+}
+
+@media (max-width: 880px) {
+	.footer-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+}

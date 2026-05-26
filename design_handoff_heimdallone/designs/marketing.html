@@ -1,0 +1,1652 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Heimdallone — Workforce command center</title>
+		<link rel="stylesheet" href="styles/heimdall.css">
+		<style>
+		/* ============ Marketing-specific ============ */
+		body {
+			overflow-x: hidden;
+		}
+
+		/* Top nav */
+		.m-nav {
+			position: sticky;
+			top: 0;
+			z-index: 50;
+			height: 60px;
+			background: color-mix(in oklab, var(--bg) 75%, transparent);
+			border-bottom: 1px solid var(--line);
+			backdrop-filter: blur(12px) saturate(140%);
+		}
+		.m-nav-inner {
+			display: flex;
+			gap: 32px;
+			align-items: center;
+			height: 100%;
+		}
+		.m-nav-links {
+			display: flex;
+			gap: 24px;
+		}
+		.m-nav-links a {
+			font-size: 13.5px;
+			color: var(--fg-2);
+			transition: color 120ms ease;
+		}
+		.m-nav-links a:hover {
+			color: var(--fg);
+		}
+		.m-nav-links a.active {
+			color: var(--fg);
+		}
+		.m-nav-actions {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+			margin-left: auto;
+		}
+
+		/* Hero */
+		.hero {
+			position: relative;
+			padding: 110px 0 60px;
+			overflow: hidden;
+		}
+		.hero-bg {
+			position: absolute;
+			inset: 0;
+			overflow: hidden;
+			pointer-events: none;
+			background: var(--bg);
+		}
+		.hero-bg::before {
+			position: absolute;
+			top: -100px;
+			left: 50%;
+			width: 1100px;
+			height: 700px;
+			content: "";
+			background: radial-gradient(
+				closest-side,
+				var(--accent-soft),
+				transparent 70%
+			);
+			opacity: 0.7;
+			transform: translateX(-50%);
+		}
+		.hero-bg::after {
+			position: absolute;
+			inset: 0;
+			content: "";
+			background-image:
+				linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+				linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+			background-size: 64px 64px;
+			-webkit-mask-image: radial-gradient(
+				ellipse at center top,
+				black 40%,
+				transparent 70%
+			);
+			mask-image: radial-gradient(
+				ellipse at center top,
+				black 40%,
+				transparent 70%
+			);
+			animation: grid-shift 35s linear infinite;
+		}
+		.hero-bg .aurora-host {
+			position: absolute;
+			inset: 0;
+			overflow: hidden;
+		}
+
+		.hero-inner {
+			position: relative;
+			z-index: 2;
+		}
+
+		.hero-eyebrow {
+			display: inline-flex;
+			gap: 8px;
+			align-items: center;
+			padding: 5px 12px 5px 5px;
+			margin-bottom: 28px;
+			font-size: 12px;
+			color: var(--fg-2);
+			cursor: pointer;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+			transition:
+				border-color 200ms ease,
+				background 200ms ease;
+		}
+		.hero-eyebrow:hover {
+			border-color: var(--line-2);
+		}
+		.hero-eyebrow .pill {
+			padding: 2px 9px;
+			font-size: 10.5px;
+			font-weight: 600;
+			color: var(--accent);
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			background: var(--accent-soft);
+			border-radius: 99px;
+		}
+
+		.hero h1 {
+			max-width: 920px;
+			font-size: clamp(48px, 7vw, 88px);
+			font-weight: 600;
+			line-height: 0.98;
+			letter-spacing: -0.045em;
+		}
+		.hero h1 .accent-italic {
+			font-family: "Inter", serif;
+			font-style: italic;
+			font-weight: 500;
+			color: var(--accent);
+			letter-spacing: -0.05em;
+		}
+		.hero-sub {
+			max-width: 600px;
+			margin-top: 24px;
+			font-size: 19px;
+			line-height: 1.45;
+			color: var(--fg-2);
+			letter-spacing: -0.01em;
+		}
+		.hero-cta {
+			display: flex;
+			gap: 10px;
+			margin-top: 36px;
+		}
+
+		/* hero variant: centered */
+		.hero[data-variant="centered"] .hero-inner {
+			text-align: center;
+		}
+		.hero[data-variant="centered"] h1 {
+			margin: 0 auto;
+		}
+		.hero[data-variant="centered"] .hero-sub {
+			margin-right: auto;
+			margin-left: auto;
+		}
+		.hero[data-variant="centered"] .hero-cta {
+			justify-content: center;
+		}
+		.hero[data-variant="centered"] .hero-eyebrow {
+			margin-right: auto;
+			margin-left: auto;
+		}
+
+		/* hero variant: split */
+		.hero[data-variant="split"] .hero-inner {
+			display: grid;
+			grid-template-columns: 1.1fr 1fr;
+			gap: 80px;
+			align-items: center;
+		}
+		.hero[data-variant="split"] .hero-right {
+			display: block;
+		}
+		.hero[data-variant="centered"] .hero-right,
+		.hero[data-variant="editorial"] .hero-right {
+			display: none;
+		}
+
+		/* hero variant: editorial */
+		.hero[data-variant="editorial"] h1 {
+			max-width: none;
+			font-size: clamp(54px, 8.5vw, 108px);
+		}
+		.hero[data-variant="editorial"] .hero-strip {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 32px;
+			padding-top: 28px;
+			margin-top: 64px;
+			border-top: 1px solid var(--line);
+		}
+		.hero[data-variant="editorial"] .strip-item .stat-value {
+			font-size: 30px;
+		}
+		.hero[data-variant="editorial"] .strip-item .label {
+			margin-top: 6px;
+			font-size: 12px;
+			color: var(--fg-3);
+		}
+
+		.hero[data-variant="centered"] .hero-strip,
+		.hero[data-variant="split"] .hero-strip {
+			display: none;
+		}
+
+		/* Hero preview (mini product mock) */
+		.hero-preview {
+			position: relative;
+			margin-top: 72px;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 18px;
+			box-shadow: var(--shadow-lg);
+		}
+		.hero-preview::before {
+			position: absolute;
+			inset: -1px;
+			padding: 1px;
+			pointer-events: none;
+			content: "";
+			background: linear-gradient(
+				180deg,
+				color-mix(in oklab, var(--accent) 35%, transparent),
+				transparent 30%
+			);
+			border-radius: 17px;
+			-webkit-mask:
+				linear-gradient(#000 0 0) content-box,
+				linear-gradient(#000 0 0);
+			-webkit-mask-composite: xor;
+			mask-composite: exclude;
+		}
+		.preview-chrome {
+			display: flex;
+			gap: 6px;
+			align-items: center;
+			height: 32px;
+			padding: 0 12px;
+			background: var(--bg-2);
+			border-bottom: 1px solid var(--line);
+		}
+		.preview-dot {
+			width: 8px;
+			height: 8px;
+			background: var(--line-2);
+			border-radius: 50%;
+		}
+		.preview-body {
+			padding: 22px;
+		}
+
+		/* Logo strip */
+		.logos {
+			padding: 56px 0 56px;
+			text-align: center;
+			border-top: 1px solid var(--line);
+			border-bottom: 1px solid var(--line);
+		}
+		.logos-label {
+			margin-bottom: 28px;
+			font-size: 11.5px;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.12em;
+		}
+		.logo-placeholder {
+			display: inline-flex;
+			flex-shrink: 0;
+			gap: 8px;
+			align-items: center;
+			font-size: 18px;
+			font-weight: 600;
+			color: var(--fg-3);
+			letter-spacing: -0.02em;
+			white-space: nowrap;
+			opacity: 0.85;
+		}
+		.logo-placeholder svg {
+			color: var(--fg-3);
+		}
+
+		/* Section heading */
+		.section {
+			padding: 96px 0;
+		}
+		.section-eyebrow {
+			margin-bottom: 16px;
+			font-size: 11.5px;
+			font-weight: 500;
+			color: var(--accent);
+			text-transform: uppercase;
+			letter-spacing: 0.14em;
+		}
+		.section h2 {
+			max-width: 760px;
+			font-size: clamp(36px, 5vw, 56px);
+			line-height: 1.02;
+			letter-spacing: -0.035em;
+		}
+		.section-sub {
+			max-width: 620px;
+			margin-top: 18px;
+			font-size: 17px;
+			line-height: 1.45;
+			color: var(--fg-2);
+		}
+
+		/* Bento */
+		.bento {
+			display: grid;
+			grid-template-columns: repeat(6, 1fr);
+			gap: 14px;
+			margin-top: 56px;
+		}
+		.bento-card {
+			position: relative;
+			min-height: 240px;
+			padding: 28px;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 18px;
+			transition:
+				transform 240ms cubic-bezier(0.16, 1, 0.3, 1),
+				border-color 240ms ease;
+		}
+		.bento-card:hover {
+			border-color: var(--line-2);
+		}
+		.bento-card.b-lg {
+			grid-column: span 3;
+			min-height: 320px;
+		}
+		.bento-card.b-md {
+			grid-column: span 3;
+		}
+		.bento-card.b-sm {
+			grid-column: span 2;
+		}
+		.bento-icon {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 36px;
+			height: 36px;
+			margin-bottom: 16px;
+			color: var(--accent);
+			background: var(--accent-soft);
+			border-radius: 9px;
+		}
+		.bento-title {
+			font-size: 19px;
+			font-weight: 600;
+			letter-spacing: -0.02em;
+		}
+		.bento-desc {
+			margin-top: 8px;
+			font-size: 14px;
+			line-height: 1.5;
+			color: var(--fg-3);
+		}
+		.bento-art {
+			position: absolute;
+			right: -20px;
+			bottom: -20px;
+			pointer-events: none;
+			opacity: 0.85;
+		}
+
+		/* Multi-country payroll section */
+		.payroll-feature {
+			display: grid;
+			grid-template-columns: 1fr 1.3fr;
+			gap: 64px;
+			align-items: center;
+			margin-top: 56px;
+		}
+		.country-card {
+			padding: 0;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+			box-shadow: var(--shadow-md);
+		}
+		.country-tabs {
+			display: flex;
+			gap: 2px;
+			padding: 6px 6px 0;
+			overflow-x: auto;
+			border-bottom: 1px solid var(--line);
+		}
+		.country-tab {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			padding: 9px 14px;
+			font-size: 12.5px;
+			color: var(--fg-3);
+			white-space: nowrap;
+			cursor: pointer;
+			background: transparent;
+			border: 0;
+			border-radius: 7px 7px 0 0;
+		}
+		.country-tab.active {
+			margin-bottom: -1px;
+			color: var(--fg);
+			background: var(--bg-2);
+			border-bottom: 1px solid var(--bg-2);
+		}
+		.country-body {
+			padding: 24px;
+			background: var(--bg-2);
+		}
+		.country-row {
+			display: flex;
+			justify-content: space-between;
+			padding: 10px 0;
+			font-size: 13.5px;
+			border-bottom: 1px dashed var(--line);
+		}
+		.country-row:last-child {
+			border-bottom: 0;
+		}
+		.country-row .v {
+			font-family: "JetBrains Mono", monospace;
+			color: var(--fg);
+		}
+		.country-total {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 14px;
+			margin-top: 14px;
+			background: var(--bg-3);
+			border-radius: 10px;
+		}
+
+		/* Steps / compliance */
+		.grid-3 {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 16px;
+			margin-top: 56px;
+		}
+		.step-card {
+			padding: 28px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 14px;
+		}
+		.step-num {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 28px;
+			height: 28px;
+			margin-bottom: 16px;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 13px;
+			font-weight: 600;
+			color: var(--accent);
+			background: var(--accent-soft);
+			border-radius: 8px;
+		}
+		.step-card h4 {
+			margin-bottom: 8px;
+			font-size: 17px;
+		}
+		.step-card p {
+			font-size: 14px;
+			line-height: 1.5;
+			color: var(--fg-3);
+		}
+
+		/* CTA */
+		.cta {
+			position: relative;
+			padding: 80px 56px;
+			margin: 80px 0 120px;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 28px;
+		}
+		.cta::before {
+			position: absolute;
+			top: -200px;
+			left: 50%;
+			width: 800px;
+			height: 400px;
+			content: "";
+			background: radial-gradient(
+				closest-side,
+				var(--accent-soft),
+				transparent 70%
+			);
+			transform: translateX(-50%);
+		}
+		.cta-inner {
+			position: relative;
+			text-align: center;
+		}
+		.cta h2 {
+			max-width: 720px;
+			margin: 0 auto;
+			font-size: clamp(36px, 5vw, 56px);
+			line-height: 1.02;
+			letter-spacing: -0.035em;
+		}
+		.cta p {
+			max-width: 480px;
+			margin: 20px auto 0;
+			font-size: 17px;
+			color: var(--fg-2);
+		}
+		.cta-actions {
+			display: inline-flex;
+			gap: 10px;
+			margin-top: 32px;
+		}
+
+		/* Shimmer CTA — inner gold gradient pulse */
+		.btn-shimmer {
+			position: relative;
+			overflow: hidden;
+			isolation: isolate;
+		}
+		.btn-shimmer::after {
+			position: absolute;
+			inset: 0;
+			z-index: 0;
+			pointer-events: none;
+			content: "";
+			background: linear-gradient(
+				110deg,
+				transparent 30%,
+				rgba(255, 255, 255, 0.45) 50%,
+				transparent 70%
+			);
+			background-size: 200% 100%;
+			animation: shimmer-pan 3.2s ease-in-out infinite;
+		}
+		.btn-shimmer > * {
+			position: relative;
+			z-index: 1;
+		}
+
+		/* Footer */
+		.footer {
+			padding: 48px 0 40px;
+			border-top: 1px solid var(--line);
+		}
+		.footer-grid {
+			display: grid;
+			grid-template-columns: 1.5fr 1fr 1fr 1fr 1fr;
+			gap: 32px;
+		}
+		.footer-col h5 {
+			margin-bottom: 14px;
+			font-size: 12px;
+			font-weight: 500;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+		}
+		.footer-col a {
+			display: block;
+			padding: 4px 0;
+			font-size: 13.5px;
+			color: var(--fg-2);
+		}
+		.footer-col a:hover {
+			color: var(--fg);
+		}
+		.footer-meta {
+			display: flex;
+			justify-content: space-between;
+			padding-top: 24px;
+			margin-top: 56px;
+			font-size: 12.5px;
+			color: var(--fg-3);
+			border-top: 1px solid var(--line);
+		}
+
+		/* Mini hero product mock */
+		.mini-dash {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 10px;
+			padding: 16px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 14px;
+		}
+		.mini-tile {
+			padding: 14px;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 11px;
+		}
+		.mini-tile .lbl {
+			font-size: 10.5px;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+		.mini-tile .val {
+			margin-top: 6px;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 22px;
+		}
+
+		/* Tweak chip strip (bottom) */
+		.tweak-strip {
+			position: fixed;
+			bottom: 16px;
+			left: 50%;
+			z-index: 60;
+			display: none;
+			gap: 8px;
+			align-items: center;
+			padding: 6px 8px;
+			font-size: 12px;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+			box-shadow: var(--shadow-lg);
+			transform: translateX(-50%);
+		}
+		.tweak-strip.visible {
+			display: inline-flex;
+		}
+		.tweak-strip .label {
+			padding: 0 6px;
+			color: var(--fg-3);
+		}
+		.tweak-strip .seg {
+			display: inline-flex;
+			gap: 2px;
+			padding: 2px;
+			background: var(--bg-3);
+			border-radius: 99px;
+		}
+		.tweak-strip .seg button {
+			height: 22px;
+			padding: 0 9px;
+			font-family: inherit;
+			font-size: 11.5px;
+			color: var(--fg-3);
+			cursor: pointer;
+			background: transparent;
+			border: 0;
+			border-radius: 99px;
+		}
+		.tweak-strip .seg button.active {
+			color: var(--fg);
+			background: var(--bg-4);
+		}
+
+		/* responsive simplification */
+		@media (max-width: 880px) {
+			.bento-card.b-lg,
+			.bento-card.b-md,
+			.bento-card.b-sm {
+				grid-column: span 6;
+			}
+			.footer-grid {
+				grid-template-columns: 1fr 1fr;
+			}
+			.payroll-feature {
+				grid-template-columns: 1fr;
+			}
+			.grid-3 {
+				grid-template-columns: 1fr;
+			}
+			.hero[data-variant="split"] .hero-inner {
+				grid-template-columns: 1fr;
+				gap: 40px;
+			}
+			.hero[data-variant="editorial"] .hero-strip {
+				grid-template-columns: repeat(2, 1fr);
+			}
+		}
+		</style>
+	</head>
+	<body>
+		<!-- TOP NAV -->
+		<nav class="m-nav" data-screen-label="01 Marketing Nav">
+			<div class="container m-nav-inner">
+				<a href="marketing.html" class="h-logo">
+					<span data-heimdall-logo class="h-logo-mark"></span>
+					<span>Heimdallone</span>
+				</a>
+				<div class="m-nav-links">
+					<a href="#product">Product</a>
+					<a href="#features">Features</a>
+					<a href="#payroll">Payroll</a>
+					<a href="pricing.html">Pricing</a>
+					<a href="docs.html">Docs</a>
+				</div>
+				<div class="m-nav-actions">
+					<div class="theme-toggle" data-theme-toggle>
+						<button data-theme="dark" title="Dark">
+							<span data-icon="moon" data-size="14"></span>
+						</button>
+						<button data-theme="light" title="Light">
+							<span data-icon="sun" data-size="14"></span>
+						</button>
+					</div>
+					<a href="login.html" class="btn btn-ghost">Sign in</a>
+					<a href="app/dashboard.html" class="btn btn-primary"
+						>Get started <span data-icon="arrow-right" data-size="13"></span></a
+					>
+				</div>
+			</div>
+		</nav>
+
+		<!-- HERO -->
+		<section class="hero" data-variant="centered" data-screen-label="02 Hero">
+			<div class="hero-bg">
+				<div class="aurora-host"><div class="aurora"></div></div>
+			</div>
+			<div class="container hero-inner">
+				<div class="hero-eyebrow">
+					<span class="pill">New</span>
+					<span>Pay-run engine for the Caribbean — now in private preview</span>
+					<span
+						data-icon="arrow-right"
+						data-size="12"
+						style="color: var(--fg-3);"
+					></span>
+				</div>
+				<h1>
+					The workforce<br>
+					<span class="accent-italic">command center</span>
+					for<br>
+					multi-country teams.
+				</h1>
+				<p class="hero-sub">
+					Heimdallone unifies HR, payroll, attendance and compliance across
+					every country you operate in — with the speed and clarity of modern
+					software.
+				</p>
+				<div class="hero-cta">
+					<a href="app/dashboard.html" class="btn btn-primary btn-lg"
+						>Open the dashboard
+						<span data-icon="arrow-right" data-size="14"></span></a
+					>
+					<a href="#product" class="btn btn-outline btn-lg">See the product</a>
+				</div>
+
+				<!-- editorial strip (only shows in editorial variant) -->
+				<div class="hero-strip">
+					<div class="strip-item">
+						<div class="stat-value">
+							<span class="count-up mono" data-end="7" data-duration="900"
+								>0</span
+							>
+						</div>
+						<div class="label">country tax engines built-in</div>
+					</div>
+					<div class="strip-item">
+						<div class="stat-value">
+							<span
+								class="count-up mono"
+								data-end="12000"
+								data-duration="1500"
+								data-suffix="+"
+								>0</span
+							>
+						</div>
+						<div class="label">payslips processed per run</div>
+					</div>
+					<div class="strip-item">
+						<div class="stat-value">
+							<span
+								class="count-up mono"
+								data-end="99.99"
+								data-duration="1500"
+								data-decimals="2"
+								data-suffix="%"
+								>0</span
+							>
+						</div>
+						<div class="label">calculation accuracy SLA</div>
+					</div>
+					<div class="strip-item">
+						<div class="stat-value">
+							&lt;<span class="count-up mono" data-end="3" data-duration="900"
+								>0</span
+							>s
+						</div>
+						<div class="label">to commit a full pay run</div>
+					</div>
+				</div>
+
+				<!-- split variant right-side mockup -->
+				<div class="hero-right">
+					<div class="hero-preview" style="margin-top: 0;">
+						<div class="preview-chrome">
+							<span class="preview-dot"></span><span class="preview-dot"></span
+							><span class="preview-dot"></span>
+							<span
+								class="mono"
+								style="color: var(--fg-4); font-size: 11px; margin-left: 12px;"
+								>heimdallone.app / payroll</span
+							>
+						</div>
+						<div class="preview-body">
+							<div class="mini-dash" id="hero-mini-split"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- centered hero product preview -->
+			<div class="container" id="hero-preview-wrap">
+				<div class="hero-preview">
+					<div class="preview-chrome">
+						<span class="preview-dot"></span><span class="preview-dot"></span
+						><span class="preview-dot"></span>
+						<span
+							class="mono"
+							style="color: var(--fg-4); font-size: 11px; margin-left: 12px;"
+							>heimdallone.app / overview</span
+						>
+						<span class="ml-auto badge badge-success"
+							><span class="badge-dot"></span>Live</span
+						>
+					</div>
+					<div class="preview-body">
+						<div
+							style="display: grid; grid-template-columns: 200px 1fr; gap: 22px;"
+						>
+							<div style="display: flex; flex-direction: column; gap: 4px;">
+								<div
+									style="font-size: 11px; color: var(--fg-3); padding: 4px 10px; letter-spacing: 0.06em; text-transform: uppercase;"
+								>
+									Workspaces
+								</div>
+								<div
+									style="display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: var(--bg-3); border-radius: 6px; font-size: 12.5px;"
+								>
+									<span
+										class="tenant-avatar"
+										style="width:18px; height:18px; font-size:9px; border-radius: 4px;"
+										>AS</span
+									>
+									Atlas Shipping
+								</div>
+								<div
+									style="font-size: 11px; color: var(--fg-3); padding: 12px 10px 4px; letter-spacing: 0.06em; text-transform: uppercase;"
+								>
+									Navigation
+								</div>
+								<div
+									style="font-size: 12.5px; color: var(--fg-2); padding: 5px 10px;"
+								>
+									Overview
+								</div>
+								<div
+									style="font-size: 12.5px; color: var(--fg); padding: 5px 10px; background: var(--bg-3); border-radius: 6px;"
+								>
+									Payroll
+								</div>
+								<div
+									style="font-size: 12.5px; color: var(--fg-2); padding: 5px 10px;"
+								>
+									Attendance
+								</div>
+								<div
+									style="font-size: 12.5px; color: var(--fg-2); padding: 5px 10px;"
+								>
+									Compliance
+								</div>
+							</div>
+							<div>
+								<div
+									style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;"
+								>
+									<div>
+										<div
+											style="font-size: 11px; color: var(--fg-3); letter-spacing: 0.06em; text-transform: uppercase;"
+										>
+											Active pay run · GY · September
+										</div>
+										<div
+											style="font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px;"
+										>
+											GYD 184,720,400.00
+										</div>
+									</div>
+									<span class="badge badge-accent"
+										><span class="badge-dot"></span>Ready for approval</span
+									>
+								</div>
+								<div class="mini-dash" id="hero-mini-centered"></div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- LOGO STRIP -->
+		<section class="logos">
+			<div class="container">
+				<div class="logos-label">
+					Trusted by operations teams across the region
+				</div>
+				<div class="marquee">
+					<div class="marquee-track">
+						<div class="logo-placeholder">
+							<span data-icon="zap" data-size="18"></span>
+							Atlas Shipping
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="building" data-size="18"></span>
+							Mahaica Group
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="globe" data-size="18"></span>
+							Bridgetown Ltd
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="briefcase" data-size="18"></span>
+							Kingston &amp; Co
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="sparkles" data-size="18"></span>
+							Demerara Works
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="shield" data-size="18"></span>
+							Trident Capital
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="activity" data-size="18"></span>
+							Spiceland Coöp
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="git-branch" data-size="18"></span>
+							Port Mourant
+						</div>
+						<!-- duplicated for seamless loop -->
+						<div class="logo-placeholder">
+							<span data-icon="zap" data-size="18"></span>
+							Atlas Shipping
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="building" data-size="18"></span>
+							Mahaica Group
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="globe" data-size="18"></span>
+							Bridgetown Ltd
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="briefcase" data-size="18"></span>
+							Kingston &amp; Co
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="sparkles" data-size="18"></span>
+							Demerara Works
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="shield" data-size="18"></span>
+							Trident Capital
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="activity" data-size="18"></span>
+							Spiceland Coöp
+						</div>
+						<div class="logo-placeholder">
+							<span data-icon="git-branch" data-size="18"></span>
+							Port Mourant
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- BENTO FEATURES -->
+		<section class="section reveal" id="features">
+			<div class="container">
+				<div class="section-eyebrow">
+					Built for the work that runs your company
+				</div>
+				<h2>
+					Everything operations needs — without the spreadsheets in the cracks.
+				</h2>
+
+				<div class="bento">
+					<div
+						class="bento-card b-lg spotlight beam-host"
+						style="display: flex; flex-direction: column;"
+					>
+						<div class="bento-icon">
+							<span data-icon="wallet" data-size="18"></span>
+						</div>
+						<div class="bento-title">Multi-country payroll engine</div>
+						<div class="bento-desc">
+							Per-country tax rules, statutory deductions and employer
+							contributions — versioned, auditable, and ready for the next
+							gazette.
+						</div>
+						<div style="margin-top: auto;">
+							<div
+								style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; padding-top: 28px;"
+							>
+								<div class="cc-badge" style="justify-content: center;">
+									<span data-flag="GY"></span>GY
+								</div>
+								<div class="cc-badge" style="justify-content: center;">
+									<span data-flag="TT"></span>TT
+								</div>
+								<div class="cc-badge" style="justify-content: center;">
+									<span data-flag="BB"></span>BB
+								</div>
+								<div class="cc-badge" style="justify-content: center;">
+									<span data-flag="JM"></span>JM
+								</div>
+								<div class="cc-badge" style="justify-content: center;">
+									<span data-flag="US"></span>US
+								</div>
+								<div class="cc-badge" style="justify-content: center;">
+									<span data-flag="CA"></span>CA
+								</div>
+								<div class="cc-badge" style="justify-content: center;">
+									<span data-flag="GB"></span>UK
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div
+						class="bento-card b-md spotlight beam-host"
+						style="display: flex; flex-direction: column;"
+					>
+						<div class="bento-icon">
+							<span data-icon="shield-check" data-size="18"></span>
+						</div>
+						<div class="bento-title">Audit-grade compliance trail</div>
+						<div class="bento-desc">
+							Every approval, edit and pay-run mutation captured with operator,
+							timestamp, and country jurisdiction. Export to PDF in one click.
+						</div>
+						<div
+							style="margin-top: auto; padding-top: 20px; display: flex; flex-direction: column; gap: 6px;"
+						>
+							<div
+								style="display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--fg-3);"
+							>
+								<span
+									class="badge badge-success"
+									style="height: 18px; padding: 0 6px;"
+									>approved</span
+								><span class="mono" style="color: var(--fg-4);">14:32:08</span>
+								Pay run · TT · August
+							</div>
+							<div
+								style="display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--fg-3);"
+							>
+								<span
+									class="badge badge-warning"
+									style="height: 18px; padding: 0 6px;"
+									>flagged</span
+								><span class="mono" style="color: var(--fg-4);">14:31:54</span>
+								NIS rate change · GY
+							</div>
+							<div
+								style="display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--fg-3);"
+							>
+								<span class="badge" style="height: 18px; padding: 0 6px;"
+									>edit</span
+								><span class="mono" style="color: var(--fg-4);">14:28:12</span>
+								Employee record · M. Persaud
+							</div>
+						</div>
+					</div>
+
+					<div class="bento-card b-sm spotlight">
+						<div class="bento-icon">
+							<span data-icon="users" data-size="18"></span>
+						</div>
+						<div class="bento-title">HR core</div>
+						<div class="bento-desc">
+							Employees, departments, contracts, documents — all the way to
+							offboarding.
+						</div>
+					</div>
+
+					<div class="bento-card b-sm spotlight">
+						<div class="bento-icon">
+							<span data-icon="clock" data-size="18"></span>
+						</div>
+						<div class="bento-title">Attendance &amp; biometric</div>
+						<div class="bento-desc">
+							Live device feeds, exception queues, overtime — without
+							spreadsheets.
+						</div>
+					</div>
+
+					<div class="bento-card b-sm spotlight">
+						<div class="bento-icon">
+							<span data-icon="calendar" data-size="18"></span>
+						</div>
+						<div class="bento-title">Leave &amp; holidays</div>
+						<div class="bento-desc">
+							Country-aware holidays. Multi-step approvals. Liability tracking.
+						</div>
+					</div>
+
+					<div class="bento-card b-md spotlight">
+						<div class="bento-icon">
+							<span data-icon="building" data-size="18"></span>
+						</div>
+						<div class="bento-title">
+							Multi-tenancy that doesn't get in the way
+						</div>
+						<div class="bento-desc">
+							One sign-in across all your organizations. Role-scoped data.
+							Region defaults that just inherit. Switch tenants in a keystroke.
+						</div>
+					</div>
+
+					<div class="bento-card b-md spotlight">
+						<div class="bento-icon">
+							<span data-icon="activity" data-size="18"></span>
+						</div>
+						<div class="bento-title">Executive analytics, by default</div>
+						<div class="bento-desc">
+							Headcount, payroll cost, leave liability, attendance health and
+							turnover risk — without a BI team or a quarter's wait.
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- MULTI-COUNTRY PAYROLL SECTION -->
+		<section
+			class="section reveal"
+			id="payroll"
+			style="border-top: 1px solid var(--line);"
+		>
+			<div class="container">
+				<div class="section-eyebrow">Multi-country payroll</div>
+				<h2>One pay run. Seven jurisdictions. Zero exports to Excel.</h2>
+				<p class="section-sub">
+					Switch country, switch effective date, see the exact gross-to-net
+					breakdown your local statutes require. Every line item is sourced from
+					a versioned country profile.
+				</p>
+
+				<div class="payroll-feature">
+					<div>
+						<div style="display: flex; flex-direction: column; gap: 20px;">
+							<div>
+								<h4 style="display: flex; align-items: center; gap: 10px;">
+									<span class="bento-icon" style="margin-bottom: 0;"
+										><span data-icon="globe" data-size="16"></span></span
+									>
+									Country profiles, not country forks
+								</h4>
+								<p style="margin-top: 6px; color: var(--fg-3);">
+									Tax bands, NIS, PAYE, statutory leave and employer
+									contributions live as versioned profiles — not hard-coded
+									logic. Update once, applied to the next pay period.
+								</p>
+							</div>
+							<div>
+								<h4 style="display: flex; align-items: center; gap: 10px;">
+									<span class="bento-icon" style="margin-bottom: 0;"
+										><span data-icon="git-branch" data-size="16"></span></span
+									>
+									Effective-date logic, built in
+								</h4>
+								<p style="margin-top: 6px; color: var(--fg-3);">
+									Mid-period rate changes split automatically. No more
+									pro-rating in spreadsheets at 9pm on the last day of the
+									month.
+								</p>
+							</div>
+							<div>
+								<h4 style="display: flex; align-items: center; gap: 10px;">
+									<span class="bento-icon" style="margin-bottom: 0;"
+										><span data-icon="file-text" data-size="16"></span></span
+									>
+									Payslips that pass an audit
+								</h4>
+								<p style="margin-top: 6px; color: var(--fg-3);">
+									Localized statutory references, deductions broken out by line,
+									employer contributions clearly separated. Export PDF or push
+									to employee portal.
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="country-card">
+						<div class="country-tabs" id="country-tabs">
+							<button class="country-tab active" data-cc="GY">
+								<span data-flag="GY"></span>
+								Guyana
+							</button>
+							<button class="country-tab" data-cc="TT">
+								<span data-flag="TT"></span>
+								Trinidad &amp; Tobago
+							</button>
+							<button class="country-tab" data-cc="BB">
+								<span data-flag="BB"></span>
+								Barbados
+							</button>
+							<button class="country-tab" data-cc="JM">
+								<span data-flag="JM"></span>
+								Jamaica
+							</button>
+							<button class="country-tab" data-cc="US">
+								<span data-flag="US"></span>
+								US
+							</button>
+							<button class="country-tab" data-cc="GB">
+								<span data-flag="GB"></span>
+								UK
+							</button>
+						</div>
+						<div class="country-body" id="country-body">
+							<!-- filled by JS -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- COMPLIANCE SECTION -->
+		<section
+			class="section reveal"
+			id="compliance"
+			style="background: var(--bg-1); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);"
+		>
+			<div class="container">
+				<div class="section-eyebrow">Compliance &amp; audit</div>
+				<h2>Operations you can defend in writing.</h2>
+				<p class="section-sub">
+					Every change is captured. Every payroll is reproducible. Auditors get
+					one URL.
+				</p>
+
+				<div class="grid-3">
+					<div class="step-card">
+						<div class="step-num">01</div>
+						<h4>Immutable event log</h4>
+						<p>
+							Every approval, override and edit is captured with operator, IP,
+							jurisdiction and reason. Never overwritten.
+						</p>
+					</div>
+					<div class="step-card">
+						<div class="step-num">02</div>
+						<h4>Reproducible pay runs</h4>
+						<p>
+							Re-run any historical period against its exact country profile
+							version. Differences are explained, never hidden.
+						</p>
+					</div>
+					<div class="step-card">
+						<div class="step-num">03</div>
+						<h4>Risk indicators, surfaced</h4>
+						<p>
+							Missing documents, expired contracts, attendance anomalies and
+							approval breaks — surfaced before they become findings.
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- CTA -->
+		<section class="container">
+			<div class="cta">
+				<div class="cta-inner">
+					<h2>Run payroll like you run your company.</h2>
+					<p>
+						Heimdallone is in private preview. Operations teams running across
+						two or more countries get priority access.
+					</p>
+					<div class="cta-actions">
+						<a href="login.html" class="btn btn-primary btn-lg btn-shimmer"
+							><span>Request preview</span>
+							<span data-icon="arrow-right" data-size="14"></span></a
+						>
+						<a href="app/dashboard.html" class="btn btn-outline btn-lg"
+							>View live demo</a
+						>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- FOOTER -->
+		<footer class="footer">
+			<div class="container">
+				<div class="footer-grid">
+					<div class="footer-col">
+						<a href="#" class="h-logo" style="margin-bottom: 16px;">
+							<span data-heimdall-logo class="h-logo-mark"></span>
+							<span>Heimdallone</span>
+						</a>
+						<p
+							style="font-size: 13px; color: var(--fg-3); max-width: 280px; line-height: 1.5;"
+						>
+							The workforce command center for multi-country operations.
+						</p>
+					</div>
+					<div class="footer-col">
+						<h5>Product</h5>
+						<a href="#features">Features</a>
+						<a href="#payroll">Payroll</a>
+						<a href="#compliance">Compliance</a>
+						<a href="pricing.html">Pricing</a>
+					</div>
+					<div class="footer-col">
+						<h5>Solutions</h5>
+						<a href="#">For operations</a>
+						<a href="#">For finance</a>
+						<a href="#">For HR leaders</a>
+						<a href="#">Multi-tenant</a>
+					</div>
+					<div class="footer-col">
+						<h5>Resources</h5>
+						<a href="docs.html">Documentation</a>
+						<a href="docs.html#changelog">Changelog</a>
+						<a href="#">Status</a>
+						<a href="#">Security</a>
+					</div>
+					<div class="footer-col">
+						<h5>Company</h5>
+						<a href="#">About</a>
+						<a href="#">Careers</a>
+						<a href="#">Contact</a>
+						<a href="#">Privacy</a>
+					</div>
+				</div>
+				<div class="footer-meta">
+					<div>© 2026 Heimdallone. All rights reserved.</div>
+					<div class="mono">v0.4.0-preview · build #1148</div>
+				</div>
+			</div>
+		</footer>
+
+		<!-- TWEAK STRIP -->
+		<div class="tweak-strip" id="tweakStrip">
+			<span class="label">Hero</span>
+			<div class="seg" id="heroSeg">
+				<button class="active" data-variant="centered">Centered</button>
+				<button data-variant="split">Split</button>
+				<button data-variant="editorial">Editorial</button>
+			</div>
+			<div
+				style="width: 1px; height: 16px; background: var(--line); margin: 0 4px;"
+			></div>
+			<span class="label">Accent</span>
+			<div class="seg" id="accentSeg">
+				<button
+					class="active"
+					data-accent="gold"
+					style="background: #e8b14c; color: #1a1308;"
+				>
+					Gold
+				</button>
+				<button
+					data-accent="violet"
+					style="background: rgba(124,92,255,0.18); color: #b8a0ff;"
+				>
+					Violet
+				</button>
+				<button
+					data-accent="green"
+					style="background: rgba(61,220,151,0.18); color: #3ddc97;"
+				>
+					Green
+				</button>
+				<button
+					data-accent="blue"
+					style="background: rgba(96,165,250,0.18); color: #60a5fa;"
+				>
+					Blue
+				</button>
+			</div>
+		</div>
+
+		<script src="js/heimdall.js"></script>
+		<script>
+		"use strict";
+		// --- Hero variant switcher ---
+		const hero = document.querySelector(".hero");
+		function setHero(variant) {
+			hero.dataset.variant = variant;
+			document
+				.querySelectorAll("#heroSeg button")
+				.forEach((b) =>
+					b.classList.toggle("active", b.dataset.variant === variant)
+				);
+			// hide the big centered preview when split (since split has its own mock)
+			const centeredPreview = document.getElementById("hero-preview-wrap");
+			centeredPreview.style.display = variant === "split" ? "none" : "";
+		}
+		document
+			.querySelectorAll("#heroSeg button")
+			.forEach((b) =>
+				b.addEventListener("click", () => setHero(b.dataset.variant))
+			);
+
+		// --- Accent color switcher ---
+		const ACCENTS = {
+			gold: {
+				c: "#e8b14c",
+				c2: "#f0c069",
+				ink: "#1a1308",
+				soft: "rgba(232,177,76,0.10)",
+				ring: "rgba(232,177,76,0.30)",
+			},
+			violet: {
+				c: "#7c5cff",
+				c2: "#9b85ff",
+				ink: "#fff",
+				soft: "rgba(124,92,255,0.12)",
+				ring: "rgba(124,92,255,0.30)",
+			},
+			green: {
+				c: "#3ddc97",
+				c2: "#5fe6ad",
+				ink: "#0a1813",
+				soft: "rgba(61,220,151,0.12)",
+				ring: "rgba(61,220,151,0.30)",
+			},
+			blue: {
+				c: "#4f8dff",
+				c2: "#7aa9ff",
+				ink: "#fff",
+				soft: "rgba(79,141,255,0.12)",
+				ring: "rgba(79,141,255,0.30)",
+			},
+		};
+		function setAccent(key) {
+			const a = ACCENTS[key];
+			const r = document.documentElement;
+			r.style.setProperty("--accent", a.c);
+			r.style.setProperty("--accent-2", a.c2);
+			r.style.setProperty("--accent-ink", a.ink);
+			r.style.setProperty("--accent-soft", a.soft);
+			r.style.setProperty("--accent-ring", a.ring);
+			document
+				.querySelectorAll("#accentSeg button")
+				.forEach((b) => b.classList.toggle("active", b.dataset.accent === key));
+			try {
+				localStorage.setItem("heimdall.accent", key);
+			} catch {}
+		}
+		document
+			.querySelectorAll("#accentSeg button")
+			.forEach((b) =>
+				b.addEventListener("click", () => setAccent(b.dataset.accent))
+			);
+		try {
+			const stored = localStorage.getItem("heimdall.accent");
+			if (stored && ACCENTS[stored]) {
+				setAccent(stored);
+			}
+		} catch {}
+
+		// Show tweak strip when tweak mode is on (host messages)
+		window.addEventListener("message", (e) => {
+			if (e.data?.type === "__activate_edit_mode") {
+				document.getElementById("tweakStrip").classList.add("visible");
+			}
+			if (e.data?.type === "__deactivate_edit_mode") {
+				document.getElementById("tweakStrip").classList.remove("visible");
+			}
+		});
+		// Listener is registered above, NOW announce availability
+		window.parent.postMessage({ type: "__edit_mode_available" }, "*");
+
+		// --- Country card data ---
+		const COUNTRY_DATA = {
+			GY: {
+				name: "Guyana",
+				cur: "GYD",
+				gross: "428,000.00",
+				lines: [
+					["Gross earnings", "428,000.00"],
+					["PAYE (income tax)", "−72,800.00"],
+					["NIS (employee)", "−23,540.00"],
+					["Other deductions", "−4,000.00"],
+				],
+				net: "327,660.00",
+				contrib: "Employer NIS 36,380.00",
+				note: "September 2026 · NIS rate effective Jul 2025",
+			},
+			TT: {
+				name: "Trinidad &amp; Tobago",
+				cur: "TTD",
+				gross: "14,800.00",
+				lines: [
+					["Gross earnings", "14,800.00"],
+					["PAYE", "−1,627.00"],
+					["NIS (Class IX)", "−333.20"],
+					["Health surcharge", "−33.00"],
+				],
+				net: "12,806.80",
+				contrib: "Employer NIS 666.80",
+				note: "September 2026 · NIS Class IX",
+			},
+			BB: {
+				name: "Barbados",
+				cur: "BBD",
+				gross: "5,200.00",
+				lines: [
+					["Gross earnings", "5,200.00"],
+					["PAYE (12.5% band)", "−420.00"],
+					["NIS (employee 11.1%)", "−577.20"],
+					["Health levy", "−52.00"],
+				],
+				net: "4,150.80",
+				contrib: "Employer NIS 644.80",
+				note: "September 2026 · Q3 contribution table",
+			},
+			JM: {
+				name: "Jamaica",
+				cur: "JMD",
+				gross: "420,000.00",
+				lines: [
+					["Gross earnings", "420,000.00"],
+					["PAYE", "−63,000.00"],
+					["NIS (employee 3%)", "−4,500.00"],
+					["NHT (employee 2%)", "−8,400.00"],
+					["Ed tax (2.25%)", "−9,450.00"],
+				],
+				net: "334,650.00",
+				contrib: "Employer NIS + NHT 16,800.00",
+				note: "September 2026 · TAJ schedule v2026.1",
+			},
+			US: {
+				name: "United States",
+				cur: "USD",
+				gross: "6,400.00",
+				lines: [
+					["Gross earnings", "6,400.00"],
+					["Federal income tax", "−812.00"],
+					["FICA (Social Sec)", "−396.80"],
+					["FICA (Medicare)", "−92.80"],
+					["State tax (FL)", "0.00"],
+				],
+				net: "5,098.40",
+				contrib: "Employer FICA 489.60",
+				note: "September 2026 · 2026 federal tables",
+			},
+			GB: {
+				name: "United Kingdom",
+				cur: "GBP",
+				gross: "3,800.00",
+				lines: [
+					["Gross earnings", "3,800.00"],
+					["PAYE (basic rate)", "−640.00"],
+					["National Insurance", "−228.00"],
+					["Workplace pension", "−190.00"],
+				],
+				net: "2,742.00",
+				contrib: "Employer NI 437.00",
+				note: "September 2026 · 2026/27 tax year",
+			},
+		};
+		function renderCountry(cc) {
+			const d = COUNTRY_DATA[cc];
+			const body = document.getElementById("country-body");
+			body.innerHTML = `
+																																																																																																												        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px;">
+																																																																																																												          <div>
+																																																																																																												            <div style="font-size: 11px; color: var(--fg-3); letter-spacing: 0.06em; text-transform: uppercase;">${d.name} · gross</div>
+																																																																																																												            <div style="font-size: 28px; font-weight: 600; letter-spacing: -0.025em; font-family: 'JetBrains Mono', monospace;">${d.cur} ${d.gross}</div>
+																																																																																																												          </div>
+																																																																																																												          <span class="badge"><span class="badge-dot" style="background: var(--accent);"></span>${d.cur}</span>
+																																																																																																												        </div>
+																																																																																																												        ${d.lines.map(([k, v]) => `<div class="country-row"><span class="muted">${k}</span><span class="v">${v}</span></div>`).join("")}
+																																																																																																												        <div class="country-total">
+																																																																																																												          <div>
+																																																																																																												            <div style="font-size: 11px; color: var(--fg-3); letter-spacing: 0.06em; text-transform: uppercase;">Net pay</div>
+																																																																																																												            <div style="font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 600; color: var(--accent); margin-top: 4px;">${d.cur} ${d.net}</div>
+																																																																																																												          </div>
+																																																																																																												          <div style="text-align: right;">
+																																																																																																												            <div style="font-size: 11px; color: var(--fg-3);">${d.contrib}</div>
+																																																																																																												            <div style="font-size: 11px; color: var(--fg-4); margin-top: 4px;">${d.note}</div>
+																																																																																																												          </div>
+																																																																																																												        </div>
+																																																																																																												      `;
+			document
+				.querySelectorAll("#country-tabs button")
+				.forEach((b) => b.classList.toggle("active", b.dataset.cc === cc));
+		}
+		document
+			.querySelectorAll("#country-tabs button")
+			.forEach((b) =>
+				b.addEventListener("click", () => renderCountry(b.dataset.cc))
+			);
+		renderCountry("GY");
+
+		// Mini dash tiles (hero centered)
+		function renderMini(elId) {
+			const el = document.getElementById(elId);
+			if (!el) {
+				return;
+			}
+			el.innerHTML = `
+																																																																																																												        <div class="mini-tile"><div class="lbl">Employees</div><div class="val">1,284</div></div>
+																																																																																																												        <div class="mini-tile"><div class="lbl">Today on duty</div><div class="val">1,196</div></div>
+																																																																																																												        <div class="mini-tile"><div class="lbl">Pay run</div><div class="val" style="font-size: 16px; color: var(--accent);">Ready</div></div>
+																																																																																																												        <div class="mini-tile"><div class="lbl">Open alerts</div><div class="val">3</div></div>
+																																																																																																												      `;
+		}
+		renderMini("hero-mini-centered");
+		renderMini("hero-mini-split");
+		</script>
+	</body>
+</html>

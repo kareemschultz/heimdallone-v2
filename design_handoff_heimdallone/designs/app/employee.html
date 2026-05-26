@@ -1,0 +1,1657 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Rohan Gopaul · Heimdallone</title>
+		<link rel="stylesheet" href="../styles/heimdall.css">
+		<style>
+		/* Page header card */
+		.profile-head {
+			position: relative;
+			margin-bottom: 14px;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 18px;
+		}
+		.profile-cover {
+			position: relative;
+			height: 120px;
+			overflow: hidden;
+			background:
+				radial-gradient(
+					circle at 20% 30%,
+					color-mix(in oklab, var(--accent) 25%, transparent),
+					transparent 50%
+				),
+				radial-gradient(
+					circle at 80% 70%,
+					color-mix(in oklab, var(--info) 18%, transparent),
+					transparent 50%
+				),
+				var(--bg-2);
+			border-bottom: 1px solid var(--line);
+		}
+		.profile-cover::after {
+			position: absolute;
+			inset: 0;
+			content: "";
+			background-image:
+				linear-gradient(to right, var(--grid-line) 1px, transparent 1px),
+				linear-gradient(to bottom, var(--grid-line) 1px, transparent 1px);
+			background-size: 32px 32px;
+			-webkit-mask-image: radial-gradient(
+				circle at 30% 50%,
+				black 30%,
+				transparent 90%
+			);
+			mask-image: radial-gradient(
+				circle at 30% 50%,
+				black 30%,
+				transparent 90%
+			);
+		}
+		.profile-id {
+			position: relative;
+			z-index: 1;
+			display: grid;
+			grid-template-columns: 96px 1fr auto;
+			gap: 22px;
+			align-items: flex-end;
+			padding: 0 28px 22px;
+			margin-top: -48px;
+		}
+		.profile-avatar {
+			position: relative;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 96px;
+			height: 96px;
+			font-size: 32px;
+			font-weight: 600;
+			color: var(--fg);
+			background: linear-gradient(
+				135deg,
+				color-mix(in oklab, var(--accent) 35%, var(--bg-3)),
+				var(--bg-3)
+			);
+			border: 4px solid var(--bg-1);
+			border-radius: 50%;
+		}
+		.profile-avatar::after {
+			position: absolute;
+			right: 5px;
+			bottom: 5px;
+			width: 16px;
+			height: 16px;
+			content: "";
+			background: var(--success);
+			border: 3px solid var(--bg-1);
+			border-radius: 50%;
+		}
+		.profile-meta {
+			padding-bottom: 8px;
+		}
+		.profile-meta h1 {
+			margin-bottom: 6px;
+			font-size: 28px;
+			line-height: 1.15;
+			letter-spacing: -0.025em;
+		}
+		.profile-meta .sub {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 10px;
+			align-items: center;
+			font-size: 13px;
+			color: var(--fg-3);
+		}
+		.profile-meta .sub .sep {
+			color: var(--fg-4);
+		}
+		.profile-actions {
+			display: flex;
+			gap: 8px;
+			padding-bottom: 8px;
+		}
+
+		/* Tabs strip below header */
+		.profile-tabs {
+			display: flex;
+			gap: 0;
+			align-items: center;
+			padding: 0 28px;
+			border-bottom: 1px solid var(--line);
+		}
+
+		/* Main grid */
+		.profile-grid {
+			display: grid;
+			grid-template-columns: 320px 1fr;
+			gap: 14px;
+		}
+		.profile-grid > .left,
+		.profile-grid > .right {
+			display: flex;
+			flex-direction: column;
+			gap: 14px;
+			min-width: 0;
+		}
+
+		/* Side card */
+		.side-card {
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.side-card .head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 12px 18px;
+			border-bottom: 1px solid var(--line);
+		}
+		.side-card .head .ttl {
+			font-size: 12.5px;
+			font-weight: 600;
+		}
+		.side-card .body {
+			padding: 14px 18px 18px;
+		}
+		.field-list .kv {
+			display: flex;
+			gap: 14px;
+			align-items: flex-start;
+			justify-content: space-between;
+			padding: 9px 0;
+			font-size: 13px;
+			border-top: 1px dashed var(--line);
+		}
+		.field-list .kv:first-child {
+			padding-top: 0;
+			border-top: 0;
+		}
+		.field-list .kv .k {
+			font-size: 12px;
+			color: var(--fg-3);
+		}
+		.field-list .kv .v {
+			max-width: 60%;
+			font-family: "JetBrains Mono", monospace;
+			font-feature-settings: "zero";
+			color: var(--fg);
+			text-align: right;
+		}
+		.field-list .kv .v.plain {
+			font-family: inherit;
+		}
+
+		/* Stat row */
+		.stat-row {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 14px;
+		}
+		.stat-card {
+			padding: 16px 18px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.stat-card .l {
+			margin-bottom: 8px;
+			font-size: 10.5px;
+			font-weight: 500;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+		}
+		.stat-card .v {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 24px;
+			font-weight: 600;
+			line-height: 1;
+			letter-spacing: -0.025em;
+		}
+		.stat-card .delta {
+			margin-top: 8px;
+			font-size: 11.5px;
+			color: var(--fg-3);
+		}
+		.stat-card .delta.up {
+			color: var(--success);
+		}
+		.stat-card .delta.warn {
+			color: var(--warning);
+		}
+
+		/* Widget */
+		.widget {
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.widget-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 14px 18px;
+			border-bottom: 1px solid var(--line);
+		}
+		.widget-head .ttl {
+			font-size: 13px;
+			font-weight: 600;
+		}
+		.widget-body {
+			padding: 16px 18px;
+		}
+
+		/* Attendance mini-cal */
+		.att-cal {
+			display: grid;
+			grid-template-columns: repeat(30, 1fr);
+			gap: 3px;
+			margin-top: 10px;
+		}
+		.att-day {
+			position: relative;
+			aspect-ratio: 1;
+			background: var(--bg-3);
+			border-radius: 3px;
+		}
+		.att-day.full {
+			background: var(--accent);
+		}
+		.att-day.full-2 {
+			background: color-mix(in oklab, var(--accent) 60%, var(--bg-3));
+		}
+		.att-day.late {
+			background: var(--warning);
+		}
+		.att-day.absent {
+			background: var(--danger);
+		}
+		.att-day.weekend {
+			background: var(--bg-2);
+		}
+		.att-day.future {
+			background: transparent;
+			border: 1px dashed var(--line);
+		}
+
+		/* Leave bar */
+		.leave-row {
+			display: grid;
+			grid-template-columns: 110px 1fr 110px;
+			gap: 14px;
+			align-items: center;
+			padding: 12px 0;
+			border-bottom: 1px dashed var(--line);
+		}
+		.leave-row:last-child {
+			border-bottom: 0;
+		}
+		.leave-row .lbl {
+			font-size: 13px;
+			color: var(--fg);
+		}
+		.leave-row .nums {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 12.5px;
+			color: var(--fg-2);
+			text-align: right;
+		}
+
+		/* Pay run table */
+		.pay-list {
+			width: 100%;
+			font-size: 13px;
+			border-collapse: collapse;
+		}
+		.pay-list th {
+			padding: 10px 12px;
+			font-size: 10.5px;
+			font-weight: 500;
+			color: var(--fg-3);
+			text-align: left;
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+			background: var(--bg-2);
+			border-bottom: 1px solid var(--line);
+		}
+		.pay-list td {
+			padding: 11px 12px;
+			vertical-align: middle;
+			border-bottom: 1px solid var(--line);
+		}
+		.pay-list tr:last-child td {
+			border-bottom: 0;
+		}
+		.pay-list tr:hover td {
+			background: var(--bg-2);
+		}
+		.pay-list .num {
+			font-family: "JetBrains Mono", monospace;
+			text-align: right;
+		}
+
+		/* Doc row */
+		.doc-row {
+			display: grid;
+			grid-template-columns: 32px 1fr auto;
+			gap: 12px;
+			align-items: center;
+			padding: 11px 0;
+			border-bottom: 1px dashed var(--line);
+		}
+		.doc-row:last-child {
+			border-bottom: 0;
+		}
+		.doc-row .ic {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 32px;
+			height: 32px;
+			color: var(--fg-3);
+			background: var(--bg-3);
+			border-radius: 9px;
+		}
+		.doc-row .ttl {
+			font-size: 13px;
+			font-weight: 500;
+		}
+		.doc-row .sub {
+			margin-top: 2px;
+			font-size: 11.5px;
+			color: var(--fg-3);
+		}
+		.doc-row a {
+			font-size: 12px;
+			color: var(--accent);
+		}
+
+		/* Timeline */
+		.tl-wrap {
+			position: relative;
+		}
+		.tl-wrap::before {
+			position: absolute;
+			top: 12px;
+			bottom: 12px;
+			left: 11px;
+			width: 1px;
+			content: "";
+			background: var(--line);
+		}
+		.tl-item {
+			position: relative;
+			z-index: 1;
+			display: grid;
+			grid-template-columns: 24px 1fr auto;
+			gap: 12px;
+			align-items: flex-start;
+			padding: 12px 0;
+		}
+		.tl-item .dot {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 22px;
+			height: 22px;
+			margin-top: 1px;
+			color: var(--fg-3);
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 50%;
+		}
+		.tl-item .dot.accent {
+			color: var(--accent);
+			border-color: var(--accent);
+		}
+		.tl-item .dot.success {
+			color: var(--success);
+			border-color: var(--success);
+		}
+		.tl-item .desc {
+			font-size: 13px;
+			color: var(--fg);
+		}
+		.tl-item .meta {
+			margin-top: 2px;
+			font-size: 11.5px;
+			color: var(--fg-3);
+		}
+		.tl-item .time {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 11px;
+			color: var(--fg-4);
+		}
+
+		@media (max-width: 1100px) {
+			.profile-grid {
+				grid-template-columns: 1fr;
+			}
+			.stat-row {
+				grid-template-columns: 1fr 1fr;
+			}
+		}
+		</style>
+	</head>
+	<body data-current="employees" data-screen-label="Employee Profile">
+		<div class="app">
+			<aside class="sidebar" data-app-shell-sidebar></aside>
+
+			<main>
+				<header class="topbar" data-app-shell-topbar></header>
+
+				<div class="page" data-tab-scope>
+					<div class="crumbs">
+						<span
+							><a href="employees.html" style="color: var(--fg-3);"
+								>Employees</a
+							></span
+						><span class="sep">/</span><span>Rohan Gopaul</span>
+					</div>
+
+					<!-- Profile header -->
+					<div class="profile-head">
+						<div class="profile-cover"></div>
+						<div class="profile-id">
+							<div class="profile-avatar">RG</div>
+							<div class="profile-meta">
+								<h1>Rohan Gopaul</h1>
+								<div class="sub">
+									<span style="color: var(--fg-2);"
+										>Senior Engineer · Engineering</span
+									>
+									<span class="sep">·</span>
+									<span class="mono" style="color: var(--fg-3);"
+										>EMP-00214</span
+									>
+									<span class="sep">·</span>
+									<span class="cc-badge" style="height: 22px;"
+										><span data-flag="GY"></span>Guyana</span
+									>
+									<span
+										class="pill-status active"
+										style="height: 22px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border-radius: 99px; font-size: 11px; background: var(--success-soft); color: var(--success);"
+									>
+										<span class="badge-dot"></span>Active · Permanent
+									</span>
+									<span class="badge" style="height: 22px; gap: 6px;"
+										><span
+											class="badge-dot"
+											style="background: var(--success);"
+										></span>Synced 14:42</span
+									>
+								</div>
+							</div>
+							<div class="profile-actions">
+								<button class="btn btn-outline btn-sm">
+									<span data-icon="info" data-size="12"></span>
+									Message
+								</button>
+								<button class="btn btn-outline btn-sm">
+									<span data-icon="file-text" data-size="12"></span>
+									View payslip
+								</button>
+								<div class="menu-root">
+									<button
+										class="btn btn-outline btn-sm"
+										data-menu-trigger="profileMenu"
+									>
+										<span data-icon="more-horizontal" data-size="12"></span>
+									</button>
+									<div
+										class="menu"
+										data-menu="profileMenu"
+										data-side="bottom-end"
+									>
+										<button class="menu-item">
+											<span class="menu-icon"
+												><span data-icon="user" data-size="14"></span></span
+											>
+											Edit profile
+										</button>
+										<button class="menu-item">
+											<span class="menu-icon"
+												><span
+													data-icon="briefcase"
+													data-size="14"
+												></span></span
+											>
+											Change role
+										</button>
+										<button class="menu-item">
+											<span class="menu-icon"
+												><span
+													data-icon="trending-up"
+													data-size="14"
+												></span></span
+											>
+											Salary adjustment
+										</button>
+										<button class="menu-item">
+											<span class="menu-icon"
+												><span data-icon="download" data-size="14"></span></span
+											>
+											Export employee record
+										</button>
+										<div class="menu-sep"></div>
+										<button class="menu-item danger">
+											<span class="menu-icon"
+												><span data-icon="log-out" data-size="14"></span></span
+											>
+											Initiate offboarding
+										</button>
+									</div>
+								</div>
+								<button class="btn btn-primary btn-sm">
+									<span data-icon="play" data-size="12"></span>
+									Quick action
+								</button>
+							</div>
+						</div>
+						<div class="profile-tabs">
+							<div class="tabs" data-tabs="profile" style="border-bottom: 0;">
+								<button class="tab" data-tab="overview" aria-selected="true">
+									<span data-icon="layout-dashboard" data-size="13"></span>
+									Overview
+								</button>
+								<button class="tab" data-tab="attendance">
+									<span data-icon="clock" data-size="13"></span>
+									Attendance
+								</button>
+								<button class="tab" data-tab="leave">
+									<span data-icon="calendar" data-size="13"></span>
+									Leave
+								</button>
+								<button class="tab" data-tab="payroll">
+									<span data-icon="wallet" data-size="13"></span>
+									Payroll <span class="count">9</span>
+								</button>
+								<button class="tab" data-tab="documents">
+									<span data-icon="file-text" data-size="13"></span>
+									Documents <span class="count">4</span>
+								</button>
+								<button class="tab" data-tab="activity">
+									<span data-icon="activity" data-size="13"></span>
+									Activity
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tab: Overview -->
+					<div class="tab-panel active" data-tab-panel="overview">
+						<div class="profile-grid">
+							<!-- LEFT: identity card -->
+							<div class="left">
+								<div class="side-card">
+									<div class="head">
+										<span class="ttl">Identity</span>
+										<button class="icon-btn" style="width: 26px; height: 26px;">
+											<span data-icon="external-link" data-size="13"></span>
+										</button>
+									</div>
+									<div class="body field-list">
+										<div class="kv">
+											<span class="k">Employee ID</span
+											><span class="v">EMP-00214</span>
+										</div>
+										<div class="kv">
+											<span class="k">Email</span
+											><span class="v" style="font-size: 11.5px;"
+												>rohan@atlas-shipping.com</span
+											>
+										</div>
+										<div class="kv">
+											<span class="k">Phone</span
+											><span class="v">+592 ••• 4218</span>
+										</div>
+										<div class="kv">
+											<span class="k">National ID</span
+											><span class="v">GY-NID-••••-7741</span>
+										</div>
+										<div class="kv">
+											<span class="k">Date of birth</span
+											><span class="v">1992-04-12</span>
+										</div>
+									</div>
+								</div>
+
+								<div class="side-card">
+									<div class="head"><span class="ttl">Employment</span></div>
+									<div class="body field-list">
+										<div class="kv">
+											<span class="k">Role</span
+											><span class="v plain">Senior Engineer</span>
+										</div>
+										<div class="kv">
+											<span class="k">Department</span
+											><span class="v plain">Engineering</span>
+										</div>
+										<div class="kv">
+											<span class="k">Manager</span
+											><span class="v plain">Maya Persaud</span>
+										</div>
+										<div class="kv">
+											<span class="k">Location</span
+											><span class="v plain">Georgetown, GY</span>
+										</div>
+										<div class="kv">
+											<span class="k">Contract</span
+											><span class="v plain">Permanent</span>
+										</div>
+										<div class="kv">
+											<span class="k">Joined</span
+											><span class="v">2024-03-18</span>
+										</div>
+										<div class="kv">
+											<span class="k">Tenure</span
+											><span class="v">2y · 6m</span>
+										</div>
+									</div>
+								</div>
+
+								<div class="side-card">
+									<div class="head">
+										<span class="ttl">Payroll · GY</span>
+										<span class="badge"
+											><span
+												class="badge-dot"
+												style="background: var(--accent);"
+											></span>v2026.1</span
+										>
+									</div>
+									<div class="body field-list">
+										<div class="kv">
+											<span class="k">Country</span
+											><span
+												class="v plain"
+												style="display: inline-flex; align-items: center; gap: 8px;"
+												><span data-flag="GY"></span>Guyana</span
+											>
+										</div>
+										<div class="kv">
+											<span class="k">Currency</span><span class="v">GYD</span>
+										</div>
+										<div class="kv">
+											<span class="k">PAYE band</span><span class="v">28%</span>
+										</div>
+										<div class="kv">
+											<span class="k">NIS number</span
+											><span class="v">GY-NIS-9482-1147</span>
+										</div>
+										<div class="kv">
+											<span class="k">Pay schedule</span
+											><span class="v plain">Monthly · last working day</span>
+										</div>
+										<div class="kv">
+											<span class="k">Bank</span
+											><span class="v plain">Republic Bank · •••• 4421</span>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- RIGHT: dashboard widgets -->
+							<div class="right">
+								<div class="stat-row">
+									<div class="stat-card">
+										<div class="l">Attendance · 30d</div>
+										<div class="v">94.8%</div>
+										<div class="delta up">
+											<span data-icon="arrow-up" data-size="10"></span>
+											+1.2pp · 2 late · 0 absent
+										</div>
+									</div>
+									<div class="stat-card">
+										<div class="l">Leave balance</div>
+										<div class="v">
+											15
+											<span style="font-size: 14px; color: var(--fg-3);"
+												>/ 18</span
+											>
+										</div>
+										<div class="delta">3 days taken · FY 2026</div>
+									</div>
+									<div class="stat-card">
+										<div class="l">Net pay · Sep</div>
+										<div class="v" style="color: var(--accent);">265.0k</div>
+										<div class="delta">GYD · gross 342.0k</div>
+									</div>
+									<div class="stat-card">
+										<div class="l">Overtime · 30d</div>
+										<div class="v">14.5 h</div>
+										<div class="delta warn">+ 6.5h pending approval</div>
+									</div>
+								</div>
+
+								<!-- Attendance widget -->
+								<div class="widget">
+									<div class="widget-head">
+										<span class="ttl">Attendance · last 30 days</span>
+										<div class="segmented" style="height: auto;">
+											<button
+												class="active"
+												style="height: 24px; padding: 0 8px; font-size: 11px;"
+											>
+												30d
+											</button>
+											<button
+												style="height: 24px; padding: 0 8px; font-size: 11px;"
+											>
+												90d
+											</button>
+											<button
+												style="height: 24px; padding: 0 8px; font-size: 11px;"
+											>
+												YTD
+											</button>
+										</div>
+									</div>
+									<div class="widget-body">
+										<div
+											style="display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px;"
+										>
+											<div style="display: flex; gap: 18px; flex-wrap: wrap;">
+												<div>
+													<span
+														style="font-size: 11px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.05em;"
+														>Full days</span
+													>
+													<div
+														class="mono"
+														style="font-size: 16px; font-weight: 600;"
+													>
+														22
+													</div>
+												</div>
+												<div>
+													<span
+														style="font-size: 11px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.05em;"
+														>Late</span
+													>
+													<div
+														class="mono"
+														style="font-size: 16px; font-weight: 600; color: var(--warning);"
+													>
+														2
+													</div>
+												</div>
+												<div>
+													<span
+														style="font-size: 11px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.05em;"
+														>Absent</span
+													>
+													<div
+														class="mono"
+														style="font-size: 16px; font-weight: 600; color: var(--danger);"
+													>
+														0
+													</div>
+												</div>
+												<div>
+													<span
+														style="font-size: 11px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.05em;"
+														>Leave</span
+													>
+													<div
+														class="mono"
+														style="font-size: 16px; font-weight: 600;"
+													>
+														3
+													</div>
+												</div>
+												<div>
+													<span
+														style="font-size: 11px; color: var(--fg-3); text-transform: uppercase; letter-spacing: 0.05em;"
+														>OT</span
+													>
+													<div
+														class="mono"
+														style="font-size: 16px; font-weight: 600; color: var(--accent);"
+													>
+														14.5h
+													</div>
+												</div>
+											</div>
+										</div>
+										<div class="att-cal" id="attCal"></div>
+										<div
+											style="display: flex; gap: 14px; margin-top: 14px; font-size: 11px; color: var(--fg-3);"
+										>
+											<span
+												style="display: inline-flex; align-items: center; gap: 5px;"
+												><span
+													style="width: 10px; height: 10px; border-radius: 3px; background: var(--accent);"
+												></span>Full</span
+											>
+											<span
+												style="display: inline-flex; align-items: center; gap: 5px;"
+												><span
+													style="width: 10px; height: 10px; border-radius: 3px; background: var(--warning);"
+												></span>Late</span
+											>
+											<span
+												style="display: inline-flex; align-items: center; gap: 5px;"
+												><span
+													style="width: 10px; height: 10px; border-radius: 3px; background: var(--danger);"
+												></span>Absent</span
+											>
+											<span
+												style="display: inline-flex; align-items: center; gap: 5px;"
+												><span
+													style="width: 10px; height: 10px; border-radius: 3px; background: var(--bg-3);"
+												></span>Leave</span
+											>
+											<span
+												style="display: inline-flex; align-items: center; gap: 5px;"
+												><span
+													style="width: 10px; height: 10px; border-radius: 3px; background: var(--bg-2);"
+												></span>Weekend</span
+											>
+										</div>
+									</div>
+								</div>
+
+								<!-- Leave widget -->
+								<div class="widget">
+									<div class="widget-head">
+										<span class="ttl">Leave balances · FY 2026</span>
+										<a href="#" style="font-size: 11.5px; color: var(--accent);"
+											>Request leave</a
+										>
+									</div>
+									<div class="widget-body">
+										<div class="leave-row">
+											<span class="lbl">Annual</span>
+											<div class="pbar">
+												<div class="pbar-fill" style="width: 16.6%;"></div>
+											</div>
+											<span class="nums">3 / 18 used</span>
+										</div>
+										<div class="leave-row">
+											<span class="lbl">Sick</span>
+											<div class="pbar">
+												<div
+													class="pbar-fill warning"
+													style="width: 14.3%;"
+												></div>
+											</div>
+											<span class="nums">2 / 14 used</span>
+										</div>
+										<div class="leave-row">
+											<span class="lbl">Compassionate</span>
+											<div class="pbar">
+												<div class="pbar-fill" style="width: 0%;"></div>
+											</div>
+											<span class="nums">0 / 3 used</span>
+										</div>
+										<div class="leave-row">
+											<span class="lbl">Study</span>
+											<div class="pbar">
+												<div class="pbar-fill" style="width: 40%;"></div>
+											</div>
+											<span class="nums">2 / 5 used</span>
+										</div>
+									</div>
+								</div>
+
+								<!-- Activity widget -->
+								<div class="widget">
+									<div class="widget-head">
+										<span class="ttl">Recent activity</span>
+										<button class="btn btn-ghost btn-sm">
+											View all
+											<span data-icon="arrow-right" data-size="11"></span>
+										</button>
+									</div>
+									<div class="widget-body">
+										<div class="tl-wrap">
+											<div class="tl-item">
+												<div class="dot accent">
+													<span data-icon="check" data-size="11"></span>
+												</div>
+												<div>
+													<div class="desc">OT request · 8h approved</div>
+													<div class="meta">
+														Week 39 · approved by Maya Persaud
+													</div>
+												</div>
+												<div class="time">Tue 14:18</div>
+											</div>
+											<div class="tl-item">
+												<div class="dot success">
+													<span data-icon="file-text" data-size="11"></span>
+												</div>
+												<div>
+													<div class="desc">
+														Performance review filed · H1 2026
+													</div>
+													<div class="meta">
+														Rated <strong>Exceeds expectations</strong> ·
+														reviewed by L. Roberts
+													</div>
+												</div>
+												<div class="time">Jul 10</div>
+											</div>
+											<div class="tl-item">
+												<div class="dot">
+													<span data-icon="trending-up" data-size="11"></span>
+												</div>
+												<div>
+													<div class="desc">Salary adjustment · +8.4%</div>
+													<div class="meta">
+														From 315,500 → 342,000 GYD/mo · effective 2026-07-01
+													</div>
+												</div>
+												<div class="time">Jul 1</div>
+											</div>
+											<div class="tl-item">
+												<div class="dot">
+													<span data-icon="briefcase" data-size="11"></span>
+												</div>
+												<div>
+													<div class="desc">
+														Promoted: Software Engineer → Senior Engineer
+													</div>
+													<div class="meta">
+														Engineering · effective 2026-04-01
+													</div>
+												</div>
+												<div class="time">Apr 1</div>
+											</div>
+											<div class="tl-item">
+												<div class="dot">
+													<span data-icon="users" data-size="11"></span>
+												</div>
+												<div>
+													<div class="desc">
+														Joined Atlas Shipping · Engineering
+													</div>
+													<div class="meta">
+														Permanent contract · onboarding completed in 9 days
+													</div>
+												</div>
+												<div class="time">Mar 18, '24</div>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tab: Attendance -->
+					<div class="tab-panel" data-tab-panel="attendance">
+						<div class="widget">
+							<div class="widget-head">
+								<span class="ttl">Time activity log · September 2026</span>
+								<div style="display: flex; gap: 6px;">
+									<button class="btn btn-ghost btn-sm">
+										<span data-icon="filter" data-size="11"></span>
+										Filter
+									</button>
+									<button class="btn btn-ghost btn-sm">
+										<span data-icon="download" data-size="11"></span>
+										Export
+									</button>
+								</div>
+							</div>
+							<div class="widget-body" style="padding: 0;">
+								<table class="pay-list">
+									<thead>
+										<tr>
+											<th>Date</th>
+											<th>Day</th>
+											<th>Check in</th>
+											<th>Check out</th>
+											<th style="text-align: right;">Hours</th>
+											<th>Source</th>
+											<th>Status</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td class="mono">2026-09-27</td>
+											<td>Mon</td>
+											<td class="mono">07:48</td>
+											<td class="mono">17:32</td>
+											<td class="num">9h 44m</td>
+											<td>
+												<span class="source-tag" style="color: var(--fg-3);"
+													><span
+														style="width: 5px; height: 5px; border-radius: 50%; background: var(--success); display: inline-block;"
+													></span>
+													ZK-DEV-GT-01</span
+												>
+											</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>OT 1.7h</span
+												>
+											</td>
+										</tr>
+										<tr>
+											<td class="mono">2026-09-26</td>
+											<td>Sun</td>
+											<td>—</td>
+											<td>—</td>
+											<td class="num" style="color: var(--fg-4);">—</td>
+											<td>
+												<span style="color: var(--fg-4); font-size: 11px;"
+													>weekend</span
+												>
+											</td>
+											<td>
+												<span
+													class="pill-status"
+													style="background: var(--bg-3);"
+													>Weekend</span
+												>
+											</td>
+										</tr>
+										<tr>
+											<td class="mono">2026-09-25</td>
+											<td>Fri</td>
+											<td class="mono">08:02</td>
+											<td class="mono">17:14</td>
+											<td class="num">9h 12m</td>
+											<td>
+												<span class="source-tag" style="color: var(--fg-3);"
+													><span
+														style="width: 5px; height: 5px; border-radius: 50%; background: var(--success); display: inline-block;"
+													></span>
+													ZK-DEV-GT-01</span
+												>
+											</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>OT 1.2h</span
+												>
+											</td>
+										</tr>
+										<tr>
+											<td class="mono">2026-09-24</td>
+											<td>Thu</td>
+											<td class="mono">08:24</td>
+											<td class="mono">17:00</td>
+											<td class="num">8h 36m</td>
+											<td>
+												<span class="source-tag" style="color: var(--fg-3);"
+													><span
+														style="width: 5px; height: 5px; border-radius: 50%; background: var(--warning); display: inline-block;"
+													></span>
+													manual</span
+												>
+											</td>
+											<td>
+												<span
+													class="pill-status notice"
+													style="background: var(--warning-soft); color: var(--warning);"
+													>Late · 24m</span
+												>
+											</td>
+										</tr>
+										<tr>
+											<td class="mono">2026-09-23</td>
+											<td>Wed</td>
+											<td class="mono">07:56</td>
+											<td class="mono">16:58</td>
+											<td class="num">9h 02m</td>
+											<td>
+												<span class="source-tag" style="color: var(--fg-3);"
+													><span
+														style="width: 5px; height: 5px; border-radius: 50%; background: var(--success); display: inline-block;"
+													></span>
+													ZK-DEV-GT-01</span
+												>
+											</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>Full</span
+												>
+											</td>
+										</tr>
+										<tr>
+											<td class="mono">2026-09-22</td>
+											<td>Tue</td>
+											<td class="mono">07:50</td>
+											<td class="mono">17:18</td>
+											<td class="num">9h 28m</td>
+											<td>
+												<span class="source-tag" style="color: var(--fg-3);"
+													><span
+														style="width: 5px; height: 5px; border-radius: 50%; background: var(--success); display: inline-block;"
+													></span>
+													ZK-DEV-GT-01</span
+												>
+											</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>OT 1.5h</span
+												>
+											</td>
+										</tr>
+										<tr>
+											<td class="mono">2026-09-21</td>
+											<td>Mon</td>
+											<td class="mono">07:44</td>
+											<td class="mono">17:00</td>
+											<td class="num">9h 16m</td>
+											<td>
+												<span class="source-tag" style="color: var(--fg-3);"
+													><span
+														style="width: 5px; height: 5px; border-radius: 50%; background: var(--success); display: inline-block;"
+													></span>
+													ZK-DEV-GT-01</span
+												>
+											</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>Full</span
+												>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tab: Leave -->
+					<div class="tab-panel" data-tab-panel="leave">
+						<div class="profile-grid" style="grid-template-columns: 1fr 1fr;">
+							<div class="widget">
+								<div class="widget-head">
+									<span class="ttl">Balances · FY 2026</span>
+								</div>
+								<div class="widget-body">
+									<div class="leave-row">
+										<span class="lbl">Annual</span>
+										<div class="pbar">
+											<div class="pbar-fill" style="width: 16.6%;"></div>
+										</div>
+										<span class="nums">3 / 18 used</span>
+									</div>
+									<div class="leave-row">
+										<span class="lbl">Sick</span>
+										<div class="pbar">
+											<div
+												class="pbar-fill warning"
+												style="width: 14.3%;"
+											></div>
+										</div>
+										<span class="nums">2 / 14 used</span>
+									</div>
+									<div class="leave-row">
+										<span class="lbl">Compassionate</span>
+										<div class="pbar">
+											<div class="pbar-fill" style="width: 0%;"></div>
+										</div>
+										<span class="nums">0 / 3 used</span>
+									</div>
+									<div class="leave-row">
+										<span class="lbl">Study</span>
+										<div class="pbar">
+											<div class="pbar-fill" style="width: 40%;"></div>
+										</div>
+										<span class="nums">2 / 5 used</span>
+									</div>
+								</div>
+							</div>
+							<div class="widget">
+								<div class="widget-head">
+									<span class="ttl">Recent requests</span
+									><a href="#" style="font-size: 11.5px; color: var(--accent);"
+										>Request leave</a
+									>
+								</div>
+								<div class="widget-body">
+									<div
+										class="leave-row"
+										style="grid-template-columns: 1fr auto;"
+									>
+										<div>
+											<div style="font-size: 13px; font-weight: 500;">
+												Annual leave · 4 days
+											</div>
+											<div
+												style="font-size: 11.5px; color: var(--fg-3); margin-top: 3px;"
+											>
+												2–5 October · awaiting approval
+											</div>
+										</div>
+										<span class="pill-status notice">Pending</span>
+									</div>
+									<div
+										class="leave-row"
+										style="grid-template-columns: 1fr auto;"
+									>
+										<div>
+											<div style="font-size: 13px; font-weight: 500;">
+												Sick leave · 1 day
+											</div>
+											<div
+												style="font-size: 11.5px; color: var(--fg-3); margin-top: 3px;"
+											>
+												14 Aug · medical attached
+											</div>
+										</div>
+										<span class="pill-status active"
+											><span class="badge-dot"></span>Approved</span
+										>
+									</div>
+									<div
+										class="leave-row"
+										style="grid-template-columns: 1fr auto;"
+									>
+										<div>
+											<div style="font-size: 13px; font-weight: 500;">
+												Annual leave · 3 days
+											</div>
+											<div
+												style="font-size: 11.5px; color: var(--fg-3); margin-top: 3px;"
+											>
+												21–23 May
+											</div>
+										</div>
+										<span class="pill-status active"
+											><span class="badge-dot"></span>Approved</span
+										>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tab: Payroll history -->
+					<div class="tab-panel" data-tab-panel="payroll">
+						<div class="widget">
+							<div class="widget-head">
+								<span class="ttl">Pay-run history · 9 runs</span>
+								<div class="segmented">
+									<button class="active">12m</button>
+									<button>YTD</button>
+									<button>All</button>
+								</div>
+							</div>
+							<div class="widget-body" style="padding: 0;">
+								<table class="pay-list">
+									<thead>
+										<tr>
+											<th>Period</th>
+											<th>Country</th>
+											<th style="text-align: right;">Gross</th>
+											<th style="text-align: right;">PAYE</th>
+											<th style="text-align: right;">NIS</th>
+											<th style="text-align: right;">Other</th>
+											<th style="text-align: right;">Net</th>
+											<th>Status</th>
+											<th></th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr>
+											<td><strong>September 2026</strong></td>
+											<td>
+												<span class="cc-badge" style="height: 22px;"
+													><span data-flag="GY"></span>GY</span
+												>
+											</td>
+											<td class="num">342,000.00</td>
+											<td class="num" style="color: var(--fg-3);">
+												−58,140.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">
+												−18,810.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">0.00</td>
+											<td
+												class="num"
+												style="font-weight: 600; color: var(--accent);"
+											>
+												265,050.00
+											</td>
+											<td><span class="pill-status notice">Ready</span></td>
+											<td>
+												<a
+													href="#"
+													style="color: var(--accent); font-size: 12px;"
+													>Payslip</a
+												>
+											</td>
+										</tr>
+										<tr>
+											<td>August 2026</td>
+											<td>
+												<span class="cc-badge" style="height: 22px;"
+													><span data-flag="GY"></span>GY</span
+												>
+											</td>
+											<td class="num">342,000.00</td>
+											<td class="num" style="color: var(--fg-3);">
+												−58,140.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">
+												−18,810.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">0.00</td>
+											<td class="num" style="font-weight: 600;">265,050.00</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>Sealed</span
+												>
+											</td>
+											<td>
+												<a
+													href="#"
+													style="color: var(--accent); font-size: 12px;"
+													>Payslip</a
+												>
+											</td>
+										</tr>
+										<tr>
+											<td>July 2026</td>
+											<td>
+												<span class="cc-badge" style="height: 22px;"
+													><span data-flag="GY"></span>GY</span
+												>
+											</td>
+											<td class="num">342,000.00</td>
+											<td class="num" style="color: var(--fg-3);">
+												−58,140.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">
+												−18,810.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">−2,500.00</td>
+											<td class="num" style="font-weight: 600;">262,550.00</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>Sealed</span
+												>
+											</td>
+											<td>
+												<a
+													href="#"
+													style="color: var(--accent); font-size: 12px;"
+													>Payslip</a
+												>
+											</td>
+										</tr>
+										<tr>
+											<td>June 2026</td>
+											<td>
+												<span class="cc-badge" style="height: 22px;"
+													><span data-flag="GY"></span>GY</span
+												>
+											</td>
+											<td class="num">315,500.00</td>
+											<td class="num" style="color: var(--fg-3);">
+												−51,870.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">
+												−17,353.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">0.00</td>
+											<td class="num" style="font-weight: 600;">246,277.00</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>Sealed</span
+												>
+											</td>
+											<td>
+												<a
+													href="#"
+													style="color: var(--accent); font-size: 12px;"
+													>Payslip</a
+												>
+											</td>
+										</tr>
+										<tr>
+											<td>May 2026</td>
+											<td>
+												<span class="cc-badge" style="height: 22px;"
+													><span data-flag="GY"></span>GY</span
+												>
+											</td>
+											<td class="num">315,500.00</td>
+											<td class="num" style="color: var(--fg-3);">
+												−51,870.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">
+												−17,353.00
+											</td>
+											<td class="num" style="color: var(--fg-3);">0.00</td>
+											<td class="num" style="font-weight: 600;">246,277.00</td>
+											<td>
+												<span class="pill-status active"
+													><span class="badge-dot"></span>Sealed</span
+												>
+											</td>
+											<td>
+												<a
+													href="#"
+													style="color: var(--accent); font-size: 12px;"
+													>Payslip</a
+												>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tab: Documents -->
+					<div class="tab-panel" data-tab-panel="documents">
+						<div class="widget">
+							<div class="widget-head">
+								<span class="ttl">Documents · 4 on file</span>
+								<button class="btn btn-primary btn-sm">
+									<span data-icon="plus" data-size="12"></span>
+									Upload
+								</button>
+							</div>
+							<div class="widget-body">
+								<div class="doc-row">
+									<div class="ic">
+										<span data-icon="file-text" data-size="15"></span>
+									</div>
+									<div>
+										<div class="ttl">Contract · Permanent (signed)</div>
+										<div class="sub">
+											PDF · 184 KB · uploaded 2024-03-18 by Lia Roberts
+										</div>
+									</div>
+									<a
+										>Open
+										<span data-icon="arrow-up-right" data-size="11"></span></a
+									>
+								</div>
+								<div class="doc-row">
+									<div class="ic">
+										<span data-icon="file-text" data-size="15"></span>
+									</div>
+									<div>
+										<div class="ttl">National ID</div>
+										<div class="sub">
+											PDF · 320 KB · uploaded 2024-03-18 · verified
+										</div>
+									</div>
+									<a
+										>Open
+										<span data-icon="arrow-up-right" data-size="11"></span></a
+									>
+								</div>
+								<div class="doc-row">
+									<div class="ic">
+										<span data-icon="file-text" data-size="15"></span>
+									</div>
+									<div>
+										<div class="ttl">Bank verification · Republic Bank</div>
+										<div class="sub">PDF · 96 KB · uploaded 2024-04-02</div>
+									</div>
+									<a
+										>Open
+										<span data-icon="arrow-up-right" data-size="11"></span></a
+									>
+								</div>
+								<div class="doc-row">
+									<div class="ic">
+										<span data-icon="file-text" data-size="15"></span>
+									</div>
+									<div>
+										<div class="ttl">Performance review · H1 2026</div>
+										<div class="sub">
+											PDF · 244 KB · uploaded 2026-07-10 by Lia Roberts
+										</div>
+									</div>
+									<a
+										>Open
+										<span data-icon="arrow-up-right" data-size="11"></span></a
+									>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tab: Activity -->
+					<div class="tab-panel" data-tab-panel="activity">
+						<div class="widget">
+							<div class="widget-head">
+								<span class="ttl">Full activity history</span
+								><button class="btn btn-ghost btn-sm">
+									<span data-icon="filter" data-size="11"></span>
+									Filter
+								</button>
+							</div>
+							<div class="widget-body">
+								<div class="tl-wrap">
+									<div class="tl-item">
+										<div class="dot accent">
+											<span data-icon="check" data-size="11"></span>
+										</div>
+										<div>
+											<div class="desc">OT request · 8h approved</div>
+											<div class="meta">Approved by Maya Persaud</div>
+										</div>
+										<div class="time">Tue 14:18</div>
+									</div>
+									<div class="tl-item">
+										<div class="dot success">
+											<span data-icon="file-text" data-size="11"></span>
+										</div>
+										<div>
+											<div class="desc">Performance review filed · H1 2026</div>
+											<div class="meta">Rated Exceeds expectations</div>
+										</div>
+										<div class="time">Jul 10</div>
+									</div>
+									<div class="tl-item">
+										<div class="dot">
+											<span data-icon="trending-up" data-size="11"></span>
+										</div>
+										<div>
+											<div class="desc">
+												Salary +8.4% · effective 2026-07-01
+											</div>
+											<div class="meta">From 315,500 → 342,000 GYD</div>
+										</div>
+										<div class="time">Jul 1</div>
+									</div>
+									<div class="tl-item">
+										<div class="dot">
+											<span data-icon="briefcase" data-size="11"></span>
+										</div>
+										<div>
+											<div class="desc">
+												Promotion · Software Engineer → Senior Engineer
+											</div>
+											<div class="meta">Engineering</div>
+										</div>
+										<div class="time">Apr 1</div>
+									</div>
+									<div class="tl-item">
+										<div class="dot">
+											<span data-icon="calendar" data-size="11"></span>
+										</div>
+										<div>
+											<div class="desc">Annual leave · 3 days · approved</div>
+											<div class="meta">21–23 May 2026</div>
+										</div>
+										<div class="time">May 18</div>
+									</div>
+									<div class="tl-item">
+										<div class="dot">
+											<span data-icon="users" data-size="11"></span>
+										</div>
+										<div>
+											<div class="desc">Joined Atlas Shipping</div>
+											<div class="meta">
+												Engineering · onboarding completed in 9 days
+											</div>
+										</div>
+										<div class="time">Mar 18, '24</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			</main>
+		</div>
+
+		<script src="../js/heimdall.js"></script>
+		<script src="../js/shell.js"></script>
+		<script>
+		"use strict";
+		// Attendance calendar — 30 days
+		const cal = document.getElementById("attCal");
+		const days = [
+			"weekend",
+			"full",
+			"full",
+			"late",
+			"full",
+			"full",
+			"full",
+			"weekend",
+			"weekend",
+			"full",
+			"full",
+			"full",
+			"full",
+			"full-2",
+			"weekend",
+			"weekend",
+			"full",
+			"full",
+			"full",
+			"full",
+			"full",
+			"weekend",
+			"weekend",
+			"full",
+			"late",
+			"full",
+			"full",
+			"full",
+			"weekend",
+			"weekend",
+		];
+		days.forEach((c) => {
+			const d = document.createElement("div");
+			d.className = "att-day " + c;
+			cal.appendChild(d);
+		});
+		</script>
+	</body>
+</html>

@@ -1,0 +1,1735 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Payroll · September 2026 · Heimdallone</title>
+		<link rel="stylesheet" href="../styles/heimdall.css">
+		<style>
+		/* ============ Payroll page ============ */
+
+		/* Pay-run banner */
+		.runbar {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			gap: 24px;
+			align-items: center;
+			padding: 18px 22px;
+			margin-bottom: 14px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 18px;
+		}
+		.runbar .left {
+			display: flex;
+			gap: 20px;
+			align-items: center;
+		}
+		.runbar .country-mark {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 44px;
+			height: 44px;
+			overflow: hidden;
+			background: var(--bg-3);
+			border: 1px solid var(--line);
+			border-radius: 13px;
+		}
+		.runbar .country-mark svg {
+			width: 30px;
+			height: 20px;
+			border-radius: 3px;
+		}
+		.runbar h2 {
+			font-size: 20px;
+			line-height: 1.2;
+			letter-spacing: -0.02em;
+		}
+		.runbar .sub {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			margin-top: 2px;
+			font-size: 12.5px;
+			color: var(--fg-3);
+		}
+		.runbar .sub .sep {
+			color: var(--fg-4);
+		}
+		.runbar .right {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+
+		/* Country tabs */
+		.country-strip {
+			display: flex;
+			gap: 4px;
+			padding: 4px;
+			margin-bottom: 18px;
+			overflow-x: auto;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 14px;
+		}
+		.country-strip button {
+			display: flex;
+			gap: 9px;
+			align-items: center;
+			padding: 9px 14px;
+			font-family: inherit;
+			font-size: 12.5px;
+			color: var(--fg-3);
+			white-space: nowrap;
+			cursor: pointer;
+			background: transparent;
+			border: 0;
+			border-radius: 10px;
+			transition:
+				background 120ms ease,
+				color 120ms ease;
+		}
+		.country-strip button:hover {
+			color: var(--fg);
+			background: var(--bg-3);
+		}
+		.country-strip button.active {
+			color: var(--fg);
+			background: var(--bg-3);
+			box-shadow: var(--shadow-sm);
+		}
+		.country-strip button .pill-dot {
+			width: 6px;
+			height: 6px;
+			background: var(--fg-4);
+			border-radius: 50%;
+		}
+		.country-strip button .pill-dot.ready {
+			background: var(--accent);
+			box-shadow: 0 0 0 3px var(--accent-soft);
+		}
+		.country-strip button .pill-dot.action {
+			background: var(--warning);
+		}
+		.country-strip button .pill-dot.sealed {
+			background: var(--success);
+		}
+		.country-strip .sep {
+			align-self: stretch;
+			width: 1px;
+			margin: 4px 4px;
+			background: var(--line);
+		}
+		.country-strip .total {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+			padding: 9px 14px;
+			margin-left: auto;
+			font-size: 12px;
+			color: var(--fg-3);
+		}
+		.country-strip .total b {
+			font-family: "JetBrains Mono", monospace;
+			font-weight: 600;
+			color: var(--fg);
+		}
+
+		/* Main grid */
+		.payroll-grid {
+			display: grid;
+			grid-template-columns: 1fr 360px;
+			gap: 14px;
+		}
+		.payroll-grid > .left-col,
+		.payroll-grid > .right-col {
+			display: flex;
+			flex-direction: column;
+			gap: 14px;
+			min-width: 0;
+		}
+
+		/* Summary cards */
+		.sum-row {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 14px;
+		}
+		.sum-card {
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+			padding: 16px 18px;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.sum-card.accent {
+			background: linear-gradient(
+				180deg,
+				color-mix(in oklab, var(--accent-soft) 110%, transparent),
+				var(--bg-1) 60%
+			);
+			border-color: color-mix(in oklab, var(--accent) 35%, var(--line));
+		}
+		.sum-card .lbl {
+			font-size: 11px;
+			font-weight: 500;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+		.sum-card .val {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 26px;
+			font-weight: 600;
+			line-height: 1.05;
+			letter-spacing: -0.025em;
+		}
+		.sum-card.accent .val {
+			color: var(--accent);
+		}
+		.sum-card .delta {
+			font-size: 11.5px;
+			color: var(--fg-3);
+		}
+		.sum-card .delta .up {
+			color: var(--success);
+		}
+		.sum-card .delta .down {
+			color: var(--danger);
+		}
+
+		/* Employees table */
+		.emp-table {
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.emp-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 14px 18px;
+			border-bottom: 1px solid var(--line);
+		}
+		.emp-search {
+			width: 220px;
+			height: 30px;
+			padding: 0 12px;
+			font-family: inherit;
+			font-size: 12.5px;
+			color: var(--fg);
+			outline: none;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+		}
+		.emp-search:focus {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 3px var(--accent-ring);
+		}
+		.emp-table table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+		.emp-table thead th {
+			padding: 10px 14px;
+			font-size: 10.5px;
+			font-weight: 500;
+			color: var(--fg-3);
+			text-align: left;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			background: var(--bg-2);
+			border-bottom: 1px solid var(--line);
+		}
+		.emp-table tbody td {
+			padding: 12px 14px;
+			font-size: 13px;
+			vertical-align: middle;
+			border-bottom: 1px solid var(--line);
+		}
+		.emp-table tbody tr:last-child td {
+			border-bottom: 0;
+		}
+		.emp-table tbody tr:hover td {
+			background: var(--bg-2);
+		}
+		.emp-name {
+			display: flex;
+			gap: 10px;
+			align-items: center;
+		}
+		.emp-name .avatar-xs {
+			display: flex;
+			flex-shrink: 0;
+			align-items: center;
+			justify-content: center;
+			width: 24px;
+			height: 24px;
+			font-size: 10px;
+			font-weight: 600;
+			color: var(--fg-2);
+			background: var(--bg-3);
+			border-radius: 50%;
+		}
+		.emp-name .sub {
+			font-size: 11.5px;
+			color: var(--fg-3);
+		}
+		.num-cell {
+			font-family: "JetBrains Mono", monospace;
+			font-feature-settings: "zero", "ss01";
+			text-align: right;
+		}
+		.num-cell.neg {
+			color: var(--fg-3);
+		}
+		.emp-table .row-flag {
+			position: relative;
+		}
+		.emp-table .row-flag::before {
+			position: absolute;
+			top: 0;
+			bottom: 0;
+			left: 0;
+			width: 3px;
+			content: "";
+			background: var(--warning);
+		}
+
+		/* Approval chain */
+		.approval-chain {
+			padding: 18px 22px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.chain {
+			display: flex;
+			gap: 0;
+			align-items: center;
+			margin-top: 14px;
+		}
+		.chain-step {
+			position: relative;
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			gap: 6px;
+		}
+		.chain-dot {
+			position: relative;
+			z-index: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 22px;
+			height: 22px;
+			color: var(--fg-3);
+			background: var(--bg-3);
+			border: 1px solid var(--line-2);
+			border-radius: 50%;
+		}
+		.chain-step.done .chain-dot {
+			color: var(--success);
+			background: var(--success-soft);
+			border-color: var(--success);
+		}
+		.chain-step.current .chain-dot {
+			color: var(--accent);
+			background: var(--accent-soft);
+			border-color: var(--accent);
+			animation: pulse-ring 1.8s ease-out infinite;
+		}
+		.chain-step + .chain-step::before {
+			position: absolute;
+			top: 11px;
+			right: 50%;
+			left: -50%;
+			height: 1px;
+			content: "";
+			background: var(--line);
+			transform: translateX(11px);
+		}
+		.chain-step.done + .chain-step::before,
+		.chain-step.current + .chain-step::before {
+			/* keep default */
+		}
+		.chain-step.done::before {
+			background: var(--success);
+		}
+		.chain-step .step-title {
+			font-size: 12.5px;
+			font-weight: 500;
+		}
+		.chain-step .step-meta {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 11px;
+			color: var(--fg-3);
+		}
+
+		/* Right column cards */
+		.side-card {
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.side-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 12px 16px;
+			border-bottom: 1px solid var(--line);
+		}
+		.side-head .ttl {
+			font-size: 13px;
+			font-weight: 600;
+		}
+		.side-body {
+			padding: 12px 16px 14px;
+		}
+
+		/* Readiness checklist */
+		.ck-item {
+			display: flex;
+			gap: 10px;
+			align-items: flex-start;
+			padding: 8px 0;
+			font-size: 12.5px;
+			border-bottom: 1px dashed var(--line);
+		}
+		.ck-item:last-child {
+			border-bottom: 0;
+		}
+		.ck-tick {
+			display: flex;
+			flex-shrink: 0;
+			align-items: center;
+			justify-content: center;
+			width: 16px;
+			height: 16px;
+			margin-top: 2px;
+			border-radius: 50%;
+		}
+		.ck-tick.done {
+			color: var(--success);
+			background: var(--success-soft);
+		}
+		.ck-tick.warn {
+			color: var(--warning);
+			background: var(--warning-soft);
+		}
+		.ck-tick.todo {
+			color: var(--fg-3);
+			background: var(--bg-3);
+			border: 1px solid var(--line-2);
+		}
+		.ck-item .ck-body {
+			flex: 1;
+			min-width: 0;
+		}
+		.ck-item .ck-body .ttl {
+			font-weight: 500;
+			color: var(--fg);
+		}
+		.ck-item .ck-body .sub {
+			margin-top: 2px;
+			font-size: 11px;
+			color: var(--fg-3);
+		}
+
+		/* Deductions list */
+		.ded-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 7px 0;
+			font-size: 12.5px;
+			border-bottom: 1px dashed var(--line);
+		}
+		.ded-row:last-child {
+			border-bottom: 0;
+		}
+		.ded-row .ded-name {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+		.ded-swatch {
+			width: 8px;
+			height: 8px;
+			border-radius: 2px;
+		}
+		.ded-row .ded-val {
+			font-family: "JetBrains Mono", monospace;
+			color: var(--fg);
+		}
+		.ded-row .ded-sub {
+			font-size: 11px;
+			color: var(--fg-3);
+		}
+
+		/* Donut */
+		.donut-wrap {
+			display: flex;
+			gap: 18px;
+			align-items: center;
+			margin-bottom: 12px;
+		}
+		.donut {
+			position: relative;
+			flex-shrink: 0;
+			width: 96px;
+			height: 96px;
+		}
+		.donut svg {
+			width: 100%;
+			height: 100%;
+			transform: rotate(-90deg);
+		}
+		.donut-center {
+			position: absolute;
+			inset: 0;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			text-align: center;
+		}
+		.donut-center .v {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 15px;
+			font-weight: 600;
+		}
+		.donut-center .l {
+			font-size: 9.5px;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+
+		/* Country profile facts */
+		.fact-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 7px 0;
+			font-size: 12.5px;
+			border-bottom: 1px dashed var(--line);
+		}
+		.fact-row:last-child {
+			border-bottom: 0;
+		}
+		.fact-row .k {
+			color: var(--fg-3);
+		}
+		.fact-row .v {
+			font-family: "JetBrains Mono", monospace;
+			color: var(--fg);
+		}
+
+		/* PAYE bands mini-table */
+		.bands {
+			margin-top: 8px;
+			overflow: hidden;
+			border: 1px solid var(--line);
+			border-radius: 10px;
+		}
+		.band-row {
+			display: grid;
+			grid-template-columns: 1fr auto;
+			padding: 7px 10px;
+			font-size: 12px;
+			border-bottom: 1px solid var(--line);
+		}
+		.band-row:last-child {
+			border-bottom: 0;
+		}
+		.band-row .r {
+			font-family: "JetBrains Mono", monospace;
+			color: var(--fg-2);
+		}
+		.band-row .l {
+			color: var(--fg-3);
+		}
+		.band-row.hi .r {
+			color: var(--accent);
+		}
+
+		/* Footer of page */
+		.page-foot {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 14px 18px;
+			margin-top: 14px;
+			font-size: 12px;
+			color: var(--fg-3);
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 14px;
+		}
+		.page-foot .mono {
+			color: var(--fg-2);
+		}
+
+		@media (max-width: 1300px) {
+			.payroll-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+		</style>
+	</head>
+	<body data-current="payroll" data-screen-label="05 Payroll Command Center">
+		<div class="app">
+			<aside class="sidebar" data-app-shell-sidebar></aside>
+
+			<main>
+				<header class="topbar" data-app-shell-topbar></header>
+
+				<div class="page">
+					<!-- Page header -->
+					<div class="page-header">
+						<div>
+							<div class="crumbs">
+								<span>Atlas Shipping</span><span class="sep">/</span
+								><span>Payroll</span><span class="sep">/</span
+								><span>September 2026</span>
+							</div>
+							<h1 class="page-title">Payroll command center</h1>
+							<p class="page-sub">
+								Period 01–30 Sep 2026 · 5 runs · Cut-off Fri 29 Sep · 09:00 GYT
+							</p>
+						</div>
+						<div style="display: flex; gap: 8px; align-items: center;">
+							<button class="btn btn-outline">
+								<span data-icon="download" data-size="13"></span>
+								Export
+							</button>
+							<button class="btn btn-outline">
+								<span data-icon="external-link" data-size="13"></span>
+								Open ledger
+							</button>
+							<button class="btn btn-primary">
+								<span data-icon="play" data-size="13"></span>
+								Recompute
+							</button>
+						</div>
+					</div>
+
+					<!-- Run banner with active country -->
+					<div class="runbar">
+						<div class="left">
+							<div class="country-mark"><span data-flag="GY"></span></div>
+							<div>
+								<h2>Guyana · September 2026</h2>
+								<div class="sub">
+									<span class="mono">GYD</span>
+									<span class="sep">·</span>
+									<span>728 employees</span>
+									<span class="sep">·</span>
+									<span
+										>Profile
+										<span class="mono" style="color: var(--fg-2);"
+											>gy.v2026.1</span
+										></span
+									>
+									<span class="sep">·</span>
+									<span
+										>Effective
+										<span class="mono" style="color: var(--fg-2);"
+											>2025-07-01</span
+										></span
+									>
+								</div>
+							</div>
+						</div>
+						<div class="right">
+							<span
+								class="badge badge-accent"
+								style="height: 28px; padding: 0 12px;"
+								><span class="badge-dot"></span>
+								Ready for approval · 96%</span
+							>
+							<button class="btn btn-primary">
+								<span data-icon="shield-check" data-size="14"></span>
+								Approve &amp; commit
+							</button>
+						</div>
+					</div>
+
+					<!-- Country strip -->
+					<div class="country-strip" id="ccStrip">
+						<button class="active" data-cc="GY">
+							<span data-flag="GY"></span>
+							Guyana <span class="pill-dot ready"></span>
+						</button>
+						<button data-cc="TT">
+							<span data-flag="TT"></span>
+							Trinidad &amp; Tobago <span class="pill-dot action"></span>
+						</button>
+						<button data-cc="BB">
+							<span data-flag="BB"></span>
+							Barbados <span class="pill-dot sealed"></span>
+						</button>
+						<button data-cc="JM">
+							<span data-flag="JM"></span>
+							Jamaica <span class="pill-dot action"></span>
+						</button>
+						<div class="sep"></div>
+						<button data-cc="US">
+							<span data-flag="US"></span>
+							United States <span class="pill-dot sealed"></span>
+						</button>
+						<button data-cc="CA">
+							<span data-flag="CA"></span>
+							Canada <span class="pill-dot"></span>
+						</button>
+						<button data-cc="GB">
+							<span data-flag="GB"></span>
+							United Kingdom <span class="pill-dot"></span>
+						</button>
+						<div class="total">All runs total · <b>USD 1.84M</b></div>
+					</div>
+
+					<!-- Main grid -->
+					<div class="payroll-grid">
+						<!-- LEFT -->
+						<div class="left-col">
+							<!-- Summary cards -->
+							<div class="sum-row">
+								<div class="sum-card">
+									<div class="lbl">Gross earnings</div>
+									<div class="val">GYD 204.8M</div>
+									<div class="delta">
+										204,820,000 · <span class="up">▲ 1.8%</span> vs August
+									</div>
+								</div>
+								<div class="sum-card">
+									<div class="lbl">Statutory deductions</div>
+									<div class="val">GYD 33.0M</div>
+									<div class="delta">PAYE 24.6M · NIS 8.4M</div>
+								</div>
+								<div class="sum-card">
+									<div class="lbl">Employer contributions</div>
+									<div class="val">GYD 12.9M</div>
+									<div class="delta">NIS 12.9M (5.6%)</div>
+								</div>
+								<div class="sum-card accent">
+									<div class="lbl">Net to pay</div>
+									<div class="val">GYD 184.7M</div>
+									<div class="delta">
+										728 employees · avg
+										<span class="mono" style="color: var(--fg-2);"
+											>253,747</span
+										>
+									</div>
+								</div>
+							</div>
+
+							<!-- Employees table -->
+							<div class="emp-table" data-tab-scope>
+								<div
+									class="emp-head"
+									style="border-bottom: 1px solid var(--line); padding: 6px 8px 6px 14px;"
+								>
+									<div
+										class="tabs"
+										data-tabs="payrollSec"
+										style="border-bottom: 0; gap: 0;"
+									>
+										<button class="tab" data-tab="preview" aria-selected="true">
+											Gross-to-net
+										</button>
+										<button class="tab" data-tab="changes">
+											Changes <span class="count">12</span>
+										</button>
+										<button class="tab" data-tab="flagged">
+											Flagged <span class="count">4</span>
+										</button>
+										<button class="tab" data-tab="overtime">
+											Overtime <span class="count">14</span>
+										</button>
+									</div>
+									<div style="display: flex; gap: 8px; align-items: center;">
+										<input class="emp-search" placeholder="Search employees…">
+										<div class="menu-root">
+											<button
+												class="btn btn-sm btn-outline"
+												data-menu-trigger="empExport"
+											>
+												<span data-icon="more-horizontal" data-size="12"></span>
+											</button>
+											<div
+												class="menu"
+												data-menu="empExport"
+												data-side="bottom-end"
+											>
+												<button class="menu-item">
+													<span class="menu-icon"
+														><span
+															data-icon="download"
+															data-size="14"
+														></span></span
+													>
+													Export CSV
+												</button>
+												<button class="menu-item">
+													<span class="menu-icon"
+														><span
+															data-icon="download"
+															data-size="14"
+														></span></span
+													>
+													Export PDF payslips
+												</button>
+												<button class="menu-item">
+													<span class="menu-icon"
+														><span
+															data-icon="file-text"
+															data-size="14"
+														></span></span
+													>
+													Bank file (RBL)
+												</button>
+												<div class="menu-sep"></div>
+												<button class="menu-item">
+													<span class="menu-icon"
+														><span
+															data-icon="external-link"
+															data-size="14"
+														></span></span
+													>
+													Send to ledger
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+								<!-- Filter chip row -->
+								<div
+									class="filter-bar"
+									style="padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--bg-1);"
+								>
+									<button class="filter-chip active">
+										<span data-icon="users" data-size="11"></span>
+										Department <span class="v">All</span>
+									</button>
+									<button class="filter-chip">
+										<span data-icon="building" data-size="11"></span>
+										Location
+									</button>
+									<button class="filter-chip">
+										<span data-icon="briefcase" data-size="11"></span>
+										Employment <span class="v">Permanent</span>
+									</button>
+									<button class="filter-chip active">
+										<span data-icon="alert-triangle" data-size="11"></span>
+										Status <span class="v">Has changes</span>
+									</button>
+									<button class="filter-chip">
+										<span data-icon="globe" data-size="11"></span>
+										Tax band
+									</button>
+									<button
+										class="filter-chip"
+										style="border-style: solid; color: var(--fg-3);"
+									>
+										<span data-icon="plus" data-size="11"></span>
+										Add filter
+									</button>
+									<span
+										style="margin-left: auto; font-size: 11.5px; color: var(--fg-3);"
+										>Showing
+										<span class="mono" style="color: var(--fg-2);"
+											>7 / 728</span
+										></span
+									>
+								</div>
+
+								<div class="tab-panel active" data-tab-panel="preview">
+									<table>
+										<thead>
+											<tr>
+												<th>Employee</th>
+												<th>Department</th>
+												<th style="text-align: right;">Gross</th>
+												<th style="text-align: right;">PAYE</th>
+												<th style="text-align: right;">NIS</th>
+												<th style="text-align: right;">Other</th>
+												<th style="text-align: right;">Net</th>
+												<th style="width: 40px;"></th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td>
+													<div class="emp-name">
+														<div
+															class="avatar-xs"
+															style="background: color-mix(in oklab, var(--accent) 30%, var(--bg-3)); color: var(--fg);"
+														>
+															MP
+														</div>
+														<div>
+															<div>Maya Persaud</div>
+															<div class="sub">EMP-00128 · GY</div>
+														</div>
+													</div>
+												</td>
+												<td><span class="dim">Operations</span></td>
+												<td class="num-cell">428,000.00</td>
+												<td class="num-cell neg">−72,800.00</td>
+												<td class="num-cell neg">−23,540.00</td>
+												<td class="num-cell neg">−4,000.00</td>
+												<td class="num-cell" style="font-weight: 600;">
+													327,660.00
+												</td>
+												<td>
+													<span
+														data-icon="chevron-right"
+														data-size="14"
+														style="color: var(--fg-4);"
+													></span>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="emp-name">
+														<div class="avatar-xs">RG</div>
+														<div>
+															<div>Rohan Gopaul</div>
+															<div class="sub">EMP-00214 · GY</div>
+														</div>
+													</div>
+												</td>
+												<td><span class="dim">Engineering</span></td>
+												<td class="num-cell">342,000.00</td>
+												<td class="num-cell neg">−58,140.00</td>
+												<td class="num-cell neg">−18,810.00</td>
+												<td class="num-cell neg">0.00</td>
+												<td class="num-cell" style="font-weight: 600;">
+													265,050.00
+												</td>
+												<td>
+													<span
+														data-icon="chevron-right"
+														data-size="14"
+														style="color: var(--fg-4);"
+													></span>
+												</td>
+											</tr>
+											<tr class="row-flag">
+												<td>
+													<div class="emp-name">
+														<div class="avatar-xs">SP</div>
+														<div>
+															<div>
+																Shanice Powell
+																<span
+																	class="badge badge-warning"
+																	style="height: 18px; padding: 0 6px; font-size: 10px; margin-left: 6px;"
+																	>retro</span
+																>
+															</div>
+															<div class="sub">EMP-00302 · GY</div>
+														</div>
+													</div>
+												</td>
+												<td><span class="dim">Finance</span></td>
+												<td class="num-cell">385,400.00</td>
+												<td class="num-cell neg">−65,518.00</td>
+												<td class="num-cell neg">−21,197.00</td>
+												<td class="num-cell neg">−8,200.00</td>
+												<td class="num-cell" style="font-weight: 600;">
+													290,485.00
+												</td>
+												<td>
+													<span
+														data-icon="chevron-right"
+														data-size="14"
+														style="color: var(--fg-4);"
+													></span>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="emp-name">
+														<div class="avatar-xs">DA</div>
+														<div>
+															<div>Devon Ali</div>
+															<div class="sub">EMP-00417 · GY</div>
+														</div>
+													</div>
+												</td>
+												<td><span class="dim">Operations</span></td>
+												<td class="num-cell">298,500.00</td>
+												<td class="num-cell neg">−50,745.00</td>
+												<td class="num-cell neg">−16,418.00</td>
+												<td class="num-cell neg">−2,500.00</td>
+												<td class="num-cell" style="font-weight: 600;">
+													228,837.00
+												</td>
+												<td>
+													<span
+														data-icon="chevron-right"
+														data-size="14"
+														style="color: var(--fg-4);"
+													></span>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="emp-name">
+														<div class="avatar-xs">JS</div>
+														<div>
+															<div>Jaden Sealey</div>
+															<div class="sub">EMP-00611 · GY</div>
+														</div>
+													</div>
+												</td>
+												<td><span class="dim">Operations</span></td>
+												<td class="num-cell">264,000.00</td>
+												<td class="num-cell neg">−44,880.00</td>
+												<td class="num-cell neg">−14,520.00</td>
+												<td class="num-cell neg">0.00</td>
+												<td class="num-cell" style="font-weight: 600;">
+													204,600.00
+												</td>
+												<td>
+													<span
+														data-icon="chevron-right"
+														data-size="14"
+														style="color: var(--fg-4);"
+													></span>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="emp-name">
+														<div class="avatar-xs">AK</div>
+														<div>
+															<div>
+																Aisha Khan
+																<span
+																	class="badge"
+																	style="height: 18px; padding: 0 6px; font-size: 10px; margin-left: 6px;"
+																	>OT +6.5h</span
+																>
+															</div>
+															<div class="sub">EMP-00702 · GY</div>
+														</div>
+													</div>
+												</td>
+												<td><span class="dim">Engineering</span></td>
+												<td class="num-cell">312,800.00</td>
+												<td class="num-cell neg">−53,176.00</td>
+												<td class="num-cell neg">−17,204.00</td>
+												<td class="num-cell neg">0.00</td>
+												<td class="num-cell" style="font-weight: 600;">
+													242,420.00
+												</td>
+												<td>
+													<span
+														data-icon="chevron-right"
+														data-size="14"
+														style="color: var(--fg-4);"
+													></span>
+												</td>
+											</tr>
+											<tr>
+												<td>
+													<div class="emp-name">
+														<div class="avatar-xs">LR</div>
+														<div>
+															<div>Lia Roberts</div>
+															<div class="sub">EMP-00814 · GY</div>
+														</div>
+													</div>
+												</td>
+												<td><span class="dim">HR</span></td>
+												<td class="num-cell">218,000.00</td>
+												<td class="num-cell neg">−37,060.00</td>
+												<td class="num-cell neg">−11,990.00</td>
+												<td class="num-cell neg">0.00</td>
+												<td class="num-cell" style="font-weight: 600;">
+													168,950.00
+												</td>
+												<td>
+													<span
+														data-icon="chevron-right"
+														data-size="14"
+														style="color: var(--fg-4);"
+													></span>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+
+								<div class="tab-panel" data-tab-panel="changes">
+									<div style="padding: 18px;">
+										<div
+											style="font-size: 12.5px; color: var(--fg-2); margin-bottom: 14px;"
+										>
+											12 employees with this-period changes vs. last period.
+										</div>
+										<div
+											class="alert-item"
+											style="padding: 10px 12px; border-radius: 11px; background: var(--bg-2); margin-bottom: 8px;"
+										>
+											<div
+												class="alert-icon"
+												style="background: var(--info-soft); color: var(--info); width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"
+											>
+												<span data-icon="arrow-up" data-size="13"></span>
+											</div>
+											<div>
+												<div style="font-size: 13px; font-weight: 500;">
+													Shanice Powell · Salary increase
+													<span class="mono dim">+8.4%</span>
+												</div>
+												<div
+													style="font-size: 11.5px; color: var(--fg-3); margin-top: 2px;"
+												>
+													Effective 2026-09-15 · retro adjustment 8,200 GYD
+												</div>
+											</div>
+										</div>
+										<div
+											class="alert-item"
+											style="padding: 10px 12px; border-radius: 11px; background: var(--bg-2); margin-bottom: 8px;"
+										>
+											<div
+												class="alert-icon"
+												style="background: var(--accent-soft); color: var(--accent); width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"
+											>
+												<span data-icon="clock" data-size="13"></span>
+											</div>
+											<div>
+												<div style="font-size: 13px; font-weight: 500;">
+													Aisha Khan · 6.5 hours overtime added
+												</div>
+												<div
+													style="font-size: 11.5px; color: var(--fg-3); margin-top: 2px;"
+												>
+													Week 39 · Engineering · approved by Maya Persaud
+												</div>
+											</div>
+										</div>
+										<div
+											class="alert-item"
+											style="padding: 10px 12px; border-radius: 11px; background: var(--bg-2); margin-bottom: 8px;"
+										>
+											<div
+												class="alert-icon"
+												style="background: var(--warning-soft); color: var(--warning); width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"
+											>
+												<span data-icon="user" data-size="13"></span>
+											</div>
+											<div>
+												<div style="font-size: 13px; font-weight: 500;">
+													3 new joiners · pro-rated from 2026-09-16
+												</div>
+												<div
+													style="font-size: 11.5px; color: var(--fg-3); margin-top: 2px;"
+												>
+													Lia Roberts (HR) · Devon Ali (Ops) · Jaden Sealey
+													(Ops)
+												</div>
+											</div>
+										</div>
+										<div style="text-align: center; padding: 16px 0;">
+											<button class="btn btn-ghost btn-sm">
+												Show 9 more changes
+												<span data-icon="chevron-down" data-size="11"></span>
+											</button>
+										</div>
+									</div>
+								</div>
+
+								<div class="tab-panel" data-tab-panel="flagged">
+									<div style="padding: 18px;">
+										<div
+											style="font-size: 12.5px; color: var(--fg-2); margin-bottom: 14px;"
+										>
+											4 employees need review before commit.
+										</div>
+										<div
+											class="alert-item"
+											style="padding: 10px 12px; border-radius: 11px; background: var(--bg-2); margin-bottom: 8px;"
+										>
+											<div
+												class="alert-icon"
+												style="background: var(--warning-soft); color: var(--warning); width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"
+											>
+												<span data-icon="alert-triangle" data-size="13"></span>
+											</div>
+											<div>
+												<div style="font-size: 13px; font-weight: 500;">
+													Shanice Powell · retroactive change crosses fiscal
+													boundary
+												</div>
+												<div
+													style="font-size: 11.5px; color: var(--fg-3); margin-top: 2px;"
+												>
+													Variance +12.4% vs August · awaiting Finance sign-off
+												</div>
+											</div>
+										</div>
+										<div
+											class="alert-item"
+											style="padding: 10px 12px; border-radius: 11px; background: var(--bg-2); margin-bottom: 8px;"
+										>
+											<div
+												class="alert-icon"
+												style="background: var(--warning-soft); color: var(--warning); width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"
+											>
+												<span data-icon="info" data-size="13"></span>
+											</div>
+											<div>
+												<div style="font-size: 13px; font-weight: 500;">
+													Devon Ali · IBAN not validated
+												</div>
+												<div
+													style="font-size: 11.5px; color: var(--fg-3); margin-top: 2px;"
+												>
+													Republic Bank · update required before bank file
+													generation
+												</div>
+											</div>
+										</div>
+										<div
+											class="alert-item"
+											style="padding: 10px 12px; border-radius: 11px; background: var(--bg-2); margin-bottom: 8px;"
+										>
+											<div
+												class="alert-icon"
+												style="background: var(--warning-soft); color: var(--warning); width: 24px; height: 24px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"
+											>
+												<span data-icon="alert-triangle" data-size="13"></span>
+											</div>
+											<div>
+												<div style="font-size: 13px; font-weight: 500;">
+													2 employees · TRN missing (Jamaica run)
+												</div>
+												<div
+													style="font-size: 11.5px; color: var(--fg-3); margin-top: 2px;"
+												>
+													Blocks Jamaica commit · HR notified Mon 25 Sep
+												</div>
+											</div>
+										</div>
+									</div>
+								</div>
+
+								<div class="tab-panel" data-tab-panel="overtime">
+									<div style="padding: 18px;">
+										<div
+											style="font-size: 12.5px; color: var(--fg-2); margin-bottom: 14px;"
+										>
+											14 approved overtime entries this period · 78.5 hours
+											total · 1.4% of payroll.
+										</div>
+										<table style="width: 100%;">
+											<thead>
+												<tr>
+													<th>Employee</th>
+													<th>Department</th>
+													<th style="text-align: right;">Hours</th>
+													<th style="text-align: right;">Rate</th>
+													<th style="text-align: right;">Cost</th>
+													<th>Approved by</th>
+												</tr>
+											</thead>
+											<tbody>
+												<tr>
+													<td>
+														<div class="emp-name">
+															<div class="avatar-xs">AK</div>
+															<div>Aisha Khan</div>
+														</div>
+													</td>
+													<td><span class="dim">Engineering</span></td>
+													<td class="num-cell">6.5</td>
+													<td class="num-cell">1.5×</td>
+													<td class="num-cell" style="font-weight: 600;">
+														28,400.00
+													</td>
+													<td><span class="dim">M. Persaud</span></td>
+												</tr>
+												<tr>
+													<td>
+														<div class="emp-name">
+															<div class="avatar-xs">RG</div>
+															<div>Rohan Gopaul</div>
+														</div>
+													</td>
+													<td><span class="dim">Engineering</span></td>
+													<td class="num-cell">8.0</td>
+													<td class="num-cell">1.5×</td>
+													<td class="num-cell" style="font-weight: 600;">
+														32,800.00
+													</td>
+													<td><span class="dim">M. Persaud</span></td>
+												</tr>
+												<tr>
+													<td>
+														<div class="emp-name">
+															<div class="avatar-xs">DA</div>
+															<div>Devon Ali</div>
+														</div>
+													</td>
+													<td><span class="dim">Operations</span></td>
+													<td class="num-cell">12.0</td>
+													<td class="num-cell">1.5×</td>
+													<td class="num-cell" style="font-weight: 600;">
+														38,400.00
+													</td>
+													<td><span class="dim">M. Persaud</span></td>
+												</tr>
+											</tbody>
+										</table>
+									</div>
+								</div>
+								<div
+									style="padding: 10px 18px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--fg-3);"
+								>
+									<span>Showing 7 of 728 employees</span>
+									<div style="display: flex; align-items: center; gap: 8px;">
+										<button class="btn btn-sm btn-ghost">
+											<span data-icon="chevron-left" data-size="12"></span>
+										</button>
+										<span class="mono">1 / 105</span>
+										<button class="btn btn-sm btn-ghost">
+											<span data-icon="chevron-right" data-size="12"></span>
+										</button>
+									</div>
+								</div>
+							</div>
+
+							<!-- Approval chain -->
+							<div class="approval-chain">
+								<div
+									style="display: flex; justify-content: space-between; align-items: flex-start;"
+								>
+									<div>
+										<div style="font-size: 13.5px; font-weight: 600;">
+											Approval chain
+										</div>
+										<div class="dim" style="font-size: 12px; margin-top: 4px;">
+											Two-step approval policy · GY pay runs
+										</div>
+									</div>
+									<div style="font-size: 11.5px; color: var(--fg-3);">
+										Locked at commit · cannot be edited
+									</div>
+								</div>
+								<div class="chain">
+									<div class="chain-step done">
+										<div class="chain-dot">
+											<span data-icon="check" data-size="11"></span>
+										</div>
+										<div class="step-title">Computed</div>
+										<div class="step-meta">system · 14:02 GYT</div>
+									</div>
+									<div class="chain-step done">
+										<div class="chain-dot">
+											<span data-icon="check" data-size="11"></span>
+										</div>
+										<div class="step-title">Reviewed · HR</div>
+										<div class="step-meta">Lia Roberts · 14:18</div>
+									</div>
+									<div class="chain-step done">
+										<div class="chain-dot">
+											<span data-icon="check" data-size="11"></span>
+										</div>
+										<div class="step-title">Verified · Finance</div>
+										<div class="step-meta">Sasha B. · 14:31</div>
+									</div>
+									<div class="chain-step current">
+										<div class="chain-dot">
+											<span data-icon="user" data-size="11"></span>
+										</div>
+										<div class="step-title">Approve · Ops Lead</div>
+										<div class="step-meta">you · pending</div>
+									</div>
+									<div class="chain-step">
+										<div class="chain-dot">
+											<span data-icon="lock" data-size="11"></span>
+										</div>
+										<div class="step-title">Commit &amp; seal</div>
+										<div class="step-meta">automated</div>
+									</div>
+									<div class="chain-step">
+										<div class="chain-dot">
+											<span data-icon="download" data-size="11"></span>
+										</div>
+										<div class="step-title">Disburse</div>
+										<div class="step-meta">Fri 29 · 09:00</div>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- RIGHT side column -->
+						<div class="right-col">
+							<!-- Readiness checklist -->
+							<div class="side-card">
+								<div class="side-head">
+									<span class="ttl">Readiness · 12 of 12</span>
+									<span class="badge badge-accent" style="height: 20px;"
+										><span class="badge-dot"></span>96%</span
+									>
+								</div>
+								<div class="side-body">
+									<div class="ck-item">
+										<div class="ck-tick done">
+											<span data-icon="check" data-size="10"></span>
+										</div>
+										<div class="ck-body">
+											<div class="ttl">All employees attached</div>
+											<div class="sub">728/728 · synced from Horilla</div>
+										</div>
+									</div>
+									<div class="ck-item">
+										<div class="ck-tick done">
+											<span data-icon="check" data-size="10"></span>
+										</div>
+										<div class="ck-body">
+											<div class="ttl">Attendance reconciled</div>
+											<div class="sub">98.4 % · 3 exceptions resolved</div>
+										</div>
+									</div>
+									<div class="ck-item">
+										<div class="ck-tick done">
+											<span data-icon="check" data-size="10"></span>
+										</div>
+										<div class="ck-body">
+											<div class="ttl">Overtime approved</div>
+											<div class="sub">14 entries · all signed off</div>
+										</div>
+									</div>
+									<div class="ck-item">
+										<div class="ck-tick done">
+											<span data-icon="check" data-size="10"></span>
+										</div>
+										<div class="ck-body">
+											<div class="ttl">Country profile applied</div>
+											<div class="sub">
+												<span class="mono">gy.v2026.1</span>
+												· NIS 5.6/5.6
+											</div>
+										</div>
+									</div>
+									<div class="ck-item">
+										<div class="ck-tick warn">
+											<span data-icon="alert-triangle" data-size="9"></span>
+										</div>
+										<div class="ck-body">
+											<div class="ttl">Bank file format</div>
+											<div class="sub">
+												Republic Bank · validate IBAN 4 holdouts
+											</div>
+										</div>
+									</div>
+									<div class="ck-item">
+										<div class="ck-tick done">
+											<span data-icon="check" data-size="10"></span>
+										</div>
+										<div class="ck-body">
+											<div class="ttl">Variance check</div>
+											<div class="sub">+1.8% vs Aug · within ±5%</div>
+										</div>
+									</div>
+									<div class="ck-item">
+										<div class="ck-tick done">
+											<span data-icon="check" data-size="10"></span>
+										</div>
+										<div class="ck-body">
+											<div class="ttl">Compliance sign-off</div>
+											<div class="sub">No outstanding findings</div>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Statutory deductions -->
+							<div class="side-card">
+								<div class="side-head">
+									<span class="ttl">Statutory deductions</span>
+									<span class="mono dim" style="font-size: 11px;">GYD</span>
+								</div>
+								<div class="side-body">
+									<div class="donut-wrap">
+										<div class="donut">
+											<svg viewBox="0 0 36 36">
+												<circle
+													cx="18"
+													cy="18"
+													r="14.5"
+													fill="none"
+													stroke="var(--bg-3)"
+													stroke-width="4"
+												/>
+												<!-- PAYE 74.5%  -> dashoffset -->
+												<circle
+													cx="18"
+													cy="18"
+													r="14.5"
+													fill="none"
+													stroke="var(--accent)"
+													stroke-width="4"
+													stroke-dasharray="91"
+													stroke-dashoffset="23"
+													stroke-linecap="butt"
+												/>
+												<!-- NIS 25.5% as a second arc, starting after first -->
+												<circle
+													cx="18"
+													cy="18"
+													r="14.5"
+													fill="none"
+													stroke="var(--info)"
+													stroke-width="4"
+													stroke-dasharray="23 91"
+													stroke-dashoffset="-68"
+												/>
+											</svg>
+											<div class="donut-center">
+												<div class="v">33.0M</div>
+												<div class="l">total</div>
+											</div>
+										</div>
+										<div
+											style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px;"
+										>
+											<div class="ded-row" style="border: 0; padding: 0;">
+												<div class="ded-name">
+													<div
+														class="ded-swatch"
+														style="background: var(--accent);"
+													></div>
+													PAYE
+												</div>
+												<div style="text-align: right;">
+													<div class="ded-val">24.6M</div>
+													<div class="ded-sub">74.5%</div>
+												</div>
+											</div>
+											<div class="ded-row" style="border: 0; padding: 0;">
+												<div class="ded-name">
+													<div
+														class="ded-swatch"
+														style="background: var(--info);"
+													></div>
+													NIS
+												</div>
+												<div style="text-align: right;">
+													<div class="ded-val">8.4M</div>
+													<div class="ded-sub">25.5%</div>
+												</div>
+											</div>
+										</div>
+									</div>
+									<div class="ded-row">
+										<div class="ded-name dim">Employer NIS (matched)</div>
+										<div class="ded-val">12.9M</div>
+									</div>
+									<div class="ded-row">
+										<div class="ded-name dim">Reconciled to GRA</div>
+										<div class="ded-val" style="color: var(--success);">
+											✓ matches
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<!-- Country profile -->
+							<div class="side-card">
+								<div class="side-head">
+									<span class="ttl">Country profile · GY</span>
+									<button class="btn btn-ghost btn-sm" style="font-size: 11px;">
+										<span data-icon="external-link" data-size="11"></span>
+										View
+									</button>
+								</div>
+								<div class="side-body">
+									<div class="fact-row">
+										<span class="k">Profile version</span>
+										<span class="v">gy.v2026.1</span>
+									</div>
+									<div class="fact-row">
+										<span class="k">Effective</span>
+										<span class="v">2025-07-01 →</span>
+									</div>
+									<div class="fact-row">
+										<span class="k">NIS · employee</span>
+										<span class="v">5.6%</span>
+									</div>
+									<div class="fact-row">
+										<span class="k">NIS · employer</span>
+										<span class="v">5.6%</span>
+									</div>
+									<div class="fact-row">
+										<span class="k">Personal threshold</span>
+										<span class="v">130,000 / mo</span>
+									</div>
+
+									<div
+										class="tiny"
+										style="margin-top: 14px; margin-bottom: 4px;"
+									>
+										PAYE bands · monthly
+									</div>
+									<div class="bands">
+										<div class="band-row">
+											<div class="l">0 – 130,000</div>
+											<div class="r">0%</div>
+										</div>
+										<div class="band-row">
+											<div class="l">130,001 – 260,000</div>
+											<div class="r">28%</div>
+										</div>
+										<div class="band-row hi">
+											<div class="l">260,001 +</div>
+											<div class="r">40%</div>
+										</div>
+									</div>
+
+									<div
+										style="margin-top: 12px; padding: 10px 12px; background: var(--warning-soft); border-radius: 8px; font-size: 11.5px; display: flex; gap: 8px; align-items: flex-start;"
+									>
+										<span
+											data-icon="alert-triangle"
+											data-size="13"
+											style="color: var(--warning); margin-top: 1px;"
+										></span>
+										<span
+											><span style="color: var(--fg);">gy.v2026.2 staged</span>
+											— NIS rate to 6.0/6.0 effective
+											<span class="mono">2026-10-01</span>.</span
+										>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Page footer / audit -->
+					<div class="page-foot">
+						<span
+							>Last computation:
+							<span class="mono">2026-09-27 14:02:18 GYT</span>
+							by system · checksum <span class="mono">8f2a · 1c4d</span></span
+						>
+						<span class="mono">Audit ledger sealed · ledger#2026-Q3-218</span>
+					</div>
+				</div>
+			</main>
+		</div>
+
+		<script src="../js/heimdall.js"></script>
+		<script src="../js/shell.js"></script>
+		<script>
+		"use strict";
+		// Country switcher (visual only)
+		const COUNTRY_LABEL = {
+			GY: {
+				name: "Guyana",
+				cc: "GY",
+				cur: "GYD",
+				emp: 728,
+				profile: "gy.v2026.1",
+				eff: "2025-07-01",
+				status: "ready",
+			},
+			TT: {
+				name: "Trinidad & Tobago",
+				cc: "TT",
+				cur: "TTD",
+				emp: 312,
+				profile: "tt.v2026.1",
+				eff: "2026-01-01",
+				status: "action",
+			},
+			BB: {
+				name: "Barbados",
+				cc: "BB",
+				cur: "BBD",
+				emp: 88,
+				profile: "bb.v2026.1",
+				eff: "2025-09-01",
+				status: "sealed",
+			},
+			JM: {
+				name: "Jamaica",
+				cc: "JM",
+				cur: "JMD",
+				emp: 96,
+				profile: "jm.v2026.1",
+				eff: "2026-04-01",
+				status: "action",
+			},
+			US: {
+				name: "United States",
+				cc: "US",
+				cur: "USD",
+				emp: 28,
+				profile: "us.v2026.1",
+				eff: "2026-01-01",
+				status: "sealed",
+			},
+			CA: {
+				name: "Canada",
+				cc: "CA",
+				cur: "CAD",
+				emp: 18,
+				profile: "ca.v2026.1",
+				eff: "2026-01-01",
+				status: "queued",
+			},
+			GB: {
+				name: "United Kingdom",
+				cc: "GB",
+				cur: "GBP",
+				emp: 14,
+				profile: "gb.v2026.1",
+				eff: "2026-04-06",
+				status: "queued",
+			},
+		};
+		document.querySelectorAll("#ccStrip button").forEach((b) => {
+			b.addEventListener("click", () => {
+				document
+					.querySelectorAll("#ccStrip button")
+					.forEach((x) => x.classList.toggle("active", x === b));
+				const cc = b.dataset.cc;
+				const d = COUNTRY_LABEL[cc];
+				if (!d) {
+					return;
+				}
+				const mark = document.querySelector(".runbar .country-mark");
+				mark.innerHTML = window.flagSvg(cc);
+				mark.querySelector("svg").setAttribute("width", "30");
+				mark.querySelector("svg").setAttribute("height", "20");
+				document.querySelector(".runbar h2").innerHTML =
+					`${d.name} · September 2026`;
+				document.querySelector(".runbar .sub").innerHTML = `
+																																																																																																												          <span class="mono">${d.cur}</span><span class="sep">·</span>
+																																																																																																												          <span>${d.emp} employees</span><span class="sep">·</span>
+																																																																																																												          <span>Profile <span class="mono" style="color: var(--fg-2);">${d.profile}</span></span><span class="sep">·</span>
+																																																																																																												          <span>Effective <span class="mono" style="color: var(--fg-2);">${d.eff}</span></span>
+																																																																																																												        `;
+			});
+		});
+		</script>
+	</body>
+</html>

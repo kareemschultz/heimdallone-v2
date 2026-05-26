@@ -1,0 +1,1422 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Overview · Heimdallone</title>
+		<link rel="stylesheet" href="../styles/heimdall.css">
+		<style>
+		/* ============= Dashboard-specific ============= */
+
+		/* Layout variants */
+		.dash[data-layout="balanced"] .layout-grid {
+			display: grid;
+			grid-template-columns: repeat(12, 1fr);
+			gap: 14px;
+		}
+		.dash[data-layout="balanced"] .w-payroll {
+			grid-column: span 8;
+		}
+		.dash[data-layout="balanced"] .w-alerts {
+			grid-column: span 4;
+		}
+		.dash[data-layout="balanced"] .w-attend {
+			grid-column: span 4;
+		}
+		.dash[data-layout="balanced"] .w-approvals {
+			grid-column: span 4;
+		}
+		.dash[data-layout="balanced"] .w-activity {
+			grid-column: span 4;
+		}
+		.dash[data-layout="balanced"] .w-headcount {
+			grid-column: span 6;
+		}
+		.dash[data-layout="balanced"] .w-cost {
+			grid-column: span 6;
+		}
+
+		.dash[data-layout="command"] .layout-grid {
+			display: grid;
+			grid-template-columns: repeat(12, 1fr);
+			gap: 14px;
+		}
+		.dash[data-layout="command"] .w-payroll {
+			grid-column: span 12;
+		}
+		.dash[data-layout="command"] .w-attend {
+			grid-column: span 7;
+		}
+		.dash[data-layout="command"] .w-alerts {
+			grid-row: span 2;
+			grid-column: span 5;
+		}
+		.dash[data-layout="command"] .w-approvals {
+			grid-column: span 7;
+		}
+		.dash[data-layout="command"] .w-activity {
+			grid-column: span 5;
+		}
+		.dash[data-layout="command"] .w-headcount {
+			grid-column: span 7;
+		}
+		.dash[data-layout="command"] .w-cost {
+			grid-column: span 12;
+		}
+		.dash[data-layout="command"] .left-col,
+		.dash[data-layout="command"] .right-col {
+			display: none;
+		}
+
+		.dash[data-layout="briefing"] .layout-grid {
+			display: grid;
+			grid-template-columns: repeat(12, 1fr);
+			gap: 14px;
+		}
+		.dash[data-layout="briefing"] .briefing-hero {
+			grid-column: span 12;
+		}
+		.dash[data-layout="briefing"] .w-payroll,
+		.dash[data-layout="briefing"] .w-attend,
+		.dash[data-layout="briefing"] .w-approvals,
+		.dash[data-layout="briefing"] .w-alerts,
+		.dash[data-layout="briefing"] .w-activity,
+		.dash[data-layout="briefing"] .w-headcount,
+		.dash[data-layout="briefing"] .w-cost {
+			grid-column: span 4;
+		}
+
+		.briefing-hero {
+			position: relative;
+			display: grid;
+			grid-template-columns: 1.2fr 1fr;
+			gap: 32px;
+			align-items: center;
+			padding: 28px 32px;
+			overflow: hidden;
+			background: linear-gradient(135deg, var(--bg-1), var(--bg-2));
+			border: 1px solid var(--line);
+			border-radius: 18px;
+		}
+		.briefing-hero::after {
+			position: absolute;
+			top: -100px;
+			right: -100px;
+			width: 400px;
+			height: 400px;
+			pointer-events: none;
+			content: "";
+			background: radial-gradient(
+				closest-side,
+				var(--accent-soft),
+				transparent 70%
+			);
+		}
+		.dash:not([data-layout="briefing"]) .briefing-hero {
+			display: none;
+		}
+		.dash[data-layout="briefing"] .kpi-row {
+			display: none;
+		}
+		.left-col[data-only],
+		.right-col[data-only] {
+			display: none;
+		}
+
+		/* KPI row */
+		.kpi-row {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 14px;
+			margin-bottom: 14px;
+		}
+		.kpi {
+			position: relative;
+			padding: 18px;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.kpi-head {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			margin-bottom: 14px;
+		}
+		.kpi-label {
+			font-size: 11.5px;
+			font-weight: 500;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.04em;
+		}
+		.kpi-icon {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 26px;
+			height: 26px;
+			color: var(--fg-3);
+			background: var(--bg-3);
+			border-radius: 8px;
+		}
+		.kpi-value {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 30px;
+			font-weight: 600;
+			line-height: 1;
+			color: var(--fg);
+			letter-spacing: -0.025em;
+		}
+		.kpi-meta {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			margin-top: 10px;
+			font-size: 12px;
+		}
+		.kpi-spark {
+			position: absolute;
+			right: 14px;
+			bottom: 14px;
+			opacity: 0.7;
+		}
+
+		/* Generic widget */
+		.widget {
+			display: flex;
+			flex-direction: column;
+			min-height: 280px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.widget-head {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 14px 18px;
+			border-bottom: 1px solid var(--line);
+		}
+		.widget-title {
+			font-size: 13.5px;
+			font-weight: 600;
+			letter-spacing: -0.005em;
+		}
+		.widget-body {
+			display: flex;
+			flex: 1;
+			flex-direction: column;
+			padding: 14px 18px 18px;
+		}
+		.widget-foot {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 10px 18px;
+			font-size: 12px;
+			color: var(--fg-3);
+			border-top: 1px solid var(--line);
+		}
+
+		/* Payroll readiness widget */
+		.payrun-row {
+			display: grid;
+			grid-template-columns: 32px 130px 1fr 100px 90px 80px;
+			gap: 14px;
+			align-items: center;
+			padding: 14px 0;
+			font-size: 13px;
+			border-bottom: 1px solid var(--line);
+		}
+		.payrun-row:last-child {
+			border-bottom: 0;
+		}
+		.payrun-row:hover {
+			padding-right: 18px;
+			padding-left: 18px;
+			margin: 0 -18px;
+			background: var(--bg-2);
+		}
+		.payrun-row .cc {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 12px;
+		}
+		.payrun-row .amount {
+			font-family: "JetBrains Mono", monospace;
+			text-align: right;
+		}
+		.payrun-row .progress-cell {
+			display: flex;
+			flex-direction: column;
+			gap: 4px;
+		}
+		.payrun-row .progress-cell .pct {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 11px;
+			color: var(--fg-3);
+		}
+		.payrun-row .country-name {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+
+		/* Attendance pulse */
+		.attend-grid {
+			display: grid;
+			grid-template-columns: repeat(24, 1fr);
+			gap: 3px;
+			margin-top: 12px;
+		}
+		.attend-cell {
+			aspect-ratio: 1;
+			background: var(--bg-3);
+			border-radius: 2px;
+		}
+		.attend-cell.l1 {
+			background: color-mix(in oklab, var(--accent) 30%, var(--bg-3));
+		}
+		.attend-cell.l2 {
+			background: color-mix(in oklab, var(--accent) 55%, var(--bg-3));
+		}
+		.attend-cell.l3 {
+			background: color-mix(in oklab, var(--accent) 80%, var(--bg-3));
+		}
+		.attend-cell.l4 {
+			background: var(--accent);
+		}
+		.attend-cell.warn {
+			background: color-mix(in oklab, var(--warning) 55%, var(--bg-3));
+		}
+		.attend-cell.danger {
+			background: color-mix(in oklab, var(--danger) 70%, var(--bg-3));
+		}
+
+		.legend {
+			display: flex;
+			gap: 6px;
+			align-items: center;
+			margin-top: 12px;
+			font-size: 11px;
+			color: var(--fg-3);
+		}
+		.legend-swatch {
+			width: 10px;
+			height: 10px;
+			border-radius: 2px;
+		}
+
+		/* Approval queue cards */
+		.approval-item {
+			display: grid;
+			grid-template-columns: 28px 1fr auto;
+			gap: 12px;
+			align-items: center;
+			padding: 12px 0;
+			font-size: 13px;
+			border-bottom: 1px solid var(--line);
+		}
+		.approval-item:last-child {
+			border-bottom: 0;
+		}
+		.approval-item .avatar-sm {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 28px;
+			height: 28px;
+			font-size: 10.5px;
+			font-weight: 600;
+			color: var(--fg-2);
+			background: var(--bg-3);
+			border-radius: 50%;
+		}
+		.approval-item .meta {
+			margin-top: 2px;
+			font-size: 11.5px;
+			color: var(--fg-3);
+		}
+		.approval-item .actions {
+			display: flex;
+			gap: 4px;
+		}
+		.approval-item button {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 26px;
+			height: 26px;
+			color: var(--fg-3);
+			cursor: pointer;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 6px;
+		}
+		.approval-item button.approve {
+			color: var(--success);
+		}
+		.approval-item button.approve:hover {
+			background: var(--success-soft);
+			border-color: var(--success);
+		}
+		.approval-item button.deny:hover {
+			color: var(--danger);
+			background: var(--danger-soft);
+			border-color: var(--danger);
+		}
+
+		/* Alerts */
+		.alert-item {
+			display: grid;
+			grid-template-columns: 24px 1fr;
+			gap: 12px;
+			padding: 12px 0;
+			border-bottom: 1px solid var(--line);
+		}
+		.alert-item:last-child {
+			border-bottom: 0;
+		}
+		.alert-icon {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 24px;
+			height: 24px;
+			border-radius: 8px;
+		}
+		.alert-icon.warn {
+			color: var(--warning);
+			background: var(--warning-soft);
+		}
+		.alert-icon.danger {
+			color: var(--danger);
+			background: var(--danger-soft);
+		}
+		.alert-icon.info {
+			color: var(--info);
+			background: var(--info-soft);
+		}
+		.alert-title {
+			font-size: 13px;
+			font-weight: 500;
+		}
+		.alert-desc {
+			margin-top: 2px;
+			font-size: 12px;
+			line-height: 1.4;
+			color: var(--fg-3);
+		}
+		.alert-meta {
+			margin-top: 4px;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 11px;
+			color: var(--fg-4);
+		}
+
+		/* Activity timeline */
+		.timeline {
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			gap: 0;
+		}
+		.timeline::before {
+			position: absolute;
+			top: 8px;
+			bottom: 8px;
+			left: 11px;
+			width: 1px;
+			content: "";
+			background: var(--line);
+		}
+		.tl-item {
+			position: relative;
+			z-index: 1;
+			display: grid;
+			grid-template-columns: 24px 1fr auto;
+			gap: 12px;
+			align-items: center;
+			padding: 8px 0;
+			font-size: 12.5px;
+		}
+		.tl-dot {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 22px;
+			height: 22px;
+			color: var(--fg-3);
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 50%;
+		}
+		.tl-dot.accent {
+			color: var(--accent);
+			border-color: var(--accent);
+		}
+		.tl-time {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 11px;
+			color: var(--fg-4);
+		}
+		.tl-actor {
+			font-weight: 500;
+			color: var(--fg);
+		}
+
+		/* Headcount chart */
+		.chart {
+			display: flex;
+			gap: 4px;
+			align-items: flex-end;
+			height: 100px;
+			margin-top: auto;
+		}
+		.bar {
+			position: relative;
+			flex: 1;
+			background: var(--bg-3);
+			border-radius: 3px 3px 0 0;
+			transition: background 120ms ease;
+		}
+		.bar.fill {
+			background: var(--accent);
+		}
+		.bar.fill-soft {
+			background: color-mix(in oklab, var(--accent) 35%, var(--bg-3));
+		}
+		.chart-axis {
+			display: flex;
+			gap: 4px;
+			margin-top: 6px;
+		}
+		.chart-axis div {
+			flex: 1;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 9.5px;
+			color: var(--fg-4);
+			text-align: center;
+		}
+
+		/* Cost area */
+		.cost-area {
+			position: relative;
+			height: 120px;
+			margin-top: auto;
+		}
+		.cost-area svg {
+			display: block;
+			width: 100%;
+			height: 100%;
+		}
+
+		/* Variant switcher (in page) */
+		.layout-pills {
+			display: inline-flex;
+			gap: 2px;
+			padding: 3px;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+		}
+		.layout-pills button {
+			height: 26px;
+			padding: 0 12px;
+			font-family: inherit;
+			font-size: 12px;
+			color: var(--fg-3);
+			cursor: pointer;
+			background: transparent;
+			border: 0;
+			border-radius: 99px;
+		}
+		.layout-pills button.active {
+			color: var(--fg);
+			background: var(--bg-4);
+		}
+		.layout-pills button:hover {
+			color: var(--fg);
+		}
+
+		/* Date range selector */
+		.date-pill {
+			display: inline-flex;
+			gap: 6px;
+			align-items: center;
+			height: 32px;
+			padding: 0 12px;
+			font-size: 12.5px;
+			color: var(--fg-2);
+			cursor: pointer;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+		}
+		.date-pill:hover {
+			background: var(--bg-3);
+		}
+		</style>
+	</head>
+	<body data-current="overview" data-screen-label="04 Executive Dashboard">
+		<div class="app">
+			<aside class="sidebar" data-app-shell-sidebar></aside>
+
+			<main>
+				<header class="topbar" data-app-shell-topbar></header>
+
+				<div class="page dash" data-layout="balanced">
+					<!-- Page header -->
+					<div class="page-header">
+						<div>
+							<div class="crumbs">
+								<span>Atlas Shipping</span><span class="sep">/</span
+								><span>Overview</span>
+							</div>
+							<h1 class="page-title">Good afternoon, Maya.</h1>
+							<p class="page-sub">
+								Tuesday, 27 September 2026 · 14:42 GYT · 1,196 of 1,284 on duty
+							</p>
+						</div>
+						<div style="display: flex; gap: 8px; align-items: center;">
+							<button class="date-pill">
+								<span data-icon="calendar" data-size="13"></span>
+								Last 30 days
+								<span data-icon="chevron-down" data-size="12"></span>
+							</button>
+							<div class="layout-pills" id="layoutPills">
+								<button class="active" data-layout="balanced">Balanced</button>
+								<button data-layout="command">Command</button>
+								<button data-layout="briefing">Briefing</button>
+							</div>
+							<button class="btn btn-primary">
+								<span data-icon="plus" data-size="13"></span>
+								Quick action
+							</button>
+						</div>
+					</div>
+
+					<!-- KPI row (balanced + command variants) -->
+					<div class="kpi-row">
+						<div class="kpi">
+							<div class="kpi-head">
+								<span class="kpi-label">Headcount</span>
+								<span class="kpi-icon"
+									><span data-icon="users" data-size="14"></span></span
+								>
+							</div>
+							<div class="kpi-value tabular">1,284</div>
+							<div class="kpi-meta">
+								<span class="stat-delta up"
+									><span data-icon="arrow-up" data-size="11"></span>
+									+24</span
+								>
+								<span class="dim">this quarter</span>
+							</div>
+						</div>
+						<div class="kpi">
+							<div class="kpi-head">
+								<span class="kpi-label">On duty today</span>
+								<span class="kpi-icon"
+									><span data-icon="clock" data-size="14"></span></span
+								>
+							</div>
+							<div class="kpi-value tabular">
+								1,196
+								<span style="font-size: 16px; color: var(--fg-3);"
+									>/ 1,284</span
+								>
+							</div>
+							<div class="kpi-meta">
+								<span
+									class="badge badge-success"
+									style="height: 18px; padding: 0 6px; font-size: 10.5px;"
+									>93.1%</span
+								>
+								<span class="dim">28 late · 14 absent · 46 leave</span>
+							</div>
+						</div>
+						<div class="kpi">
+							<div class="kpi-head">
+								<span class="kpi-label">Open approvals</span>
+								<span class="kpi-icon"
+									><span data-icon="check" data-size="14"></span></span
+								>
+							</div>
+							<div class="kpi-value tabular">12</div>
+							<div class="kpi-meta">
+								<span style="color: var(--warning);">4 leave</span>
+								<span class="dim">· 5 OT · 3 contract</span>
+							</div>
+						</div>
+						<div class="kpi">
+							<div class="kpi-head">
+								<span class="kpi-label">Compliance score</span>
+								<span class="kpi-icon"
+									><span data-icon="shield-check" data-size="14"></span></span
+								>
+							</div>
+							<div class="kpi-value tabular" style="color: var(--success);">
+								98<span style="font-size: 16px; color: var(--fg-3);">/100</span>
+							</div>
+							<div class="kpi-meta">
+								<span class="stat-delta up"
+									><span data-icon="arrow-up" data-size="11"></span>
+									+2</span
+								>
+								<span class="dim">vs last month</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- BRIEFING variant hero -->
+					<div class="layout-grid">
+						<div class="briefing-hero">
+							<div>
+								<div class="eyebrow">Today's briefing</div>
+								<h2
+									style="font-size: 36px; line-height: 1.05; margin-top: 8px; max-width: 580px; letter-spacing: -0.03em;"
+								>
+									Two pay runs ready to commit. Three compliance items to clear
+									before Friday.
+								</h2>
+								<p
+									style="margin-top: 16px; max-width: 540px; color: var(--fg-2); font-size: 15px;"
+								>
+									GY September is at 96% readiness. TT August has one
+									outstanding NIS reconciliation. Attendance for the week is on
+									track at 93.1% — above your 90% threshold.
+								</p>
+								<div style="display: flex; gap: 8px; margin-top: 24px;">
+									<a href="payroll.html" class="btn btn-primary"
+										>Open payroll
+										<span data-icon="arrow-right" data-size="13"></span></a
+									>
+									<button class="btn btn-outline">Review compliance</button>
+								</div>
+							</div>
+							<div
+								style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; position: relative; z-index: 1;"
+							>
+								<div class="card card-pad" style="background: var(--bg-2);">
+									<div class="tiny">Headcount</div>
+									<div class="stat-value" style="margin-top: 6px;">1,284</div>
+									<div class="stat-delta up" style="margin-top: 6px;">
+										<span data-icon="arrow-up" data-size="11"></span>
+										+24 QoQ
+									</div>
+								</div>
+								<div class="card card-pad" style="background: var(--bg-2);">
+									<div class="tiny">Pay-run total</div>
+									<div
+										class="stat-value"
+										style="margin-top: 6px; color: var(--accent);"
+									>
+										USD 1.84M
+									</div>
+									<div class="dim" style="margin-top: 6px; font-size: 11.5px;">
+										Across 7 countries
+									</div>
+								</div>
+								<div class="card card-pad" style="background: var(--bg-2);">
+									<div class="tiny">Leave liability</div>
+									<div class="stat-value" style="margin-top: 6px;">
+										USD 412k
+									</div>
+									<div class="dim" style="margin-top: 6px; font-size: 11.5px;">
+										~ 8.4 days/employee
+									</div>
+								</div>
+								<div class="card card-pad" style="background: var(--bg-2);">
+									<div class="tiny">Turnover risk</div>
+									<div
+										class="stat-value"
+										style="margin-top: 6px; color: var(--warning);"
+									>
+										Low
+									</div>
+									<div class="dim" style="margin-top: 6px; font-size: 11.5px;">
+										3 watchlist · 0 critical
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Command variant uses left-col / right-col wrappers -->
+						<div class="left-col" data-only="command">
+							<!-- duplicated content for command layout -->
+						</div>
+
+						<!-- ----- Payroll readiness ----- -->
+						<section class="widget w-payroll">
+							<div class="widget-head">
+								<div style="display: flex; align-items: center; gap: 10px;">
+									<span class="widget-title">Payroll readiness</span>
+									<span class="badge badge-accent"
+										><span class="badge-dot"></span>2 ready</span
+									>
+								</div>
+								<a href="payroll.html" class="btn btn-ghost btn-sm"
+									>Open
+									<span data-icon="arrow-up-right" data-size="11"></span></a
+								>
+							</div>
+							<div class="widget-body" style="padding: 4px 18px 6px;">
+								<div class="payrun-row">
+									<span data-flag="GY"></span>
+									<div class="country-name">
+										<span>Guyana</span><span class="dim">GYD</span>
+									</div>
+									<div class="progress-cell">
+										<div class="pbar">
+											<div class="pbar-fill" style="width: 96%;"></div>
+										</div>
+										<span class="pct">96% · 12 of 12 checks</span>
+									</div>
+									<span class="amount tabular">184,720,400</span>
+									<span class="badge badge-accent" style="justify-self: end;"
+										><span class="badge-dot"></span>Ready</span
+									>
+									<button class="btn btn-sm btn-outline">Approve</button>
+								</div>
+								<div class="payrun-row">
+									<span data-flag="TT"></span>
+									<div class="country-name">
+										<span>Trinidad &amp; Tobago</span
+										><span class="dim">TTD</span>
+									</div>
+									<div class="progress-cell">
+										<div class="pbar">
+											<div class="pbar-fill warning" style="width: 78%;"></div>
+										</div>
+										<span class="pct">78% · NIS reconciliation pending</span>
+									</div>
+									<span class="amount tabular">2,140,820</span>
+									<span class="badge badge-warning" style="justify-self: end;"
+										><span class="badge-dot"></span>Review</span
+									>
+									<button class="btn btn-sm btn-outline">Open</button>
+								</div>
+								<div class="payrun-row">
+									<span data-flag="BB"></span>
+									<div class="country-name">
+										<span>Barbados</span><span class="dim">BBD</span>
+									</div>
+									<div class="progress-cell">
+										<div class="pbar">
+											<div class="pbar-fill" style="width: 100%;"></div>
+										</div>
+										<span class="pct">100% · Approved 14:08</span>
+									</div>
+									<span class="amount tabular">412,600</span>
+									<span class="badge badge-success" style="justify-self: end;"
+										><span class="badge-dot"></span>Sealed</span
+									>
+									<button class="btn btn-sm btn-ghost">View</button>
+								</div>
+								<div class="payrun-row">
+									<span data-flag="JM"></span>
+									<div class="country-name">
+										<span>Jamaica</span><span class="dim">JMD</span>
+									</div>
+									<div class="progress-cell">
+										<div class="pbar">
+											<div class="pbar-fill" style="width: 84%;"></div>
+										</div>
+										<span class="pct">84% · 2 employees missing TRN</span>
+									</div>
+									<span class="amount tabular">38,420,000</span>
+									<span class="badge badge-warning" style="justify-self: end;"
+										><span class="badge-dot"></span>Action</span
+									>
+									<button class="btn btn-sm btn-outline">Resolve</button>
+								</div>
+								<div class="payrun-row">
+									<span data-flag="US"></span>
+									<div class="country-name">
+										<span>United States</span><span class="dim">USD</span>
+									</div>
+									<div class="progress-cell">
+										<div class="pbar">
+											<div class="pbar-fill" style="width: 100%;"></div>
+										</div>
+										<span class="pct">100% · Committed Mon 14:22</span>
+									</div>
+									<span class="amount tabular">186,200</span>
+									<span class="badge badge-success" style="justify-self: end;"
+										><span class="badge-dot"></span>Sealed</span
+									>
+									<button class="btn btn-sm btn-ghost">View</button>
+								</div>
+							</div>
+							<div class="widget-foot">
+								<span
+									>Next commit window:
+									<span class="mono" style="color: var(--fg-2);"
+										>Fri 29 Sep · 09:00 GYT</span
+									></span
+								>
+								<span class="mono">Total · USD 1.84M equiv.</span>
+							</div>
+						</section>
+
+						<!-- ----- Compliance alerts ----- -->
+						<section class="widget w-alerts">
+							<div class="widget-head">
+								<span class="widget-title">Compliance &amp; risk</span>
+								<span class="badge"
+									><span
+										class="badge-dot"
+										style="background: var(--warning);"
+									></span>3 open</span
+								>
+							</div>
+							<div class="widget-body" style="padding-top: 4px;">
+								<div class="alert-item">
+									<div class="alert-icon warn">
+										<span data-icon="alert-triangle" data-size="13"></span>
+									</div>
+									<div>
+										<div class="alert-title">NIS rate change · Guyana</div>
+										<div class="alert-desc">
+											New employer rate effective 1 Oct. Profile
+											<span class="mono">v2026.2</span>
+											staged for review.
+										</div>
+										<div class="alert-meta">due in 3 days · finance@</div>
+									</div>
+								</div>
+								<div class="alert-item">
+									<div class="alert-icon danger">
+										<span data-icon="alert-triangle" data-size="13"></span>
+									</div>
+									<div>
+										<div class="alert-title">
+											2 employees missing TRN · Jamaica
+										</div>
+										<div class="alert-desc">
+											Blocks payroll commit. Last reminder sent Mon.
+										</div>
+										<div class="alert-meta">blocking · hr@</div>
+									</div>
+								</div>
+								<div class="alert-item">
+									<div class="alert-icon info">
+										<span data-icon="info" data-size="13"></span>
+									</div>
+									<div>
+										<div class="alert-title">
+											14 contracts renew this quarter
+										</div>
+										<div class="alert-desc">
+											5 in GY, 6 in TT, 3 in BB. Renewal pack ready.
+										</div>
+										<div class="alert-meta">advance notice · hr@</div>
+									</div>
+								</div>
+							</div>
+							<div class="widget-foot">
+								<a href="#" style="color: var(--accent);"
+									>All compliance items
+									<span data-icon="arrow-right" data-size="11"></span></a
+								>
+							</div>
+						</section>
+
+						<!-- ----- Attendance pulse ----- -->
+						<section class="widget w-attend">
+							<div class="widget-head">
+								<span class="widget-title">Attendance pulse · today</span>
+								<div class="segmented" style="padding: 2px;">
+									<button
+										class="active"
+										style="height: 22px; padding: 0 8px; font-size: 11px;"
+									>
+										Day
+									</button>
+									<button
+										style="height: 22px; padding: 0 8px; font-size: 11px;"
+									>
+										Week
+									</button>
+								</div>
+							</div>
+							<div class="widget-body">
+								<div
+									style="display: flex; align-items: baseline; justify-content: space-between;"
+								>
+									<div>
+										<div class="stat-value">93.1%</div>
+										<div class="kpi-meta">
+											<span class="stat-delta up"
+												><span data-icon="arrow-up" data-size="10"></span>
+												1.4pp</span
+											><span class="dim">vs 7-day</span>
+										</div>
+									</div>
+									<div style="text-align: right; font-size: 11.5px;">
+										<div style="color: var(--fg-3);">1,196 / 1,284</div>
+										<div style="color: var(--warning); margin-top: 4px;">
+											28 late · 14 absent
+										</div>
+									</div>
+								</div>
+								<div class="attend-grid" id="attendGrid"></div>
+								<div class="legend">
+									<span>00:00</span>
+									<div
+										style="flex: 1; display: flex; gap: 3px; justify-content: center;"
+									>
+										<div class="legend-swatch attend-cell"></div>
+										<div class="legend-swatch attend-cell l1"></div>
+										<div class="legend-swatch attend-cell l2"></div>
+										<div class="legend-swatch attend-cell l3"></div>
+										<div class="legend-swatch attend-cell l4"></div>
+									</div>
+									<span>23:00</span>
+								</div>
+							</div>
+						</section>
+
+						<!-- ----- Approval queue ----- -->
+						<section class="widget w-approvals">
+							<div class="widget-head">
+								<span class="widget-title">Your approval queue</span>
+								<span class="badge badge-accent">12</span>
+							</div>
+							<div class="widget-body" style="padding-top: 4px;">
+								<div class="approval-item">
+									<div class="avatar-sm">RG</div>
+									<div>
+										<div>
+											<span style="font-weight: 500;">Rohan Gopaul</span>
+											· Leave · 4 days
+										</div>
+										<div class="meta">Annual · 2–5 Oct · Mahaica yard</div>
+									</div>
+									<div class="actions">
+										<button class="deny" title="Deny">
+											<span data-icon="x" data-size="12"></span>
+										</button>
+										<button class="approve" title="Approve">
+											<span data-icon="check" data-size="12"></span>
+										</button>
+									</div>
+								</div>
+								<div class="approval-item">
+									<div class="avatar-sm">AK</div>
+									<div>
+										<div>
+											<span style="font-weight: 500;">Aisha Khan</span>
+											· Overtime · 6.5h
+										</div>
+										<div class="meta">Engineering · Mon 26 Sep</div>
+									</div>
+									<div class="actions">
+										<button class="deny">
+											<span data-icon="x" data-size="12"></span>
+										</button>
+										<button class="approve">
+											<span data-icon="check" data-size="12"></span>
+										</button>
+									</div>
+								</div>
+								<div class="approval-item">
+									<div class="avatar-sm">JS</div>
+									<div>
+										<div>
+											<span style="font-weight: 500;">Jaden Sealey</span>
+											· Contract renewal
+										</div>
+										<div class="meta">Operations · expires 14 Oct</div>
+									</div>
+									<div class="actions">
+										<button class="deny">
+											<span data-icon="x" data-size="12"></span>
+										</button>
+										<button class="approve">
+											<span data-icon="check" data-size="12"></span>
+										</button>
+									</div>
+								</div>
+								<div class="approval-item">
+									<div class="avatar-sm">SP</div>
+									<div>
+										<div>
+											<span style="font-weight: 500;">Shanice Powell</span>
+											· Leave · 2 days
+										</div>
+										<div class="meta">Sick · medical attached</div>
+									</div>
+									<div class="actions">
+										<button class="deny">
+											<span data-icon="x" data-size="12"></span>
+										</button>
+										<button class="approve">
+											<span data-icon="check" data-size="12"></span>
+										</button>
+									</div>
+								</div>
+							</div>
+							<div class="widget-foot">
+								<a href="#" style="color: var(--accent);"
+									>Open queue
+									<span data-icon="arrow-right" data-size="11"></span></a
+								>
+								<span class="mono">avg approval · 2h 14m</span>
+							</div>
+						</section>
+
+						<!-- ----- Activity ----- -->
+						<section class="widget w-activity" data-tab-scope>
+							<div class="widget-head">
+								<div class="tabs tabs-pill" data-tabs="activity">
+									<button class="tab" data-tab="all" aria-selected="true">
+										All <span class="count">14</span>
+									</button>
+									<button class="tab" data-tab="you">You</button>
+									<button class="tab" data-tab="approvals">
+										Approvals <span class="count">3</span>
+									</button>
+									<button class="tab" data-tab="system">System</button>
+								</div>
+								<button
+									class="icon-btn"
+									title="More"
+									style="width: 28px; height: 28px;"
+								>
+									<span data-icon="more-horizontal" data-size="14"></span>
+								</button>
+							</div>
+							<div class="widget-body" style="padding-top: 4px;">
+								<div class="tab-panel active" data-tab-panel="all">
+									<div class="timeline">
+										<div class="tl-item">
+											<div class="tl-dot accent">
+												<span data-icon="check" data-size="11"></span>
+											</div>
+											<div>
+												<span class="tl-actor">You</span>
+												approved BB pay run · BBD 412,600
+											</div>
+											<div class="tl-time">14:08</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="file-text" data-size="11"></span>
+											</div>
+											<div>
+												<span class="tl-actor">Sasha B.</span>
+												uploaded TRN docs for 1 employee
+											</div>
+											<div class="tl-time">13:42</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="alert-triangle" data-size="11"></span>
+											</div>
+											<div>
+												<span class="tl-actor">System</span>
+												flagged NIS rate change · GY
+											</div>
+											<div class="tl-time">13:30</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="users" data-size="11"></span>
+											</div>
+											<div>
+												<span class="tl-actor">Lia Roberts</span>
+												joined Engineering · TT
+											</div>
+											<div class="tl-time">11:18</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="database" data-size="11"></span>
+											</div>
+											<div>
+												<span class="tl-actor">HR sync</span>
+												ingested 1,284 records from Horilla
+											</div>
+											<div class="tl-time">06:00</div>
+										</div>
+									</div>
+								</div>
+								<div class="tab-panel" data-tab-panel="you">
+									<div class="timeline">
+										<div class="tl-item">
+											<div class="tl-dot accent">
+												<span data-icon="check" data-size="11"></span>
+											</div>
+											<div>Approved BB pay run · BBD 412,600</div>
+											<div class="tl-time">14:08</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="file-text" data-size="11"></span>
+											</div>
+											<div>Commented on Aisha Khan's OT request</div>
+											<div class="tl-time">11:24</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="check" data-size="11"></span>
+											</div>
+											<div>Approved Mahaica yard leave roster</div>
+											<div class="tl-time">Mon 17:02</div>
+										</div>
+									</div>
+								</div>
+								<div class="tab-panel" data-tab-panel="approvals">
+									<div class="timeline">
+										<div class="tl-item">
+											<div class="tl-dot accent">
+												<span data-icon="check" data-size="11"></span>
+											</div>
+											<div>
+												<span class="tl-actor">You</span>
+												approved BB pay run
+											</div>
+											<div class="tl-time">14:08</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="user" data-size="11"></span>
+											</div>
+											<div>
+												<span class="tl-actor">Sasha B.</span>
+												reviewed GY pay run · finance
+											</div>
+											<div class="tl-time">14:31</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="user" data-size="11"></span>
+											</div>
+											<div>
+												<span class="tl-actor">Lia Roberts</span>
+												reviewed GY pay run · HR
+											</div>
+											<div class="tl-time">14:18</div>
+										</div>
+									</div>
+								</div>
+								<div class="tab-panel" data-tab-panel="system">
+									<div class="timeline">
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="alert-triangle" data-size="11"></span>
+											</div>
+											<div>NIS rate change detected · GY</div>
+											<div class="tl-time">13:30</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="database" data-size="11"></span>
+											</div>
+											<div>HR sync ingested 1,284 records</div>
+											<div class="tl-time">06:00</div>
+										</div>
+										<div class="tl-item">
+											<div class="tl-dot">
+												<span data-icon="shield-check" data-size="11"></span>
+											</div>
+											<div>Audit ledger sealed · ledger#218</div>
+											<div class="tl-time">Mon 23:00</div>
+										</div>
+									</div>
+								</div>
+							</div>
+							<div class="widget-foot">
+								<a href="#" style="color: var(--accent);"
+									>Audit ledger
+									<span data-icon="arrow-right" data-size="11"></span></a
+								>
+								<span class="mono">sealed · 14:42</span>
+							</div>
+						</section>
+
+						<!-- ----- Headcount trend ----- -->
+						<section class="widget w-headcount">
+							<div class="widget-head">
+								<span class="widget-title">Headcount trend</span>
+								<div class="segmented">
+									<button class="active">12m</button>
+									<button>YTD</button>
+									<button>All</button>
+								</div>
+							</div>
+							<div class="widget-body">
+								<div
+									style="display: flex; align-items: baseline; justify-content: space-between;"
+								>
+									<div>
+										<div class="stat-value">1,284</div>
+										<div class="kpi-meta">
+											<span class="stat-delta up"
+												><span data-icon="arrow-up" data-size="10"></span>
+												+9.8%</span
+											><span class="dim">YoY · 116 net</span>
+										</div>
+									</div>
+									<div
+										style="text-align: right; font-size: 11.5px; color: var(--fg-3);"
+									>
+										<div>GY 728 · TT 312 · BB 88</div>
+										<div style="margin-top: 4px;">
+											JM 96 · US 28 · CA 18 · UK 14
+										</div>
+									</div>
+								</div>
+								<div class="chart" id="hcChart"></div>
+								<div class="chart-axis" id="hcAxis"></div>
+							</div>
+						</section>
+
+						<!-- ----- Payroll cost ----- -->
+						<section class="widget w-cost">
+							<div class="widget-head">
+								<span class="widget-title">Total payroll cost</span>
+								<div class="segmented">
+									<button>Gross</button>
+									<button class="active">Loaded</button>
+								</div>
+							</div>
+							<div class="widget-body">
+								<div
+									style="display: flex; align-items: baseline; justify-content: space-between;"
+								>
+									<div>
+										<div class="stat-value">USD 1.84M</div>
+										<div class="kpi-meta">
+											<span class="stat-delta up"
+												><span data-icon="arrow-up" data-size="10"></span>
+												+3.2%</span
+											><span class="dim">vs Aug</span>
+										</div>
+									</div>
+									<div
+										style="text-align: right; font-size: 11.5px; color: var(--fg-3);"
+									>
+										<div>Gross USD 1.62M</div>
+										<div>Employer contrib USD 218k</div>
+									</div>
+								</div>
+								<div class="cost-area">
+									<svg viewBox="0 0 400 120" preserveAspectRatio="none">
+										<defs>
+											<linearGradient id="costGrad" x1="0" x2="0" y1="0" y2="1">
+												<stop
+													offset="0%"
+													stop-color="var(--accent)"
+													stop-opacity="0.5"
+												/>
+												<stop
+													offset="100%"
+													stop-color="var(--accent)"
+													stop-opacity="0"
+												/>
+											</linearGradient>
+										</defs>
+										<path
+											d="M 0,90 L 33,80 L 66,82 L 99,72 L 132,70 L 165,68 L 198,58 L 231,62 L 264,50 L 297,52 L 330,42 L 363,38 L 396,32 L 400,32 L 400,120 L 0,120 Z"
+											fill="url(#costGrad)"
+										/>
+										<path
+											d="M 0,90 L 33,80 L 66,82 L 99,72 L 132,70 L 165,68 L 198,58 L 231,62 L 264,50 L 297,52 L 330,42 L 363,38 L 396,32"
+											fill="none"
+											stroke="var(--accent)"
+											stroke-width="1.5"
+											stroke-linejoin="round"
+											stroke-linecap="round"
+										/>
+									</svg>
+								</div>
+							</div>
+						</section>
+					</div>
+				</div>
+			</main>
+		</div>
+
+		<script src="../js/heimdall.js"></script>
+		<script src="../js/shell.js"></script>
+		<script>
+		"use strict";
+		// attendance grid
+		const grid = document.getElementById("attendGrid");
+		const pattern = [
+			0, 0, 0, 0, 0, 0, 1, 3, 4, 4, 4, 4, 3, 2, 4, 4, 4, 4, 3, 2, 1, 1, 0, 0,
+		]; // 24 hours
+		const days = 5;
+		for (let d = 0; d < days; d++) {
+			for (let h = 0; h < 24; h++) {
+				const lvl = pattern[h];
+				const cls = lvl === 0 ? "" : "l" + lvl;
+				// sprinkle anomalies
+				const anomaly =
+					d === 2 && h === 14 ? "warn" : d === 4 && h === 11 ? "danger" : "";
+				const el = document.createElement("div");
+				el.className = "attend-cell " + cls + " " + anomaly;
+				grid.appendChild(el);
+			}
+		}
+
+		// headcount chart
+		const months = [
+			"Oct",
+			"Nov",
+			"Dec",
+			"Jan",
+			"Feb",
+			"Mar",
+			"Apr",
+			"May",
+			"Jun",
+			"Jul",
+			"Aug",
+			"Sep",
+		];
+		const heights = [62, 65, 64, 70, 72, 70, 78, 82, 86, 88, 92, 100];
+		const chartEl = document.getElementById("hcChart");
+		const axisEl = document.getElementById("hcAxis");
+		heights.forEach((h, i) => {
+			const b = document.createElement("div");
+			b.className = "bar " + (i === heights.length - 1 ? "fill" : "fill-soft");
+			b.style.height = h + "%";
+			chartEl.appendChild(b);
+			const a = document.createElement("div");
+			a.textContent = months[i];
+			axisEl.appendChild(a);
+		});
+
+		// Layout switcher
+		const dash = document.querySelector(".dash");
+		function applyLayout(v) {
+			dash.dataset.layout = v;
+			document
+				.querySelectorAll("#layoutPills button")
+				.forEach((x) => x.classList.toggle("active", x.dataset.layout === v));
+		}
+		document.querySelectorAll("#layoutPills button").forEach((b) => {
+			b.addEventListener("click", () => applyLayout(b.dataset.layout));
+		});
+		// honor URL hash (#command / #briefing / #balanced)
+		const hashLayout = (location.hash || "").replace("#", "");
+		if (["balanced", "command", "briefing"].includes(hashLayout)) {
+			applyLayout(hashLayout);
+		}
+		window.addEventListener("hashchange", () => {
+			const h = (location.hash || "").replace("#", "");
+			if (["balanced", "command", "briefing"].includes(h)) {
+				applyLayout(h);
+			}
+		});
+		</script>
+	</body>
+</html>

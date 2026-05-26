@@ -124,3 +124,19 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 ---
 
 Most formatting and common issues are automatically fixed by Biome. Run `bun x ultracite fix` before committing to ensure compliance.
+
+---
+
+## References
+
+Technology references for this project (researched from live docs):
+
+- [Better Auth Organization Plugin](.claude/docs/better-auth-organization.md) — multi-tenancy, roles, permissions, teams
+- [Better Auth Admin Plugin](.claude/docs/better-auth-admin.md) — platform admin, user management, impersonation
+- [oRPC Reference](.claude/docs/orpc-reference.md) — server/client/middleware patterns with Hono
+- [Design Handoff Summary](.claude/docs/design-handoff-summary.md) — tokens, screens, interactions, sample data
+- [Horilla Module Map](.claude/docs/horilla-module-map.md) — Horilla module → Heimdallone concept mapping
+
+Design source of truth: `design_handoff_heimdallone/` (committed to git). Open the HTML files directly — the CSS rule is the answer.
+
+- [Lessons Learned & Gotchas](.claude/docs/lessons-learned.md) — edge cases, patterns, mistakes to avoid

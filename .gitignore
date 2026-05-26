@@ -49,3 +49,9 @@ coverage
 .cache
 tmp
 temp
+
+# Reference repositories (large, not vendored)
+.references/
+
+# Raw ZIP archives (large binaries — extracted contents tracked separately)
+*.zip

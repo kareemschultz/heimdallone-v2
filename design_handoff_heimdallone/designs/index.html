@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Heimdallone — Design overview</title>
+		<link rel="stylesheet" href="styles/heimdall.css">
+		<style>
+		body {
+			background: #f0eee9;
+		}
+		.iframe-wrap {
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+			background: #08090c;
+			border: 0;
+		}
+		.iframe-wrap iframe {
+			display: block;
+			width: 100%;
+			height: 100%;
+			border: 0;
+		}
+
+		/* small top bar */
+		.topnote {
+			position: fixed;
+			top: 16px;
+			left: 16px;
+			z-index: 100;
+			display: inline-flex;
+			gap: 10px;
+			align-items: center;
+			padding: 8px 12px 8px 8px;
+			font-family: "Inter", system-ui, sans-serif;
+			font-size: 12.5px;
+			color: #2a251f;
+			background: rgba(255, 255, 255, 0.9);
+			border: 1px solid rgba(0, 0, 0, 0.06);
+			border-radius: 99px;
+			box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.18);
+			backdrop-filter: blur(8px);
+		}
+		.topnote .mark {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 24px;
+			height: 24px;
+			color: #e8b14c;
+			background: #08090c;
+			border-radius: 50%;
+		}
+		.topnote a {
+			padding-left: 10px;
+			margin-left: 4px;
+			color: #6e6457;
+			text-decoration: none;
+			border-left: 1px solid rgba(0, 0, 0, 0.1);
+		}
+		.topnote a:hover {
+			color: #2a251f;
+		}
+		</style>
+	</head>
+	<body>
+		<div class="topnote">
+			<span class="mark"><span id="hLogo"></span></span>
+			<strong>Heimdallone</strong>
+			<span style="color: #8a7e6d;">— design overview</span>
+			<a href="marketing.html" target="_blank">Open marketing →</a>
+			<a href="app/dashboard.html" target="_blank">Open app →</a>
+		</div>
+
+		<div id="root"></div>
+
+		<script
+			src="https://unpkg.com/react@18.3.1/umd/react.development.js"
+			integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L"
+			crossorigin="anonymous"
+		></script>
+		<script
+			src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"
+			integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm"
+			crossorigin="anonymous"
+		></script>
+		<script
+			src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js"
+			integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y"
+			crossorigin="anonymous"
+		></script>
+		<script type="text/babel" src="design-canvas.jsx"></script>
+		<script src="js/heimdall.js"></script>
+		<script>
+		"use strict";
+		// place the small Heimdall mark in the chip
+		document.getElementById("hLogo").innerHTML = window.heimdallLogo(16);
+		</script>
+
+		<script type="text/babel">
+  const IFrame = ({ src, w = 1440, h = 900 }) => (
+    <div className="iframe-wrap" style={{ width: w, height: h }}>
+      <iframe src={src} title={src}></iframe>
+    </div>
+  );
+
+  function App() {
+    return (
+      <DesignCanvas>
+
+        <DCSection
+          id="marketing"
+          title="Public marketing"
+          subtitle="Linear-restrained with selective Magic UI motion — aurora hero, marquee logos, animated counters, border beams, shimmer CTA. Hero has Centered / Split / Editorial variants accessible via the in-page tweak strip.">
+          <DCArtboard id="landing" label="Landing" width={1440} height={1100}>
+            <IFrame src="marketing.html" w={1440} h={1100} />
+          </DCArtboard>
+          <DCArtboard id="pricing" label="Pricing" width={1440} height={1200}>
+            <IFrame src="pricing.html" w={1440} h={1200} />
+          </DCArtboard>
+          <DCArtboard id="docs" label="Docs hub" width={1440} height={1200}>
+            <IFrame src="docs.html" w={1440} h={1200} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="auth"
+          title="Authentication"
+          subtitle="Split layout. Org-aware login hint, SSO + passkey, status panel left.">
+          <DCArtboard id="login" label="Login" width={1200} height={780}>
+            <IFrame src="login.html" w={1200} h={780} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="app"
+          title="Authenticated app · shell + dashboard"
+          subtitle="Balanced density (6–8 widgets). Three layout variants: Balanced / Command / Briefing — switchable from the page header. Activity widget uses tabbed views; topbar has wired dropdown menus.">
+          <DCArtboard id="dashboard-balanced" label="Dashboard · Balanced" width={1440} height={1100}>
+            <IFrame src="app/dashboard.html" w={1440} h={1100} />
+          </DCArtboard>
+          <DCArtboard id="dashboard-command" label="Dashboard · Command" width={1440} height={1100}>
+            <IFrame src="app/dashboard.html#command" w={1440} h={1100} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="employees"
+          title="Employees"
+          subtitle="List view with bulk-select, density toggle, filter chips, drawer preview. Drawer is tabbed (Overview / Payroll / Leave / Documents / Activity). Click any row to open it.">
+          <DCArtboard id="emp-list" label="Employees · list" width={1440} height={1000}>
+            <IFrame src="app/employees.html" w={1440} h={1000} />
+          </DCArtboard>
+          <DCArtboard id="emp-profile" label="Employee profile · overview" width={1440} height={1300}>
+            <IFrame src="app/employee.html" w={1440} h={1300} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="payroll"
+          title="Payroll command center"
+          subtitle="Caribbean-first (GY/TT/BB/JM) + US/CA/UK secondary. Pay-run banner, gross-to-net preview, approval chain, country profile sidebar. Section tabs (Gross-to-net / Changes / Flagged / Overtime) inside the employee table.">
+          <DCArtboard id="payroll-gy" label="Payroll · Guyana" width={1440} height={1300}>
+            <IFrame src="app/payroll.html" w={1440} h={1300} />
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection
+          id="compliance"
+          title="Compliance &amp; audit ledger"
+          subtitle="Hash-chained, continuously sealed event log. Tabbed by category (All / Approvals / Payroll / HR / Security / Findings). One-click evidence pack export.">
+          <DCArtboard id="comp" label="Compliance ledger" width={1440} height={1200}>
+            <IFrame src="app/compliance.html" w={1440} h={1200} />
+          </DCArtboard>
+        </DCSection>
+
+      </DesignCanvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+
+  // Activate the "command" layout variant when the iframe URL has that hash.
+  // Set after iframe load via a small script injected into the iframe.
+  window.addEventListener("message", () => {}); // noop for now
+</script>
+	</body>
+</html>

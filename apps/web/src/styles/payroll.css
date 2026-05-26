@@ -1,0 +1,579 @@
+/* ============ Payroll page ============ */
+
+/* Pay-run banner */
+.runbar {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	gap: 24px;
+	align-items: center;
+	padding: 18px 22px;
+	margin-bottom: 14px;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 18px;
+}
+.runbar .left {
+	display: flex;
+	gap: 20px;
+	align-items: center;
+}
+.runbar .country-mark {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	overflow: hidden;
+	background: var(--bg-3);
+	border: 1px solid var(--line);
+	border-radius: 13px;
+}
+.runbar .country-mark svg {
+	width: 30px;
+	height: 20px;
+	border-radius: 3px;
+}
+.runbar h2 {
+	font-size: 20px;
+	line-height: 1.2;
+	letter-spacing: -0.02em;
+}
+.runbar .sub {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-top: 2px;
+	font-size: 12.5px;
+	color: var(--fg-3);
+}
+.runbar .sub .sep {
+	color: var(--fg-4);
+}
+.runbar .right {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+
+/* Country tabs */
+.country-strip {
+	display: flex;
+	gap: 4px;
+	padding: 4px;
+	margin-bottom: 18px;
+	overflow-x: auto;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.country-strip button {
+	display: flex;
+	gap: 9px;
+	align-items: center;
+	padding: 9px 14px;
+	font-family: inherit;
+	font-size: 12.5px;
+	color: var(--fg-3);
+	white-space: nowrap;
+	cursor: pointer;
+	background: transparent;
+	border: 0;
+	border-radius: 10px;
+	transition:
+		background 120ms ease,
+		color 120ms ease;
+}
+.country-strip button:hover {
+	color: var(--fg);
+	background: var(--bg-3);
+}
+.country-strip button.active {
+	color: var(--fg);
+	background: var(--bg-3);
+	box-shadow: var(--shadow-sm);
+}
+.country-strip button .pill-dot {
+	width: 6px;
+	height: 6px;
+	background: var(--fg-4);
+	border-radius: 50%;
+}
+.country-strip button .pill-dot.ready {
+	background: var(--accent);
+	box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.country-strip button .pill-dot.action {
+	background: var(--warning);
+}
+.country-strip button .pill-dot.sealed {
+	background: var(--success);
+}
+.country-strip .sep {
+	align-self: stretch;
+	width: 1px;
+	margin: 4px 4px;
+	background: var(--line);
+}
+.country-strip .total {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	padding: 9px 14px;
+	margin-left: auto;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.country-strip .total b {
+	font-family: "JetBrains Mono", monospace;
+	font-weight: 600;
+	color: var(--fg);
+}
+
+/* Main grid */
+.payroll-grid {
+	display: grid;
+	grid-template-columns: 1fr 360px;
+	gap: 14px;
+}
+.payroll-grid > .left-col,
+.payroll-grid > .right-col {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	min-width: 0;
+}
+
+/* Summary cards */
+.sum-row {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 14px;
+}
+.sum-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 16px 18px;
+	overflow: hidden;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+}
+.sum-card.accent {
+	background: linear-gradient(
+		180deg,
+		color-mix(in oklab, var(--accent-soft) 110%, transparent),
+		var(--bg-1) 60%
+	);
+	border-color: color-mix(in oklab, var(--accent) 35%, var(--line));
+}
+.sum-card .lbl {
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--fg-3);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+.sum-card .val {
+	font-family: "JetBrains Mono", monospace;
+	font-size: 26px;
+	font-weight: 600;
+	line-height: 1.05;
+	letter-spacing: -0.025em;
+}
+.sum-card.accent .val {
+	color: var(--accent);
+}
+.sum-card .delta {
+	font-size: 11.5px;
+	color: var(--fg-3);
+}
+.sum-card .delta .up {
+	color: var(--success);
+}
+.sum-card .delta .down {
+	color: var(--danger);
+}
+
+/* Employees table */
+.emp-table {
+	overflow: hidden;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+}
+.emp-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	border-bottom: 1px solid var(--line);
+}
+.emp-search {
+	width: 220px;
+	height: 30px;
+	padding: 0 12px;
+	font-family: inherit;
+	font-size: 12.5px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 99px;
+}
+.emp-search:focus {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 3px var(--accent-ring);
+}
+.emp-table table {
+	width: 100%;
+	border-collapse: collapse;
+}
+.emp-table thead th {
+	padding: 10px 14px;
+	font-size: 10.5px;
+	font-weight: 500;
+	color: var(--fg-3);
+	text-align: left;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	background: var(--bg-2);
+	border-bottom: 1px solid var(--line);
+}
+.emp-table tbody td {
+	padding: 12px 14px;
+	font-size: 13px;
+	vertical-align: middle;
+	border-bottom: 1px solid var(--line);
+}
+.emp-table tbody tr:last-child td {
+	border-bottom: 0;
+}
+.emp-table tbody tr:hover td {
+	background: var(--bg-2);
+}
+.emp-name {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+.emp-name .avatar-xs {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	font-size: 10px;
+	font-weight: 600;
+	color: var(--fg-2);
+	background: var(--bg-3);
+	border-radius: 50%;
+}
+.emp-name .sub {
+	font-size: 11.5px;
+	color: var(--fg-3);
+}
+.num-cell {
+	font-family: "JetBrains Mono", monospace;
+	font-feature-settings: "zero", "ss01";
+	text-align: right;
+}
+.num-cell.neg {
+	color: var(--fg-3);
+}
+.emp-table .row-flag {
+	position: relative;
+}
+.emp-table .row-flag::before {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 3px;
+	content: "";
+	background: var(--warning);
+}
+
+/* Approval chain */
+.approval-chain {
+	padding: 18px 22px;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+}
+.chain {
+	display: flex;
+	gap: 0;
+	align-items: center;
+	margin-top: 14px;
+}
+.chain-step {
+	position: relative;
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 6px;
+}
+.chain-dot {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border: 1px solid var(--line-2);
+	border-radius: 50%;
+}
+.chain-step.done .chain-dot {
+	color: var(--success);
+	background: var(--success-soft);
+	border-color: var(--success);
+}
+.chain-step.current .chain-dot {
+	color: var(--accent);
+	background: var(--accent-soft);
+	border-color: var(--accent);
+	animation: pulse-ring 1.8s ease-out infinite;
+}
+.chain-step + .chain-step::before {
+	position: absolute;
+	top: 11px;
+	right: 50%;
+	left: -50%;
+	height: 1px;
+	content: "";
+	background: var(--line);
+	transform: translateX(11px);
+}
+.chain-step.done + .chain-step::before,
+.chain-step.current + .chain-step::before {
+	/* keep default */
+}
+.chain-step.done::before {
+	background: var(--success);
+}
+.chain-step .step-title {
+	font-size: 12.5px;
+	font-weight: 500;
+}
+.chain-step .step-meta {
+	font-family: "JetBrains Mono", monospace;
+	font-size: 11px;
+	color: var(--fg-3);
+}
+
+/* Right column cards */
+.side-card {
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+}
+.side-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 16px;
+	border-bottom: 1px solid var(--line);
+}
+.side-head .ttl {
+	font-size: 13px;
+	font-weight: 600;
+}
+.side-body {
+	padding: 12px 16px 14px;
+}
+
+/* Readiness checklist */
+.ck-item {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	padding: 8px 0;
+	font-size: 12.5px;
+	border-bottom: 1px dashed var(--line);
+}
+.ck-item:last-child {
+	border-bottom: 0;
+}
+.ck-tick {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 16px;
+	height: 16px;
+	margin-top: 2px;
+	border-radius: 50%;
+}
+.ck-tick.done {
+	color: var(--success);
+	background: var(--success-soft);
+}
+.ck-tick.warn {
+	color: var(--warning);
+	background: var(--warning-soft);
+}
+.ck-tick.todo {
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border: 1px solid var(--line-2);
+}
+.ck-item .ck-body {
+	flex: 1;
+	min-width: 0;
+}
+.ck-item .ck-body .ttl {
+	font-weight: 500;
+	color: var(--fg);
+}
+.ck-item .ck-body .sub {
+	margin-top: 2px;
+	font-size: 11px;
+	color: var(--fg-3);
+}
+
+/* Deductions list */
+.ded-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 7px 0;
+	font-size: 12.5px;
+	border-bottom: 1px dashed var(--line);
+}
+.ded-row:last-child {
+	border-bottom: 0;
+}
+.ded-row .ded-name {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+.ded-swatch {
+	width: 8px;
+	height: 8px;
+	border-radius: 2px;
+}
+.ded-row .ded-val {
+	font-family: "JetBrains Mono", monospace;
+	color: var(--fg);
+}
+.ded-row .ded-sub {
+	font-size: 11px;
+	color: var(--fg-3);
+}
+
+/* Donut */
+.donut-wrap {
+	display: flex;
+	gap: 18px;
+	align-items: center;
+	margin-bottom: 12px;
+}
+.donut {
+	position: relative;
+	flex-shrink: 0;
+	width: 96px;
+	height: 96px;
+}
+.donut svg {
+	width: 100%;
+	height: 100%;
+	transform: rotate(-90deg);
+}
+.donut-center {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+}
+.donut-center .v {
+	font-family: "JetBrains Mono", monospace;
+	font-size: 15px;
+	font-weight: 600;
+}
+.donut-center .l {
+	font-size: 9.5px;
+	color: var(--fg-3);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Country profile facts */
+.fact-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 7px 0;
+	font-size: 12.5px;
+	border-bottom: 1px dashed var(--line);
+}
+.fact-row:last-child {
+	border-bottom: 0;
+}
+.fact-row .k {
+	color: var(--fg-3);
+}
+.fact-row .v {
+	font-family: "JetBrains Mono", monospace;
+	color: var(--fg);
+}
+
+/* PAYE bands mini-table */
+.bands {
+	margin-top: 8px;
+	overflow: hidden;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.band-row {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	padding: 7px 10px;
+	font-size: 12px;
+	border-bottom: 1px solid var(--line);
+}
+.band-row:last-child {
+	border-bottom: 0;
+}
+.band-row .r {
+	font-family: "JetBrains Mono", monospace;
+	color: var(--fg-2);
+}
+.band-row .l {
+	color: var(--fg-3);
+}
+.band-row.hi .r {
+	color: var(--accent);
+}
+
+/* Footer of page */
+.page-foot {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	margin-top: 14px;
+	font-size: 12px;
+	color: var(--fg-3);
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.page-foot .mono {
+	color: var(--fg-2);
+}
+
+@media (max-width: 1300px) {
+	.payroll-grid {
+		grid-template-columns: 1fr;
+	}
+}

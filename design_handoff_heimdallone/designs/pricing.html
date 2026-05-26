@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Pricing · Heimdallone</title>
+		<link rel="stylesheet" href="styles/heimdall.css">
+		<link rel="stylesheet" href="styles/marketing.css">
+		<style>
+		body {
+			overflow-x: hidden;
+		}
+
+		/* Hero billing toggle */
+		.billing-toggle {
+			display: inline-flex;
+			gap: 2px;
+			align-items: center;
+			padding: 3px;
+			margin-top: 32px;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+		}
+		.billing-toggle button {
+			display: inline-flex;
+			gap: 8px;
+			align-items: center;
+			height: 34px;
+			padding: 0 18px;
+			font-family: inherit;
+			font-size: 13px;
+			font-weight: 500;
+			color: var(--fg-3);
+			cursor: pointer;
+			background: transparent;
+			border: 0;
+			border-radius: 99px;
+			transition:
+				color 120ms ease,
+				background 120ms ease;
+		}
+		.billing-toggle button.active {
+			color: var(--fg);
+			background: var(--bg-4);
+			box-shadow: var(--shadow-sm);
+		}
+		.billing-toggle .save-pill {
+			padding: 1px 7px;
+			font-size: 10.5px;
+			font-weight: 600;
+			color: var(--accent);
+			letter-spacing: 0.04em;
+			background: var(--accent-soft);
+			border-radius: 99px;
+		}
+
+		/* Plan grid */
+		.plans {
+			display: grid;
+			grid-template-columns: repeat(4, 1fr);
+			gap: 14px;
+			margin-top: 56px;
+		}
+		.plan {
+			position: relative;
+			display: flex;
+			flex-direction: column;
+			gap: 20px;
+			padding: 28px 24px 24px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 18px;
+			transition:
+				border-color 200ms ease,
+				transform 200ms ease;
+		}
+		.plan:hover {
+			border-color: var(--line-2);
+		}
+		.plan.featured {
+			background: linear-gradient(
+				180deg,
+				color-mix(in oklab, var(--accent-soft) 110%, transparent),
+				var(--bg-1) 50%
+			);
+			border-color: color-mix(in oklab, var(--accent) 35%, var(--line));
+		}
+		.plan .badge-strip {
+			position: absolute;
+			top: -10px;
+			left: 24px;
+			display: inline-flex;
+			align-items: center;
+			height: 20px;
+			padding: 0 9px;
+			font-size: 10.5px;
+			font-weight: 600;
+			color: var(--accent-ink);
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			background: var(--accent);
+			border-radius: 99px;
+		}
+		.plan-head {
+			display: flex;
+			flex-direction: column;
+			gap: 6px;
+		}
+		.plan-name {
+			font-size: 14px;
+			font-weight: 600;
+			letter-spacing: -0.005em;
+		}
+		.plan-desc {
+			min-height: 36px;
+			font-size: 12.5px;
+			line-height: 1.45;
+			color: var(--fg-3);
+		}
+
+		.plan-price {
+			display: flex;
+			gap: 6px;
+			align-items: baseline;
+			padding-bottom: 18px;
+			border-bottom: 1px solid var(--line);
+		}
+		.plan-price .num {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 42px;
+			font-weight: 600;
+			line-height: 1;
+			color: var(--fg);
+			letter-spacing: -0.04em;
+		}
+		.plan-price .cur {
+			align-self: flex-start;
+			margin-top: 6px;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 16px;
+			font-weight: 500;
+			color: var(--fg-3);
+		}
+		.plan-price .per {
+			font-size: 12.5px;
+			color: var(--fg-3);
+		}
+		.plan-price.custom .num {
+			font-size: 28px;
+			letter-spacing: -0.03em;
+		}
+
+		.plan-cta {
+			width: 100%;
+			height: 40px;
+			font-size: 13.5px;
+			border-radius: 11px;
+		}
+
+		.plan-features {
+			display: flex;
+			flex-direction: column;
+			gap: 8px;
+		}
+		.plan-features .group-label {
+			margin-top: 8px;
+			font-size: 10.5px;
+			font-weight: 500;
+			color: var(--fg-4);
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+		}
+		.plan-feat {
+			display: grid;
+			grid-template-columns: 16px 1fr;
+			gap: 10px;
+			align-items: flex-start;
+			font-size: 12.5px;
+			line-height: 1.45;
+			color: var(--fg-2);
+		}
+		.plan-feat .ck {
+			margin-top: 2px;
+			color: var(--accent);
+		}
+		.plan-feat .ck.muted {
+			color: var(--fg-4);
+		}
+		.plan-feat .ck.cross {
+			color: var(--fg-4);
+		}
+		.plan-feat .v {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 12px;
+			color: var(--fg);
+		}
+
+		/* Comparison table */
+		.compare-wrap {
+			margin: 96px 0;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 18px;
+		}
+		.compare-wrap table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+		.compare-wrap thead th {
+			position: sticky;
+			top: 60px;
+			z-index: 2;
+			padding: 18px 18px 14px;
+			font-size: 13px;
+			font-weight: 600;
+			text-align: left;
+			background: var(--bg-2);
+			border-bottom: 1px solid var(--line);
+		}
+		.compare-wrap thead th .sub {
+			display: block;
+			margin-top: 2px;
+			font-size: 11px;
+			font-weight: 400;
+			color: var(--fg-3);
+		}
+		.compare-wrap thead th:first-child {
+			font-size: 12px;
+			font-weight: 500;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+		}
+		.compare-wrap thead .col-featured {
+			color: var(--accent);
+		}
+		.compare-wrap tbody tr.section-row td {
+			padding: 14px 18px 6px;
+			font-size: 11px;
+			font-weight: 500;
+			color: var(--fg-4);
+			text-transform: uppercase;
+			letter-spacing: 0.08em;
+			background: var(--bg-2);
+			border-top: 1px solid var(--line);
+		}
+		.compare-wrap tbody td {
+			padding: 11px 18px;
+			font-size: 13px;
+			vertical-align: top;
+			color: var(--fg);
+			border-bottom: 1px solid var(--line);
+		}
+		.compare-wrap tbody tr:last-child td {
+			border-bottom: 0;
+		}
+		.compare-wrap tbody td.feat {
+			color: var(--fg-2);
+		}
+		.compare-wrap tbody td.center {
+			text-align: center;
+		}
+		.compare-wrap .ck-on {
+			color: var(--accent);
+		}
+		.compare-wrap .ck-off {
+			color: var(--fg-4);
+		}
+		.compare-wrap .feat-meta {
+			margin-top: 3px;
+			font-size: 11.5px;
+			font-weight: 400;
+			color: var(--fg-3);
+		}
+
+		/* FAQ */
+		.faq-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 14px;
+			margin-top: 56px;
+		}
+		.faq-item {
+			padding: 22px 24px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 14px;
+		}
+		.faq-item summary {
+			display: flex;
+			gap: 16px;
+			align-items: flex-start;
+			justify-content: space-between;
+			font-size: 15px;
+			font-weight: 500;
+			letter-spacing: -0.01em;
+			cursor: pointer;
+			list-style: none;
+		}
+		.faq-item summary::-webkit-details-marker {
+			display: none;
+		}
+		.faq-item summary::after {
+			flex-shrink: 0;
+			font-size: 20px;
+			font-weight: 400;
+			color: var(--fg-3);
+			content: "+";
+			transition: transform 200ms ease;
+		}
+		.faq-item[open] summary::after {
+			content: "−";
+		}
+		.faq-item p {
+			margin-top: 14px;
+			font-size: 13.5px;
+			line-height: 1.55;
+			color: var(--fg-2);
+		}
+
+		/* CTA */
+		.cta {
+			position: relative;
+			padding: 80px 56px;
+			margin: 0 0 120px;
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 28px;
+		}
+		.cta::before {
+			position: absolute;
+			top: -200px;
+			left: 50%;
+			width: 800px;
+			height: 400px;
+			content: "";
+			background: radial-gradient(
+				closest-side,
+				var(--accent-soft),
+				transparent 70%
+			);
+			transform: translateX(-50%);
+		}
+		.cta-inner {
+			position: relative;
+			text-align: center;
+		}
+		.cta h2 {
+			max-width: 720px;
+			margin: 0 auto;
+			font-size: clamp(36px, 5vw, 56px);
+			line-height: 1.02;
+			letter-spacing: -0.035em;
+		}
+		.cta p {
+			max-width: 480px;
+			margin: 20px auto 0;
+			font-size: 17px;
+			color: var(--fg-2);
+		}
+		.cta-actions {
+			display: inline-flex;
+			gap: 10px;
+			margin-top: 32px;
+		}
+
+		@media (max-width: 1100px) {
+			.plans {
+				grid-template-columns: repeat(2, 1fr);
+			}
+		}
+		@media (max-width: 700px) {
+			.plans {
+				grid-template-columns: 1fr;
+			}
+			.faq-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+		</style>
+	</head>
+	<body data-current="pricing">
+		<div data-marketing-nav></div>
+
+		<!-- Hero -->
+		<section class="m-page-hero" data-screen-label="Pricing Hero">
+			<div class="glow"></div>
+			<div class="container">
+				<div class="eyebrow">Pricing</div>
+				<h1>Built for the work that <em>scales</em> with you.</h1>
+				<p>
+					Transparent plans across every country you operate in. Start small,
+					expand without re-platforming.
+				</p>
+				<div class="billing-toggle" id="billingToggle">
+					<button class="active" data-billing="monthly">Monthly</button>
+					<button data-billing="annual">
+						Annual <span class="save-pill">−20%</span>
+					</button>
+				</div>
+			</div>
+		</section>
+
+		<!-- Plans -->
+		<section class="section" style="padding-top: 56px;">
+			<div class="container">
+				<div class="plans">
+					<!-- Starter -->
+					<div class="plan">
+						<div class="plan-head">
+							<span class="plan-name">Starter</span>
+							<span class="plan-desc"
+								>For single-country teams getting out of spreadsheets.</span
+							>
+						</div>
+						<div class="plan-price">
+							<span class="cur">$</span>
+							<span class="num" data-price-monthly="6" data-price-annual="5"
+								>6</span
+							>
+							<span class="per">/ employee / mo</span>
+						</div>
+						<a href="login.html" class="btn btn-outline plan-cta"
+							>Start free trial</a
+						>
+						<div class="plan-features">
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Up to <span class="v">50</span> employees</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span><span class="v">1</span> country tax engine</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>HR core · attendance · leave</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Single-step approvals</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Standard payslips &amp; CSV exports</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Email support · 24h SLA</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Growth (featured) -->
+					<div class="plan featured beam-host beam-always">
+						<span class="badge-strip">Most popular</span>
+						<div class="plan-head">
+							<span class="plan-name" style="color: var(--accent);"
+								>Growth</span
+							>
+							<span class="plan-desc"
+								>Multi-country operations with serious payroll needs.</span
+							>
+						</div>
+						<div class="plan-price">
+							<span class="cur">$</span>
+							<span class="num" data-price-monthly="14" data-price-annual="11"
+								>14</span
+							>
+							<span class="per">/ employee / mo</span>
+						</div>
+						<a href="login.html" class="btn btn-primary plan-cta btn-shimmer"
+							><span>Start free trial</span></a
+						>
+						<div class="plan-features">
+							<div class="group-label">Everything in Starter, plus</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Up to <span class="v">1,500</span> employees</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span><span class="v">Up to 4</span> country tax engines</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Multi-step approval chains</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Audit ledger &amp; reproducible runs</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Bank file exports (RBL, RBC, NCB)</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Biometric ingest &amp; exception queue</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Chat support · <span class="v">4h</span> SLA</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Enterprise -->
+					<div class="plan">
+						<div class="plan-head">
+							<span class="plan-name">Enterprise</span>
+							<span class="plan-desc"
+								>For groups with multiple legal entities and complex governance.</span
+							>
+						</div>
+						<div class="plan-price custom">
+							<span class="num">Custom</span>
+						</div>
+						<a href="#" class="btn btn-outline plan-cta">Talk to sales</a>
+						<div class="plan-features">
+							<div class="group-label">Everything in Growth, plus</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Unlimited employees &amp; countries</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Multi-entity consolidation</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>SSO · SAML · SCIM · enterprise IDP</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Role-based access controls (RBAC)</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Custom country profiles</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Dedicated CSM &amp; private channel</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Custom SLA · <span class="v">99.99%</span> uptime</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Self-hosted -->
+					<div class="plan">
+						<div class="plan-head">
+							<span class="plan-name">Self-hosted</span>
+							<span class="plan-desc"
+								>Bring-your-own infra. Same product, in your VPC, against your
+								Horilla.</span
+							>
+						</div>
+						<div class="plan-price custom">
+							<span class="num">Contact</span>
+						</div>
+						<a href="#" class="btn btn-outline plan-cta">Request deployment</a>
+						<div class="plan-features">
+							<div class="group-label">Built for regulated environments</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Runs against your Postgres + Horilla</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Tauri desktop &amp; mobile builds</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Air-gapped friendly</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>BYO secrets / KMS / HSM</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Source-available license terms</span>
+							</div>
+							<div class="plan-feat">
+								<span class="ck" data-icon="check" data-size="14"></span
+								><span>Annual security review</span>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Comparison table -->
+		<section class="container reveal">
+			<div style="text-align: center; margin-bottom: 24px;">
+				<div class="section-eyebrow" style="margin-bottom: 12px;">
+					Side-by-side
+				</div>
+				<h2 style="font-size: clamp(28px, 4vw, 42px); margin: 0 auto;">
+					Compare what's included
+				</h2>
+			</div>
+			<div class="compare-wrap">
+				<table>
+					<thead>
+						<tr>
+							<th>Feature</th>
+							<th>Starter</th>
+							<th class="col-featured">Growth</th>
+							<th>Enterprise</th>
+							<th>Self-hosted</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr class="section-row">
+							<td colspan="5">HR core</td>
+						</tr>
+						<tr>
+							<td class="feat">Employees included</td>
+							<td>Up to 50</td>
+							<td class="col-featured">Up to 1,500</td>
+							<td>Unlimited</td>
+							<td>Unlimited</td>
+						</tr>
+						<tr>
+							<td class="feat">Departments &amp; positions</td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+						</tr>
+						<tr>
+							<td class="feat">Documents &amp; e-signatures</td>
+							<td>Basic</td>
+							<td>Advanced</td>
+							<td>+ Custom workflows</td>
+							<td>+ Custom workflows</td>
+						</tr>
+						<tr>
+							<td class="feat">Onboarding flows</td>
+							<td class="ck-off" data-icon="x"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td>+ Templates</td>
+							<td>+ Templates</td>
+						</tr>
+
+						<tr class="section-row">
+							<td colspan="5">Payroll</td>
+						</tr>
+						<tr>
+							<td class="feat">
+								Country tax engines
+								<div class="feat-meta">GY · TT · BB · JM · US · CA · UK</div>
+							</td>
+							<td>1</td>
+							<td class="col-featured">Up to 4</td>
+							<td>Unlimited</td>
+							<td>Unlimited</td>
+						</tr>
+						<tr>
+							<td class="feat">Effective-date logic</td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+						</tr>
+						<tr>
+							<td class="feat">Approval chains</td>
+							<td>Single-step</td>
+							<td class="col-featured">Multi-step</td>
+							<td>Custom</td>
+							<td>Custom</td>
+						</tr>
+						<tr>
+							<td class="feat">Bank file exports</td>
+							<td class="ck-off" data-icon="x"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td>+ Custom formats</td>
+							<td>+ Custom formats</td>
+						</tr>
+						<tr>
+							<td class="feat">Reproducible historical runs</td>
+							<td class="ck-off" data-icon="x"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+						</tr>
+
+						<tr class="section-row">
+							<td colspan="5">Compliance &amp; audit</td>
+						</tr>
+						<tr>
+							<td class="feat">Audit ledger</td>
+							<td>30 days</td>
+							<td class="col-featured">7 years</td>
+							<td>Configurable</td>
+							<td>Configurable</td>
+						</tr>
+						<tr>
+							<td class="feat">Risk indicators</td>
+							<td>Basic</td>
+							<td>Advanced</td>
+							<td>+ Custom rules</td>
+							<td>+ Custom rules</td>
+						</tr>
+						<tr>
+							<td class="feat">SOC 2 evidence pack</td>
+							<td class="ck-off" data-icon="x"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+						</tr>
+
+						<tr class="section-row">
+							<td colspan="5">Identity &amp; access</td>
+						</tr>
+						<tr>
+							<td class="feat">SSO / SAML</td>
+							<td class="ck-off" data-icon="x"></td>
+							<td>Google · Microsoft</td>
+							<td>Any IDP</td>
+							<td>Any IDP</td>
+						</tr>
+						<tr>
+							<td class="feat">SCIM provisioning</td>
+							<td class="ck-off" data-icon="x"></td>
+							<td class="ck-off" data-icon="x"></td>
+							<td class="ck-on" data-icon="check"></td>
+							<td class="ck-on" data-icon="check"></td>
+						</tr>
+						<tr>
+							<td class="feat">Custom roles &amp; RBAC</td>
+							<td>3 roles</td>
+							<td>10 roles</td>
+							<td>Unlimited</td>
+							<td>Unlimited</td>
+						</tr>
+
+						<tr class="section-row">
+							<td colspan="5">Support &amp; deployment</td>
+						</tr>
+						<tr>
+							<td class="feat">Support channel</td>
+							<td>Email</td>
+							<td>Chat + Email</td>
+							<td>Dedicated CSM</td>
+							<td>Dedicated CSM</td>
+						</tr>
+						<tr>
+							<td class="feat">Response SLA</td>
+							<td>24h</td>
+							<td class="col-featured">4h</td>
+							<td>1h custom</td>
+							<td>1h custom</td>
+						</tr>
+						<tr>
+							<td class="feat">Deployment</td>
+							<td>Hosted</td>
+							<td>Hosted</td>
+							<td>Hosted or VPC</td>
+							<td>Your infra</td>
+						</tr>
+						<tr>
+							<td class="feat">Uptime SLA</td>
+							<td>99.9%</td>
+							<td>99.95%</td>
+							<td>99.99%</td>
+							<td>Self-managed</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<!-- FAQ -->
+		<section class="section reveal" style="padding-top: 0;">
+			<div class="container">
+				<div style="text-align: center; max-width: 600px; margin: 0 auto;">
+					<div class="section-eyebrow">FAQ</div>
+					<h2 style="font-size: clamp(32px, 4vw, 44px); margin: 0 auto;">
+						Common questions, answered.
+					</h2>
+				</div>
+				<div class="faq-grid">
+					<details class="faq-item">
+						<summary>What counts as an employee for billing?</summary>
+						<p>
+							Anyone with an active employment record in the period — including
+							contractors and part-timers if you're paying them through
+							Heimdallone. Inactive, archived, and offboarded employees never
+							count, even if their historical records remain.
+						</p>
+					</details>
+					<details class="faq-item">
+						<summary>Can we add country tax engines as we expand?</summary>
+						<p>
+							Yes. Each plan includes a soft cap on countries, but you can add
+							additional country profiles à la carte. New jurisdictions take
+							effect on the next pay period and inherit your existing approval
+							policy.
+						</p>
+					</details>
+					<details class="faq-item">
+						<summary>Does the price include payroll tax calculation?</summary>
+						<p>
+							Yes. Every plan ships with the country tax engines included for
+							that tier — PAYE bands, NIS rates, statutory deductions and
+							employer contributions — versioned and updated as gazettes are
+							published.
+						</p>
+					</details>
+					<details class="faq-item">
+						<summary>Do we keep our existing Horilla deployment?</summary>
+						<p>
+							Yes. Heimdallone reads from and writes to your existing Horilla
+							HRMS. Self-hosted plans run entirely inside your VPC. There's no
+							migration or data export needed.
+						</p>
+					</details>
+					<details class="faq-item">
+						<summary>What happens at renewal?</summary>
+						<p>
+							Annual plans renew at the same per-employee rate unless we notify
+							you of a change at least 60 days before renewal. Month-to-month
+							plans can be cancelled any time and you only pay for the current
+							period.
+						</p>
+					</details>
+					<details class="faq-item">
+						<summary>Is there a free trial?</summary>
+						<p>
+							Yes — 14 days, no credit card required, full Growth feature set.
+							After trial, your data is preserved for 60 days while you decide.
+							Self-hosted trials are scoped per deployment; reach out for
+							details.
+						</p>
+					</details>
+				</div>
+			</div>
+		</section>
+
+		<!-- CTA -->
+		<section class="container">
+			<div class="cta">
+				<div class="cta-inner">
+					<h2>Ready to run payroll the way it should be?</h2>
+					<p>
+						Spin up a sandbox tenant, import a sample roster, and see your first
+						pay run computed in under five minutes.
+					</p>
+					<div class="cta-actions">
+						<a href="login.html" class="btn btn-primary btn-lg btn-shimmer"
+							><span>Start free trial</span>
+							<span data-icon="arrow-right" data-size="14"></span></a
+						>
+						<a href="docs.html" class="btn btn-outline btn-lg">Read the docs</a>
+					</div>
+				</div>
+			</div>
+		</section>
+
+		<div data-marketing-footer></div>
+
+		<script src="js/heimdall.js"></script>
+		<script src="js/marketing-chrome.js"></script>
+		<script>
+		"use strict";
+		// Render check icons in plan features + compare table
+		document.querySelectorAll(".plan-feat .ck").forEach((el) => {
+			if (!el.innerHTML.trim()) {
+				el.innerHTML = window.Icon(
+					el.dataset.icon || "check",
+					Number.parseInt(el.dataset.size || "14", 10)
+				);
+			}
+		});
+		document.querySelectorAll(".compare-wrap td[data-icon]").forEach((el) => {
+			el.innerHTML = window.Icon(el.dataset.icon, 16);
+		});
+
+		// Billing toggle
+		document.querySelectorAll("#billingToggle button").forEach((b) => {
+			b.addEventListener("click", () => {
+				const mode = b.dataset.billing;
+				document
+					.querySelectorAll("#billingToggle button")
+					.forEach((x) => x.classList.toggle("active", x === b));
+				document.querySelectorAll("[data-price-monthly]").forEach((el) => {
+					const val =
+						mode === "annual"
+							? el.dataset.priceAnnual
+							: el.dataset.priceMonthly;
+					// animate
+					el.style.transition = "opacity 160ms ease";
+					el.style.opacity = "0.3";
+					setTimeout(() => {
+						el.textContent = val;
+						el.style.opacity = "1";
+					}, 160);
+				});
+			});
+		});
+		</script>
+	</body>
+</html>

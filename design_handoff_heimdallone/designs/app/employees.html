@@ -1,0 +1,1447 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width,initial-scale=1">
+		<title>Employees · Heimdallone</title>
+		<link rel="stylesheet" href="../styles/heimdall.css">
+		<style>
+		/* Page-specific */
+		.toolbar {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			align-items: center;
+			padding: 6px;
+			margin-bottom: 14px;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.toolbar .search {
+			position: relative;
+			flex: 1;
+			min-width: 220px;
+			height: 36px;
+			padding: 0 14px 0 38px;
+			font-family: inherit;
+			font-size: 13px;
+			color: var(--fg);
+			outline: none;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+			transition: border-color 120ms ease;
+		}
+		.search-wrap {
+			position: relative;
+			flex: 1;
+		}
+		.search-wrap .icon-l {
+			position: absolute;
+			top: 50%;
+			left: 14px;
+			color: var(--fg-4);
+			pointer-events: none;
+			transform: translateY(-50%);
+		}
+		.toolbar .search:focus {
+			border-color: var(--accent);
+			box-shadow: 0 0 0 3px var(--accent-ring);
+		}
+		.toolbar-divider {
+			width: 1px;
+			height: 24px;
+			background: var(--line);
+		}
+
+		/* Filter chip bar */
+		.filter-row {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			align-items: center;
+			margin-bottom: 14px;
+		}
+		.filter-row .meta {
+			display: flex;
+			gap: 14px;
+			align-items: center;
+			margin-left: auto;
+			font-size: 12px;
+			color: var(--fg-3);
+		}
+
+		/* Table */
+		.emp-list {
+			overflow: hidden;
+			background: var(--bg-1);
+			border: 1px solid var(--line);
+			border-radius: 16px;
+		}
+		.emp-list table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+		.emp-list thead th {
+			position: sticky;
+			top: 0;
+			z-index: 1;
+			padding: 11px 16px;
+			font-size: 10.5px;
+			font-weight: 500;
+			color: var(--fg-3);
+			text-align: left;
+			text-transform: uppercase;
+			letter-spacing: 0.06em;
+			white-space: nowrap;
+			background: var(--bg-2);
+			border-bottom: 1px solid var(--line);
+		}
+		.emp-list thead th.sortable {
+			cursor: pointer;
+		}
+		.emp-list thead th.sortable:hover {
+			color: var(--fg);
+		}
+		.emp-list thead th .sort-ind {
+			margin-left: 4px;
+			font-size: 9px;
+			vertical-align: 1px;
+			color: var(--accent);
+		}
+		.emp-list tbody td {
+			padding: 12px 16px;
+			font-size: 13px;
+			vertical-align: middle;
+			color: var(--fg);
+			border-bottom: 1px solid var(--line);
+		}
+		.emp-list tbody tr:hover td {
+			background: var(--bg-2);
+		}
+		.emp-list tbody tr.selected td {
+			background: var(--accent-soft);
+		}
+		.emp-list tbody tr:last-child td {
+			border-bottom: 0;
+		}
+		.emp-list .checkbox {
+			position: relative;
+			width: 16px;
+			height: 16px;
+			appearance: none;
+			cursor: pointer;
+			background: var(--bg-2);
+			border: 1.5px solid var(--line-strong);
+			border-radius: 5px;
+			transition:
+				background 120ms ease,
+				border-color 120ms ease;
+		}
+		.emp-list .checkbox:checked {
+			background: var(--accent);
+			border-color: var(--accent);
+		}
+		.emp-list .checkbox:checked::after {
+			position: absolute;
+			top: 1px;
+			left: 4px;
+			width: 4px;
+			height: 8px;
+			content: "";
+			border-right: 1.5px solid var(--accent-ink);
+			border-bottom: 1.5px solid var(--accent-ink);
+			transform: rotate(45deg);
+		}
+		.emp-name {
+			display: flex;
+			gap: 12px;
+			align-items: center;
+		}
+		.emp-name .avatar-sm {
+			position: relative;
+			display: flex;
+			flex-shrink: 0;
+			align-items: center;
+			justify-content: center;
+			width: 30px;
+			height: 30px;
+			font-size: 11px;
+			font-weight: 600;
+			color: var(--fg-2);
+			background: var(--bg-3);
+			border-radius: 50%;
+		}
+		.emp-name .avatar-sm.online::after {
+			position: absolute;
+			right: -1px;
+			bottom: -1px;
+			width: 9px;
+			height: 9px;
+			content: "";
+			background: var(--success);
+			border: 2px solid var(--bg-1);
+			border-radius: 50%;
+		}
+		.emp-name .ttl {
+			font-weight: 500;
+			letter-spacing: -0.005em;
+		}
+		.emp-name .sub {
+			margin-top: 1px;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 11.5px;
+			color: var(--fg-3);
+		}
+		.pill-status {
+			display: inline-flex;
+			gap: 6px;
+			align-items: center;
+			height: 22px;
+			padding: 0 9px;
+			font-size: 11px;
+			font-weight: 500;
+			color: var(--fg-2);
+			background: var(--bg-3);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+		}
+		.pill-status.active {
+			color: var(--success);
+			background: var(--success-soft);
+			border-color: transparent;
+		}
+		.pill-status.probation {
+			color: var(--info);
+			background: var(--info-soft);
+			border-color: transparent;
+		}
+		.pill-status.notice {
+			color: var(--warning);
+			background: var(--warning-soft);
+			border-color: transparent;
+		}
+		.pill-status.contract {
+			color: var(--fg-2);
+			background: var(--bg-3);
+		}
+
+		.source-tag {
+			display: inline-flex;
+			gap: 5px;
+			align-items: center;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 10.5px;
+			color: var(--fg-4);
+		}
+		.source-tag .dot {
+			width: 5px;
+			height: 5px;
+			background: var(--success);
+			border-radius: 50%;
+		}
+		.source-tag.stale .dot {
+			background: var(--warning);
+		}
+
+		.row-actions {
+			display: flex;
+			gap: 4px;
+			opacity: 0;
+			transition: opacity 120ms ease;
+		}
+		.emp-list tbody tr:hover .row-actions {
+			opacity: 1;
+		}
+		.row-actions button {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 24px;
+			height: 24px;
+			color: var(--fg-3);
+			cursor: pointer;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 7px;
+		}
+		.row-actions button:hover {
+			color: var(--fg);
+			background: var(--bg-3);
+		}
+
+		/* Bulk action bar (appears when selecting) */
+		.bulk-bar {
+			display: none;
+			gap: 10px;
+			align-items: center;
+			padding: 6px 8px 6px 14px;
+			margin-bottom: 14px;
+			background: var(--bg-3);
+			border: 1px solid var(--accent-ring);
+			border-radius: 99px;
+			box-shadow: var(--shadow-md);
+		}
+		.bulk-bar.visible {
+			display: inline-flex;
+		}
+		.bulk-bar .count {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 12.5px;
+			color: var(--fg);
+		}
+		.bulk-bar .count b {
+			color: var(--accent);
+		}
+
+		/* Pagination */
+		.pagination {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 12px 16px;
+			font-size: 12px;
+			color: var(--fg-3);
+			border-top: 1px solid var(--line);
+		}
+		.pagination .pager {
+			display: flex;
+			gap: 6px;
+			align-items: center;
+		}
+		.pagination button {
+			min-width: 28px;
+			height: 28px;
+			padding: 0 10px;
+			font-family: "JetBrains Mono", monospace;
+			font-size: 12px;
+			color: var(--fg-2);
+			cursor: pointer;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 7px;
+		}
+		.pagination button:hover {
+			background: var(--bg-3);
+		}
+		.pagination button.active {
+			color: var(--accent-ink);
+			background: var(--accent);
+			border-color: var(--accent);
+		}
+		.pagination .pager button.icon {
+			width: 28px;
+			padding: 0;
+		}
+
+		/* Right-side drawer (hidden by default) */
+		.drawer-backdrop {
+			position: fixed;
+			inset: 0;
+			z-index: 90;
+			display: none;
+			background: rgba(8, 9, 12, 0.5);
+			opacity: 0;
+			backdrop-filter: blur(2px);
+			transition: opacity 200ms ease;
+		}
+		.drawer-backdrop.visible {
+			display: block;
+			opacity: 1;
+		}
+		.drawer {
+			position: fixed;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 100;
+			display: flex;
+			flex-direction: column;
+			width: 460px;
+			max-width: 100vw;
+			background: var(--bg-1);
+			border-left: 1px solid var(--line);
+			box-shadow: -20px 0 60px -20px rgba(0, 0, 0, 0.5);
+			transform: translateX(100%);
+			transition: transform 280ms cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.drawer.visible {
+			transform: translateX(0);
+		}
+		.drawer-head {
+			display: flex;
+			gap: 14px;
+			align-items: flex-start;
+			justify-content: space-between;
+			padding: 18px 20px;
+			border-bottom: 1px solid var(--line);
+		}
+		.drawer-head .id-card {
+			display: flex;
+			gap: 14px;
+			align-items: center;
+		}
+		.drawer-head .avatar-lg {
+			display: flex;
+			flex-shrink: 0;
+			align-items: center;
+			justify-content: center;
+			width: 56px;
+			height: 56px;
+			font-size: 18px;
+			font-weight: 600;
+			color: var(--fg);
+			background: linear-gradient(
+				135deg,
+				color-mix(in oklab, var(--accent) 35%, var(--bg-3)),
+				var(--bg-3)
+			);
+			border-radius: 50%;
+		}
+		.drawer-head h2 {
+			margin-bottom: 4px;
+			font-size: 18px;
+			letter-spacing: -0.015em;
+		}
+		.drawer-head .sub {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			font-size: 12px;
+			color: var(--fg-3);
+		}
+		.drawer-body {
+			flex: 1;
+			padding: 18px 20px 24px;
+			overflow-y: auto;
+		}
+		.drawer-foot {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+			padding: 14px 20px;
+			border-top: 1px solid var(--line);
+		}
+
+		.drawer-section {
+			margin-bottom: 24px;
+		}
+		.drawer-section .tiny {
+			margin-bottom: 12px;
+		}
+		.drawer-stats {
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 8px;
+		}
+		.drawer-stat {
+			padding: 12px;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 11px;
+		}
+		.drawer-stat .l {
+			margin-bottom: 6px;
+			font-size: 10.5px;
+			color: var(--fg-3);
+			text-transform: uppercase;
+			letter-spacing: 0.05em;
+		}
+		.drawer-stat .v {
+			font-family: "JetBrains Mono", monospace;
+			font-size: 18px;
+			font-weight: 600;
+		}
+		.drawer-stat .sub-v {
+			margin-top: 3px;
+			font-size: 11px;
+			color: var(--fg-3);
+		}
+
+		/* Empty-state for tabs */
+		.empty-state {
+			padding: 48px 24px;
+			font-size: 13px;
+			color: var(--fg-3);
+			text-align: center;
+		}
+		.empty-state .ic {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 44px;
+			height: 44px;
+			margin: 0 auto 12px;
+			color: var(--fg-3);
+			background: var(--bg-2);
+			border-radius: 12px;
+		}
+
+		/* Density toggle */
+		.density-pills {
+			display: inline-flex;
+			gap: 2px;
+			padding: 3px;
+			background: var(--bg-2);
+			border: 1px solid var(--line);
+			border-radius: 99px;
+		}
+		.density-pills button {
+			height: 26px;
+			padding: 0 10px;
+			font-family: inherit;
+			font-size: 11.5px;
+			color: var(--fg-3);
+			cursor: pointer;
+			background: transparent;
+			border: 0;
+			border-radius: 99px;
+		}
+		.density-pills button.active {
+			color: var(--fg);
+			background: var(--bg-4);
+		}
+
+		/* Density mode "compact" */
+		.emp-list[data-density="compact"] tbody td {
+			padding: 6px 16px;
+			font-size: 12.5px;
+		}
+		.emp-list[data-density="compact"] .avatar-sm {
+			width: 22px;
+			height: 22px;
+			font-size: 9.5px;
+		}
+		.emp-list[data-density="comfortable"] tbody td {
+			padding: 16px;
+		}
+		</style>
+	</head>
+	<body data-current="employees" data-screen-label="Employees">
+		<div class="app">
+			<aside class="sidebar" data-app-shell-sidebar></aside>
+
+			<main>
+				<header class="topbar" data-app-shell-topbar></header>
+
+				<div class="page">
+					<!-- Page header -->
+					<div class="page-header">
+						<div>
+							<div class="crumbs">
+								<span>Atlas Shipping</span><span class="sep">/</span
+								><span>Employees</span>
+							</div>
+							<h1 class="page-title">Employees</h1>
+							<p class="page-sub">
+								1,284 active · 14 on leave · 6 onboarding this week
+							</p>
+						</div>
+						<div style="display: flex; gap: 8px; align-items: center;">
+							<button class="btn btn-outline">
+								<span data-icon="download" data-size="13"></span>
+								Export
+							</button>
+							<div class="menu-root">
+								<button class="btn btn-outline" data-menu-trigger="importMenu">
+									<span data-icon="external-link" data-size="13"></span>
+									Import <span data-icon="chevron-down" data-size="12"></span>
+								</button>
+								<div class="menu" data-menu="importMenu" data-side="bottom-end">
+									<button class="menu-item">
+										<span class="menu-icon"
+											><span data-icon="database" data-size="14"></span></span
+										>
+										Sync from Horilla
+									</button>
+									<button class="menu-item">
+										<span class="menu-icon"
+											><span data-icon="file-text" data-size="14"></span></span
+										>
+										Upload CSV
+									</button>
+									<button class="menu-item">
+										<span class="menu-icon"
+											><span data-icon="git-branch" data-size="14"></span></span
+										>
+										Import via API
+									</button>
+								</div>
+							</div>
+							<button class="btn btn-primary">
+								<span data-icon="plus" data-size="13"></span>
+								Add employee
+							</button>
+						</div>
+					</div>
+
+					<!-- Bulk action bar -->
+					<div class="bulk-bar" id="bulkBar">
+						<span class="count"><b id="bulkCount">0</b> selected</span>
+						<div class="toolbar-divider"></div>
+						<button class="btn btn-ghost btn-sm">
+							<span data-icon="external-link" data-size="11"></span>
+							Move department
+						</button>
+						<button class="btn btn-ghost btn-sm">
+							<span data-icon="file-text" data-size="11"></span>
+							Send document
+						</button>
+						<button class="btn btn-ghost btn-sm">
+							<span data-icon="wallet" data-size="11"></span>
+							Add to pay run
+						</button>
+						<div class="toolbar-divider"></div>
+						<button class="btn btn-ghost btn-sm" style="color: var(--danger);">
+							<span data-icon="x" data-size="11"></span>
+							Archive
+						</button>
+						<button class="btn btn-outline btn-sm" id="clearSel">Clear</button>
+					</div>
+
+					<!-- Toolbar -->
+					<div class="toolbar">
+						<div class="search-wrap">
+							<span class="icon-l" data-icon="search" data-size="15"></span>
+							<input
+								class="search"
+								placeholder="Search by name, ID, email, department…"
+							>
+						</div>
+						<div class="toolbar-divider"></div>
+						<div class="segmented">
+							<button class="active">
+								All <span style="opacity: 0.7;">·</span>
+								<span class="mono" style="font-size: 11px;">1,284</span>
+							</button>
+							<button>Active</button>
+							<button>On leave</button>
+							<button>Onboarding</button>
+							<button>Archived</button>
+						</div>
+						<div class="toolbar-divider"></div>
+						<div class="density-pills">
+							<button data-density="comfortable">Comfy</button>
+							<button class="active" data-density="default">Default</button>
+							<button data-density="compact">Compact</button>
+						</div>
+						<div class="menu-root" style="margin-left: auto;">
+							<button class="btn btn-ghost btn-sm" data-menu-trigger="colMenu">
+								<span data-icon="filter" data-size="12"></span>
+								Columns
+							</button>
+							<div class="menu" data-menu="colMenu" data-side="bottom-end">
+								<div class="menu-section">Toggle columns</div>
+								<button class="menu-item">
+									<span class="menu-icon"
+										><span
+											data-icon="check"
+											data-size="13"
+											style="color: var(--accent);"
+										></span></span
+									>
+									Department
+								</button>
+								<button class="menu-item">
+									<span class="menu-icon"
+										><span
+											data-icon="check"
+											data-size="13"
+											style="color: var(--accent);"
+										></span></span
+									>
+									Location
+								</button>
+								<button class="menu-item">
+									<span class="menu-icon"
+										><span
+											data-icon="check"
+											data-size="13"
+											style="color: var(--accent);"
+										></span></span
+									>
+									Country / payroll
+								</button>
+								<button class="menu-item">
+									<span class="menu-icon"
+										><span
+											data-icon="check"
+											data-size="13"
+											style="color: var(--accent);"
+										></span></span
+									>
+									Status
+								</button>
+								<button class="menu-item">
+									<span class="menu-icon"></span>
+									Manager
+								</button>
+								<button class="menu-item">
+									<span class="menu-icon"></span>
+									Joined date
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Filter chip bar -->
+					<div class="filter-row">
+						<button class="filter-chip active">
+							<span data-icon="globe" data-size="11"></span>
+							Country <span class="v">GY · TT · BB · JM</span>
+						</button>
+						<button class="filter-chip">
+							<span data-icon="building" data-size="11"></span>
+							Department
+						</button>
+						<button class="filter-chip">
+							<span data-icon="briefcase" data-size="11"></span>
+							Employment
+						</button>
+						<button class="filter-chip active">
+							<span data-icon="users" data-size="11"></span>
+							Manager <span class="v">Persaud, M.</span>
+						</button>
+						<button class="filter-chip">
+							<span data-icon="calendar" data-size="11"></span>
+							Joined
+						</button>
+						<button class="filter-chip">
+							<span data-icon="plus" data-size="11"></span>
+							Add filter
+						</button>
+						<div class="meta">
+							<span
+								>Showing
+								<span class="mono" style="color: var(--fg-2);">1 – 12</span>
+								of
+								<span class="mono" style="color: var(--fg-2);"
+									>1,284</span
+								></span
+							>
+							<span class="badge"
+								><span
+									class="badge-dot"
+									style="background: var(--success);"
+								></span>Synced 14:42</span
+							>
+						</div>
+					</div>
+
+					<!-- Employee table -->
+					<div class="emp-list" data-density="default" id="empList">
+						<table>
+							<thead>
+								<tr>
+									<th style="width: 40px; padding-right: 0;">
+										<input type="checkbox" class="checkbox" id="selectAll">
+									</th>
+									<th class="sortable">
+										Employee <span class="sort-ind">▼</span>
+									</th>
+									<th class="sortable">Department</th>
+									<th class="sortable">Location</th>
+									<th class="sortable">Country</th>
+									<th class="sortable">Status</th>
+									<th class="sortable" style="text-align: right;">Manager</th>
+									<th>Source</th>
+									<th style="width: 100px;"></th>
+								</tr>
+							</thead>
+							<tbody id="empBody">
+								<!-- populated by JS -->
+							</tbody>
+						</table>
+						<div class="pagination">
+							<span
+								>Showing
+								<span class="mono" style="color: var(--fg-2);">1–12</span>
+								of
+								<span class="mono" style="color: var(--fg-2);"
+									>1,284</span
+								></span
+							>
+							<div class="pager">
+								<button class="icon">
+									<span data-icon="chevron-left" data-size="12"></span>
+								</button>
+								<button class="active">1</button>
+								<button>2</button>
+								<button>3</button>
+								<button>4</button>
+								<span style="color: var(--fg-4); padding: 0 4px;">…</span>
+								<button>107</button>
+								<button class="icon">
+									<span data-icon="chevron-right" data-size="12"></span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			</main>
+		</div>
+
+		<!-- Drawer (employee preview) -->
+		<div class="drawer-backdrop" id="drawerBackdrop"></div>
+		<aside class="drawer" id="drawer" data-screen-label="Employee Drawer">
+			<div class="drawer-head">
+				<div class="id-card">
+					<div class="avatar-lg" id="drAvatar">RG</div>
+					<div>
+						<h2 id="drName">Rohan Gopaul</h2>
+						<div class="sub">
+							<span id="drId" class="mono" style="color: var(--fg-2);"
+								>EMP-00214</span
+							>
+							<span style="color: var(--fg-4);">·</span>
+							<span id="drRole">Senior Engineer, Engineering</span>
+						</div>
+					</div>
+				</div>
+				<button class="icon-btn" id="drClose">
+					<span data-icon="x" data-size="14"></span>
+				</button>
+			</div>
+
+			<div class="drawer-body" data-tab-scope>
+				<div class="tabs" data-tabs="drawerTabs" style="margin-bottom: 20px;">
+					<button class="tab" data-tab="overview" aria-selected="true">
+						Overview
+					</button>
+					<button class="tab" data-tab="payroll">Payroll</button>
+					<button class="tab" data-tab="leave">Leave</button>
+					<button class="tab" data-tab="docs">
+						Documents <span class="count">4</span>
+					</button>
+					<button class="tab" data-tab="activity">Activity</button>
+				</div>
+
+				<div class="tab-panel active" data-tab-panel="overview">
+					<div class="drawer-section">
+						<div class="tiny">Employment</div>
+						<div class="kv">
+							<span class="kv-k">Status</span
+							><span class="kv-v"
+								><span class="pill-status active"
+									><span class="badge-dot"></span>Active</span
+								></span
+							>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Joined</span
+							><span class="kv-v">2024-03-18</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Contract</span
+							><span class="kv-v">Permanent</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Manager</span
+							><span
+								class="kv-v"
+								style="font-family: inherit; color: var(--fg);"
+								>Maya Persaud</span
+							>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Location</span
+							><span
+								class="kv-v"
+								style="font-family: inherit; color: var(--fg);"
+								>Georgetown, GY</span
+							>
+						</div>
+					</div>
+
+					<div class="drawer-section">
+						<div class="tiny">This period at a glance</div>
+						<div class="drawer-stats">
+							<div class="drawer-stat">
+								<div class="l">Attendance</div>
+								<div class="v">94.8%</div>
+								<div class="sub-v">2 late · 0 absent</div>
+							</div>
+							<div class="drawer-stat">
+								<div class="l">Leave taken</div>
+								<div class="v">3 / 18</div>
+								<div class="sub-v">15 remaining</div>
+							</div>
+							<div class="drawer-stat">
+								<div class="l">Net pay</div>
+								<div class="v" style="color: var(--accent);">265k</div>
+								<div class="sub-v">GYD · Sep</div>
+							</div>
+						</div>
+					</div>
+
+					<div class="drawer-section">
+						<div class="tiny">Country &amp; tax</div>
+						<div class="kv">
+							<span class="kv-k">Country</span
+							><span
+								class="kv-v"
+								style="font-family: inherit; color: var(--fg); display: inline-flex; align-items: center; gap: 8px;"
+								><span data-flag="GY"></span>
+								Guyana</span
+							>
+						</div>
+						<div class="kv">
+							<span class="kv-k">PAYE band</span
+							><span class="kv-v">28% bracket</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">NIS #</span
+							><span class="kv-v">GY-NIS-9482-1147</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Profile</span
+							><span class="kv-v">gy.v2026.1</span>
+						</div>
+					</div>
+
+					<div class="drawer-section">
+						<div class="tiny">Source</div>
+						<div
+							style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; display: flex; align-items: center; gap: 12px;"
+						>
+							<div
+								style="width: 32px; height: 32px; border-radius: 9px; background: var(--success-soft); color: var(--success); display: flex; align-items: center; justify-content: center;"
+								data-icon="database"
+								data-size="16"
+							></div>
+							<div style="flex: 1;">
+								<div style="font-size: 12.5px; font-weight: 500;">
+									Synced from Horilla HRMS
+								</div>
+								<div
+									style="font-size: 11px; color: var(--fg-3); margin-top: 2px;"
+								>
+									Last update
+									<span class="mono" style="color: var(--fg-2);"
+										>2026-09-27 14:42:08</span
+									>
+								</div>
+							</div>
+							<a
+								href="#"
+								style="color: var(--accent); font-size: 12px; display: inline-flex; align-items: center; gap: 4px;"
+								>Open <span data-icon="arrow-up-right" data-size="11"></span></a
+							>
+						</div>
+					</div>
+				</div>
+
+				<div class="tab-panel" data-tab-panel="payroll">
+					<div class="drawer-section">
+						<div class="tiny">Latest pay run · GY · September 2026</div>
+						<div class="kv">
+							<span class="kv-k">Gross</span
+							><span class="kv-v">342,000.00</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">PAYE</span
+							><span class="kv-v" style="color: var(--fg-3);">−58,140.00</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">NIS (employee)</span
+							><span class="kv-v" style="color: var(--fg-3);">−18,810.00</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Other deductions</span
+							><span class="kv-v" style="color: var(--fg-3);">0.00</span>
+						</div>
+						<div
+							class="kv"
+							style="border-top: 1px solid var(--line); padding-top: 12px; margin-top: 4px;"
+						>
+							<span class="kv-k" style="color: var(--fg);">Net pay</span
+							><span class="kv-v" style="color: var(--accent); font-size: 16px;"
+								>265,050.00</span
+							>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Employer NIS</span
+							><span class="kv-v" style="color: var(--fg-3);">19,152.00</span>
+						</div>
+					</div>
+					<button class="btn btn-outline w-full">
+						View payslip <span data-icon="external-link" data-size="12"></span>
+					</button>
+				</div>
+
+				<div class="tab-panel" data-tab-panel="leave">
+					<div class="drawer-section">
+						<div class="tiny">Balances · FY 2026</div>
+						<div class="kv">
+							<span class="kv-k">Annual</span
+							><span class="kv-v">15 / 18 days</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Sick</span
+							><span class="kv-v">12 / 14 days</span>
+						</div>
+						<div class="kv">
+							<span class="kv-k">Compassionate</span
+							><span class="kv-v">3 / 3 days</span>
+						</div>
+					</div>
+					<div class="drawer-section">
+						<div class="tiny">Upcoming</div>
+						<div
+							style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px;"
+						>
+							<div style="font-size: 13px; font-weight: 500;">
+								Annual leave · 4 days
+							</div>
+							<div
+								style="font-size: 11.5px; color: var(--fg-3); margin-top: 4px;"
+							>
+								2–5 October · awaiting your approval
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="tab-panel" data-tab-panel="docs">
+					<div class="drawer-section">
+						<div class="tiny">On file (4)</div>
+						<div style="display: flex; flex-direction: column; gap: 8px;">
+							<div
+								style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 11px; padding: 11px 13px; display: flex; align-items: center; gap: 12px;"
+							>
+								<span
+									data-icon="file-text"
+									data-size="16"
+									style="color: var(--fg-3);"
+								></span>
+								<div style="flex: 1;">
+									<div style="font-size: 13px;">
+										Contract · Permanent (signed)
+									</div>
+									<div style="font-size: 11.5px; color: var(--fg-3);">
+										PDF · 184 KB · 2024-03-18
+									</div>
+								</div>
+								<a style="color: var(--accent); font-size: 11.5px;">Open</a>
+							</div>
+							<div
+								style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 11px; padding: 11px 13px; display: flex; align-items: center; gap: 12px;"
+							>
+								<span
+									data-icon="file-text"
+									data-size="16"
+									style="color: var(--fg-3);"
+								></span>
+								<div style="flex: 1;">
+									<div style="font-size: 13px;">National ID</div>
+									<div style="font-size: 11.5px; color: var(--fg-3);">
+										PDF · 320 KB · 2024-03-18
+									</div>
+								</div>
+								<a style="color: var(--accent); font-size: 11.5px;">Open</a>
+							</div>
+							<div
+								style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 11px; padding: 11px 13px; display: flex; align-items: center; gap: 12px;"
+							>
+								<span
+									data-icon="file-text"
+									data-size="16"
+									style="color: var(--fg-3);"
+								></span>
+								<div style="flex: 1;">
+									<div style="font-size: 13px;">
+										Bank verification · Republic Bank
+									</div>
+									<div style="font-size: 11.5px; color: var(--fg-3);">
+										PDF · 96 KB · 2024-04-02
+									</div>
+								</div>
+								<a style="color: var(--accent); font-size: 11.5px;">Open</a>
+							</div>
+							<div
+								style="background: var(--bg-2); border: 1px solid var(--line); border-radius: 11px; padding: 11px 13px; display: flex; align-items: center; gap: 12px;"
+							>
+								<span
+									data-icon="file-text"
+									data-size="16"
+									style="color: var(--fg-3);"
+								></span>
+								<div style="flex: 1;">
+									<div style="font-size: 13px;">
+										Performance review · H1 2026
+									</div>
+									<div style="font-size: 11.5px; color: var(--fg-3);">
+										PDF · 244 KB · 2026-07-10
+									</div>
+								</div>
+								<a style="color: var(--accent); font-size: 11.5px;">Open</a>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="tab-panel" data-tab-panel="activity">
+					<div
+						class="timeline"
+						style="position: relative; display: flex; flex-direction: column;"
+					>
+						<div
+							style="position: absolute; left: 11px; top: 12px; bottom: 12px; width: 1px; background: var(--line);"
+						></div>
+						<div
+							style="display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; font-size: 12.5px; position: relative; z-index: 1;"
+						>
+							<div
+								style="width: 22px; height: 22px; border-radius: 50%; background: var(--bg-1); border: 1px solid var(--accent); color: var(--accent); display: flex; align-items: center; justify-content: center;"
+							>
+								<span data-icon="check" data-size="11"></span>
+							</div>
+							<div>OT request · 8h · approved by Maya Persaud</div>
+							<div class="mono" style="font-size: 11px; color: var(--fg-4);">
+								Tue 14:18
+							</div>
+						</div>
+						<div
+							style="display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; font-size: 12.5px; position: relative; z-index: 1;"
+						>
+							<div
+								style="width: 22px; height: 22px; border-radius: 50%; background: var(--bg-1); border: 1px solid var(--line); color: var(--fg-3); display: flex; align-items: center; justify-content: center;"
+							>
+								<span data-icon="file-text" data-size="11"></span>
+							</div>
+							<div>Performance review filed · H1 2026</div>
+							<div class="mono" style="font-size: 11px; color: var(--fg-4);">
+								Jul 10
+							</div>
+						</div>
+						<div
+							style="display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; font-size: 12.5px; position: relative; z-index: 1;"
+						>
+							<div
+								style="width: 22px; height: 22px; border-radius: 50%; background: var(--bg-1); border: 1px solid var(--line); color: var(--fg-3); display: flex; align-items: center; justify-content: center;"
+							>
+								<span data-icon="trending-up" data-size="11"></span>
+							</div>
+							<div>Salary increase · +8.4% · effective 2026-07-01</div>
+							<div class="mono" style="font-size: 11px; color: var(--fg-4);">
+								Jul 1
+							</div>
+						</div>
+						<div
+							style="display: grid; grid-template-columns: 22px 1fr auto; gap: 12px; align-items: center; padding: 10px 0; font-size: 12.5px; position: relative; z-index: 1;"
+						>
+							<div
+								style="width: 22px; height: 22px; border-radius: 50%; background: var(--bg-1); border: 1px solid var(--line); color: var(--fg-3); display: flex; align-items: center; justify-content: center;"
+							>
+								<span data-icon="users" data-size="11"></span>
+							</div>
+							<div>Joined Engineering team</div>
+							<div class="mono" style="font-size: 11px; color: var(--fg-4);">
+								Mar 18, '24
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="drawer-foot">
+				<a href="employee.html" class="btn btn-outline" style="flex: 1;"
+					>Open full profile
+					<span data-icon="external-link" data-size="13"></span></a
+				>
+				<button class="btn btn-primary">
+					<span data-icon="play" data-size="13"></span>
+					Send message
+				</button>
+			</div>
+		</aside>
+
+		<script src="../js/heimdall.js"></script>
+		<script src="../js/shell.js"></script>
+		<script>
+		"use strict";
+		// Sample employees
+		const EMPLOYEES = [
+			{
+				id: "EMP-00128",
+				name: "Maya Persaud",
+				role: "Ops Lead",
+				dept: "Operations",
+				loc: "Georgetown",
+				cc: "GY",
+				status: "active",
+				manager: "—",
+				src: "horilla",
+				online: true,
+				initials: "MP",
+			},
+			{
+				id: "EMP-00214",
+				name: "Rohan Gopaul",
+				role: "Senior Engineer",
+				dept: "Engineering",
+				loc: "Georgetown",
+				cc: "GY",
+				status: "active",
+				manager: "Persaud, M.",
+				src: "horilla",
+				online: true,
+				initials: "RG",
+			},
+			{
+				id: "EMP-00302",
+				name: "Shanice Powell",
+				role: "Finance Manager",
+				dept: "Finance",
+				loc: "Bridgetown",
+				cc: "BB",
+				status: "active",
+				manager: "Roberts, L.",
+				src: "horilla",
+				online: false,
+				initials: "SP",
+			},
+			{
+				id: "EMP-00417",
+				name: "Devon Ali",
+				role: "Yard Operator",
+				dept: "Operations",
+				loc: "Mahaica",
+				cc: "GY",
+				status: "probation",
+				manager: "Persaud, M.",
+				src: "horilla",
+				online: true,
+				initials: "DA",
+			},
+			{
+				id: "EMP-00504",
+				name: "Kareena Ramnath",
+				role: "HR Generalist",
+				dept: "HR",
+				loc: "Georgetown",
+				cc: "GY",
+				status: "active",
+				manager: "Roberts, L.",
+				src: "horilla",
+				online: true,
+				initials: "KR",
+			},
+			{
+				id: "EMP-00611",
+				name: "Jaden Sealey",
+				role: "Logistics Lead",
+				dept: "Operations",
+				loc: "Port of Spain",
+				cc: "TT",
+				status: "active",
+				manager: "Persaud, M.",
+				src: "horilla",
+				online: false,
+				initials: "JS",
+			},
+			{
+				id: "EMP-00702",
+				name: "Aisha Khan",
+				role: "Software Engineer",
+				dept: "Engineering",
+				loc: "Georgetown",
+				cc: "GY",
+				status: "active",
+				manager: "Persaud, M.",
+				src: "horilla",
+				online: true,
+				initials: "AK",
+			},
+			{
+				id: "EMP-00814",
+				name: "Lia Roberts",
+				role: "Head of HR",
+				dept: "HR",
+				loc: "Georgetown",
+				cc: "GY",
+				status: "active",
+				manager: "—",
+				src: "horilla",
+				online: true,
+				initials: "LR",
+			},
+			{
+				id: "EMP-00904",
+				name: "Marcus Hines",
+				role: "Account Manager",
+				dept: "Sales",
+				loc: "Kingston",
+				cc: "JM",
+				status: "active",
+				manager: "Khan, T.",
+				src: "horilla",
+				online: false,
+				initials: "MH",
+			},
+			{
+				id: "EMP-01023",
+				name: "Trish Khan",
+				role: "Sales Lead, JM",
+				dept: "Sales",
+				loc: "Kingston",
+				cc: "JM",
+				status: "active",
+				manager: "—",
+				src: "horilla",
+				online: true,
+				initials: "TK",
+			},
+			{
+				id: "EMP-01104",
+				name: "Nadia Singh",
+				role: "Compliance Officer",
+				dept: "Compliance",
+				loc: "Port of Spain",
+				cc: "TT",
+				status: "notice",
+				manager: "Roberts, L.",
+				src: "stale",
+				online: false,
+				initials: "NS",
+			},
+			{
+				id: "EMP-01211",
+				name: "Eli Pierre",
+				role: "Junior Engineer",
+				dept: "Engineering",
+				loc: "Georgetown",
+				cc: "GY",
+				status: "probation",
+				manager: "Gopaul, R.",
+				src: "horilla",
+				online: true,
+				initials: "EP",
+			},
+		];
+
+		const STATUS_LABELS = {
+			active: "Active",
+			probation: "Probation",
+			notice: "Notice",
+			contract: "Contract",
+		};
+
+		function render() {
+			const body = document.getElementById("empBody");
+			body.innerHTML = EMPLOYEES.map(
+				(e) => `
+																																																																																																												        <tr data-id="${e.id}">
+																																																																																																												          <td style="padding-right: 0;"><input type="checkbox" class="checkbox row-cb" /></td>
+																																																																																																												          <td>
+																																																																																																												            <div class="emp-name">
+																																																																																																												              <div class="avatar-sm ${e.online ? "online" : ""}">${e.initials}</div>
+																																																																																																												              <div>
+																																																																																																												                <div class="ttl">${e.name}</div>
+																																																																																																												                <div class="sub">${e.id} · ${e.role}</div>
+																																																																																																												              </div>
+																																																																																																												            </div>
+																																																																																																												          </td>
+																																																																																																												          <td><span style="color: var(--fg-2);">${e.dept}</span></td>
+																																																																																																												          <td><span style="color: var(--fg-2);">${e.loc}</span></td>
+																																																																																																												          <td><span class="cc-badge"><span data-flag="${e.cc}"></span>${e.cc}</span></td>
+																																																																																																												          <td><span class="pill-status ${e.status}">${e.status === "active" ? '<span class="badge-dot"></span>' : ""}${STATUS_LABELS[e.status]}</span></td>
+																																																																																																												          <td style="text-align: right; color: var(--fg-3); font-size: 12px;">${e.manager}</td>
+																																																																																																												          <td><span class="source-tag ${e.src === "stale" ? "stale" : ""}"><span class="dot"></span>${e.src === "stale" ? "horilla · stale" : "horilla"}</span></td>
+																																																																																																												          <td>
+																																																																																																												            <div class="row-actions">
+																																																																																																												              <button title="Open profile"><span data-icon="external-link" data-size="12"></span></button>
+																																																																																																												              <button title="Message"><span data-icon="info" data-size="12"></span></button>
+																																																																																																												              <button title="More"><span data-icon="more-horizontal" data-size="12"></span></button>
+																																																																																																												            </div>
+																																																																																																												          </td>
+																																																																																																												        </tr>
+																																																																																																												      `
+			).join("");
+			window.hydrateFlags(body);
+			window.hydrateIcons(body);
+
+			// Wire row click → drawer
+			body.querySelectorAll("tr").forEach((tr) => {
+				tr.style.cursor = "pointer";
+				tr.addEventListener("click", (e) => {
+					if (e.target.closest("input,button,a")) {
+						return;
+					}
+					const id = tr.dataset.id;
+					openDrawer(id);
+				});
+			});
+
+			// Wire checkbox bulk-bar
+			body.querySelectorAll(".row-cb").forEach((cb) => {
+				cb.addEventListener("change", () => {
+					cb.closest("tr").classList.toggle("selected", cb.checked);
+					updateBulkBar();
+				});
+				cb.addEventListener("click", (e) => e.stopPropagation());
+			});
+		}
+
+		function updateBulkBar() {
+			const count = document.querySelectorAll(".row-cb:checked").length;
+			document.getElementById("bulkCount").textContent = count;
+			document.getElementById("bulkBar").classList.toggle("visible", count > 0);
+		}
+		document.getElementById("selectAll").addEventListener("change", (e) => {
+			document.querySelectorAll(".row-cb").forEach((cb) => {
+				cb.checked = e.target.checked;
+				cb.closest("tr").classList.toggle("selected", cb.checked);
+			});
+			updateBulkBar();
+		});
+		document.getElementById("clearSel").addEventListener("click", () => {
+			document.querySelectorAll(".row-cb, #selectAll").forEach((cb) => {
+				cb.checked = false;
+				cb.closest("tr")?.classList.remove("selected");
+			});
+			updateBulkBar();
+		});
+
+		// Density toggle
+		document.querySelectorAll(".density-pills button").forEach((b) => {
+			b.addEventListener("click", () => {
+				document
+					.querySelectorAll(".density-pills button")
+					.forEach((x) => x.classList.toggle("active", x === b));
+				document.getElementById("empList").dataset.density = b.dataset.density;
+			});
+		});
+
+		// Drawer
+		const drawer = document.getElementById("drawer");
+		const backdrop = document.getElementById("drawerBackdrop");
+		function openDrawer(id) {
+			const e = EMPLOYEES.find((x) => x.id === id);
+			if (!e) {
+				return;
+			}
+			document.getElementById("drAvatar").textContent = e.initials;
+			document.getElementById("drName").textContent = e.name;
+			document.getElementById("drId").textContent = e.id;
+			document.getElementById("drRole").textContent = `${e.role}, ${e.dept}`;
+			drawer.classList.add("visible");
+			backdrop.classList.add("visible");
+		}
+		function closeDrawer() {
+			drawer.classList.remove("visible");
+			backdrop.classList.remove("visible");
+		}
+		document.getElementById("drClose").addEventListener("click", closeDrawer);
+		backdrop.addEventListener("click", closeDrawer);
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape") {
+				closeDrawer();
+			}
+		});
+
+		render();
+		</script>
+	</body>
+</html>
