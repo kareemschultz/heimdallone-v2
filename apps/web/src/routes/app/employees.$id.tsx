@@ -1,54 +1,1592 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import {
+	Activity,
+	ArrowRight,
+	ArrowUp,
+	ArrowUpRight,
+	Briefcase,
+	Calendar,
+	Check,
+	ChevronDown,
+	Clock,
+	Download,
+	ExternalLink,
+	FileText,
+	Filter,
+	Info,
+	LayoutDashboard,
+	LogOut,
+	MoreHorizontal,
+	Play,
+	Plus,
+	TrendingUp,
+	User,
+	Users,
+	Wallet,
+} from "lucide-react";
+import { useState } from "react";
+
+import "@/styles/employee-profile.css";
 
 export const Route = createFileRoute("/app/employees/$id")({
 	component: EmployeeProfilePage,
 });
 
+type ProfileTab =
+	| "overview"
+	| "attendance"
+	| "leave"
+	| "payroll"
+	| "documents"
+	| "activity";
+
+const ATT_DAYS = [
+	"weekend",
+	"full",
+	"full",
+	"late",
+	"full",
+	"full",
+	"full",
+	"weekend",
+	"weekend",
+	"full",
+	"full",
+	"full",
+	"full",
+	"full-2",
+	"weekend",
+	"weekend",
+	"full",
+	"full",
+	"full",
+	"full",
+	"full",
+	"weekend",
+	"weekend",
+	"full",
+	"late",
+	"full",
+	"full",
+	"full",
+	"weekend",
+	"weekend",
+];
+
 function EmployeeProfilePage() {
-	const { id } = Route.useParams();
+	const [profileTab, setProfileTab] = useState<ProfileTab>("overview");
 
 	return (
-		<div className="page">
-			<div className="page-header">
-				<div>
-					<div className="crumbs">
-						<span>Heimdallone</span>
-						<span className="sep">/</span>
-						<span>Employees</span>
-						<span className="sep">/</span>
-						<span>{id}</span>
+		<div className="page" data-tab-scope>
+			<div className="crumbs">
+				<span>
+					<Link style={{ color: "var(--fg-3)" }} to="/app/employees">
+						Employees
+					</Link>
+				</span>
+				<span className="sep">/</span>
+				<span>Rohan Gopaul</span>
+			</div>
+
+			{/* Profile header */}
+			<div className="profile-head">
+				<div className="profile-cover" />
+				<div className="profile-id">
+					<div className="profile-avatar">RG</div>
+					<div className="profile-meta">
+						<h1>Rohan Gopaul</h1>
+						<div className="sub">
+							<span style={{ color: "var(--fg-2)" }}>
+								Senior Engineer · Engineering
+							</span>
+							<span className="sep">·</span>
+							<span className="mono" style={{ color: "var(--fg-3)" }}>
+								EMP-00214
+							</span>
+							<span className="sep">·</span>
+							<span className="cc-badge" style={{ height: "22px" }}>
+								<span style={{ fontSize: "11px" }}>GY</span>
+								Guyana
+							</span>
+							<span
+								className="pill-status active"
+								style={{
+									height: "22px",
+									display: "inline-flex",
+									alignItems: "center",
+									gap: "6px",
+									padding: "0 9px",
+									borderRadius: "99px",
+									fontSize: "11px",
+									background: "var(--success-soft)",
+									color: "var(--success)",
+								}}
+							>
+								<span className="badge-dot" />
+								Active · Permanent
+							</span>
+							<span className="badge" style={{ height: "22px", gap: "6px" }}>
+								<span
+									className="badge-dot"
+									style={{ background: "var(--success)" }}
+								/>
+								Synced 14:42
+							</span>
+						</div>
 					</div>
-					<h1 className="page-title">Employee Profile</h1>
-					<p className="page-sub">Detailed employee view</p>
+					<div className="profile-actions">
+						<button className="btn btn-outline btn-sm" type="button">
+							<Info size={12} />
+							Message
+						</button>
+						<button className="btn btn-outline btn-sm" type="button">
+							<FileText size={12} />
+							View payslip
+						</button>
+						<div className="menu-root">
+							<button className="btn btn-outline btn-sm" type="button">
+								<MoreHorizontal size={12} />
+							</button>
+							<div className="menu" data-side="bottom-end">
+								<button className="menu-item" type="button">
+									<span className="menu-icon">
+										<User size={14} />
+									</span>
+									Edit profile
+								</button>
+								<button className="menu-item" type="button">
+									<span className="menu-icon">
+										<Briefcase size={14} />
+									</span>
+									Change role
+								</button>
+								<button className="menu-item" type="button">
+									<span className="menu-icon">
+										<TrendingUp size={14} />
+									</span>
+									Salary adjustment
+								</button>
+								<button className="menu-item" type="button">
+									<span className="menu-icon">
+										<Download size={14} />
+									</span>
+									Export employee record
+								</button>
+								<div className="menu-sep" />
+								<button className="menu-item danger" type="button">
+									<span className="menu-icon">
+										<LogOut size={14} />
+									</span>
+									Initiate offboarding
+								</button>
+							</div>
+						</div>
+						<button className="btn btn-primary btn-sm" type="button">
+							<Play size={12} />
+							Quick action
+						</button>
+					</div>
+				</div>
+				<div className="profile-tabs">
+					<div className="tabs" style={{ borderBottom: 0 }}>
+						{(
+							[
+								{
+									key: "overview",
+									icon: <LayoutDashboard size={13} />,
+									label: "Overview",
+								},
+								{
+									key: "attendance",
+									icon: <Clock size={13} />,
+									label: "Attendance",
+								},
+								{
+									key: "leave",
+									icon: <Calendar size={13} />,
+									label: "Leave",
+								},
+								{
+									key: "payroll",
+									icon: <Wallet size={13} />,
+									label: (
+										<>
+											Payroll <span className="count">9</span>
+										</>
+									),
+								},
+								{
+									key: "documents",
+									icon: <FileText size={13} />,
+									label: (
+										<>
+											Documents <span className="count">4</span>
+										</>
+									),
+								},
+								{
+									key: "activity",
+									icon: <Activity size={13} />,
+									label: "Activity",
+								},
+							] as {
+								key: ProfileTab;
+								icon: React.ReactNode;
+								label: React.ReactNode;
+							}[]
+						).map(({ key, icon, label }) => (
+							<button
+								aria-selected={profileTab === key}
+								className="tab"
+								key={key}
+								onClick={() => setProfileTab(key)}
+								type="button"
+							>
+								{icon}
+								{label}
+							</button>
+						))}
+					</div>
 				</div>
 			</div>
-			<div
-				className="card card-pad"
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					minHeight: "400px",
-					textAlign: "center",
-				}}
-			>
-				<div className="eyebrow" style={{ marginBottom: "12px" }}>
-					People
+
+			{/* Tab: Overview */}
+			{profileTab === "overview" && (
+				<div className="tab-panel active">
+					<div className="profile-grid">
+						{/* LEFT: identity card */}
+						<div className="left">
+							<div className="side-card">
+								<div className="head">
+									<span className="ttl">Identity</span>
+									<button
+										className="icon-btn"
+										style={{ width: "26px", height: "26px" }}
+										type="button"
+									>
+										<ExternalLink size={13} />
+									</button>
+								</div>
+								<div className="body field-list">
+									<div className="kv">
+										<span className="k">Employee ID</span>
+										<span className="v">EMP-00214</span>
+									</div>
+									<div className="kv">
+										<span className="k">Email</span>
+										<span className="v" style={{ fontSize: "11.5px" }}>
+											rohan@atlas-shipping.com
+										</span>
+									</div>
+									<div className="kv">
+										<span className="k">Phone</span>
+										<span className="v">+592 ••• 4218</span>
+									</div>
+									<div className="kv">
+										<span className="k">National ID</span>
+										<span className="v">GY-NID-••••-7741</span>
+									</div>
+									<div className="kv">
+										<span className="k">Date of birth</span>
+										<span className="v">1992-04-12</span>
+									</div>
+								</div>
+							</div>
+
+							<div className="side-card">
+								<div className="head">
+									<span className="ttl">Employment</span>
+								</div>
+								<div className="body field-list">
+									<div className="kv">
+										<span className="k">Role</span>
+										<span className="v plain">Senior Engineer</span>
+									</div>
+									<div className="kv">
+										<span className="k">Department</span>
+										<span className="v plain">Engineering</span>
+									</div>
+									<div className="kv">
+										<span className="k">Manager</span>
+										<span className="v plain">Maya Persaud</span>
+									</div>
+									<div className="kv">
+										<span className="k">Location</span>
+										<span className="v plain">Georgetown, GY</span>
+									</div>
+									<div className="kv">
+										<span className="k">Contract</span>
+										<span className="v plain">Permanent</span>
+									</div>
+									<div className="kv">
+										<span className="k">Joined</span>
+										<span className="v">2024-03-18</span>
+									</div>
+									<div className="kv">
+										<span className="k">Tenure</span>
+										<span className="v">2y · 6m</span>
+									</div>
+								</div>
+							</div>
+
+							<div className="side-card">
+								<div className="head">
+									<span className="ttl">Payroll · GY</span>
+									<span className="badge">
+										<span
+											className="badge-dot"
+											style={{ background: "var(--accent)" }}
+										/>
+										v2026.1
+									</span>
+								</div>
+								<div className="body field-list">
+									<div className="kv">
+										<span className="k">Country</span>
+										<span
+											className="v plain"
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "8px",
+											}}
+										>
+											<span style={{ fontSize: "11px" }}>GY</span>
+											Guyana
+										</span>
+									</div>
+									<div className="kv">
+										<span className="k">Currency</span>
+										<span className="v">GYD</span>
+									</div>
+									<div className="kv">
+										<span className="k">PAYE band</span>
+										<span className="v">28%</span>
+									</div>
+									<div className="kv">
+										<span className="k">NIS number</span>
+										<span className="v">GY-NIS-9482-1147</span>
+									</div>
+									<div className="kv">
+										<span className="k">Pay schedule</span>
+										<span className="v plain">Monthly · last working day</span>
+									</div>
+									<div className="kv">
+										<span className="k">Bank</span>
+										<span className="v plain">Republic Bank · •••• 4421</span>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						{/* RIGHT: dashboard widgets */}
+						<div className="right">
+							<div className="stat-row">
+								<div className="stat-card">
+									<div className="l">Attendance · 30d</div>
+									<div className="v">94.8%</div>
+									<div className="delta up">
+										<ArrowUp size={10} />
+										+1.2pp · 2 late · 0 absent
+									</div>
+								</div>
+								<div className="stat-card">
+									<div className="l">Leave balance</div>
+									<div className="v">
+										15
+										<span style={{ fontSize: "14px", color: "var(--fg-3)" }}>
+											{" "}
+											/ 18
+										</span>
+									</div>
+									<div className="delta">3 days taken · FY 2026</div>
+								</div>
+								<div className="stat-card">
+									<div className="l">Net pay · Sep</div>
+									<div className="v" style={{ color: "var(--accent)" }}>
+										265.0k
+									</div>
+									<div className="delta">GYD · gross 342.0k</div>
+								</div>
+								<div className="stat-card">
+									<div className="l">Overtime · 30d</div>
+									<div className="v">14.5 h</div>
+									<div className="delta warn">+ 6.5h pending approval</div>
+								</div>
+							</div>
+
+							{/* Attendance widget */}
+							<div className="widget">
+								<div className="widget-head">
+									<span className="ttl">Attendance · last 30 days</span>
+									<div className="segmented" style={{ height: "auto" }}>
+										<button
+											className="active"
+											style={{
+												height: "24px",
+												padding: "0 8px",
+												fontSize: "11px",
+											}}
+											type="button"
+										>
+											30d
+										</button>
+										<button
+											style={{
+												height: "24px",
+												padding: "0 8px",
+												fontSize: "11px",
+											}}
+											type="button"
+										>
+											90d
+										</button>
+										<button
+											style={{
+												height: "24px",
+												padding: "0 8px",
+												fontSize: "11px",
+											}}
+											type="button"
+										>
+											YTD
+										</button>
+									</div>
+								</div>
+								<div className="widget-body">
+									<div
+										style={{
+											display: "flex",
+											alignItems: "baseline",
+											justifyContent: "space-between",
+											flexWrap: "wrap",
+											gap: "8px",
+										}}
+									>
+										<div
+											style={{
+												display: "flex",
+												gap: "18px",
+												flexWrap: "wrap",
+											}}
+										>
+											<div>
+												<span
+													style={{
+														fontSize: "11px",
+														color: "var(--fg-3)",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em",
+													}}
+												>
+													Full days
+												</span>
+												<div
+													className="mono"
+													style={{
+														fontSize: "16px",
+														fontWeight: 600,
+													}}
+												>
+													22
+												</div>
+											</div>
+											<div>
+												<span
+													style={{
+														fontSize: "11px",
+														color: "var(--fg-3)",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em",
+													}}
+												>
+													Late
+												</span>
+												<div
+													className="mono"
+													style={{
+														fontSize: "16px",
+														fontWeight: 600,
+														color: "var(--warning)",
+													}}
+												>
+													2
+												</div>
+											</div>
+											<div>
+												<span
+													style={{
+														fontSize: "11px",
+														color: "var(--fg-3)",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em",
+													}}
+												>
+													Absent
+												</span>
+												<div
+													className="mono"
+													style={{
+														fontSize: "16px",
+														fontWeight: 600,
+														color: "var(--danger)",
+													}}
+												>
+													0
+												</div>
+											</div>
+											<div>
+												<span
+													style={{
+														fontSize: "11px",
+														color: "var(--fg-3)",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em",
+													}}
+												>
+													Leave
+												</span>
+												<div
+													className="mono"
+													style={{
+														fontSize: "16px",
+														fontWeight: 600,
+													}}
+												>
+													3
+												</div>
+											</div>
+											<div>
+												<span
+													style={{
+														fontSize: "11px",
+														color: "var(--fg-3)",
+														textTransform: "uppercase",
+														letterSpacing: "0.05em",
+													}}
+												>
+													OT
+												</span>
+												<div
+													className="mono"
+													style={{
+														fontSize: "16px",
+														fontWeight: 600,
+														color: "var(--accent)",
+													}}
+												>
+													14.5h
+												</div>
+											</div>
+										</div>
+									</div>
+									<div className="att-cal">
+										{ATT_DAYS.map((day, i) => (
+											<div className={`att-day ${day}`} key={i} />
+										))}
+									</div>
+									<div
+										style={{
+											display: "flex",
+											gap: "14px",
+											marginTop: "14px",
+											fontSize: "11px",
+											color: "var(--fg-3)",
+										}}
+									>
+										<span
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "5px",
+											}}
+										>
+											<span
+												style={{
+													width: "10px",
+													height: "10px",
+													borderRadius: "3px",
+													background: "var(--accent)",
+												}}
+											/>
+											Full
+										</span>
+										<span
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "5px",
+											}}
+										>
+											<span
+												style={{
+													width: "10px",
+													height: "10px",
+													borderRadius: "3px",
+													background: "var(--warning)",
+												}}
+											/>
+											Late
+										</span>
+										<span
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "5px",
+											}}
+										>
+											<span
+												style={{
+													width: "10px",
+													height: "10px",
+													borderRadius: "3px",
+													background: "var(--danger)",
+												}}
+											/>
+											Absent
+										</span>
+										<span
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "5px",
+											}}
+										>
+											<span
+												style={{
+													width: "10px",
+													height: "10px",
+													borderRadius: "3px",
+													background: "var(--bg-3)",
+												}}
+											/>
+											Leave
+										</span>
+										<span
+											style={{
+												display: "inline-flex",
+												alignItems: "center",
+												gap: "5px",
+											}}
+										>
+											<span
+												style={{
+													width: "10px",
+													height: "10px",
+													borderRadius: "3px",
+													background: "var(--bg-2)",
+												}}
+											/>
+											Weekend
+										</span>
+									</div>
+								</div>
+							</div>
+
+							{/* Leave widget */}
+							<div className="widget">
+								<div className="widget-head">
+									<span className="ttl">Leave balances · FY 2026</span>
+									<a
+										href="#"
+										style={{ fontSize: "11.5px", color: "var(--accent)" }}
+									>
+										Request leave
+									</a>
+								</div>
+								<div className="widget-body">
+									<div className="leave-row">
+										<span className="lbl">Annual</span>
+										<div className="pbar">
+											<div className="pbar-fill" style={{ width: "16.6%" }} />
+										</div>
+										<span className="nums">3 / 18 used</span>
+									</div>
+									<div className="leave-row">
+										<span className="lbl">Sick</span>
+										<div className="pbar">
+											<div
+												className="pbar-fill warning"
+												style={{ width: "14.3%" }}
+											/>
+										</div>
+										<span className="nums">2 / 14 used</span>
+									</div>
+									<div className="leave-row">
+										<span className="lbl">Compassionate</span>
+										<div className="pbar">
+											<div className="pbar-fill" style={{ width: "0%" }} />
+										</div>
+										<span className="nums">0 / 3 used</span>
+									</div>
+									<div className="leave-row">
+										<span className="lbl">Study</span>
+										<div className="pbar">
+											<div className="pbar-fill" style={{ width: "40%" }} />
+										</div>
+										<span className="nums">2 / 5 used</span>
+									</div>
+								</div>
+							</div>
+
+							{/* Activity widget */}
+							<div className="widget">
+								<div className="widget-head">
+									<span className="ttl">Recent activity</span>
+									<button className="btn btn-ghost btn-sm" type="button">
+										View all
+										<ArrowRight size={11} />
+									</button>
+								</div>
+								<div className="widget-body">
+									<div className="tl-wrap">
+										<div className="tl-item">
+											<div className="dot accent">
+												<Check size={11} />
+											</div>
+											<div>
+												<div className="desc">OT request · 8h approved</div>
+												<div className="meta">
+													Week 39 · approved by Maya Persaud
+												</div>
+											</div>
+											<div className="time">Tue 14:18</div>
+										</div>
+										<div className="tl-item">
+											<div className="dot success">
+												<FileText size={11} />
+											</div>
+											<div>
+												<div className="desc">
+													Performance review filed · H1 2026
+												</div>
+												<div className="meta">
+													Rated <strong>Exceeds expectations</strong> · reviewed
+													by L. Roberts
+												</div>
+											</div>
+											<div className="time">Jul 10</div>
+										</div>
+										<div className="tl-item">
+											<div className="dot">
+												<TrendingUp size={11} />
+											</div>
+											<div>
+												<div className="desc">Salary adjustment · +8.4%</div>
+												<div className="meta">
+													From 315,500 → 342,000 GYD/mo · effective 2026-07-01
+												</div>
+											</div>
+											<div className="time">Jul 1</div>
+										</div>
+										<div className="tl-item">
+											<div className="dot">
+												<Briefcase size={11} />
+											</div>
+											<div>
+												<div className="desc">
+													Promoted: Software Engineer → Senior Engineer
+												</div>
+												<div className="meta">
+													Engineering · effective 2026-04-01
+												</div>
+											</div>
+											<div className="time">Apr 1</div>
+										</div>
+										<div className="tl-item">
+											<div className="dot">
+												<Users size={11} />
+											</div>
+											<div>
+												<div className="desc">
+													Joined Atlas Shipping · Engineering
+												</div>
+												<div className="meta">
+													Permanent contract · onboarding completed in 9 days
+												</div>
+											</div>
+											<div className="time">Mar 18, '24</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
 				</div>
-				<h3>Employee Profile</h3>
-				<p
-					style={{
-						maxWidth: "420px",
-						marginTop: "8px",
-						fontSize: "13.5px",
-						color: "var(--fg-3)",
-					}}
-				>
-					Detailed employee view. This module will be implemented in a future
-					phase.
-				</p>
-			</div>
+			)}
+
+			{/* Tab: Attendance */}
+			{profileTab === "attendance" && (
+				<div className="tab-panel active">
+					<div className="widget">
+						<div className="widget-head">
+							<span className="ttl">Time activity log · September 2026</span>
+							<div style={{ display: "flex", gap: "6px" }}>
+								<button className="btn btn-ghost btn-sm" type="button">
+									<Filter size={11} />
+									Filter
+								</button>
+								<button className="btn btn-ghost btn-sm" type="button">
+									<Download size={11} />
+									Export
+								</button>
+							</div>
+						</div>
+						<div className="widget-body" style={{ padding: 0 }}>
+							<table className="pay-list">
+								<thead>
+									<tr>
+										<th>Date</th>
+										<th>Day</th>
+										<th>Check in</th>
+										<th>Check out</th>
+										<th style={{ textAlign: "right" }}>Hours</th>
+										<th>Source</th>
+										<th>Status</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td className="mono">2026-09-27</td>
+										<td>Mon</td>
+										<td className="mono">07:48</td>
+										<td className="mono">17:32</td>
+										<td className="num">9h 44m</td>
+										<td>
+											<span
+												className="source-tag"
+												style={{ color: "var(--fg-3)" }}
+											>
+												<span
+													style={{
+														width: "5px",
+														height: "5px",
+														borderRadius: "50%",
+														background: "var(--success)",
+														display: "inline-block",
+													}}
+												/>
+												ZK-DEV-GT-01
+											</span>
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												OT 1.7h
+											</span>
+										</td>
+									</tr>
+									<tr>
+										<td className="mono">2026-09-26</td>
+										<td>Sun</td>
+										<td>—</td>
+										<td>—</td>
+										<td className="num" style={{ color: "var(--fg-4)" }}>
+											—
+										</td>
+										<td>
+											<span
+												style={{
+													color: "var(--fg-4)",
+													fontSize: "11px",
+												}}
+											>
+												weekend
+											</span>
+										</td>
+										<td>
+											<span
+												className="pill-status"
+												style={{ background: "var(--bg-3)" }}
+											>
+												Weekend
+											</span>
+										</td>
+									</tr>
+									<tr>
+										<td className="mono">2026-09-25</td>
+										<td>Fri</td>
+										<td className="mono">08:02</td>
+										<td className="mono">17:14</td>
+										<td className="num">9h 12m</td>
+										<td>
+											<span
+												className="source-tag"
+												style={{ color: "var(--fg-3)" }}
+											>
+												<span
+													style={{
+														width: "5px",
+														height: "5px",
+														borderRadius: "50%",
+														background: "var(--success)",
+														display: "inline-block",
+													}}
+												/>
+												ZK-DEV-GT-01
+											</span>
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												OT 1.2h
+											</span>
+										</td>
+									</tr>
+									<tr>
+										<td className="mono">2026-09-24</td>
+										<td>Thu</td>
+										<td className="mono">08:24</td>
+										<td className="mono">17:00</td>
+										<td className="num">8h 36m</td>
+										<td>
+											<span
+												className="source-tag"
+												style={{ color: "var(--fg-3)" }}
+											>
+												<span
+													style={{
+														width: "5px",
+														height: "5px",
+														borderRadius: "50%",
+														background: "var(--warning)",
+														display: "inline-block",
+													}}
+												/>
+												manual
+											</span>
+										</td>
+										<td>
+											<span
+												className="pill-status notice"
+												style={{
+													background: "var(--warning-soft)",
+													color: "var(--warning)",
+												}}
+											>
+												Late · 24m
+											</span>
+										</td>
+									</tr>
+									<tr>
+										<td className="mono">2026-09-23</td>
+										<td>Wed</td>
+										<td className="mono">07:56</td>
+										<td className="mono">16:58</td>
+										<td className="num">9h 02m</td>
+										<td>
+											<span
+												className="source-tag"
+												style={{ color: "var(--fg-3)" }}
+											>
+												<span
+													style={{
+														width: "5px",
+														height: "5px",
+														borderRadius: "50%",
+														background: "var(--success)",
+														display: "inline-block",
+													}}
+												/>
+												ZK-DEV-GT-01
+											</span>
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												Full
+											</span>
+										</td>
+									</tr>
+									<tr>
+										<td className="mono">2026-09-22</td>
+										<td>Tue</td>
+										<td className="mono">07:50</td>
+										<td className="mono">17:18</td>
+										<td className="num">9h 28m</td>
+										<td>
+											<span
+												className="source-tag"
+												style={{ color: "var(--fg-3)" }}
+											>
+												<span
+													style={{
+														width: "5px",
+														height: "5px",
+														borderRadius: "50%",
+														background: "var(--success)",
+														display: "inline-block",
+													}}
+												/>
+												ZK-DEV-GT-01
+											</span>
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												OT 1.5h
+											</span>
+										</td>
+									</tr>
+									<tr>
+										<td className="mono">2026-09-21</td>
+										<td>Mon</td>
+										<td className="mono">07:44</td>
+										<td className="mono">17:00</td>
+										<td className="num">9h 16m</td>
+										<td>
+											<span
+												className="source-tag"
+												style={{ color: "var(--fg-3)" }}
+											>
+												<span
+													style={{
+														width: "5px",
+														height: "5px",
+														borderRadius: "50%",
+														background: "var(--success)",
+														display: "inline-block",
+													}}
+												/>
+												ZK-DEV-GT-01
+											</span>
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												Full
+											</span>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Tab: Leave */}
+			{profileTab === "leave" && (
+				<div className="tab-panel active">
+					<div
+						className="profile-grid"
+						style={{ gridTemplateColumns: "1fr 1fr" }}
+					>
+						<div className="widget">
+							<div className="widget-head">
+								<span className="ttl">Balances · FY 2026</span>
+							</div>
+							<div className="widget-body">
+								<div className="leave-row">
+									<span className="lbl">Annual</span>
+									<div className="pbar">
+										<div className="pbar-fill" style={{ width: "16.6%" }} />
+									</div>
+									<span className="nums">3 / 18 used</span>
+								</div>
+								<div className="leave-row">
+									<span className="lbl">Sick</span>
+									<div className="pbar">
+										<div
+											className="pbar-fill warning"
+											style={{ width: "14.3%" }}
+										/>
+									</div>
+									<span className="nums">2 / 14 used</span>
+								</div>
+								<div className="leave-row">
+									<span className="lbl">Compassionate</span>
+									<div className="pbar">
+										<div className="pbar-fill" style={{ width: "0%" }} />
+									</div>
+									<span className="nums">0 / 3 used</span>
+								</div>
+								<div className="leave-row">
+									<span className="lbl">Study</span>
+									<div className="pbar">
+										<div className="pbar-fill" style={{ width: "40%" }} />
+									</div>
+									<span className="nums">2 / 5 used</span>
+								</div>
+							</div>
+						</div>
+						<div className="widget">
+							<div className="widget-head">
+								<span className="ttl">Recent requests</span>
+								<a
+									href="#"
+									style={{ fontSize: "11.5px", color: "var(--accent)" }}
+								>
+									Request leave
+								</a>
+							</div>
+							<div className="widget-body">
+								<div
+									className="leave-row"
+									style={{ gridTemplateColumns: "1fr auto" }}
+								>
+									<div>
+										<div style={{ fontSize: "13px", fontWeight: 500 }}>
+											Annual leave · 4 days
+										</div>
+										<div
+											style={{
+												fontSize: "11.5px",
+												color: "var(--fg-3)",
+												marginTop: "3px",
+											}}
+										>
+											2–5 October · awaiting approval
+										</div>
+									</div>
+									<span className="pill-status notice">Pending</span>
+								</div>
+								<div
+									className="leave-row"
+									style={{ gridTemplateColumns: "1fr auto" }}
+								>
+									<div>
+										<div style={{ fontSize: "13px", fontWeight: 500 }}>
+											Sick leave · 1 day
+										</div>
+										<div
+											style={{
+												fontSize: "11.5px",
+												color: "var(--fg-3)",
+												marginTop: "3px",
+											}}
+										>
+											14 Aug · medical attached
+										</div>
+									</div>
+									<span className="pill-status active">
+										<span className="badge-dot" />
+										Approved
+									</span>
+								</div>
+								<div
+									className="leave-row"
+									style={{ gridTemplateColumns: "1fr auto" }}
+								>
+									<div>
+										<div style={{ fontSize: "13px", fontWeight: 500 }}>
+											Annual leave · 3 days
+										</div>
+										<div
+											style={{
+												fontSize: "11.5px",
+												color: "var(--fg-3)",
+												marginTop: "3px",
+											}}
+										>
+											21–23 May
+										</div>
+									</div>
+									<span className="pill-status active">
+										<span className="badge-dot" />
+										Approved
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Tab: Payroll */}
+			{profileTab === "payroll" && (
+				<div className="tab-panel active">
+					<div className="widget">
+						<div className="widget-head">
+							<span className="ttl">Pay-run history · 9 runs</span>
+							<div className="segmented">
+								<button className="active" type="button">
+									12m
+								</button>
+								<button type="button">YTD</button>
+								<button type="button">All</button>
+							</div>
+						</div>
+						<div className="widget-body" style={{ padding: 0 }}>
+							<table className="pay-list">
+								<thead>
+									<tr>
+										<th>Period</th>
+										<th>Country</th>
+										<th style={{ textAlign: "right" }}>Gross</th>
+										<th style={{ textAlign: "right" }}>PAYE</th>
+										<th style={{ textAlign: "right" }}>NIS</th>
+										<th style={{ textAlign: "right" }}>Other</th>
+										<th style={{ textAlign: "right" }}>Net</th>
+										<th>Status</th>
+										<th />
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>
+											<strong>September 2026</strong>
+										</td>
+										<td>
+											<span className="cc-badge" style={{ height: "22px" }}>
+												<span style={{ fontSize: "11px" }}>GY</span>
+												GY
+											</span>
+										</td>
+										<td className="num">342,000.00</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−58,140.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−18,810.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											0.00
+										</td>
+										<td
+											className="num"
+											style={{
+												fontWeight: 600,
+												color: "var(--accent)",
+											}}
+										>
+											265,050.00
+										</td>
+										<td>
+											<span className="pill-status notice">Ready</span>
+										</td>
+										<td>
+											<a
+												href="#"
+												style={{
+													color: "var(--accent)",
+													fontSize: "12px",
+												}}
+											>
+												Payslip
+											</a>
+										</td>
+									</tr>
+									<tr>
+										<td>August 2026</td>
+										<td>
+											<span className="cc-badge" style={{ height: "22px" }}>
+												<span style={{ fontSize: "11px" }}>GY</span>
+												GY
+											</span>
+										</td>
+										<td className="num">342,000.00</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−58,140.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−18,810.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											0.00
+										</td>
+										<td className="num" style={{ fontWeight: 600 }}>
+											265,050.00
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												Sealed
+											</span>
+										</td>
+										<td>
+											<a
+												href="#"
+												style={{
+													color: "var(--accent)",
+													fontSize: "12px",
+												}}
+											>
+												Payslip
+											</a>
+										</td>
+									</tr>
+									<tr>
+										<td>July 2026</td>
+										<td>
+											<span className="cc-badge" style={{ height: "22px" }}>
+												<span style={{ fontSize: "11px" }}>GY</span>
+												GY
+											</span>
+										</td>
+										<td className="num">342,000.00</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−58,140.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−18,810.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−2,500.00
+										</td>
+										<td className="num" style={{ fontWeight: 600 }}>
+											262,550.00
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												Sealed
+											</span>
+										</td>
+										<td>
+											<a
+												href="#"
+												style={{
+													color: "var(--accent)",
+													fontSize: "12px",
+												}}
+											>
+												Payslip
+											</a>
+										</td>
+									</tr>
+									<tr>
+										<td>June 2026</td>
+										<td>
+											<span className="cc-badge" style={{ height: "22px" }}>
+												<span style={{ fontSize: "11px" }}>GY</span>
+												GY
+											</span>
+										</td>
+										<td className="num">315,500.00</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−51,870.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−17,353.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											0.00
+										</td>
+										<td className="num" style={{ fontWeight: 600 }}>
+											246,277.00
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												Sealed
+											</span>
+										</td>
+										<td>
+											<a
+												href="#"
+												style={{
+													color: "var(--accent)",
+													fontSize: "12px",
+												}}
+											>
+												Payslip
+											</a>
+										</td>
+									</tr>
+									<tr>
+										<td>May 2026</td>
+										<td>
+											<span className="cc-badge" style={{ height: "22px" }}>
+												<span style={{ fontSize: "11px" }}>GY</span>
+												GY
+											</span>
+										</td>
+										<td className="num">315,500.00</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−51,870.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											−17,353.00
+										</td>
+										<td className="num" style={{ color: "var(--fg-3)" }}>
+											0.00
+										</td>
+										<td className="num" style={{ fontWeight: 600 }}>
+											246,277.00
+										</td>
+										<td>
+											<span className="pill-status active">
+												<span className="badge-dot" />
+												Sealed
+											</span>
+										</td>
+										<td>
+											<a
+												href="#"
+												style={{
+													color: "var(--accent)",
+													fontSize: "12px",
+												}}
+											>
+												Payslip
+											</a>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Tab: Documents */}
+			{profileTab === "documents" && (
+				<div className="tab-panel active">
+					<div className="widget">
+						<div className="widget-head">
+							<span className="ttl">Documents · 4 on file</span>
+							<button className="btn btn-primary btn-sm" type="button">
+								<Plus size={12} />
+								Upload
+							</button>
+						</div>
+						<div className="widget-body">
+							<div className="doc-row">
+								<div className="ic">
+									<FileText size={15} />
+								</div>
+								<div>
+									<div className="ttl">Contract · Permanent (signed)</div>
+									<div className="sub">
+										PDF · 184 KB · uploaded 2024-03-18 by Lia Roberts
+									</div>
+								</div>
+								<a>
+									Open <ArrowUpRight size={11} />
+								</a>
+							</div>
+							<div className="doc-row">
+								<div className="ic">
+									<FileText size={15} />
+								</div>
+								<div>
+									<div className="ttl">National ID</div>
+									<div className="sub">
+										PDF · 320 KB · uploaded 2024-03-18 · verified
+									</div>
+								</div>
+								<a>
+									Open <ArrowUpRight size={11} />
+								</a>
+							</div>
+							<div className="doc-row">
+								<div className="ic">
+									<FileText size={15} />
+								</div>
+								<div>
+									<div className="ttl">Bank verification · Republic Bank</div>
+									<div className="sub">PDF · 96 KB · uploaded 2024-04-02</div>
+								</div>
+								<a>
+									Open <ArrowUpRight size={11} />
+								</a>
+							</div>
+							<div className="doc-row">
+								<div className="ic">
+									<FileText size={15} />
+								</div>
+								<div>
+									<div className="ttl">Performance review · H1 2026</div>
+									<div className="sub">
+										PDF · 244 KB · uploaded 2026-07-10 by Lia Roberts
+									</div>
+								</div>
+								<a>
+									Open <ArrowUpRight size={11} />
+								</a>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
+
+			{/* Tab: Activity */}
+			{profileTab === "activity" && (
+				<div className="tab-panel active">
+					<div className="widget">
+						<div className="widget-head">
+							<span className="ttl">Full activity history</span>
+							<button className="btn btn-ghost btn-sm" type="button">
+								<Filter size={11} />
+								Filter
+							</button>
+						</div>
+						<div className="widget-body">
+							<div className="tl-wrap">
+								<div className="tl-item">
+									<div className="dot accent">
+										<Check size={11} />
+									</div>
+									<div>
+										<div className="desc">OT request · 8h approved</div>
+										<div className="meta">Approved by Maya Persaud</div>
+									</div>
+									<div className="time">Tue 14:18</div>
+								</div>
+								<div className="tl-item">
+									<div className="dot success">
+										<FileText size={11} />
+									</div>
+									<div>
+										<div className="desc">
+											Performance review filed · H1 2026
+										</div>
+										<div className="meta">Rated Exceeds expectations</div>
+									</div>
+									<div className="time">Jul 10</div>
+								</div>
+								<div className="tl-item">
+									<div className="dot">
+										<TrendingUp size={11} />
+									</div>
+									<div>
+										<div className="desc">
+											Salary +8.4% · effective 2026-07-01
+										</div>
+										<div className="meta">From 315,500 → 342,000 GYD</div>
+									</div>
+									<div className="time">Jul 1</div>
+								</div>
+								<div className="tl-item">
+									<div className="dot">
+										<Briefcase size={11} />
+									</div>
+									<div>
+										<div className="desc">
+											Promotion · Software Engineer → Senior Engineer
+										</div>
+										<div className="meta">Engineering</div>
+									</div>
+									<div className="time">Apr 1</div>
+								</div>
+								<div className="tl-item">
+									<div className="dot">
+										<Calendar size={11} />
+									</div>
+									<div>
+										<div className="desc">Annual leave · 3 days · approved</div>
+										<div className="meta">21–23 May 2026</div>
+									</div>
+									<div className="time">May 18</div>
+								</div>
+								<div className="tl-item">
+									<div className="dot">
+										<Users size={11} />
+									</div>
+									<div>
+										<div className="desc">Joined Atlas Shipping</div>
+										<div className="meta">
+											Engineering · onboarding completed in 9 days
+										</div>
+									</div>
+									<div className="time">Mar 18, '24</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
