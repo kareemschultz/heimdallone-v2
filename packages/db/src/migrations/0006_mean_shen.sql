@@ -1,0 +1,1 @@
+ALTER TABLE "payroll_setting" ADD CONSTRAINT "payroll_setting_org_uq" UNIQUE("organization_id");

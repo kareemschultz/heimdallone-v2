@@ -347,3 +347,15 @@ Living document. Updated after each major task or unexpected issue.
 34. **Payroll blocker/warning classification** — Splitting issues into blockers (prevent processing) and warnings (flag for review) with plain-language messages and resolution links is a repeatable pattern for any workflow with prerequisites. The "why blocked?" panel is the most important UX element for non-technical users.
 
 35. **Spec-before-implement for the highest-risk module** — Payroll affects real money. The Phase 8A spec covers 12 entities, 20+ TypeScript interfaces, 17-step calculation order, 9 blockers, 9 warnings, 10 UI routes, and 10 open questions — all documented before any code is written. This is the right level of rigor for payroll.
+
+## Session: 2026-05-27 — Phase 8B Cleanup
+
+### Gotchas Discovered
+
+73. **Tenant-critical config must have DB-level UNIQUE, not just application logic** — `payroll_setting` had a single row per org enforced only by seed scripts. For payroll (real money), a DB-level `UNIQUE(organization_id)` constraint is mandatory. Application-level uniqueness checks can be bypassed by concurrent requests, direct DB access, or bugs. This applies to any "one per tenant" config table: enforce at the database level with a unique constraint or index.
+
+74. **Drizzle Kit snapshot JSON needs formatter pass after `drizzle-kit generate`** — Drizzle generates `meta/*.json` files with expanded array formatting that doesn't match Biome's rules. Run `bun x ultracite fix` on the generated files to avoid inflating the lint error count. This is a recurring cost of using Biome with Drizzle — add it to the post-generate checklist.
+
+### Patterns That Worked
+
+36. **Drizzle 3-arg pgTable for table-level constraints** — To add a UNIQUE constraint across columns, use `pgTable("name", { columns }, (t) => [unique("constraint_name").on(t.col)])`. The 3-arg form is the only way to express table-level constraints like composite uniques, composite indexes, or check constraints in Drizzle.

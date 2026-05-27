@@ -26,6 +26,7 @@
 | Migration | Description |
 |-----------|-------------|
 | `0005_mysterious_abomination.sql` | Payroll tables — 12 tables, 10 enums, indexes, constraints |
+| `0006_mean_shen.sql` | Add UNIQUE constraint on `payroll_setting.organization_id` |
 
 ## Commands
 
@@ -59,6 +60,7 @@ bun run scripts/seed-payroll.ts
 ## Notes
 
 - `payroll_run`, `payslip`, `payslip_line_item`, and `payroll_issue` are intentionally empty — these will be populated by the payroll engine (Phase 8C) and API (Phase 8D).
+- `payroll_setting` has a DB-level UNIQUE constraint on `organization_id` (`payroll_setting_org_uq`) — one setting row per tenant, enforced at the database level.
 - All money fields use `numeric(12,2)` for exact decimal arithmetic.
 - The `payslip_line_item` table is normalized (not JSON) for queryability and reporting.
 - `pay_item_assignment` supports both employee-level and department-level targeting.
