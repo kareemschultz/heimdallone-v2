@@ -1,0 +1,208 @@
+/* Attendance status pills */
+.pill-status.as-present {
+	color: var(--success);
+	background: var(--success-soft);
+	border-color: transparent;
+}
+.pill-status.as-half-day {
+	color: var(--warning);
+	background: var(--warning-soft);
+	border-color: transparent;
+}
+.pill-status.as-absent {
+	color: var(--danger);
+	background: var(--danger-soft);
+	border-color: transparent;
+}
+.pill-status.as-holiday {
+	color: var(--info);
+	background: var(--info-soft);
+	border-color: transparent;
+}
+.pill-status.as-conflict {
+	color: var(--danger);
+	background: var(--danger-soft);
+	border: 1px solid var(--danger);
+}
+
+/* Payroll status pills */
+.pill-status.ps-pending {
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border-color: transparent;
+}
+.pill-status.ps-approved {
+	color: var(--success);
+	background: var(--success-soft);
+	border-color: transparent;
+}
+.pill-status.ps-locked {
+	color: var(--accent);
+	background: var(--accent-soft);
+	border-color: transparent;
+}
+
+/* Clock panel */
+.clock-panel {
+	display: flex;
+	gap: 16px;
+	align-items: center;
+	padding: 16px 20px;
+	margin-bottom: 20px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+.clock-panel .clock-status {
+	display: flex;
+	flex: 1;
+	gap: 10px;
+	align-items: center;
+}
+.clock-panel .clock-dot {
+	flex-shrink: 0;
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}
+.clock-panel .clock-dot.in {
+	background: var(--success);
+	box-shadow: 0 0 6px var(--success);
+}
+.clock-panel .clock-dot.out {
+	background: var(--fg-4);
+}
+.clock-panel .clock-label {
+	font-size: 13px;
+	color: var(--fg-2);
+}
+.clock-panel .clock-label strong {
+	color: var(--fg);
+}
+.clock-panel .clock-elapsed {
+	margin-top: 2px;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+
+/* Summary cards */
+.att-summary {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: 10px;
+	margin-bottom: 20px;
+}
+.att-summary .card {
+	padding: 14px 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.att-summary .card .card-val {
+	font-size: 22px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.att-summary .card .card-lbl {
+	margin-top: 2px;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+
+/* Record detail drawer */
+.att-detail {
+	position: fixed;
+	inset: 0;
+	z-index: 200;
+	display: flex;
+	justify-content: flex-end;
+}
+.att-detail .backdrop {
+	position: absolute;
+	inset: 0;
+	cursor: pointer;
+	background: rgba(8, 9, 12, 0.6);
+	border: none;
+}
+.att-detail .drawer {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: min(460px, 90vw);
+	overflow-y: auto;
+	background: var(--bg-1);
+	border-left: 1px solid var(--line);
+}
+.att-detail .drawer-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 18px 20px;
+	border-bottom: 1px solid var(--line);
+}
+.att-detail .drawer-head h4 {
+	font-size: 15px;
+	font-weight: 600;
+}
+.att-detail .drawer-body {
+	flex: 1;
+	padding: 20px;
+}
+.att-detail .drawer-body .info-row {
+	display: flex;
+	justify-content: space-between;
+	padding: 8px 0;
+	font-size: 13px;
+	border-bottom: 1px solid var(--line);
+}
+.att-detail .drawer-body .info-row .k {
+	color: var(--fg-3);
+}
+.att-detail .drawer-body .info-row .v {
+	font-weight: 500;
+	color: var(--fg);
+}
+.att-detail .events-list {
+	margin-top: 16px;
+}
+.att-detail .events-list h5 {
+	margin-bottom: 8px;
+	font-size: 13px;
+	color: var(--fg-3);
+}
+.att-detail .event-item {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	padding: 8px 12px;
+	margin-bottom: 6px;
+	font-size: 13px;
+	background: var(--bg-2);
+	border-radius: 8px;
+}
+.att-detail .event-item .ev-time {
+	font-weight: 500;
+	color: var(--fg);
+}
+.att-detail .event-item .ev-dur {
+	margin-left: auto;
+	color: var(--fg-3);
+}
+.att-detail .event-item .ev-source {
+	padding: 2px 6px;
+	font-size: 11px;
+	color: var(--fg-4);
+	background: var(--bg-3);
+	border-radius: 4px;
+}
+
+/* Helper callout */
+.att-helper {
+	padding: 10px 14px;
+	margin-top: 12px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--info);
+	background: var(--info-soft);
+	border-radius: 8px;
+}
