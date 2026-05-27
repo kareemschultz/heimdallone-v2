@@ -25,7 +25,8 @@ Phase 15:  Analytics + Dashboards + Reports
 - **Phase 8B**: ✅ Payroll DB schema + migration + seed (12 tables, 12 enums, GY 2026 profile)
 - **Phase 8C**: ✅ Payroll calculation engine (`packages/payroll-engine/`) — 17 tests, 76 assertions
 - **Phase 8D**: ✅ Payroll oRPC API — 10 router groups, ~60 procedures, PayrollInput builder, engine integration
-- **Phase 8E–8J**: Next — settings UI + setup wizard → run wizard → payslip/PDF/templates → analytics → QA → branding/onboarding polish
+- **Phase 8E**: ✅ Payroll settings + pay items UI — 5 routes (dashboard, settings, pay-items, loans, reimbursements), setup checklist
+- **Phase 8F–8K**: Next — run wizard → payslip/PDF/templates → analytics → QA → branding/onboarding → bank export
 
 ## Dependency Graph
 
