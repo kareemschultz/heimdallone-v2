@@ -152,7 +152,8 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 - Phase 7A.1: **Complete** — Odoo HRMS research, feature gap review, spec enrichment
 - Phase 7C: **Complete** — Attendance oRPC router (17 procedures), RBAC scoping, audit events
 - Phase 7D: **Complete** — Attendance UI (records table, clock panel, detail drawer, corrections view, bulk actions)
-- Next: Phase 7E — Leave DB schema + seed
+- Phase 7E: **Complete** — Leave DB schema (7 tables, 5 enums), migration, seed (5 types, 24 balances, 7 requests)
+- Next: Phase 7F — Leave oRPC API
 
 ### Key Architecture Files
 - `.claude/CLAUDE.md` — Full project instructions with doc references
