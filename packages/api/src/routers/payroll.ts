@@ -1046,6 +1046,11 @@ const reimbursementsCreate = authorizedProcedure("payroll", "create")
 		})
 	)
 	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Only payroll administrators can create reimbursements.",
+			});
+		}
 		const [emp] = await db
 			.select()
 			.from(employeeProfile)
