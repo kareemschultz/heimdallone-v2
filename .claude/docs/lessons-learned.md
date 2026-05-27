@@ -368,7 +368,7 @@ Living document. Updated after each major task or unexpected issue.
 
 76. **Biome `noNonNullAssertion` in test files** — Using `result.find(...)!.amount` in tests triggers lint errors. Use optional chain `?.` instead, even in tests where you've already asserted `toBeDefined()`. For `Math.abs()` which requires `number`, add `?? 0` fallback.
 
-77. **Barrel file (`index.ts`) adds 1 lint error per package** — Biome's `noBarrelFile` rule flags re-export files. This is inherent to the monorepo pattern where each package needs a single entry point. Accept as structural debt (1 error per package).
+77. **Biome `noBarrelFile` cannot be worked around with local definitions** — Adding a local `export const` to a file with re-exports does NOT satisfy the rule. And switching to `import` + `export` triggers `noExportedImports` ("use export from instead") — a catch-22. The fix: remove the barrel file entirely and use `package.json` subpath exports (`"./*": { "default": "./src/*.ts" }`). Consumers import from `@pkg/module` instead of `@pkg`. This is cleaner anyway — it enables tree-shaking and avoids loading unused modules.
 
 ### Patterns That Worked
 

@@ -49,8 +49,17 @@ Rounding: `Math.round()` at each calculation step (banker's rounding not require
 
 ## Input/Output
 
-See `src/types.ts` for the full type definitions:
+See `src/types.ts` for the full type definitions. Import from subpaths:
 
+```typescript
+import { calculatePayroll } from "@Heimdallone/payroll-engine/calculate";
+import { calculateProjectedPay } from "@Heimdallone/payroll-engine/projected-pay";
+import type { PayrollInput, PayrollPreviewResult } from "@Heimdallone/payroll-engine/types";
+import { toCents, fromCents } from "@Heimdallone/payroll-engine/money";
+import { guyana2026 } from "@Heimdallone/payroll-engine/countries/guyana-2026";
+```
+
+Key types:
 - `PayrollInput` — employee, contract, attendance, leave, pay items, loans, reimbursements, country profile, settings
 - `PayrollPreviewResult` — all pay components, line items, blockers, warnings, explanation steps
 - `ProjectedPayResult` — estimate with confidence level and disclaimers

@@ -1436,7 +1436,7 @@ Make Heimdallone easy for non-technical HR/payroll staff to start using. A lot o
 
 - Progress indicator (step X of 10)
 - Save and resume later
-- Skip optional steps
+- **Skip button** on every optional step — clearly labeled "Skip" or "Skip this step". Required steps (company profile, country payroll setup) cannot be skipped. Optional steps (org structure, holidays, attendance setup) can be skipped and completed later from settings.
 - "Recommended" defaults highlighted
 - Plain-language helper text for every field
 - Dropdowns with common presets
@@ -1444,6 +1444,31 @@ Make Heimdallone easy for non-technical HR/payroll staff to start using. A lot o
 - "Why this matters" tooltips
 - Setup completion score on dashboard
 - Direct links from readiness checklist to fix pages
+
+### Interactive Product Tour (Phase 8J or later)
+
+After initial setup, guide users through the platform with interactive per-feature tours:
+
+**Approach**: Per-feature tours rather than one giant global tour. Each module launches its own tour on first visit. Tours highlight UI elements with overlay tooltips and step-by-step walkthroughs.
+
+**Tour modules**:
+- Dashboard tour — stat tiles, charts, quick actions
+- Employee list tour — search, filters, create, profile navigation
+- Payroll tour — run wizard, preview, approve, payslip view
+- Attendance tour — records, corrections, validation
+- Leave tour — request flow, balance cards, approval
+- Settings tour — payroll settings, pay items, leave types
+
+**UX rules**:
+- Tours auto-trigger on first visit to each module (not on every visit)
+- "Skip tour" and "Don't show again" buttons always visible
+- Tours can be replayed from a "Help" menu
+- Tours adapt to user role (admin sees settings tour, employee sees self-service tour)
+- Tour state persisted per-user (localStorage or DB flag)
+
+**Implementation**: Use a lightweight tour library (e.g., `driver.js`, `react-joyride`). Build tour definitions as JSON configs per module — not hardcoded into components. This keeps tours maintainable as the UI evolves.
+
+**Deferred to**: Phase 8J at earliest, or Phase 14/15 as a polish layer.
 
 ---
 

@@ -2,9 +2,6 @@
   "name": "@Heimdallone/payroll-engine",
   "type": "module",
   "exports": {
-    ".": {
-      "default": "./src/index.ts"
-    },
     "./*": {
       "default": "./src/*.ts"
     }
