@@ -23,8 +23,9 @@ Phase 15:  Analytics + Dashboards + Reports
 - **Phase 7**: ✅ Attendance + Leave complete (schema, API, UI, QA/security pass — 7A through 7H)
 - **Phase 8A**: ✅ Payroll spec finalization — [payroll-implementation-plan.md](../payroll-implementation-plan.md)
 - **Phase 8B**: ✅ Payroll DB schema + migration + seed (12 tables, 12 enums, GY 2026 profile)
-- **Phase 8C**: ✅ Payroll calculation engine (`packages/payroll-engine/`) — 16 tests, 71 assertions
-- **Phase 8D–8J**: Next — API → settings UI + setup wizard → run wizard → payslip/PDF/templates → analytics → QA → branding/onboarding polish
+- **Phase 8C**: ✅ Payroll calculation engine (`packages/payroll-engine/`) — 17 tests, 76 assertions
+- **Phase 8D**: ✅ Payroll oRPC API — 10 router groups, ~60 procedures, PayrollInput builder, engine integration
+- **Phase 8E–8J**: Next — settings UI + setup wizard → run wizard → payslip/PDF/templates → analytics → QA → branding/onboarding polish
 
 ## Dependency Graph
 

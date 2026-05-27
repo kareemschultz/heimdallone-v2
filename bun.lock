@@ -146,6 +146,7 @@
         "@Heimdallone/auth": "workspace:*",
         "@Heimdallone/db": "workspace:*",
         "@Heimdallone/env": "workspace:*",
+        "@Heimdallone/payroll-engine": "workspace:*",
         "@orpc/client": "catalog:",
         "@orpc/openapi": "catalog:",
         "@orpc/server": "catalog:",

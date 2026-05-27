@@ -1,0 +1,551 @@
+import { db } from "@Heimdallone/db";
+import { attendanceRecord } from "@Heimdallone/db/schema/attendance";
+import {
+	contract,
+	department,
+	employeeProfile,
+	employeeWorkInfo,
+} from "@Heimdallone/db/schema/hr-core";
+import { leaveRequest, leaveType } from "@Heimdallone/db/schema/leave";
+import {
+	countryPayrollProfile,
+	loan,
+	loanInstallment,
+	payItem,
+	payItemAssignment,
+	payPeriod,
+	payrollSetting,
+	reimbursement,
+} from "@Heimdallone/db/schema/payroll";
+import { toCents } from "@Heimdallone/payroll-engine/money";
+import type {
+	AttendanceInput,
+	ContractInput,
+	CountryPayrollProfileInput,
+	EmployeeInput,
+	LeaveInput,
+	PayItemInput,
+	PayrollInput,
+	PayrollSettingInput,
+} from "@Heimdallone/payroll-engine/types";
+import { and, eq, gte, lte } from "drizzle-orm";
+
+export async function buildPayrollInput(
+	organizationId: string,
+	employeeId: string,
+	periodId: string
+): Promise<PayrollInput> {
+	const [emp, workInfo, activeContract, period, settings] = await Promise.all([
+		db
+			.select()
+			.from(employeeProfile)
+			.where(
+				and(
+					eq(employeeProfile.id, employeeId),
+					eq(employeeProfile.organizationId, organizationId)
+				)
+			)
+			.limit(1)
+			.then((r) => r[0]),
+		db
+			.select()
+			.from(employeeWorkInfo)
+			.where(eq(employeeWorkInfo.employeeId, employeeId))
+			.limit(1)
+			.then((r) => r[0]),
+		db
+			.select()
+			.from(contract)
+			.where(
+				and(
+					eq(contract.employeeId, employeeId),
+					eq(contract.organizationId, organizationId),
+					eq(contract.status, "active")
+				)
+			)
+			.limit(1)
+			.then((r) => r[0]),
+		db
+			.select()
+			.from(payPeriod)
+			.where(
+				and(
+					eq(payPeriod.id, periodId),
+					eq(payPeriod.organizationId, organizationId)
+				)
+			)
+			.limit(1)
+			.then((r) => r[0]),
+		db
+			.select()
+			.from(payrollSetting)
+			.where(eq(payrollSetting.organizationId, organizationId))
+			.limit(1)
+			.then((r) => r[0]),
+	]);
+
+	const employee = await buildEmployeeInput(
+		emp,
+		workInfo,
+		employeeId,
+		organizationId
+	);
+	const contractInput = buildContractInput(activeContract);
+	const periodInput = buildPeriodInput(period);
+	const attendance = period
+		? await buildAttendanceInput(employeeId, period.startDate, period.endDate)
+		: emptyAttendance();
+	const leave = period
+		? await buildLeaveInput(employeeId, period.startDate, period.endDate)
+		: { paidLeaveDays: 0, unpaidLeaveDays: 0, pendingLeaveDays: 0 };
+	const payItems = await buildPayItemInputs(
+		organizationId,
+		employeeId,
+		workInfo?.departmentId ?? null
+	);
+	const loans = await buildLoanInputs(organizationId, employeeId, period);
+	const reimbursements = await buildReimbursementInputs(
+		organizationId,
+		employeeId
+	);
+	const countryProfileInput = await buildCountryProfile(organizationId);
+	const settingsInput = buildSettings(settings);
+
+	return {
+		employee,
+		contract: contractInput,
+		period: periodInput,
+		attendance,
+		leave,
+		holidays: { count: 0, dates: [] },
+		payItems,
+		loans,
+		reimbursements,
+		countryProfile: countryProfileInput,
+		settings: settingsInput,
+	};
+}
+
+async function buildEmployeeInput(
+	emp: typeof employeeProfile.$inferSelect | undefined,
+	workInfo: typeof employeeWorkInfo.$inferSelect | undefined,
+	employeeId: string,
+	organizationId: string
+): Promise<EmployeeInput> {
+	const dept = workInfo?.departmentId
+		? await db
+				.select({ name: department.name })
+				.from(department)
+				.where(eq(department.id, workInfo.departmentId))
+				.limit(1)
+				.then((r) => r[0])
+		: null;
+
+	return {
+		id: emp?.id ?? employeeId,
+		organizationId,
+		firstName: emp?.firstName ?? "Unknown",
+		lastName: emp?.lastName ?? "",
+		employeeCode: emp?.badgeId ?? "",
+		departmentId: workInfo?.departmentId ?? null,
+		departmentName: dept?.name ?? null,
+		dependentChildren: 0,
+	};
+}
+
+function buildContractInput(
+	activeContract: typeof contract.$inferSelect | undefined
+): ContractInput {
+	return {
+		id: activeContract?.id ?? "",
+		baseSalary: activeContract ? Number(activeContract.baseSalary) : 0,
+		wageType:
+			(activeContract?.wageType as ContractInput["wageType"]) ?? "monthly",
+		payFrequency: activeContract?.payFrequency ?? "monthly",
+		salaryCurrency: activeContract?.salaryCurrency ?? "GYD",
+		filingStatusId: activeContract?.filingStatusId ?? null,
+		deductLeaveFromBasicPay: activeContract?.deductLeaveFromBasicPay ?? true,
+	};
+}
+
+function buildPeriodInput(period: typeof payPeriod.$inferSelect | undefined) {
+	return {
+		startDate: period ? formatDate(period.startDate) : "",
+		endDate: period ? formatDate(period.endDate) : "",
+		workingDays: period?.workingDays ?? 22,
+		expectedHours: period ? Number(period.expectedHours) : 176,
+	};
+}
+
+async function buildLoanInputs(
+	organizationId: string,
+	employeeId: string,
+	period: typeof payPeriod.$inferSelect | undefined
+) {
+	if (!period) {
+		return { dueInstallments: [] };
+	}
+
+	const rows = await db
+		.select({
+			loanId: loanInstallment.loanId,
+			installmentId: loanInstallment.id,
+			loanTitle: loan.title,
+			amount: loanInstallment.amount,
+			sequenceNumber: loanInstallment.sequenceNumber,
+			totalInstallments: loan.totalInstallments,
+		})
+		.from(loanInstallment)
+		.innerJoin(loan, eq(loanInstallment.loanId, loan.id))
+		.where(
+			and(
+				eq(loan.employeeId, employeeId),
+				eq(loan.organizationId, organizationId),
+				eq(loan.status, "active"),
+				eq(loanInstallment.status, "pending"),
+				lte(loanInstallment.dueDate, period.endDate)
+			)
+		);
+
+	return {
+		dueInstallments: rows.map((i) => ({
+			loanId: i.loanId,
+			installmentId: i.installmentId,
+			loanTitle: i.loanTitle,
+			amount: Number(i.amount),
+			sequenceNumber: i.sequenceNumber,
+			totalInstallments: i.totalInstallments,
+		})),
+	};
+}
+
+async function buildReimbursementInputs(
+	organizationId: string,
+	employeeId: string
+) {
+	const rows = await db
+		.select({
+			id: reimbursement.id,
+			title: reimbursement.title,
+			amount: reimbursement.amount,
+		})
+		.from(reimbursement)
+		.where(
+			and(
+				eq(reimbursement.employeeId, employeeId),
+				eq(reimbursement.organizationId, organizationId),
+				eq(reimbursement.status, "approved")
+			)
+		);
+
+	return {
+		approved: rows.map((r) => ({
+			id: r.id,
+			title: r.title,
+			amount: Number(r.amount),
+		})),
+	};
+}
+
+async function buildCountryProfile(
+	organizationId: string
+): Promise<CountryPayrollProfileInput> {
+	const profile = await db
+		.select()
+		.from(countryPayrollProfile)
+		.where(
+			and(
+				eq(countryPayrollProfile.organizationId, organizationId),
+				eq(countryPayrollProfile.isActive, true)
+			)
+		)
+		.limit(1)
+		.then((r) => r[0]);
+
+	if (!profile) {
+		return {
+			countryCode: "NONE",
+			effectiveYear: 0,
+			taxBrackets: [],
+			personalAllowanceFormula: "",
+			personalAllowanceThreshold: 0,
+			childAllowancePerChild: 0,
+			overtimeAllowanceCap: 0,
+			insurancePremiumCapAmount: 0,
+			employeeNISRate: 0,
+			employerNISRate: 0,
+			nisMaxEarnings: 0,
+		};
+	}
+
+	const brackets = profile.taxBrackets as Array<{
+		min: number;
+		max: number | null;
+		rate: number;
+		fixedAmount: number;
+	}>;
+
+	return {
+		countryCode: profile.countryCode,
+		effectiveYear: profile.effectiveYear,
+		taxBrackets: brackets.map((b) => ({
+			min: toCents(b.min),
+			max: b.max === null ? null : toCents(b.max),
+			rate: b.rate,
+			fixedAmount: toCents(b.fixedAmount),
+		})),
+		personalAllowanceFormula: profile.personalAllowanceFormula,
+		personalAllowanceThreshold: toCents(
+			Number(profile.personalAllowanceThreshold ?? 0)
+		),
+		childAllowancePerChild: toCents(
+			Number(profile.childAllowancePerChild ?? 0)
+		),
+		overtimeAllowanceCap: toCents(Number(profile.overtimeAllowanceCap ?? 0)),
+		insurancePremiumCapAmount: toCents(
+			Number(profile.insurancePremiumCapAmount ?? 0)
+		),
+		employeeNISRate: Number(profile.employeeNISRate),
+		employerNISRate: Number(profile.employerNISRate),
+		nisMaxEarnings: toCents(Number(profile.nisMaxEarnings ?? 0)),
+	};
+}
+
+function buildSettings(
+	settings: typeof payrollSetting.$inferSelect | undefined
+): PayrollSettingInput {
+	return {
+		overtimeMultipliers: {
+			weekday: Number(settings?.weekdayOvertimeMultiplier ?? 1.5),
+			saturday: Number(settings?.saturdayMultiplier ?? 1.5),
+			sunday: Number(settings?.sundayMultiplier ?? 2.0),
+			publicHoliday: Number(settings?.publicHolidayMultiplier ?? 2.0),
+			nightShift: Number(settings?.nightShiftMultiplier ?? 1.0),
+		},
+		standardHoursPerDay: Number(settings?.standardHoursPerDay ?? 8),
+		lunchDeductionMinutes: settings?.lunchDeductionMinutes ?? 0,
+		minimumNetPayThreshold: settings?.minimumNetPayThreshold
+			? toCents(Number(settings.minimumNetPayThreshold))
+			: null,
+	};
+}
+
+async function buildAttendanceInput(
+	employeeId: string,
+	periodStart: Date,
+	periodEnd: Date
+): Promise<AttendanceInput> {
+	const records = await db
+		.select({
+			workedMinutes: attendanceRecord.workedMinutes,
+			overtimeMinutes: attendanceRecord.overtimeMinutes,
+			dayType: attendanceRecord.dayType,
+			status: attendanceRecord.status,
+			isValidated: attendanceRecord.isValidated,
+			isOvertimeApproved: attendanceRecord.isOvertimeApproved,
+			payrollStatus: attendanceRecord.payrollStatus,
+		})
+		.from(attendanceRecord)
+		.where(
+			and(
+				eq(attendanceRecord.employeeId, employeeId),
+				gte(attendanceRecord.date, periodStart),
+				lte(attendanceRecord.date, periodEnd)
+			)
+		);
+
+	return aggregateAttendance(records);
+}
+
+function aggregateAttendance(
+	records: Array<{
+		workedMinutes: number;
+		overtimeMinutes: number;
+		dayType: string;
+		status: string;
+		isValidated: boolean;
+		isOvertimeApproved: boolean;
+		payrollStatus: string;
+	}>
+): AttendanceInput {
+	let totalWorkedMinutes = 0;
+	let totalApprovedOvertimeMinutes = 0;
+	const overtimeByDayType = { weekday: 0, saturday: 0, sunday: 0, holiday: 0 };
+	let daysPresent = 0;
+	let daysHalfDay = 0;
+	let daysAbsent = 0;
+	let daysHoliday = 0;
+	let pendingItems = 0;
+
+	for (const r of records) {
+		totalWorkedMinutes += r.workedMinutes;
+		if (r.isOvertimeApproved && r.payrollStatus === "approved") {
+			totalApprovedOvertimeMinutes += r.overtimeMinutes;
+			const dtype = r.dayType as keyof typeof overtimeByDayType;
+			if (dtype in overtimeByDayType) {
+				overtimeByDayType[dtype] += r.overtimeMinutes;
+			}
+		}
+		if (r.status === "present") {
+			daysPresent++;
+		} else if (r.status === "half_day") {
+			daysHalfDay++;
+		} else if (r.status === "absent") {
+			daysAbsent++;
+		} else if (r.status === "holiday") {
+			daysHoliday++;
+		}
+		if (!r.isValidated || r.payrollStatus === "pending") {
+			pendingItems++;
+		}
+	}
+
+	return {
+		totalWorkedMinutes,
+		totalApprovedOvertimeMinutes,
+		overtimeByDayType,
+		daysPresent,
+		daysHalfDay,
+		daysAbsent,
+		daysHoliday,
+		pendingItems,
+		isComplete: records.length > 0,
+	};
+}
+
+function emptyAttendance(): AttendanceInput {
+	return {
+		totalWorkedMinutes: 0,
+		totalApprovedOvertimeMinutes: 0,
+		overtimeByDayType: { weekday: 0, saturday: 0, sunday: 0, holiday: 0 },
+		daysPresent: 0,
+		daysHalfDay: 0,
+		daysAbsent: 0,
+		daysHoliday: 0,
+		pendingItems: 0,
+		isComplete: false,
+	};
+}
+
+async function buildLeaveInput(
+	employeeId: string,
+	periodStart: Date,
+	periodEnd: Date
+): Promise<LeaveInput> {
+	const requests = await db
+		.select({
+			requestedDays: leaveRequest.requestedDays,
+			status: leaveRequest.status,
+			isPaid: leaveType.isPaid,
+		})
+		.from(leaveRequest)
+		.innerJoin(leaveType, eq(leaveRequest.leaveTypeId, leaveType.id))
+		.where(
+			and(
+				eq(leaveRequest.employeeId, employeeId),
+				lte(leaveRequest.startDate, periodEnd),
+				gte(leaveRequest.endDate, periodStart)
+			)
+		);
+
+	let paidLeaveDays = 0;
+	let unpaidLeaveDays = 0;
+	let pendingLeaveDays = 0;
+
+	for (const r of requests) {
+		const days = Number(r.requestedDays);
+		if (r.status === "approved") {
+			if (r.isPaid) {
+				paidLeaveDays += days;
+			} else {
+				unpaidLeaveDays += days;
+			}
+		} else if (r.status === "requested") {
+			pendingLeaveDays += days;
+		}
+	}
+
+	return { paidLeaveDays, unpaidLeaveDays, pendingLeaveDays };
+}
+
+async function buildPayItemInputs(
+	organizationId: string,
+	employeeId: string,
+	departmentId: string | null
+): Promise<{ allowances: PayItemInput[]; deductions: PayItemInput[] }> {
+	const [items, empAssignments, deptAssignments] = await Promise.all([
+		db
+			.select()
+			.from(payItem)
+			.where(
+				and(
+					eq(payItem.organizationId, organizationId),
+					eq(payItem.isActive, true)
+				)
+			),
+		db
+			.select()
+			.from(payItemAssignment)
+			.where(eq(payItemAssignment.employeeId, employeeId)),
+		departmentId
+			? db
+					.select()
+					.from(payItemAssignment)
+					.where(eq(payItemAssignment.departmentId, departmentId))
+			: Promise.resolve([]),
+	]);
+
+	const allowances: PayItemInput[] = [];
+	const deductions: PayItemInput[] = [];
+
+	for (const item of items) {
+		const assignment =
+			empAssignments.find((a) => a.payItemId === item.id) ??
+			deptAssignments.find((a) => a.payItemId === item.id);
+		if (assignment?.isExcluded) {
+			continue;
+		}
+		if (!(item.includeAllActive || assignment)) {
+			continue;
+		}
+
+		const mapped = mapPayItem(item, assignment);
+		if (item.type === "allowance") {
+			allowances.push(mapped);
+		} else {
+			deductions.push(mapped);
+		}
+	}
+
+	return { allowances, deductions };
+}
+
+function mapPayItem(
+	item: typeof payItem.$inferSelect,
+	assignment: typeof payItemAssignment.$inferSelect | undefined
+): PayItemInput {
+	return {
+		payItemId: item.id,
+		title: item.title,
+		isFixed: item.isFixed,
+		fixedAmount: item.fixedAmount ? Number(item.fixedAmount) : null,
+		basedOn: item.basedOn,
+		rate: item.rate ? Number(item.rate) : null,
+		isTaxable: item.isTaxable,
+		isPreTax: item.isPreTax,
+		isTax: item.isTax,
+		isStatutory: item.isStatutory,
+		employerRate: item.employerRate ? Number(item.employerRate) : null,
+		maxAmount: item.maxAmount ? Number(item.maxAmount) : null,
+		overrideAmount: assignment?.overrideAmount
+			? Number(assignment.overrideAmount)
+			: null,
+	};
+}
+
+function formatDate(d: Date | string): string {
+	if (typeof d === "string") {
+		return d;
+	}
+	return d.toISOString().split("T")[0] ?? "";
+}

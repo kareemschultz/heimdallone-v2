@@ -13,6 +13,7 @@
   "dependencies": {
     "@Heimdallone/auth": "workspace:*",
     "@Heimdallone/db": "workspace:*",
+    "@Heimdallone/payroll-engine": "workspace:*",
     "@Heimdallone/env": "workspace:*",
     "@orpc/client": "catalog:",
     "@orpc/openapi": "catalog:",

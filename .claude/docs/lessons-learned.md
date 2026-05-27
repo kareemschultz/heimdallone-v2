@@ -381,3 +381,21 @@ Living document. Updated after each major task or unexpected issue.
 40. **Country rules must be versioned by year, not just country** — Trinidad & Tobago NIS rate changes from 16.2% (2026) to 19.2% (2027). A `countryCode + effectiveYear` registry key ensures the engine never silently applies wrong rates across year boundaries. Each country/year combination is an independent, auditable module. The `resolveCountryRules("TT", 2026)` → `trinidad-2026.ts` pattern makes this explicit.
 
 41. **Graceful blocker for unimplemented country rules** — Rather than throwing an error or returning garbage when an org selects a country without implemented rules, the engine returns a clear blocker: "Payroll rules for BB 2026 are not implemented yet." This prevents silent miscalculation and gives a resolution path. The API layer doesn't need special handling — the blocker flows through the standard payroll preview UI.
+
+## Session: 2026-05-27 — Phase 8D (Payroll oRPC API)
+
+### Gotchas Discovered
+
+78. **`employeeProfile` has `badgeId`, not `employeeCode`** — The engine types expect `employeeCode` but the DB schema uses `badgeId` on `employee_profile`. The input builder maps `badgeId` → `employeeCode`. Don't assume column names from the engine types match the DB schema — always check the Drizzle schema.
+
+79. **Leave request status is `"requested"`, not `"pending"`** — The `leaveRequestStatusEnum` uses `["requested", "approved", "rejected", "cancelled"]`. The engine and readiness plan use "pending" as the concept, but the DB enum value is "requested". TypeScript catches this mismatch at compile time if the types are narrow enough.
+
+80. **`departmentId` lives on `employeeWorkInfo`, not `employeeProfile`** — The `employee_profile` table doesn't have a department column. Department assignment is on `employee_work_info`. Any query grouping employees by department must join through `employeeWorkInfo`.
+
+81. **Biome `noExcessiveCognitiveComplexity` hits input builder functions hard** — `buildPayrollInput` assembles data from 8+ DB queries with conditional logic. Extract each concern (country profile, settings, loans, reimbursements, attendance, leave, pay items) into its own function. This also improves testability — each builder function can be unit-tested independently later.
+
+### Patterns That Worked
+
+42. **PayrollInput builder as adapter boundary** — All DB→engine translation happens in `payroll-input-builder.ts`. The router calls `buildPayrollInput()` and passes the result directly to `calculatePayroll()`. No calculation logic in the router, no DB logic in the engine. This keeps both sides independently testable and makes the data flow auditable.
+
+43. **`fromCents()` at API response boundaries** — The engine works in integer cents internally. The router converts back via `fromCents()` only when building the response. DB persistence also uses `fromCents()` to store `numeric(12,2)` values. This ensures no floating-point errors leak into persisted data or API responses.
