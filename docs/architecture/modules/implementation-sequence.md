@@ -30,7 +30,8 @@ Phase 15:  Analytics + Dashboards + Reports
 - **Phase 8G**: ✅ Payslip list/detail + print-ready layout, employee self-service
 - **Phase 8H**: ✅ Payroll analytics/reports dashboard — metrics, department costs, issues, export placeholders
 - **Phase 8I**: ✅ QA/RBAC/compliance pass — 9 tenant-FK security fixes, browser-verified all 8 payroll pages
-- **Phase 8J–8K**: Next — branding/onboarding polish → payment batch + bank export
+- **Phase 8J**: ✅ Branding, templates, onboarding polish — checklist badges, helper copy, compliance notes, template selector
+- **Phase 8K**: Next — payment batch + generic bank export
 
 ## Dependency Graph
 

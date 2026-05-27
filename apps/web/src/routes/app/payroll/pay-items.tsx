@@ -92,7 +92,8 @@ function PayItemsPage() {
 					</div>
 					<h1 className="page-title">Pay items</h1>
 					<p className="page-sub">
-						Allowances, deductions, and tax items that apply to employee payroll
+						Pay items are allowances, deductions, and statutory items used in
+						every payroll calculation.
 					</p>
 				</div>
 				{canManage && (

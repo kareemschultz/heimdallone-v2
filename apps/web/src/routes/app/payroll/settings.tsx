@@ -141,7 +141,8 @@ function PayrollSettingsPage() {
 					</div>
 					<h1 className="page-title">Payroll settings</h1>
 					<p className="page-sub">
-						Configure overtime, work schedule, and payroll defaults
+						These settings control how payroll is calculated for your
+						organization.
 					</p>
 				</div>
 				{canManage && Object.keys(form).length > 0 && (

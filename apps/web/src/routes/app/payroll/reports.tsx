@@ -113,7 +113,8 @@ function PayrollReportsPage() {
 					</div>
 					<h1 className="page-title">Payroll reports</h1>
 					<p className="page-sub">
-						Analytics, cost summaries, and payroll run insights
+						Use reports to understand payroll cost, blockers, and department
+						totals across payroll runs.
 					</p>
 				</div>
 			</div>

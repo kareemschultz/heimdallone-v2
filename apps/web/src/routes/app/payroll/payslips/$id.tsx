@@ -146,6 +146,30 @@ function PayslipDetailPage() {
 				</div>
 			</div>
 
+			<div
+				className="no-print"
+				style={{
+					marginBottom: 14,
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "space-between",
+					padding: "8px 14px",
+					background: "var(--bg-1)",
+					border: "1px solid var(--line)",
+					borderRadius: 10,
+				}}
+			>
+				<div style={{ fontSize: 12.5, color: "var(--fg-3)" }}>
+					Template: <strong style={{ color: "var(--fg-2)" }}>Classic</strong>
+					<span style={{ marginLeft: 8, fontSize: 10, color: "var(--fg-4)" }}>
+						Modern, Compact, Detailed, Statutory — coming later
+					</span>
+				</div>
+				<div style={{ fontSize: 11, color: "var(--fg-4)" }}>
+					Use Print / Save as PDF to save a copy
+				</div>
+			</div>
+
 			{isDraft && (
 				<div
 					style={{
@@ -328,9 +352,10 @@ function PayslipDetailPage() {
 
 				<div className="payslip-footer">
 					<span>
-						Generated {fmtDate(slip.generatedAt as string)} · {org.orgName}
+						Generated {fmtDate(slip.generatedAt as string)} · {org.orgName} ·
+						Powered by Heimdallone
 					</span>
-					<span>This is a computer-generated document.</span>
+					<span>This payslip is generated from approved payroll data.</span>
 				</div>
 			</div>
 

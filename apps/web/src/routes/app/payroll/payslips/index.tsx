@@ -74,8 +74,8 @@ function PayslipsPage() {
 					</h1>
 					<p className="page-sub">
 						{isEmployee
-							? "Your pay history and payslip details"
-							: "All employee payslips across payroll runs"}
+							? "Payslips show your earnings, deductions, and net pay for each period."
+							: "Payslips show the final breakdown of earnings, deductions, and net pay for every employee."}
 					</p>
 				</div>
 			</div>

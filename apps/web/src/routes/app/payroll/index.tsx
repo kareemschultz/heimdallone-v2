@@ -80,7 +80,8 @@ function PayrollDashboard() {
 					</div>
 					<h1 className="page-title">Payroll setup</h1>
 					<p className="page-sub">
-						Configure payroll settings, pay items, and employee assignments
+						Start here to check if payroll is ready. Configure settings, pay
+						items, and review your setup checklist.
 					</p>
 				</div>
 			</div>
@@ -231,6 +232,35 @@ function PayrollDashboard() {
 							</span>
 						</div>
 						<div className="side-body">
+							{readinessPercent >= 80 ? (
+								<div
+									style={{
+										padding: "8px 0 12px",
+										fontSize: 12.5,
+										color: "var(--success)",
+									}}
+								>
+									<Check
+										size={12}
+										style={{ verticalAlign: -2, marginRight: 4 }}
+									/>
+									Ready to run payroll
+								</div>
+							) : (
+								<div
+									style={{
+										padding: "8px 0 12px",
+										fontSize: 12.5,
+										color: "var(--warning)",
+									}}
+								>
+									<AlertTriangle
+										size={12}
+										style={{ verticalAlign: -2, marginRight: 4 }}
+									/>
+									Complete required items before running payroll
+								</div>
+							)}
 							{checklist.map((item) => (
 								<div className="ck-item" key={item.key}>
 									<div className={`ck-tick ${item.status}`}>
@@ -238,8 +268,47 @@ function PayrollDashboard() {
 										{item.status === "warn" && <AlertTriangle size={10} />}
 									</div>
 									<div className="ck-body">
-										<div className="ttl">{item.title}</div>
+										<div className="ttl">
+											{item.title}
+											<span
+												style={{
+													marginLeft: 6,
+													fontSize: 9,
+													padding: "1px 5px",
+													borderRadius: 4,
+													background: item.required
+														? "var(--accent-soft)"
+														: "var(--bg-3)",
+													color: item.required
+														? "var(--accent)"
+														: "var(--fg-4)",
+												}}
+											>
+												{item.required ? "Required" : "Optional"}
+											</span>
+										</div>
 										<div className="sub">{item.description}</div>
+										{item.status !== "done" && (
+											<div
+												className="sub"
+												style={{ marginTop: 2, fontStyle: "italic" }}
+											>
+												{item.why}
+												{item.href && (
+													<Link
+														style={{
+															marginLeft: 6,
+															color: "var(--accent)",
+															textDecoration: "none",
+															fontSize: 11,
+														}}
+														to={item.href}
+													>
+														Fix →
+													</Link>
+												)}
+											</div>
+										)}
 									</div>
 								</div>
 							))}
@@ -328,6 +397,25 @@ function PayrollDashboard() {
 						</div>
 					)}
 				</div>
+
+				<div
+					style={{
+						marginTop: 14,
+						padding: "12px 16px",
+						background: "var(--bg-1)",
+						border: "1px solid var(--line)",
+						borderRadius: 12,
+						fontSize: 12,
+						color: "var(--fg-4)",
+						lineHeight: 1.6,
+					}}
+				>
+					Payroll calculations use Guyana 2026 rules based on researched
+					guidance. Official statutory verification is required before
+					production use. Barbados and Trinidad rules are documented but not yet
+					implemented. Bank export templates require official bank file
+					specifications.
+				</div>
 			</div>
 		</div>
 	);
@@ -396,9 +484,12 @@ function NavRow({
 
 interface ChecklistItem {
 	description: string;
+	href?: string;
 	key: string;
+	required: boolean;
 	status: "done" | "warn" | "todo";
 	title: string;
+	why: string;
 }
 
 function buildChecklist(
@@ -415,6 +506,9 @@ function buildChecklist(
 				? "Configured"
 				: "Set up PAYE, NIS, and allowance rules",
 			status: profile ? "done" : "todo",
+			required: true,
+			href: "/app/payroll/settings",
+			why: "Tax and NIS rules determine how payroll is calculated.",
 		},
 		{
 			key: "settings",
@@ -423,6 +517,9 @@ function buildChecklist(
 				? "Configured"
 				: "Set currency, overtime, and work schedule",
 			status: settings ? "done" : "todo",
+			required: true,
+			href: "/app/payroll/settings",
+			why: "Overtime rates and work schedule affect pay calculations.",
 		},
 		{
 			key: "period",
@@ -432,30 +529,45 @@ function buildChecklist(
 					? `${openPeriods.length} open`
 					: "Create a pay period",
 			status: openPeriods.length > 0 ? "done" : "todo",
+			required: true,
+			href: "/app/payroll/settings",
+			why: "A pay period defines the date range for each payroll run.",
 		},
 		{
 			key: "payitems",
 			title: "Pay items",
 			description: "PAYE, NIS, allowances, deductions",
 			status: settings ? "done" : "todo",
+			required: true,
+			href: "/app/payroll/pay-items",
+			why: "Pay items control which allowances and deductions apply.",
 		},
 		{
 			key: "employees",
 			title: "Employees with contracts",
 			description: "Active contracts required for payroll",
 			status: "done",
+			required: true,
+			href: "/app/employees",
+			why: "Each employee needs an active contract with salary details.",
 		},
 		{
 			key: "attendance",
 			title: "Attendance configured",
 			description: "Attendance records feed payroll hours",
 			status: "done",
+			required: false,
+			href: "/app/attendance",
+			why: "Attendance data determines worked hours and overtime.",
 		},
 		{
 			key: "leave",
 			title: "Leave types configured",
 			description: "Leave affects payroll deductions",
 			status: "done",
+			required: false,
+			href: "/app/leave",
+			why: "Unpaid leave reduces pay; paid leave keeps salary intact.",
 		},
 		{
 			key: "run",
@@ -464,6 +576,9 @@ function buildChecklist(
 				? "Completed"
 				: "Preview payroll to verify setup",
 			status: (dashboard?.totalRuns ?? 0) > 0 ? "done" : "todo",
+			required: false,
+			href: "/app/payroll/run",
+			why: "Run a preview to verify your payroll setup is correct.",
 		},
 	];
 }

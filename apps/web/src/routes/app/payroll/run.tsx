@@ -91,7 +91,8 @@ function PayrollRunWizard() {
 					</div>
 					<h1 className="page-title">Run payroll</h1>
 					<p className="page-sub">
-						Create a payroll run, preview results, and finalize when ready
+						Preview payroll first — nothing is finalized until you confirm.
+						Review every employee before proceeding.
 					</p>
 				</div>
 			</div>
