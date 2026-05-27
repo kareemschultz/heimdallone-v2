@@ -273,3 +273,27 @@ Living document. Updated after each major task or unexpected issue.
 11. **gy-taxcalc is a useful internal reference but official rules must be verified** — rates match 2026 GRA notices, but annual budget changes require re-verification. The payroll engine must version rules per country+year.
 
 12. **Old HeimdallOne v1 can inspire features but v2 remains the only implementation target** — v1 had production-grade payroll (75K+ lines) but monolithic routers, no helper text, and brittle edge cases. Carry forward the concepts (versioned rules, accrual, reversal), avoid the patterns (19K-line files, non-transactional finalization).
+
+---
+
+## Session: 2026-05-27 — Phase 7A.1 Odoo Research + Phase 7C Attendance API
+
+### Gotchas Discovered
+
+58. **Odoo is useful for workflow/UX inspiration but not architecture** — Odoo's module system, ORM, and view layer are Python/XML-native and don't translate to TypeScript. Extract concepts and patterns, not code or architecture. Their work-entries/resource-calendar abstractions are elegant but heavyweight; Heimdallone's simpler join-based approach (attendance_record + leave_request + holidays → payroll) is intentional.
+
+59. **Odoo-style search/filter/group-by and multi-view patterns are valuable** — Every Odoo list view supports unified search, filter chips, group-by, and saved presets. Every module offers list + kanban + calendar + pivot + graph views. Heimdallone should adopt ViewSwitcher and enhanced FilterBar with group-by as shared primitives.
+
+60. **Work entries vs attendance_record: compare carefully** — Odoo's unified work-entry system auto-generates records from attendance, leave, and planning modules. Heimdallone's design keeps these separate (payroll reads from three sources). Both work; ours is simpler but requires documented join logic in the payroll-readiness plan.
+
+61. **Dual tolerance for attendance is smarter than a single grace period** — Odoo uses separate thresholds: company-favoring (don't penalize employee for < N min late) and employee-favoring (don't deduct for < N min early departure). Our current `graceTimeMinutes` only handles the first case.
+
+62. **Accrual milestones are industry-standard for leave** — Flat accrual rates (1 day/month for everyone) are a simplification. Real HRMS systems use tenure-based rates. Plan for JSON milestone rules on leave_type.
+
+63. **`z.record()` in Zod v3.23+ requires two arguments** — `z.record(z.unknown())` fails; must use `z.record(z.string(), z.unknown())`. Caught during Phase 7C attendance API implementation.
+
+### Patterns That Worked
+
+26. **Security review caught IDOR in eventsCreateManual** — The `authorizedProcedure("attendance", "create")` gate limits to HR roles, but the handler accepted any `employeeId` without scope checking. Added `checkScopeForMutation()` call to prevent cross-employee writes by unauthorized actors.
+
+27. **Parallel research agents** — Running Odoo docs and GitHub research agents simultaneously produced comprehensive results in ~3 minutes vs sequential which would have taken ~6 minutes. Background agents are ideal for web-research-heavy spec phases.

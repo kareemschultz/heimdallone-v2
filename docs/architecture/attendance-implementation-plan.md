@@ -384,3 +384,40 @@ pending → approved (changes applied to attendance_record, audit logged)
 | 4 | Should overtime approval be separate from validation? | Yes — validation confirms hours are correct; OT approval confirms overtime should be paid. Two separate concerns. | Decided |
 | 5 | Should we store `minimumMinutes` on the record or look it up from shift? | Store on record — snapshot at creation time. If shift changes later, existing records aren't affected. | Decided |
 | 6 | Night shift: how to handle overnight clock-in/out? | Use `eventDate` (the shift START date) as the canonical date. Clock-out on the next calendar day is still attributed to the start date. Matches v1's `logicalShiftDate` pattern. | Decided |
+
+---
+
+## Odoo-Inspired Enhancements (Phase 7A.1 Research)
+
+> Added 2026-05-27 from Phase 7A.1 Odoo HRMS research. These are spec-enrichment recommendations — no schema changes until Phase 7D or later.
+
+### Adopt for Phase 7D or Stretch
+
+1. **Dual tolerance model** — Add `employeeFavoringToleranceMinutes` to `attendance_setting`. If employee departs < N minutes early, round up to full shift (don't penalize). Current `graceTimeMinutes` handles late arrival only. Odoo uses separate thresholds for company-favoring (grace in) and employee-favoring (round up on early departure).
+
+2. **Max session threshold** — Add `maxSessionHours` (default 16) to `attendance_setting`. Flag attendance records exceeding this threshold as potential forgotten checkouts. Odoo uses 16h and 24h tiers with red highlighting.
+
+3. **Persistent check-in indicator** — Nav bar status dot (green = clocked in, red = not clocked in) visible on all pages. Odoo's systray button is always visible regardless of which module the user is in. More prominent than a dashboard-only widget.
+
+4. **Work entry conflict resolution UX** — Orange triangle indicator on records with issues (missing clock-out, unvalidated, pending correction). Two resolution paths: quick-fix inline vs navigate to source. Matches Odoo's work entry conflict pattern.
+
+### Adopt for Phase 7E (Leave)
+
+5. **Accrual milestones** — Tenure-based accrual rates (e.g., year 1 = 1 day/month, year 2+ = 1.5 days/month). Add `leave_accrual_milestone` table or JSON milestones on leave_type. Odoo's accrual plan has multi-level progression.
+
+6. **Negative balance cap** — Add `allowNegativeBalance` (bool) and `negativeBalanceCap` (numeric) to leave_type. Allows emergency leave up to a configurable limit. Odoo calls this `allows_negative` + `max_allowed_negative`.
+
+7. **Private leave reason** — Leave request reason should be maskable for non-HR roles (e.g., medical leave shows `*****` to managers, full text visible to HR only). Odoo has `private_name` field.
+
+### Adopt for Phase 8 (Payroll)
+
+8. **Deferred time off** — If leave is taken after payslips are validated for a period, auto-roll the deduction to the next period. Prevents mid-cycle payroll errors. Add to payroll engine specification.
+
+9. **Work entry rounding** — Configurable rounding per work-entry-type: 5.5 hours can round to 4 or 8 depending on direction (up/down) and unit (half-day/full-day). Add to attendance_setting or payroll_setting.
+
+### Defer
+
+10. **Kiosk mode** — Full-screen check-in for shared terminals. Defer to Phase 11 with biometric devices.
+11. **Two-week alternating schedules** — Support for week A/B patterns. Defer — niche need.
+12. **Email-based approve/refuse** — Controller links in notification emails. Defer to Phase 14 notifications.
+13. **Absence detection cron** — Auto-creates negative-overtime "technical" records for no-shows. Defer — adds complexity; our absent detection is simpler.

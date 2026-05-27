@@ -149,7 +149,9 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 - Phase 6E: **Complete** — payroll/attendance/leave spec enrichment, GRA verification, v1+gy-taxcalc inspection
 - Phase 7A: **Complete** — Attendance + Leave implementation plans finalized, payroll-readiness plan created
 - Phase 7B: **Complete** — Attendance DB schema (4 tables, 5 enums), migration, seed (72 records, 73 events, 2 corrections)
-- Next: Phase 7C — Attendance oRPC API
+- Phase 7A.1: **Complete** — Odoo HRMS research, feature gap review, spec enrichment
+- Phase 7C: **Complete** — Attendance oRPC router (17 procedures), RBAC scoping, audit events
+- Next: Phase 7D — Attendance UI
 
 ### Key Architecture Files
 - `.claude/CLAUDE.md` — Full project instructions with doc references

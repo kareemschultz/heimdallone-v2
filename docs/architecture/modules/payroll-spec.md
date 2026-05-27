@@ -411,6 +411,8 @@ Uses existing permissions: `payslip:draft/finalize/reverse/read`, `loan:*`, `adv
 6. **Tax bracket edge** — Amount exactly on bracket boundary. Use inclusive lower, exclusive upper.
 7. **Concurrent payslip generation** — Two admins run payroll simultaneously. Use unique constraint.
 8. **Loan with resignation** — Outstanding balance must be deducted from final settlement.
+9. **Deferred time off** — Leave taken after payslips are validated for a period must auto-roll to the next period's payslip. Prevents mid-cycle payroll errors. (From Odoo research — Phase 7A.1)
+10. **Work entry rounding** — Configurable rounding per day (e.g., 5.5 hours rounds to 4 or 8 depending on direction). Add rounding config to payroll or attendance settings. (From Odoo research — Phase 7A.1)
 
 ## Implementation Readiness
 

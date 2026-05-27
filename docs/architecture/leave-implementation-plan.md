@@ -439,3 +439,34 @@ requestedDays = count(workingDays in [startDate..endDate])
 | 4 | Should leave requests block on team conflicts? | No — warn only. "2 team members already on leave" is informational, not a blocker. Configurable in future phases. | Decided |
 | 5 | Can half-day leave span multiple days? | Yes — start_date first_half + end_date second_half is valid. Middle days are full_day. | Decided |
 | 6 | Should company_leave_day support custom dates (not just weekly)? | No — use the existing `holiday` table for specific dates. `company_leave_day` is for recurring weekly patterns only. | Decided |
+
+---
+
+## Odoo-Inspired Enhancements (Phase 7A.1 Research)
+
+> Added 2026-05-27 from Phase 7A.1 Odoo HRMS research.
+
+### Adopt for Phase 7E Schema
+
+1. **Accrual milestones** — Add milestone-based accrual rules to leave_type. Instead of a flat `accrualAmount`, support tiered rates by tenure:
+   - Year 1: 1 day/month
+   - Year 2-5: 1.5 days/month
+   - Year 5+: 2 days/month
+   - Implementation: JSON array field `accrualMilestones` on leave_type, or a separate `leave_accrual_milestone` table if more complex. Odoo uses a full `hr.leave.accrual.level` model with progression rules. For Phase 7E, a JSON array on leave_type is sufficient.
+
+2. **Negative balance cap** — Add `allowNegativeBalance` (boolean, default false) and `negativeBalanceCap` (numeric, nullable) to leave_type. Allows employees to go negative for emergency leave up to a configurable limit. Prevents balance violations while supporting genuine emergencies.
+
+3. **Private leave reason** — Add `isReasonPrivate` (boolean, default false) to leave_request. When true, the `description` field is masked for non-HR roles (shows "Personal leave" instead of the actual text). Important for medical, family, or mental health leave. Odoo calls this `private_name`.
+
+### Adopt for Phase 7F API
+
+4. **Configurable approval per type** — Leave types should have an `approvalType` field: `none` (auto-approve), `manager`, `hr`, `both` (manager then HR). Phase 7F starts with `manager` as default; multi-level approval queues added later.
+
+5. **Mandatory day enforcement** — Add ability to mark dates as "mandatory work days" that block leave requests (e.g., inventory day, audit day). Uses existing `leave_restriction` entity but adds an `isHardBlock` flag to distinguish "warn only" vs "block entirely".
+
+### Defer
+
+6. **Hourly leave requests** — Odoo supports hour-based leave. Half-day is sufficient for Phase 7; hourly adds complexity.
+7. **Extra hours deduction** — Auto-deduct from overtime bank before touching leave balance. Needs overtime bank tracking, which is Phase 8+.
+8. **Email-based approve/refuse** — Links in notification emails. Phase 14.
+9. **Nightly accrual reconciliation cron** — Auto-cancels leaves where balance dropped below request. Phase 8+ scheduled job.
