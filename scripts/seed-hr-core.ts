@@ -207,14 +207,14 @@ async function main() {
 			organizationId: orgId,
 			name: "Day Shift",
 			weeklyFullTimeMinutes: 2400,
-			monthlyFullTimeMinutes: 12000,
+			monthlyFullTimeMinutes: 12_000,
 		},
 		{
 			id: shiftIds.night,
 			organizationId: orgId,
 			name: "Night Shift",
 			weeklyFullTimeMinutes: 2400,
-			monthlyFullTimeMinutes: 12000,
+			monthlyFullTimeMinutes: 12_000,
 		},
 	]);
 	console.log("   2 shifts created");
@@ -313,22 +313,22 @@ async function main() {
 
 	interface EmpSeed {
 		badgeId: string;
-		firstName: string;
-		lastName: string;
-		email: string;
-		phone: string;
-		gender: "male" | "female" | "other";
-		country: string;
 		city: string;
+		country: string;
 		deptId: string;
+		email: string;
+		empTypeId: string;
+		firstName: string;
+		gender: "male" | "female" | "other";
+		lastName: string;
+		managerId?: string;
+		phone: string;
 		posId: string;
 		roleId?: string;
-		shiftId: string;
-		workTypeId: string;
-		empTypeId: string;
 		salary: string;
-		managerId?: string;
+		shiftId: string;
 		userEmail?: string;
+		workTypeId: string;
 	}
 
 	const mayaId = createId();

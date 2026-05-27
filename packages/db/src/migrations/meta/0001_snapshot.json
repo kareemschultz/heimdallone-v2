@@ -1,6 +1,6 @@
 {
-  "id": "1f5122e0-fb7d-4d7d-aeda-e23fae3fa7c6",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "392851e5-f226-48c4-a0b9-0b39c753a3cf",
+  "prevId": "1f5122e0-fb7d-4d7d-aeda-e23fae3fa7c6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1364,6 +1364,28 @@
             }
           ],
           "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "employee_profile_org_badge_uidx": {
+          "name": "employee_profile_org_badge_uidx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "badge_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"employee_profile\".\"badge_id\" IS NOT NULL",
           "concurrently": false,
           "method": "btree",
           "with": {}

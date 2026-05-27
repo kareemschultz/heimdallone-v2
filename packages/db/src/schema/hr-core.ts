@@ -1,5 +1,5 @@
 import { createId } from "@paralleldrive/cuid2";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
 	boolean,
 	date,
@@ -12,6 +12,7 @@ import {
 	text,
 	timestamp,
 	unique,
+	uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { organization, user } from "./auth";
@@ -130,7 +131,7 @@ export const shift = pgTable(
 			.default(2400)
 			.notNull(),
 		monthlyFullTimeMinutes: integer("monthly_full_time_minutes")
-			.default(12000)
+			.default(12_000)
 			.notNull(),
 		isActive: boolean("is_active").default(true).notNull(),
 		...timestamps,
@@ -198,6 +199,9 @@ export const employeeProfile = pgTable(
 		index("employee_profile_org_idx").on(t.organizationId),
 		index("employee_profile_user_idx").on(t.userId),
 		unique("employee_profile_org_email_uq").on(t.organizationId, t.email),
+		uniqueIndex("employee_profile_org_badge_uidx")
+			.on(t.organizationId, t.badgeId)
+			.where(sql`${t.badgeId} IS NOT NULL`),
 	]
 );
 
@@ -322,16 +326,13 @@ export const departmentRelations = relations(department, ({ many }) => ({
 	jobPositions: many(jobPosition),
 }));
 
-export const jobPositionRelations = relations(
-	jobPosition,
-	({ one, many }) => ({
-		department: one(department, {
-			fields: [jobPosition.departmentId],
-			references: [department.id],
-		}),
-		jobRoles: many(jobRole),
-	})
-);
+export const jobPositionRelations = relations(jobPosition, ({ one, many }) => ({
+	department: one(department, {
+		fields: [jobPosition.departmentId],
+		references: [department.id],
+	}),
+	jobRoles: many(jobRole),
+}));
 
 export const jobRoleRelations = relations(jobRole, ({ one }) => ({
 	jobPosition: one(jobPosition, {

@@ -1,0 +1,1 @@
+CREATE UNIQUE INDEX "employee_profile_org_badge_uidx" ON "employee_profile" USING btree ("organization_id","badge_id") WHERE "employee_profile"."badge_id" IS NOT NULL;
