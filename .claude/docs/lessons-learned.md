@@ -153,3 +153,31 @@ Living document. Updated after each major task or unexpected issue.
 5. **Archive protection with employee count** — The `departmentArchive` procedure checks if active employees reference the department before archiving. The error message includes the count. Similar guards needed for jobPosition (not yet implemented), shift, workType, employeeType.
 
 6. **`drizzle-kit push` vs `drizzle-kit generate + migrate`** — `push` applies schema diff directly and prompts for destructive changes. `generate` creates versioned SQL migration files. For development, `push` is faster. For production, always use `generate` + `migrate` for auditable, reversible migrations.
+
+---
+
+## Session: 2026-05-27 — Phase 5C–5E Employee Wizard + Edit + RBAC
+
+### Gotchas Discovered
+
+36. **OrgCtx must be exported for child routes** — The `OrgCtx` React context was defined in `app/route.tsx` but not exported. Child routes (`employees/index.tsx`, `employees/$id.tsx`) need `useContext(OrgCtx)` to access `memberRole` for role-aware UI. Fixed by adding `export` to the context definition.
+
+37. **`sql.join()` for dynamic IN clauses in Drizzle** — For manager-scope filtering, the employee list needs `WHERE id IN (self, report1, report2, ...)`. Drizzle doesn't have a native `.in()` that accepts a dynamic array cleanly. Use `sql\`${table.id} IN (${sql.join(ids.map(id => sql\`${id}\`), sql\`, \`)})\`` for safe parameterized dynamic IN clauses.
+
+38. **Employee without userId returns empty list, not error** — When `resolveCurrentEmployee` returns null (user has no employee profile in this org), the list returns `{ data: [], total: 0 }` instead of throwing. This is correct UX — a user who isn't an employee in this org simply sees no employees, not an error.
+
+39. **Duplicate check must be pre-insert, not post-constraint** — Relying on Postgres unique constraint violations for duplicate email/badge gives raw error messages. Pre-checking with a SELECT before INSERT gives friendly messages like "An employee with this email already exists." The trade-off is a race condition window, but for HRMS the risk is negligible.
+
+### Patterns That Worked
+
+13. **Scope helper as a utility module** — `employee-scope.ts` centralizes all role/scope logic: `canReadAllEmployees`, `canMutateEmployees`, `canReadFullBankDetails`, `resolveCurrentEmployee`, `getDirectReportIds`, `checkReportingManagerCycle`. Each procedure imports only what it needs. Easier to audit than inline role checks scattered across procedures.
+
+14. **Reusable EditSheet component** — A generic modal component that accepts a field list `{ key, label, value, type, options }[]` and renders the appropriate input (text, date, select). Only sends changed fields to the API (`diff before save`). Reusable across personal info, work info, and bank details edits without duplicating form logic.
+
+15. **Cycle detection via chain walking** — `checkReportingManagerCycle` walks up the reporting chain from the proposed manager, checking each level against the employee being edited. Capped at 20 iterations to prevent infinite loops in corrupted data. Catches self-assignment and multi-level cycles.
+
+### Edge Cases to Watch
+
+7. **Employee with no employee profile** — A Better Auth user who is a member of an org but has no `employee_profile` record. This is valid (platform admins, external users). The scope system returns empty results for such users rather than errors.
+
+8. **Manager with no direct reports** — A user with `manager` role but no employees have `reportingManagerId` pointing to them. They see only themselves in the list. This is correct behavior.

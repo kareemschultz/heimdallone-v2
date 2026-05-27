@@ -283,18 +283,18 @@ What does NOT change: colors, spacing, typography, card shapes, sidebar structur
 - [x] Employee search works (name, email, badge) (Phase 5B.3)
 - [x] Employee row click opens drawer with live data (Phase 5B.3)
 - [x] Employee profile page loads with resolved names (Phase 5B.3.1)
-- [ ] Employee create wizard creates employee with all fields (Phase 5C)
-- [ ] Employee create wizard works with minimal fields (Phase 5C)
-- [ ] Employee archive works with confirmation (Phase 5D)
+- [x] Employee create wizard creates employee with all fields (Phase 5C)
+- [x] Employee create wizard works with minimal fields (Phase 5C)
+- [x] Employee archive works with confirmation (Phase 5D)
 - [x] Employee archive blocked when employee is a manager — API enforced (Phase 5B.2)
 - [x] Org settings page shows departments/positions/shifts with CRUD (Phase 5B.4)
-- [ ] Holidays page shows CRUD (Phase 5B.5)
+- [x] Holidays page shows CRUD + country import engine (Phase 5B.5)
 - [x] Bank details masked for employee role, full for HR (Phase 5B.3)
 - [ ] Audit timeline shows changes on employee profile (deferred)
-- [ ] Manager sees only direct reports by default (Phase 5E)
-- [ ] Employee sees only own profile (Phase 5E)
+- [x] Manager sees only direct reports by default (Phase 5E)
+- [x] Employee sees only own profile (Phase 5E)
 - [x] HR admin sees all employees (Phase 5B.3)
-- [ ] Auditor sees all employees read-only (Phase 5E)
+- [x] Auditor sees all employees read-only (Phase 5E)
 
 ### Implementation Status
 
@@ -305,7 +305,17 @@ What does NOT change: colors, spacing, typography, card shapes, sidebar structur
 | 5B.3 | Done | Employee list + profile wired to live oRPC data |
 | 5B.3.1 | Done | Profile employment card shows resolved names |
 | 5B.4 | Done | Org settings with live CRUD for 6 entity types |
-| 5B.5 | Next | Holiday management |
-| 5C | Planned | Employee create wizard |
-| 5D | Planned | Employee edit/archive UI |
-| 5E | Planned | Manager/self-scope + RBAC tightening |
+| 5B.5 | Done | Holiday management + Nager.Date country import engine |
+| 5C | Done | Employee create wizard (4-step, minimal + full) |
+| 5C.1 | Done | Add Employee button linked to create wizard |
+| 5D | Done | Employee edit sheets + archive/restore UI |
+| 5E | Done | Manager/self-scope + RBAC tightening + friendly errors |
+
+### Remaining HR Core gaps
+
+- [ ] Audit timeline on employee profile Activity tab
+- [ ] Frontend URL guards for `/app/settings` and `/app/employees/create`
+- [ ] Employee self-service profile update (request-based flow)
+- [ ] Shift create/edit UI (schedule editing)
+- [ ] Granular RBAC resources (department:create, shift:update)
+- [ ] Field-level audit diffs for sensitive fields

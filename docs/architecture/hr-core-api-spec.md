@@ -341,49 +341,64 @@ No new RBAC resources were added. All org structure CRUD (departments, positions
 - All other roles: `accountNumber` → `****XXXX` (last 4 only), `bankCode1` → `****XX` (last 2 only)
 - Masking is server-side — the client never receives unmasked data for non-privileged roles
 
-### Known limitations (Phase 5B.2)
+### Known limitations (Phase 5B.2) → Resolved in Phase 5E
 
-1. **Manager-scope not implemented** — `employee:read` permission currently returns all org employees regardless of reporting relationship. Manager should only see direct reports.
-2. **Employee self-scope not implemented** — Employees with `employee:read` see all org employees. Should only see own profile.
-3. **No `session.userId → employeeProfile` mapping** — The router does not yet resolve the logged-in user's employee profile. Needed for self-scope and manager-scope.
-4. **Granular RBAC deferred** — All org structure CRUD uses `employee:create/update` instead of specific resources.
-5. **Field-level audit diffs sparse** — Most mutations only log the action, not which fields changed. Should be expanded for salary, department, manager, and bank detail changes.
-6. **No duplicate email error handling** — `employees.create` will fail with a raw DB error if email is duplicate. Should catch and return a friendly CONFLICT error.
-7. **No circular reporting manager check** — `workInfo.update` allows setting a reporting manager that creates a cycle.
+1. ~~Manager-scope not implemented~~ → **Implemented** (Phase 5E). Manager sees self + direct reports.
+2. ~~Employee self-scope not implemented~~ → **Implemented** (Phase 5E). Employee sees own profile only.
+3. ~~No session.userId → employeeProfile mapping~~ → **Implemented** (Phase 5E). `resolveCurrentEmployee()` utility.
+4. **Granular RBAC deferred** — Still uses `employee:create/update` for all org structure CRUD.
+5. **Field-level audit diffs sparse** — Most mutations still log action only, not field-level changes.
+6. ~~No duplicate email error handling~~ → **Implemented** (Phase 5E). Returns "An employee with this email already exists."
+7. ~~No circular reporting manager check~~ → **Implemented** (Phase 5E). Chain-walking cycle detection up to 20 levels.
+
+### Server-side role behavior (Phase 5E)
+
+| Role | List scope | GetById | Create | Edit | Archive | Bank read | Bank edit |
+|------|-----------|---------|--------|------|---------|-----------|-----------|
+| tenant_owner | All | All | Yes | Yes | Yes | Full | Yes |
+| tenant_admin | All | All | Yes | Yes | Yes | Full | Yes |
+| hr_admin | All | All | Yes | Yes | Yes | Full | Yes |
+| payroll_admin | All | All | No | No | No | Full | Yes |
+| auditor | All | All | No | No | No | Masked | No |
+| manager | Self + reports | Self + reports | No | No | No | Masked | No |
+| employee | Self only | Self only | No | No | No | Masked | No |
+| recruiter | Self only | Self only | No | No | No | None | No |
+| helpdesk_agent | Self only | Self only | No | No | No | None | No |
+
+### Friendly error messages (Phase 5E)
+
+| Trigger | Message |
+|---------|---------|
+| Duplicate email | "An employee with this email already exists." |
+| Duplicate badge | "This badge ID is already assigned to another employee." |
+| Self-reporting manager | "This manager assignment would create a reporting loop." |
+| Circular manager chain | Same message (walks 20 levels) |
+| Non-HR create/edit/archive | "Only HR administrators can create/edit/archive employees." |
+| Non-privileged bank edit | "Only HR and payroll administrators can edit bank details." |
+
+### Remaining limitations
+
+1. **Granular RBAC resources** — Org structure CRUD uses `employee:create/update` instead of specific `department:create`, `shift:update`.
+2. **Field-level audit diffs** — Most mutations log action only, not which fields changed.
+3. **Employee self-service** — Employees cannot update their own profile (phone, address) yet.
+4. **Settings page access** — No frontend guard on `/app/settings` for non-HR roles.
+5. **Create wizard URL guard** — `/app/employees/create` accessible by URL for any role (API blocks mutation).
 
 ---
 
 ## Required Before Production
 
-### Manager-scope and employee self-scope
+### Implemented in Phase 5E ✓
 
-The current implementation allows any user with `employee:read` to see all employees in the org. Before production:
+- ~~Manager-scope~~ → `resolveCurrentEmployee()` + `getDirectReportIds()` in `employee-scope.ts`
+- ~~Employee self-scope~~ → Filters list and getById to own profile only
+- ~~Duplicate email/badge handling~~ → Pre-insert SELECT with friendly messages
+- ~~Circular reporting manager~~ → Chain-walking validation up to 20 levels
 
-1. **Map session user to employee profile**: Query `employeeProfile` where `userId = session.user.id` to get the logged-in user's employee record and their `reportingManagerId`.
-2. **Self-scope**: Employee role queries must filter to `employeeProfile.userId = session.user.id`.
-3. **Manager-scope**: Manager role queries must filter to `employeeWorkInfo.reportingManagerId = currentEmployee.id`.
-4. **Implementation location**: A middleware or helper in `packages/api/src/utils/` that resolves `session.userId → employeeProfile` and injects `currentEmployeeId` + `isManager` into context.
+### Still needed
 
-### Granular RBAC resources
-
-Evaluate adding these resources to `permissions.ts`:
-- `department:create/read/update/archive`
-- `job_position:create/read/update/archive`
-- `shift:create/read/update/archive`
-- `work_type:create/read/update/archive`
-
-This allows roles like "manager" to read departments but not create them, without needing `employee:create` permission.
-
-### Field-level audit for sensitive updates
-
-These mutations must log field-level diffs:
-- `employees.workInfo.update` — especially `basicSalary`, `departmentId`, `reportingManagerId`
-- `employees.bankDetails.update` — all fields (financial data)
-- `employees.update` — especially `email`, `badgeId`
-
-### Multi-org tenant isolation testing
-
-Before production, test with 2+ organizations to verify:
-- No data leaks across orgs
-- Unique constraints work per-org (same email in different orgs is OK)
-- Archiving in one org doesn't affect another
+1. **Granular RBAC resources** — Evaluate `department:create`, `shift:update` etc. for fine-grained control
+2. **Field-level audit for sensitive updates** — Salary, department, manager, bank detail changes should log diffs
+3. **Multi-org tenant isolation testing** — Test with 2+ organizations to verify no data leaks
+4. **Employee self-service profile update** — Request-based flow for employees to update own phone/address
+5. **Frontend URL guards** — `/app/settings` and `/app/employees/create` accessible by URL (API blocks mutations)
