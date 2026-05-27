@@ -359,3 +359,21 @@ Living document. Updated after each major task or unexpected issue.
 ### Patterns That Worked
 
 36. **Drizzle 3-arg pgTable for table-level constraints** — To add a UNIQUE constraint across columns, use `pgTable("name", { columns }, (t) => [unique("constraint_name").on(t.col)])`. The 3-arg form is the only way to express table-level constraints like composite uniques, composite indexes, or check constraints in Drizzle.
+
+## Session: 2026-05-27 — Phase 8C (Payroll Calculation Engine)
+
+### Gotchas Discovered
+
+75. **Biome `noExcessiveCognitiveComplexity` limits long pipeline functions** — A 17-step payroll calculation in a single function hits complexity 46 (max 20). Extract step groups into helper functions that take a shared context object. The context pattern (`CalcContext` with `lineItems`, `explanations`, `sortOrder`) keeps helpers pure while allowing them to accumulate results.
+
+76. **Biome `noNonNullAssertion` in test files** — Using `result.find(...)!.amount` in tests triggers lint errors. Use optional chain `?.` instead, even in tests where you've already asserted `toBeDefined()`. For `Math.abs()` which requires `number`, add `?? 0` fallback.
+
+77. **Barrel file (`index.ts`) adds 1 lint error per package** — Biome's `noBarrelFile` rule flags re-export files. This is inherent to the monorepo pattern where each package needs a single entry point. Accept as structural debt (1 error per package).
+
+### Patterns That Worked
+
+37. **Integer cents for money arithmetic** — Converting all money to integer cents at input boundaries (`toCents()`), doing all math in cents, and keeping cents in output avoids IEEE 754 floating-point errors entirely. `Math.round(cents * rate)` gives exact results for payroll amounts within JS safe integer range. No need for BigDecimal libraries.
+
+38. **Pure calculation engine with zero dependencies** — The payroll engine has no runtime dependencies. It takes `PayrollInput` → returns `PayrollPreviewResult`. No DB, no HTTP, no framework imports. This makes it unit-testable with fixtures alone (16 tests, 71 assertions, 30ms), portable to workers or client-side projections, and auditable by tracing the `explanation[]` array.
+
+39. **CountryRules interface for multi-country support** — Encapsulating country-specific tax/NIS/allowance logic behind a `CountryRules` interface makes adding new countries a matter of creating a new module file. The engine resolves rules by country code, and each module is independently testable.

@@ -212,6 +212,13 @@
         "typescript": "catalog:",
       },
     },
+    "packages/payroll-engine": {
+      "name": "@Heimdallone/payroll-engine",
+      "devDependencies": {
+        "@Heimdallone/config": "workspace:*",
+        "typescript": "catalog:",
+      },
+    },
     "packages/ui": {
       "name": "@Heimdallone/ui",
       "version": "0.0.0",
@@ -266,6 +273,8 @@
     "@Heimdallone/db": ["@Heimdallone/db@workspace:packages/db"],
 
     "@Heimdallone/env": ["@Heimdallone/env@workspace:packages/env"],
+
+    "@Heimdallone/payroll-engine": ["@Heimdallone/payroll-engine@workspace:packages/payroll-engine"],
 
     "@Heimdallone/ui": ["@Heimdallone/ui@workspace:packages/ui"],
 

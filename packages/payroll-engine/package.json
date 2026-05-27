@@ -1,0 +1,20 @@
+{
+  "name": "@Heimdallone/payroll-engine",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {
+    "test": "bun test",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@Heimdallone/config": "workspace:*",
+    "typescript": "catalog:"
+  }
+}
