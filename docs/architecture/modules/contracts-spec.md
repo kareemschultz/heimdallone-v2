@@ -1,5 +1,7 @@
 # Contracts Module Specification
 
+> **Phase 6 implementation plan**: See [`docs/architecture/contracts-implementation-plan.md`](../contracts-implementation-plan.md) for full schema, API, UI, RBAC, and business rules.
+
 ## Purpose
 
 Employment contracts define the legal and financial terms of an employee's engagement: wage type, pay frequency, base salary, filing status, notice period, and contract dates. Every payroll calculation starts from the active contract.
