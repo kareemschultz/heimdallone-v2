@@ -1,10 +1,65 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
+import {
+	Archive,
+	Briefcase,
+	Building,
+	Check,
+	Clock,
+	Edit,
+	Plus,
+	Undo,
+	Users,
+	X,
+} from "lucide-react";
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/settings")({
-	component: SettingsPage,
+	component: OrganizationSettingsPage,
 });
 
-function SettingsPage() {
+type SettingsTab =
+	| "departments"
+	| "positions"
+	| "roles"
+	| "workTypes"
+	| "employeeTypes"
+	| "shifts";
+
+interface EditingItem {
+	departmentId?: string;
+	description?: string;
+	id?: string;
+	jobPositionId?: string;
+	name: string;
+}
+
+function OrganizationSettingsPage() {
+	const [tab, setTab] = useState<SettingsTab>("departments");
+	const [editing, setEditing] = useState<EditingItem | null>(null);
+	const [showArchived, setShowArchived] = useState(false);
+	const [confirmArchive, setConfirmArchive] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
+	const qc = useQueryClient();
+
+	const tabs: { key: SettingsTab; label: string; icon: React.ReactNode }[] = [
+		{ key: "departments", label: "Departments", icon: <Building size={13} /> },
+		{ key: "positions", label: "Positions", icon: <Briefcase size={13} /> },
+		{ key: "roles", label: "Roles", icon: <Users size={13} /> },
+		{ key: "workTypes", label: "Work Types", icon: <Briefcase size={13} /> },
+		{
+			key: "employeeTypes",
+			label: "Employment Types",
+			icon: <Users size={13} />,
+		},
+		{ key: "shifts", label: "Shifts", icon: <Clock size={13} /> },
+	];
+
 	return (
 		<div className="page">
 			<div className="page-header">
@@ -14,37 +69,1373 @@ function SettingsPage() {
 						<span className="sep">/</span>
 						<span>Settings</span>
 					</div>
-					<h1 className="page-title">Settings</h1>
-					<p className="page-sub">Workspace configuration and preferences</p>
+					<h1 className="page-title">Organization Settings</h1>
+					<p className="page-sub">
+						Configure departments, positions, shifts, and other organization
+						structure. These settings are used when adding employees.
+					</p>
 				</div>
 			</div>
+
+			<div className="tabs" style={{ marginBottom: 20 }}>
+				{tabs.map(({ key, label, icon }) => (
+					<button
+						aria-selected={tab === key}
+						className="tab"
+						key={key}
+						onClick={() => {
+							setTab(key);
+							setEditing(null);
+						}}
+						type="button"
+					>
+						{icon}
+						{label}
+					</button>
+				))}
+			</div>
+
+			{tab === "departments" && (
+				<SettingSection
+					confirmArchive={confirmArchive}
+					editing={editing}
+					hasDescription
+					label="Department"
+					listHook={() =>
+						useQuery(
+							orpc.hrCore.departments.list.queryOptions({
+								input: { includeArchived: showArchived },
+							})
+						)
+					}
+					onArchive={async (id) => {
+						await client.hrCore.departments.archive({ id });
+						qc.invalidateQueries();
+						toast.success("Department archived");
+					}}
+					onConfirmArchive={setConfirmArchive}
+					onCreate={async (item) => {
+						await client.hrCore.departments.create({
+							name: item.name,
+							description: item.description,
+						});
+						qc.invalidateQueries();
+						toast.success("Department created");
+					}}
+					onEdit={setEditing}
+					onUpdate={async (item) => {
+						await client.hrCore.departments.update({
+							id: item.id!,
+							name: item.name,
+							description: item.description,
+						});
+						qc.invalidateQueries();
+						toast.success("Department updated");
+					}}
+					plural="Departments"
+					setConfirmArchive={setConfirmArchive}
+					showArchived={showArchived}
+					toggleArchived={() => setShowArchived((v) => !v)}
+				/>
+			)}
+
+			{tab === "positions" && (
+				<PositionSection
+					editing={editing}
+					onEdit={setEditing}
+					showArchived={showArchived}
+					toggleArchived={() => setShowArchived((v) => !v)}
+				/>
+			)}
+
+			{tab === "roles" && (
+				<RoleSection
+					editing={editing}
+					onEdit={setEditing}
+					showArchived={showArchived}
+					toggleArchived={() => setShowArchived((v) => !v)}
+				/>
+			)}
+
+			{tab === "workTypes" && (
+				<SettingSection
+					confirmArchive={confirmArchive}
+					editing={editing}
+					label="Work Type"
+					listHook={() =>
+						useQuery(
+							orpc.hrCore.workTypes.list.queryOptions({
+								input: { includeArchived: showArchived },
+							})
+						)
+					}
+					onArchive={async (id) => {
+						await client.hrCore.workTypes.archive({ id });
+						qc.invalidateQueries();
+						toast.success("Work type archived");
+					}}
+					onConfirmArchive={setConfirmArchive}
+					onCreate={async (item) => {
+						await client.hrCore.workTypes.create({ name: item.name });
+						qc.invalidateQueries();
+						toast.success("Work type created");
+					}}
+					onEdit={setEditing}
+					onUpdate={async (item) => {
+						await client.hrCore.workTypes.update({
+							id: item.id!,
+							name: item.name,
+						});
+						qc.invalidateQueries();
+						toast.success("Work type updated");
+					}}
+					plural="Work Types"
+					setConfirmArchive={setConfirmArchive}
+					showArchived={showArchived}
+					toggleArchived={() => setShowArchived((v) => !v)}
+				/>
+			)}
+
+			{tab === "employeeTypes" && (
+				<SettingSection
+					confirmArchive={confirmArchive}
+					editing={editing}
+					label="Employment Type"
+					listHook={() =>
+						useQuery(
+							orpc.hrCore.employeeTypes.list.queryOptions({
+								input: { includeArchived: showArchived },
+							})
+						)
+					}
+					onArchive={async (id) => {
+						await client.hrCore.employeeTypes.archive({ id });
+						qc.invalidateQueries();
+						toast.success("Employment type archived");
+					}}
+					onConfirmArchive={setConfirmArchive}
+					onCreate={async (item) => {
+						await client.hrCore.employeeTypes.create({ name: item.name });
+						qc.invalidateQueries();
+						toast.success("Employment type created");
+					}}
+					onEdit={setEditing}
+					onUpdate={async (item) => {
+						await client.hrCore.employeeTypes.update({
+							id: item.id!,
+							name: item.name,
+						});
+						qc.invalidateQueries();
+						toast.success("Employment type updated");
+					}}
+					plural="Employment Types"
+					setConfirmArchive={setConfirmArchive}
+					showArchived={showArchived}
+					toggleArchived={() => setShowArchived((v) => !v)}
+				/>
+			)}
+
+			{tab === "shifts" && <ShiftSection />}
+		</div>
+	);
+}
+
+// ─── Generic Setting Section ──────────────────────────────
+
+function SettingSection({
+	label,
+	plural,
+	hasDescription,
+	listHook,
+	onCreate,
+	onUpdate,
+	onArchive,
+	editing,
+	onEdit,
+	showArchived,
+	toggleArchived,
+	confirmArchive,
+	onConfirmArchive,
+	setConfirmArchive,
+}: {
+	label: string;
+	plural: string;
+	hasDescription?: boolean;
+	listHook: () => ReturnType<typeof useQuery>;
+	onCreate: (item: EditingItem) => Promise<void>;
+	onUpdate: (item: EditingItem) => Promise<void>;
+	onArchive: (id: string) => Promise<void>;
+	editing: EditingItem | null;
+	onEdit: (item: EditingItem | null) => void;
+	showArchived: boolean;
+	toggleArchived: () => void;
+	confirmArchive: { id: string; name: string } | null;
+	onConfirmArchive: (item: { id: string; name: string } | null) => void;
+	setConfirmArchive: (item: { id: string; name: string } | null) => void;
+}) {
+	const { data, isLoading } = listHook();
+	const items =
+		(data as {
+			id: string;
+			name: string;
+			description?: string;
+			isActive: boolean;
+		}[]) ?? [];
+	const [formName, setFormName] = useState("");
+	const [formDesc, setFormDesc] = useState("");
+	const [saving, setSaving] = useState(false);
+
+	const startCreate = () => {
+		setFormName("");
+		setFormDesc("");
+		onEdit({ name: "" });
+	};
+	const startEdit = (item: {
+		id: string;
+		name: string;
+		description?: string | null;
+	}) => {
+		setFormName(item.name);
+		setFormDesc(item.description ?? "");
+		onEdit({
+			id: item.id,
+			name: item.name,
+			description: item.description ?? "",
+		});
+	};
+	const cancelEdit = () => onEdit(null);
+
+	const handleSave = async () => {
+		if (!formName.trim()) {
+			return;
+		}
+		setSaving(true);
+		try {
+			if (editing?.id) {
+				await onUpdate({
+					id: editing.id,
+					name: formName.trim(),
+					description: formDesc.trim() || undefined,
+				});
+			} else {
+				await onCreate({
+					name: formName.trim(),
+					description: formDesc.trim() || undefined,
+				});
+			}
+			onEdit(null);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Something went wrong";
+			toast.error(msg);
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleArchive = async () => {
+		if (!confirmArchive) {
+			return;
+		}
+		try {
+			await onArchive(confirmArchive.id);
+			setConfirmArchive(null);
+		} catch (err: unknown) {
+			const msg = err instanceof Error ? err.message : "Cannot archive";
+			toast.error(msg);
+			setConfirmArchive(null);
+		}
+	};
+
+	return (
+		<div className="card card-pad">
 			<div
-				className="card card-pad"
 				style={{
 					display: "flex",
-					flexDirection: "column",
+					justifyContent: "space-between",
 					alignItems: "center",
-					justifyContent: "center",
-					minHeight: "400px",
-					textAlign: "center",
+					marginBottom: 16,
 				}}
 			>
-				<div className="eyebrow" style={{ marginBottom: "12px" }}>
-					Coming Soon
+				<div>
+					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>{plural}</h4>
+					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
+						{label}s define your organization structure. Archived{" "}
+						{label.toLowerCase()}s are hidden from dropdowns but preserved for
+						historical records.
+					</p>
 				</div>
-				<h3>Settings</h3>
-				<p
+				<div style={{ display: "flex", gap: 8 }}>
+					<button
+						className={`btn btn-ghost btn-sm${showArchived ? "active" : ""}`}
+						onClick={toggleArchived}
+						style={showArchived ? { color: "var(--accent)" } : {}}
+						type="button"
+					>
+						<Archive size={12} />
+						{showArchived ? "Hide archived" : "Show archived"}
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						onClick={startCreate}
+						type="button"
+					>
+						<Plus size={12} />
+						Add {label.toLowerCase()}
+					</button>
+				</div>
+			</div>
+
+			{/* Inline create/edit form */}
+			{editing && (
+				<div
 					style={{
-						maxWidth: "420px",
-						marginTop: "8px",
-						fontSize: "13.5px",
-						color: "var(--fg-3)",
+						display: "flex",
+						gap: 8,
+						alignItems: "flex-end",
+						padding: "12px 14px",
+						marginBottom: 12,
+						background: "var(--bg-3)",
+						borderRadius: 12,
+						border: "1px solid var(--line)",
 					}}
 				>
-					Workspace configuration and preferences. This module will be
-					implemented in a future phase.
-				</p>
+					<div style={{ flex: 1 }}>
+						<label className="label" style={{ marginBottom: 4 }}>
+							Name
+						</label>
+						<input
+							autoFocus
+							className="input"
+							onChange={(e) => setFormName(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									handleSave();
+								}
+								if (e.key === "Escape") {
+									cancelEdit();
+								}
+							}}
+							placeholder={`e.g., ${label === "Department" ? "Engineering" : label === "Work Type" ? "Remote" : "Full-time"}`}
+							style={{ height: 34 }}
+							value={formName}
+						/>
+					</div>
+					{hasDescription && (
+						<div style={{ flex: 1 }}>
+							<label className="label" style={{ marginBottom: 4 }}>
+								Description (optional)
+							</label>
+							<input
+								className="input"
+								onChange={(e) => setFormDesc(e.target.value)}
+								onKeyDown={(e) => {
+									if (e.key === "Enter") {
+										handleSave();
+									}
+									if (e.key === "Escape") {
+										cancelEdit();
+									}
+								}}
+								placeholder="Brief description"
+								style={{ height: 34 }}
+								value={formDesc}
+							/>
+						</div>
+					)}
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={saving || !formName.trim()}
+						onClick={handleSave}
+						type="button"
+					>
+						<Check size={12} />
+						{editing.id ? "Save" : "Create"}
+					</button>
+					<button
+						className="btn btn-ghost btn-sm"
+						onClick={cancelEdit}
+						type="button"
+					>
+						<X size={12} />
+					</button>
+				</div>
+			)}
+
+			{/* Table */}
+			{isLoading ? (
+				<div
+					style={{
+						padding: "40px 0",
+						textAlign: "center",
+						color: "var(--fg-3)",
+						fontSize: "13px",
+					}}
+				>
+					Loading…
+				</div>
+			) : items.length === 0 ? (
+				<div style={{ padding: "40px 0", textAlign: "center" }}>
+					<p style={{ color: "var(--fg-3)", fontSize: "13px" }}>
+						No {plural.toLowerCase()} configured yet. Add your first{" "}
+						{label.toLowerCase()} to get started.
+					</p>
+				</div>
+			) : (
+				<table className="tbl">
+					<thead>
+						<tr>
+							<th>Name</th>
+							{hasDescription && <th>Description</th>}
+							<th style={{ width: 100 }}>Status</th>
+							<th style={{ width: 80 }} />
+						</tr>
+					</thead>
+					<tbody>
+						{items.map((item) => (
+							<tr key={item.id}>
+								<td style={{ fontWeight: 500 }}>{item.name}</td>
+								{hasDescription && (
+									<td style={{ color: "var(--fg-3)", fontSize: "12.5px" }}>
+										{item.description || "—"}
+									</td>
+								)}
+								<td>
+									<span
+										className={`pill-status ${item.isActive ? "active" : "archived"}`}
+									>
+										<span className="badge-dot" />
+										{item.isActive ? "Active" : "Archived"}
+									</span>
+								</td>
+								<td>
+									<div
+										style={{
+											display: "flex",
+											gap: 4,
+											justifyContent: "flex-end",
+										}}
+									>
+										<button
+											className="btn btn-ghost btn-sm"
+											onClick={() => startEdit(item)}
+											title="Edit"
+											type="button"
+										>
+											<Edit size={12} />
+										</button>
+										{item.isActive ? (
+											<button
+												className="btn btn-ghost btn-sm"
+												onClick={() =>
+													onConfirmArchive({ id: item.id, name: item.name })
+												}
+												style={{ color: "var(--danger)" }}
+												title="Archive"
+												type="button"
+											>
+												<Archive size={12} />
+											</button>
+										) : (
+											<button
+												className="btn btn-ghost btn-sm"
+												onClick={() => onArchive(item.id)}
+												style={{ color: "var(--success)" }}
+												title="Restore"
+												type="button"
+											>
+												<Undo size={12} />
+											</button>
+										)}
+									</div>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			)}
+
+			{/* Archive confirm */}
+			{confirmArchive && (
+				<div
+					style={{
+						position: "fixed",
+						inset: 0,
+						zIndex: 200,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						background: "rgba(8,9,12,0.6)",
+					}}
+				>
+					<div
+						style={{
+							background: "var(--bg-2)",
+							border: "1px solid var(--line)",
+							borderRadius: 16,
+							padding: "24px",
+							maxWidth: 400,
+							width: "100%",
+						}}
+					>
+						<h4 style={{ marginBottom: 8 }}>Archive {confirmArchive.name}?</h4>
+						<p
+							style={{
+								fontSize: "13px",
+								color: "var(--fg-3)",
+								marginBottom: 20,
+							}}
+						>
+							Archived {label.toLowerCase()}s are hidden from dropdowns when
+							adding employees, but preserved for historical records. You can
+							restore it later.
+						</p>
+						<div
+							style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
+						>
+							<button
+								className="btn btn-outline btn-sm"
+								onClick={() => setConfirmArchive(null)}
+								type="button"
+							>
+								Cancel
+							</button>
+							<button
+								className="btn btn-sm"
+								onClick={handleArchive}
+								style={{
+									background: "var(--danger-soft)",
+									color: "var(--danger)",
+								}}
+								type="button"
+							>
+								Archive
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ─── Position Section (needs department selector) ─────────
+
+function PositionSection({
+	editing,
+	onEdit,
+	showArchived,
+	toggleArchived,
+}: {
+	editing: EditingItem | null;
+	onEdit: (item: EditingItem | null) => void;
+	showArchived: boolean;
+	toggleArchived: () => void;
+}) {
+	const qc = useQueryClient();
+	const { data: depts } = useQuery(
+		orpc.hrCore.departments.list.queryOptions({
+			input: { includeArchived: false },
+		})
+	);
+	const { data, isLoading } = useQuery(
+		orpc.hrCore.jobPositions.list.queryOptions({
+			input: { includeArchived: showArchived },
+		})
+	);
+	const items =
+		(data as {
+			id: string;
+			name: string;
+			departmentId: string;
+			description?: string | null;
+			isActive: boolean;
+		}[]) ?? [];
+	const departments = (depts as { id: string; name: string }[]) ?? [];
+	const deptMap = new Map(departments.map((d) => [d.id, d.name]));
+
+	const [formName, setFormName] = useState("");
+	const [formDept, setFormDept] = useState("");
+	const [saving, setSaving] = useState(false);
+	const [confirmArchive, setConfirmArchive] = useState<{
+		id: string;
+		name: string;
+	} | null>(null);
+
+	const startCreate = () => {
+		setFormName("");
+		setFormDept(departments[0]?.id ?? "");
+		onEdit({ name: "" });
+	};
+	const startEdit = (item: {
+		id: string;
+		name: string;
+		departmentId: string;
+	}) => {
+		setFormName(item.name);
+		setFormDept(item.departmentId);
+		onEdit({ id: item.id, name: item.name, departmentId: item.departmentId });
+	};
+
+	const handleSave = async () => {
+		if (!(formName.trim() && formDept)) {
+			return;
+		}
+		setSaving(true);
+		try {
+			if (editing?.id) {
+				await client.hrCore.jobPositions.update({
+					id: editing.id,
+					name: formName.trim(),
+				});
+			} else {
+				await client.hrCore.jobPositions.create({
+					departmentId: formDept,
+					name: formName.trim(),
+				});
+			}
+			qc.invalidateQueries();
+			toast.success(editing?.id ? "Position updated" : "Position created");
+			onEdit(null);
+		} catch (err: unknown) {
+			toast.error(err instanceof Error ? err.message : "Something went wrong");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	return (
+		<div className="card card-pad">
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					marginBottom: 16,
+				}}
+			>
+				<div>
+					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Job Positions</h4>
+					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
+						Positions are roles within departments (e.g., "Senior Engineer" in
+						Engineering).
+					</p>
+				</div>
+				<div style={{ display: "flex", gap: 8 }}>
+					<button
+						className={`btn btn-ghost btn-sm${showArchived ? "active" : ""}`}
+						onClick={toggleArchived}
+						style={showArchived ? { color: "var(--accent)" } : {}}
+						type="button"
+					>
+						<Archive size={12} />
+						{showArchived ? "Hide archived" : "Show archived"}
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						onClick={startCreate}
+						type="button"
+					>
+						<Plus size={12} />
+						Add position
+					</button>
+				</div>
 			</div>
+
+			{editing && (
+				<div
+					style={{
+						display: "flex",
+						gap: 8,
+						alignItems: "flex-end",
+						padding: "12px 14px",
+						marginBottom: 12,
+						background: "var(--bg-3)",
+						borderRadius: 12,
+						border: "1px solid var(--line)",
+					}}
+				>
+					<div style={{ flex: 1 }}>
+						<label className="label" style={{ marginBottom: 4 }}>
+							Department
+						</label>
+						<select
+							className="input"
+							onChange={(e) => setFormDept(e.target.value)}
+							style={{ height: 34 }}
+							value={formDept}
+						>
+							<option value="">Select department…</option>
+							{departments.map((d) => (
+								<option key={d.id} value={d.id}>
+									{d.name}
+								</option>
+							))}
+						</select>
+					</div>
+					<div style={{ flex: 1 }}>
+						<label className="label" style={{ marginBottom: 4 }}>
+							Position name
+						</label>
+						<input
+							autoFocus
+							className="input"
+							onChange={(e) => setFormName(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter") {
+									handleSave();
+								}
+								if (e.key === "Escape") {
+									onEdit(null);
+								}
+							}}
+							placeholder="e.g., Senior Engineer"
+							style={{ height: 34 }}
+							value={formName}
+						/>
+					</div>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={saving || !formName.trim() || !formDept}
+						onClick={handleSave}
+						type="button"
+					>
+						<Check size={12} />
+						{editing.id ? "Save" : "Create"}
+					</button>
+					<button
+						className="btn btn-ghost btn-sm"
+						onClick={() => onEdit(null)}
+						type="button"
+					>
+						<X size={12} />
+					</button>
+				</div>
+			)}
+
+			{isLoading ? (
+				<div
+					style={{
+						padding: "40px 0",
+						textAlign: "center",
+						color: "var(--fg-3)",
+						fontSize: "13px",
+					}}
+				>
+					Loading…
+				</div>
+			) : items.length === 0 ? (
+				<div style={{ padding: "40px 0", textAlign: "center" }}>
+					<p style={{ color: "var(--fg-3)", fontSize: "13px" }}>
+						No positions configured yet. Create departments first, then add
+						positions.
+					</p>
+				</div>
+			) : (
+				<table className="tbl">
+					<thead>
+						<tr>
+							<th>Position</th>
+							<th>Department</th>
+							<th style={{ width: 100 }}>Status</th>
+							<th style={{ width: 80 }} />
+						</tr>
+					</thead>
+					<tbody>
+						{items.map((item) => (
+							<tr key={item.id}>
+								<td style={{ fontWeight: 500 }}>{item.name}</td>
+								<td style={{ color: "var(--fg-2)" }}>
+									{deptMap.get(item.departmentId) ?? "—"}
+								</td>
+								<td>
+									<span
+										className={`pill-status ${item.isActive ? "active" : "archived"}`}
+									>
+										<span className="badge-dot" />
+										{item.isActive ? "Active" : "Archived"}
+									</span>
+								</td>
+								<td>
+									<div
+										style={{
+											display: "flex",
+											gap: 4,
+											justifyContent: "flex-end",
+										}}
+									>
+										<button
+											className="btn btn-ghost btn-sm"
+											onClick={() => startEdit(item)}
+											title="Edit"
+											type="button"
+										>
+											<Edit size={12} />
+										</button>
+										{item.isActive && (
+											<button
+												className="btn btn-ghost btn-sm"
+												onClick={() =>
+													setConfirmArchive({ id: item.id, name: item.name })
+												}
+												style={{ color: "var(--danger)" }}
+												title="Archive"
+												type="button"
+											>
+												<Archive size={12} />
+											</button>
+										)}
+									</div>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			)}
+
+			{confirmArchive && (
+				<div
+					style={{
+						position: "fixed",
+						inset: 0,
+						zIndex: 200,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						background: "rgba(8,9,12,0.6)",
+					}}
+				>
+					<div
+						style={{
+							background: "var(--bg-2)",
+							border: "1px solid var(--line)",
+							borderRadius: 16,
+							padding: 24,
+							maxWidth: 400,
+							width: "100%",
+						}}
+					>
+						<h4 style={{ marginBottom: 8 }}>Archive {confirmArchive.name}?</h4>
+						<p
+							style={{
+								fontSize: "13px",
+								color: "var(--fg-3)",
+								marginBottom: 20,
+							}}
+						>
+							Archived positions are hidden from dropdowns but preserved for
+							historical records.
+						</p>
+						<div
+							style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
+						>
+							<button
+								className="btn btn-outline btn-sm"
+								onClick={() => setConfirmArchive(null)}
+								type="button"
+							>
+								Cancel
+							</button>
+							<button
+								className="btn btn-sm"
+								onClick={async () => {
+									try {
+										await client.hrCore.jobPositions.archive({
+											id: confirmArchive.id,
+										});
+										qc.invalidateQueries();
+										toast.success("Position archived");
+									} catch (err: unknown) {
+										toast.error(
+											err instanceof Error ? err.message : "Cannot archive"
+										);
+									}
+									setConfirmArchive(null);
+								}}
+								style={{
+									background: "var(--danger-soft)",
+									color: "var(--danger)",
+								}}
+								type="button"
+							>
+								Archive
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ─── Role Section (needs position selector) ───────────────
+
+function RoleSection({
+	editing,
+	onEdit,
+	showArchived,
+	toggleArchived,
+}: {
+	editing: EditingItem | null;
+	onEdit: (item: EditingItem | null) => void;
+	showArchived: boolean;
+	toggleArchived: () => void;
+}) {
+	const qc = useQueryClient();
+	const { data: positions } = useQuery(
+		orpc.hrCore.jobPositions.list.queryOptions({
+			input: { includeArchived: false },
+		})
+	);
+	const { data, isLoading } = useQuery(
+		orpc.hrCore.jobRoles.list.queryOptions({
+			input: { includeArchived: showArchived },
+		})
+	);
+	const items =
+		(data as {
+			id: string;
+			name: string;
+			jobPositionId: string;
+			isActive: boolean;
+		}[]) ?? [];
+	const positionList = (positions as { id: string; name: string }[]) ?? [];
+	const posMap = new Map(positionList.map((p) => [p.id, p.name]));
+
+	const [formName, setFormName] = useState("");
+	const [formPos, setFormPos] = useState("");
+	const [saving, setSaving] = useState(false);
+
+	return (
+		<div className="card card-pad">
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					marginBottom: 16,
+				}}
+			>
+				<div>
+					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Job Roles</h4>
+					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
+						Roles are optional specializations within a position (e.g.,
+						"Backend" within "Senior Engineer").
+					</p>
+				</div>
+				<div style={{ display: "flex", gap: 8 }}>
+					<button
+						className={`btn btn-ghost btn-sm${showArchived ? "active" : ""}`}
+						onClick={toggleArchived}
+						style={showArchived ? { color: "var(--accent)" } : {}}
+						type="button"
+					>
+						<Archive size={12} />
+						{showArchived ? "Hide archived" : "Show archived"}
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						onClick={() => {
+							setFormName("");
+							setFormPos(positionList[0]?.id ?? "");
+							onEdit({ name: "" });
+						}}
+						type="button"
+					>
+						<Plus size={12} />
+						Add role
+					</button>
+				</div>
+			</div>
+
+			{editing && (
+				<div
+					style={{
+						display: "flex",
+						gap: 8,
+						alignItems: "flex-end",
+						padding: "12px 14px",
+						marginBottom: 12,
+						background: "var(--bg-3)",
+						borderRadius: 12,
+						border: "1px solid var(--line)",
+					}}
+				>
+					<div style={{ flex: 1 }}>
+						<label className="label" style={{ marginBottom: 4 }}>
+							Position
+						</label>
+						<select
+							className="input"
+							onChange={(e) => setFormPos(e.target.value)}
+							style={{ height: 34 }}
+							value={formPos}
+						>
+							<option value="">Select position…</option>
+							{positionList.map((p) => (
+								<option key={p.id} value={p.id}>
+									{p.name}
+								</option>
+							))}
+						</select>
+					</div>
+					<div style={{ flex: 1 }}>
+						<label className="label" style={{ marginBottom: 4 }}>
+							Role name
+						</label>
+						<input
+							autoFocus
+							className="input"
+							onChange={(e) => setFormName(e.target.value)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" && formName.trim() && formPos) {
+									(async () => {
+										setSaving(true);
+										try {
+											if (editing.id) {
+												await client.hrCore.jobRoles.update({
+													id: editing.id,
+													name: formName.trim(),
+												});
+											} else {
+												await client.hrCore.jobRoles.create({
+													jobPositionId: formPos,
+													name: formName.trim(),
+												});
+											}
+											qc.invalidateQueries();
+											toast.success(
+												editing.id ? "Role updated" : "Role created"
+											);
+											onEdit(null);
+										} catch (err: unknown) {
+											toast.error(err instanceof Error ? err.message : "Error");
+										} finally {
+											setSaving(false);
+										}
+									})();
+								}
+								if (e.key === "Escape") {
+									onEdit(null);
+								}
+							}}
+							placeholder="e.g., Backend"
+							style={{ height: 34 }}
+							value={formName}
+						/>
+					</div>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={saving || !formName.trim() || !formPos}
+						onClick={async () => {
+							setSaving(true);
+							try {
+								if (editing.id) {
+									await client.hrCore.jobRoles.update({
+										id: editing.id,
+										name: formName.trim(),
+									});
+								} else {
+									await client.hrCore.jobRoles.create({
+										jobPositionId: formPos,
+										name: formName.trim(),
+									});
+								}
+								qc.invalidateQueries();
+								toast.success(editing.id ? "Role updated" : "Role created");
+								onEdit(null);
+							} catch (err: unknown) {
+								toast.error(err instanceof Error ? err.message : "Error");
+							} finally {
+								setSaving(false);
+							}
+						}}
+						type="button"
+					>
+						<Check size={12} />
+						{editing.id ? "Save" : "Create"}
+					</button>
+					<button
+						className="btn btn-ghost btn-sm"
+						onClick={() => onEdit(null)}
+						type="button"
+					>
+						<X size={12} />
+					</button>
+				</div>
+			)}
+
+			{isLoading ? (
+				<div
+					style={{
+						padding: "40px 0",
+						textAlign: "center",
+						color: "var(--fg-3)",
+						fontSize: "13px",
+					}}
+				>
+					Loading…
+				</div>
+			) : items.length === 0 ? (
+				<div style={{ padding: "40px 0", textAlign: "center" }}>
+					<p style={{ color: "var(--fg-3)", fontSize: "13px" }}>
+						No roles configured. Roles are optional — add them to specialize
+						positions.
+					</p>
+				</div>
+			) : (
+				<table className="tbl">
+					<thead>
+						<tr>
+							<th>Role</th>
+							<th>Position</th>
+							<th style={{ width: 100 }}>Status</th>
+							<th style={{ width: 80 }} />
+						</tr>
+					</thead>
+					<tbody>
+						{items.map((item) => (
+							<tr key={item.id}>
+								<td style={{ fontWeight: 500 }}>{item.name}</td>
+								<td style={{ color: "var(--fg-2)" }}>
+									{posMap.get(item.jobPositionId) ?? "—"}
+								</td>
+								<td>
+									<span
+										className={`pill-status ${item.isActive ? "active" : "archived"}`}
+									>
+										<span className="badge-dot" />
+										{item.isActive ? "Active" : "Archived"}
+									</span>
+								</td>
+								<td>
+									<div
+										style={{
+											display: "flex",
+											gap: 4,
+											justifyContent: "flex-end",
+										}}
+									>
+										<button
+											className="btn btn-ghost btn-sm"
+											onClick={() => {
+												setFormName(item.name);
+												setFormPos(item.jobPositionId);
+												onEdit({ id: item.id, name: item.name });
+											}}
+											title="Edit"
+											type="button"
+										>
+											<Edit size={12} />
+										</button>
+									</div>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			)}
+		</div>
+	);
+}
+
+// ─── Shift Section ────────────────────────────────────────
+
+function ShiftSection() {
+	const qc = useQueryClient();
+	const { data, isLoading } = useQuery(
+		orpc.hrCore.shifts.list.queryOptions({ input: { includeArchived: false } })
+	);
+	const shifts =
+		(data as {
+			id: string;
+			name: string;
+			weeklyFullTimeMinutes: number;
+			isActive: boolean;
+		}[]) ?? [];
+
+	const [selectedShiftId, setSelectedShiftId] = useState<string | null>(null);
+	const { data: shiftDetail } = useQuery(
+		orpc.hrCore.shifts.getById.queryOptions({
+			input: { id: selectedShiftId ?? "" },
+		})
+	);
+
+	const detail = shiftDetail as
+		| {
+				id: string;
+				name: string;
+				schedules: {
+					dayOfWeek: number;
+					startTime: string;
+					endTime: string;
+					minimumWorkMinutes: number;
+					isNightShift: boolean;
+				}[];
+		  }
+		| undefined;
+
+	const dayNames = [
+		"Monday",
+		"Tuesday",
+		"Wednesday",
+		"Thursday",
+		"Friday",
+		"Saturday",
+		"Sunday",
+	];
+
+	return (
+		<div className="card card-pad">
+			<div
+				style={{
+					display: "flex",
+					justifyContent: "space-between",
+					alignItems: "center",
+					marginBottom: 16,
+				}}
+			>
+				<div>
+					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Shifts</h4>
+					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
+						Shifts define when employees work. Each shift has a weekly schedule
+						with start and end times per day.
+					</p>
+				</div>
+			</div>
+
+			{isLoading ? (
+				<div
+					style={{
+						padding: "40px 0",
+						textAlign: "center",
+						color: "var(--fg-3)",
+						fontSize: "13px",
+					}}
+				>
+					Loading…
+				</div>
+			) : shifts.length === 0 ? (
+				<div style={{ padding: "40px 0", textAlign: "center" }}>
+					<p style={{ color: "var(--fg-3)", fontSize: "13px" }}>
+						No shifts configured yet.
+					</p>
+				</div>
+			) : (
+				<div style={{ display: "flex", gap: 16 }}>
+					<div style={{ minWidth: 200 }}>
+						{shifts.map((s) => (
+							<button
+								key={s.id}
+								onClick={() => setSelectedShiftId(s.id)}
+								style={{
+									display: "block",
+									width: "100%",
+									padding: "10px 14px",
+									textAlign: "left",
+									border: "none",
+									background:
+										selectedShiftId === s.id ? "var(--bg-3)" : "transparent",
+									borderRadius: 10,
+									cursor: "pointer",
+									fontSize: "13px",
+									fontWeight: selectedShiftId === s.id ? 600 : 400,
+									color: selectedShiftId === s.id ? "var(--fg)" : "var(--fg-2)",
+									fontFamily: "inherit",
+								}}
+								type="button"
+							>
+								{s.name}
+								<span
+									style={{
+										display: "block",
+										fontSize: "11px",
+										color: "var(--fg-3)",
+										marginTop: 2,
+									}}
+								>
+									{Math.round(s.weeklyFullTimeMinutes / 60)}h/week
+								</span>
+							</button>
+						))}
+					</div>
+
+					<div style={{ flex: 1 }}>
+						{selectedShiftId ? (
+							detail?.schedules ? (
+								<table className="tbl">
+									<thead>
+										<tr>
+											<th>Day</th>
+											<th>Start</th>
+											<th>End</th>
+											<th>Min Hours</th>
+											<th>Night Shift</th>
+										</tr>
+									</thead>
+									<tbody>
+										{detail.schedules.map((sc) => (
+											<tr key={sc.dayOfWeek}>
+												<td style={{ fontWeight: 500 }}>
+													{dayNames[sc.dayOfWeek] ?? `Day ${sc.dayOfWeek}`}
+												</td>
+												<td className="mono" style={{ color: "var(--fg-2)" }}>
+													{sc.startTime}
+												</td>
+												<td className="mono" style={{ color: "var(--fg-2)" }}>
+													{sc.endTime}
+												</td>
+												<td className="mono" style={{ color: "var(--fg-2)" }}>
+													{Math.floor(sc.minimumWorkMinutes / 60)}h{" "}
+													{sc.minimumWorkMinutes % 60}m
+												</td>
+												<td>
+													{sc.isNightShift ? (
+														<span className="badge badge-info">Night</span>
+													) : (
+														<span style={{ color: "var(--fg-4)" }}>—</span>
+													)}
+												</td>
+											</tr>
+										))}
+										{detail.schedules.length === 0 && (
+											<tr>
+												<td
+													colSpan={5}
+													style={{ textAlign: "center", color: "var(--fg-3)" }}
+												>
+													No schedule configured for this shift.
+												</td>
+											</tr>
+										)}
+									</tbody>
+								</table>
+							) : (
+								<div
+									style={{
+										padding: "40px 0",
+										textAlign: "center",
+										color: "var(--fg-3)",
+										fontSize: "13px",
+									}}
+								>
+									Loading schedule…
+								</div>
+							)
+						) : (
+							<div
+								style={{
+									padding: "40px 0",
+									textAlign: "center",
+									color: "var(--fg-3)",
+									fontSize: "13px",
+								}}
+							>
+								Select a shift to view its schedule.
+							</div>
+						)}
+					</div>
+				</div>
+			)}
 		</div>
 	);
 }
