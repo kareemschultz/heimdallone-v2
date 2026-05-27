@@ -205,11 +205,9 @@ function PayrollDashboard() {
 								sub="Preview and finalize payroll"
 							/>
 							<NavRow
-								disabled
-								href="/app/payroll"
+								href="/app/payroll/payslips"
 								icon={<Banknote size={16} />}
 								label="Payslips"
-								note="Coming in Phase 8G"
 								sub="Employee payslips and history"
 							/>
 							<NavRow
