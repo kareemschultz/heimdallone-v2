@@ -411,3 +411,21 @@ Living document. Updated after each major task or unexpected issue.
 ### Patterns That Worked
 
 44. **Security review caught missing `canManagePayroll` guard** — The automated security review flagged `reimbursementsCreate` as missing the role check that every sibling handler had. Even though `authorizedProcedure("payroll", "create")` provides an RBAC gate, the `canManagePayroll` check is a defense-in-depth pattern — it limits mutations to specific roles within the already-authorized set.
+
+## Session: 2026-05-27 — Phase 8I (Payroll QA/RBAC/Compliance)
+
+### Gotchas Discovered
+
+84. **`authorizedProcedure` checks role, not FK ownership** — `authorizedProcedure("payroll", "read")` gates by role permission, but does NOT verify that input IDs (payItemId, payPeriodId, etc.) belong to the current tenant. Every handler must add `eq(table.organizationId, orgId(context))` to WHERE clauses. Found: assignment DELETE missing payItemId bind (HIGH), payPeriodId unverified before `buildPayrollInput` (MEDIUM × 2), attendance/leave/department queries missing org scope in input builder (MEDIUM × 3).
+
+85. **Reusable utility functions need their own tenant scoping** — `buildAttendanceInput` and `buildLeaveInput` queried by `employeeId` only. Even though the caller verified the employee's org, the utility functions should be independently safe — they may be called from new contexts later. Added `organizationId` parameter to both.
+
+86. **DELETE with only `id` is dangerous without FK bind** — `payItemsRemoveAssignment` deleted by `payItemAssignment.id` alone. An attacker knowing a valid `payItemId` from their own tenant could supply any `assignmentId` and delete cross-tenant. Fixed by adding `eq(payItemAssignment.payItemId, input.payItemId)` to the DELETE WHERE clause.
+
+### Patterns That Worked
+
+45. **Systematic tenant-FK audit** — Walking every procedure's input→query path caught 9 findings across router + input builder. The pattern: for each input ID, trace it to the first DB query and verify `organizationId` appears in the WHERE clause. This is now a repeatable checklist for future modules.
+
+### Compliance Note
+
+Payroll calculations are not production-compliance-certified. Official statutory verification and payroll QA sign-off are required before production use. Guyana 2026 PAYE/NIS logic is implemented per research but needs GRA confirmation. Barbados/Trinidad rules are documented but not implemented.

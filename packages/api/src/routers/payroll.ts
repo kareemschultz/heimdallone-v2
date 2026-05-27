@@ -711,7 +711,12 @@ const payItemsRemoveAssignment = authorizedProcedure("payroll", "delete")
 
 		await db
 			.delete(payItemAssignment)
-			.where(eq(payItemAssignment.id, input.id));
+			.where(
+				and(
+					eq(payItemAssignment.id, input.id),
+					eq(payItemAssignment.payItemId, input.payItemId)
+				)
+			);
 
 		await createAuditEvent(db as never, {
 			organizationId: orgId(context),
@@ -1383,7 +1388,12 @@ const runsPreview = authorizedProcedure("payroll", "update")
 		const [period] = await db
 			.select()
 			.from(payPeriod)
-			.where(eq(payPeriod.id, run.payPeriodId))
+			.where(
+				and(
+					eq(payPeriod.id, run.payPeriodId),
+					eq(payPeriod.organizationId, orgId(context))
+				)
+			)
 			.limit(1);
 		if (!period) {
 			throw new ORPCError("NOT_FOUND", { message: "Pay period not found." });
@@ -1830,6 +1840,20 @@ const payslipsPreviewEmployee = authorizedProcedure("payroll", "read")
 			throw new ORPCError("NOT_FOUND", { message: "Employee not found." });
 		}
 
+		const [period] = await db
+			.select()
+			.from(payPeriod)
+			.where(
+				and(
+					eq(payPeriod.id, input.payPeriodId),
+					eq(payPeriod.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!period) {
+			throw new ORPCError("NOT_FOUND", { message: "Pay period not found." });
+		}
+
 		const payrollInput = await buildPayrollInput(
 			orgId(context),
 			input.employeeId,
@@ -2041,6 +2065,20 @@ const projectedPayForEmployee = authorizedProcedure("payroll", "read")
 			.limit(1);
 		if (!emp) {
 			throw new ORPCError("NOT_FOUND", { message: "Employee not found." });
+		}
+
+		const [period] = await db
+			.select()
+			.from(payPeriod)
+			.where(
+				and(
+					eq(payPeriod.id, input.payPeriodId),
+					eq(payPeriod.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!period) {
+			throw new ORPCError("NOT_FOUND", { message: "Pay period not found." });
 		}
 
 		const payrollInput = await buildPayrollInput(

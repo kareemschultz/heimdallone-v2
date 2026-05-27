@@ -93,10 +93,20 @@ export async function buildPayrollInput(
 	const contractInput = buildContractInput(activeContract);
 	const periodInput = buildPeriodInput(period);
 	const attendance = period
-		? await buildAttendanceInput(employeeId, period.startDate, period.endDate)
+		? await buildAttendanceInput(
+				organizationId,
+				employeeId,
+				period.startDate,
+				period.endDate
+			)
 		: emptyAttendance();
 	const leave = period
-		? await buildLeaveInput(employeeId, period.startDate, period.endDate)
+		? await buildLeaveInput(
+				organizationId,
+				employeeId,
+				period.startDate,
+				period.endDate
+			)
 		: { paidLeaveDays: 0, unpaidLeaveDays: 0, pendingLeaveDays: 0 };
 	const payItems = await buildPayItemInputs(
 		organizationId,
@@ -136,7 +146,12 @@ async function buildEmployeeInput(
 		? await db
 				.select({ name: department.name })
 				.from(department)
-				.where(eq(department.id, workInfo.departmentId))
+				.where(
+					and(
+						eq(department.id, workInfo.departmentId),
+						eq(department.organizationId, organizationId)
+					)
+				)
 				.limit(1)
 				.then((r) => r[0])
 		: null;
@@ -331,6 +346,7 @@ function buildSettings(
 }
 
 async function buildAttendanceInput(
+	organizationId: string,
 	employeeId: string,
 	periodStart: Date,
 	periodEnd: Date
@@ -349,6 +365,7 @@ async function buildAttendanceInput(
 		.where(
 			and(
 				eq(attendanceRecord.employeeId, employeeId),
+				eq(attendanceRecord.organizationId, organizationId),
 				gte(attendanceRecord.date, periodStart),
 				lte(attendanceRecord.date, periodEnd)
 			)
@@ -428,6 +445,7 @@ function emptyAttendance(): AttendanceInput {
 }
 
 async function buildLeaveInput(
+	organizationId: string,
 	employeeId: string,
 	periodStart: Date,
 	periodEnd: Date
@@ -443,6 +461,7 @@ async function buildLeaveInput(
 		.where(
 			and(
 				eq(leaveRequest.employeeId, employeeId),
+				eq(leaveRequest.organizationId, organizationId),
 				lte(leaveRequest.startDate, periodEnd),
 				gte(leaveRequest.endDate, periodStart)
 			)
