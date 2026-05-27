@@ -121,3 +121,35 @@ Living document. Updated after each major task or unexpected issue.
 8. **`db as never` for audit utility typing** — The `createAuditEvent` function accepts a generic `NodePgDatabase` but the `db` singleton has a specific schema type. Casting `db as never` avoids complex generic threading while maintaining runtime correctness. Not ideal — a properly typed DB utility would be better long-term.
 
 9. **Drizzle `uniqueIndex().where()` for partial indexes** — Drizzle ORM 0.31+ supports partial unique indexes natively with `.where(sql\`...\`)`. No raw SQL migration needed. The generated SQL is exactly what Postgres expects.
+
+---
+
+## Session: 2026-05-27 — Phase 5B.3–5B.4 Frontend Wiring + Org Settings
+
+### Gotchas Discovered
+
+30. **oRPC v1 wire format wraps input in `{"json": {...}}`** — When calling oRPC endpoints via curl/fetch, the body must be `{"json": {"field": "value"}}`, not just `{"field": "value"}`. The TanStack Query client handles this automatically, but manual testing requires the wrapper. The path format is slash-separated: `/rpc/hrCore/departments/list`.
+
+31. **`requireActiveOrganization` had hardcoded `memberRole: "member"`** — The middleware set `memberRole: "member"` instead of querying the actual role from the `member` table. This caused all `authorizedProcedure` calls to fail with "Unknown role: member" since `member` isn't a defined tenant role. Fixed by querying `member.role` from the database using `(userId, organizationId)`.
+
+32. **`@Heimdallone/db/schema` import path doesn't resolve** — The db package exports `"./*": "./src/*.ts"` but `schema` is a directory, not a file. Import as `@Heimdallone/db/schema/index` for the barrel, or `@Heimdallone/db/schema/hr-core` for specific tables.
+
+33. **`drizzle-kit push` prompts interactively for constraint changes** — When pushing schema changes that affect existing data (adding unique constraints to populated tables), `drizzle-kit push` asks for confirmation interactively. In non-TTY environments (piped/CI), this fails. Use `drizzle-kit generate` + apply migration SQL directly for non-interactive environments.
+
+34. **TanStack Router `routeTree.gen.ts` is auto-generated** — The file header says "You should NOT make any changes." It regenerates on dev server start and build. Must be gitignored (`**/routeTree.gen.ts`). If tracked, it causes constant merge conflicts.
+
+35. **Playwright MCP and screenshot artifacts accumulate** — `.playwright-mcp/` and `screenshots/` directories from visual testing sessions grow unboundedly. Gitignore them and clean periodically.
+
+### Patterns That Worked
+
+10. **Enriched `getById` with LEFT JOINs for display names** — Instead of returning raw FK IDs and requiring the client to resolve names, the `employeeGetById` procedure joins work info with department/position/role/shift/workType/employeeType tables and returns `departmentName`, `jobPositionName`, etc. directly. The reporting manager name is resolved via a separate query on `employeeProfile`. This avoids N+1 queries on the client.
+
+11. **Inline create/edit form pattern for settings** — The org settings page uses an expandable inline form row (background: `var(--bg-3)`, border-radius 12px) that appears above the table when creating or editing. Enter to save, Escape to cancel. Simpler than a separate dialog or sheet for simple name-only entities. Matches the handoff design language without introducing new modal patterns.
+
+12. **`qc.invalidateQueries()` for broad cache busting** — After any mutation in org settings, calling `queryClient.invalidateQueries()` without specifying a key busts all cached queries. This is intentionally broad for settings pages where a department rename might affect position display names. For high-frequency pages (employee list), use targeted invalidation.
+
+### Edge Cases to Watch
+
+5. **Archive protection with employee count** — The `departmentArchive` procedure checks if active employees reference the department before archiving. The error message includes the count. Similar guards needed for jobPosition (not yet implemented), shift, workType, employeeType.
+
+6. **`drizzle-kit push` vs `drizzle-kit generate + migrate`** — `push` applies schema diff directly and prompts for destructive changes. `generate` creates versioned SQL migration files. For development, `push` is faster. For production, always use `generate` + `migrate` for auditable, reversible migrations.

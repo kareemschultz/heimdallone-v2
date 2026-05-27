@@ -149,3 +149,13 @@ HRMS domain extraction (Phase 4D):
 - [Module Priority Index](docs/horilla-extraction/module-index.md) — priority tiers, dependencies, implementation order
 - [UI Pattern Library](docs/horilla-extraction/ui-pattern-library-recommendations.md) — cross-module UI standards
 - [Domain Roadmap](docs/horilla-extraction/heimdallone-domain-roadmap.md) — Phases 5-15 implementation sequence
+
+HR Core implementation (Phase 5):
+
+- [HR Core Domain Plan](docs/architecture/hr-core-domain-plan.md) — entity relationships, archive strategy, open questions
+- [HR Core Schema Spec](docs/architecture/hr-core-schema-spec.md) — Drizzle tables, money/enum/date strategy
+- [HR Core API Spec](docs/architecture/hr-core-api-spec.md) — oRPC procedures, RBAC, bank masking, known limitations
+- [HR Core UI Plan](docs/architecture/hr-core-ui-plan.md) — routes, primitives, UX, Phase 5B implementation sequence
+- [HR Core DB Setup](docs/implementation/hr-core-db-setup.md) — tables, migrations, seed, commands
+- [Shared UI Primitives](docs/architecture/shared-ui-primitives-plan.md) — 17 component specs with handoff CSS mapping
+- [Module Spec Backlog](docs/architecture/modules/README.md) — specs for all post-HR-Core modules
