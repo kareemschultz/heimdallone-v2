@@ -1500,6 +1500,114 @@ Each preset suggests: work schedule, attendance rules, overtime policy, leave ty
 
 ---
 
+## Future Caribbean Payroll Modules: Barbados and Trinidad & Tobago
+
+### Status
+
+**Researched but deferred.** Guyana remains the first and only implemented rules module. Barbados and Trinidad & Tobago require official verification before production use.
+
+### Country Rules Registry
+
+The engine uses a `countryCode + effectiveYear` registry (`packages/payroll-engine/src/countries/registry.ts`). Each country/year combination is an independent module implementing the `CountryRules` interface.
+
+```
+packages/payroll-engine/src/countries/
+  registry.ts           — Map<"GY-2026", rules> lookup
+  guyana-2026.ts        — ✅ implemented
+  barbados-2026.ts      — deferred
+  trinidad-2026.ts      — deferred
+```
+
+If the requested country/year is not in the registry, the engine returns a blocker:
+> "Payroll rules for {country} {year} are not implemented yet."
+
+### Barbados 2026 — Research Notes
+
+**Personal Income Tax (PIT)**:
+
+| Bracket | Rate |
+|---------|------|
+| First BBD 50,000 taxable income | 12.5% |
+| Above BBD 50,000 | 28.5% |
+
+**National Insurance (NIS)** — effective 1 April 2025:
+
+| Item | Value |
+|------|-------|
+| Insurable earnings cap (monthly) | BBD 5,280 |
+| Insurable earnings cap (weekly) | BBD 1,219 |
+| Employee share | 11% |
+| Employer share | 12.75% |
+
+**Resilience and Regeneration Fund**:
+
+| Item | Rate |
+|------|------|
+| Employee | 0.25% of gross earnings |
+| Employer | 0.25% of gross earnings |
+
+**Personal Allowances**:
+
+| Allowance | Amount |
+|-----------|--------|
+| Individual | BBD 25,000 |
+| Over 60 receiving pension | BBD 40,000 |
+| Spouse (if qualifying) | BBD 3,000 |
+
+- PAYE withheld at source.
+- Tax year is calendar year.
+- **Needs official GRA (Barbados Revenue Authority) verification before production.**
+
+### Trinidad & Tobago 2026 — Research Notes
+
+**Personal Income Tax (PIT)**:
+
+| Bracket | Rate |
+|---------|------|
+| Chargeable income under TTD 1,000,000 | 25% |
+| Above TTD 1,000,000 | 30% |
+
+**National Insurance (NIS)** — effective January 2026:
+
+| Item | Value |
+|------|-------|
+| Total contribution rate | 16.2% |
+| Maximum weekly contribution | TTD 508.50 |
+| Cap reference (monthly income) | TTD 13,600+ |
+| Employer max weekly | TTD 339.00 |
+| Employee max weekly | TTD 169.50 |
+
+**Note**: Effective January 2027, NIS rate increases to 19.2%. This is why versioned year rules are mandatory — `trinidad-2026.ts` and `trinidad-2027.ts` must be separate modules.
+
+**Health Surcharge** — deducted at source:
+
+| Item | Value |
+|------|-------|
+| Maximum | TTD 8.25/week |
+| Applies when | Monthly income > TTD 470 |
+
+**Personal Allowance**: TTD 90,000.
+
+**Personal Deductions**:
+
+| Deduction | Cap |
+|-----------|-----|
+| Approved pension/annuity/NIS contributions | TTD 60,000 |
+| Tertiary education expenses | TTD 72,000 |
+
+- PAYE deducted at source on employment income.
+- Tax year is calendar year.
+- **Needs official BIR (Board of Inland Revenue) verification before production.**
+
+### Implementation Guidance
+
+- Country profiles in the DB (`country_payroll_profile`) store the numeric values (rates, caps, brackets).
+- Country rules modules in the engine contain the *logic* (formulas, cap interactions, special rules like BB's Resilience Fund or TT's Health Surcharge).
+- Both are needed: the profile provides the data, the rules module provides the behavior.
+- Each country may require fields not present in the current `CountryPayrollProfileInput` (e.g., Barbados needs `resilienceFundRate`, Trinidad needs `healthSurchargeMax`). The `otherStatutoryRules` JSONB column on `country_payroll_profile` can store these until the schema is extended.
+
+---
+
 ## Implementation Sequence
 
 | Sub-phase | Scope | Depends On | Estimated Size |

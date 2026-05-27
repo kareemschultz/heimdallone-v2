@@ -25,8 +25,10 @@ The oRPC API layer (Phase 8D) will be the adapter that:
 Country-specific tax/NIS/allowance logic is encapsulated in versioned modules implementing `CountryRules`:
 
 - **Guyana 2026** (`src/countries/guyana-2026.ts`) — PAYE 25%/35%, NIS 5.6%/8.4%, personal allowance, child allowance, OT cap, insurance cap
+- **Barbados 2026** — researched, deferred (PIT 12.5%/28.5%, NIS 11%/12.75%, Resilience Fund 0.25%)
+- **Trinidad & Tobago 2026** — researched, deferred (PIT 25%/30%, NIS 16.2%, Health Surcharge)
 
-Adding a new country: create `src/countries/{country}-{year}.ts` implementing `CountryRules`, then register it in `resolveCountryRules()`. The UI will need a country dropdown (Phase 8E).
+Adding a new country: create `src/countries/{country}-{year}.ts` implementing `CountryRules`, register it in `src/countries/registry.ts`. The UI will need a country dropdown (Phase 8E). If a country/year is not registered, the engine returns a `MISSING_COUNTRY_PROFILE` blocker.
 
 ## Guyana 2026 Rules
 
@@ -101,7 +103,9 @@ bun test packages/payroll-engine
 
 ## Deferred Items
 
-- Additional country profiles (Trinidad, Barbados, etc.)
+- Barbados 2026 rules module (researched, needs official verification)
+- Trinidad & Tobago 2026 rules module (researched, needs official verification)
+- Trinidad & Tobago 2027 rules module (NIS rate changes to 19.2%)
 - Frequency scaling for weekly/fortnightly/semi-monthly pay periods
 - Gratuity calculation
 - Severance/final settlement

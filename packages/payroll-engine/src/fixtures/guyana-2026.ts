@@ -5,6 +5,7 @@ import type {
 } from "../types";
 
 const GY_PROFILE: CountryPayrollProfileInput = {
+	countryCode: "GY",
 	taxBrackets: [
 		{ min: 0, max: 28_000_000, rate: 0.25, fixedAmount: 0 },
 		{ min: 28_000_000, max: null, rate: 0.35, fixedAmount: 0 },
@@ -386,5 +387,19 @@ export const atNISCeiling: PayrollInput = {
 	loans: noLoans,
 	reimbursements: noReimbursements,
 	countryProfile: GY_PROFILE,
+	settings: DEFAULT_SETTINGS,
+};
+
+export const unsupportedCountry: PayrollInput = {
+	employee: baseEmployee,
+	contract: baseContract,
+	period: basePeriod,
+	attendance: baseAttendance,
+	leave: noLeave,
+	holidays: noHolidays,
+	payItems: noPayItems,
+	loans: noLoans,
+	reimbursements: noReimbursements,
+	countryProfile: { ...GY_PROFILE, countryCode: "BB", effectiveYear: 2026 },
 	settings: DEFAULT_SETTINGS,
 };

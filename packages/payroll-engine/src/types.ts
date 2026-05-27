@@ -128,6 +128,7 @@ export interface TaxBracket {
 
 export interface CountryPayrollProfileInput {
 	childAllowancePerChild: number;
+	countryCode: string;
 	effectiveYear: number;
 	employeeNISRate: number;
 	employerNISRate: number;

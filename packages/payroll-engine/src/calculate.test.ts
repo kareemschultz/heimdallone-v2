@@ -8,6 +8,7 @@ import {
 	monthlySalariedNormal,
 	negativeNetPay,
 	pendingOvertimeWarning,
+	unsupportedCountry,
 	withChildAllowance,
 	withInsuranceCap,
 	withLoanDeduction,
@@ -201,6 +202,20 @@ describe("calculatePayroll", () => {
 
 		expect(result.employeeNis).toBe(maxNisEmployee);
 		expect(result.employerNis).toBe(maxNisEmployer);
+	});
+
+	test("unsupported country — blocker", () => {
+		const result = calculatePayroll(unsupportedCountry);
+
+		expect(result.isPayrollReady).toBe(false);
+		expect(
+			result.blockers.some((b) => b.code === "MISSING_COUNTRY_PROFILE")
+		).toBe(true);
+		expect(
+			result.blockers.find((b) => b.code === "MISSING_COUNTRY_PROFILE")?.message
+		).toContain("BB");
+		expect(result.confidence).toBe("cannot_estimate");
+		expect(result.grossPay).toBe(0);
 	});
 
 	test("deterministic rounding — same input always same output", () => {

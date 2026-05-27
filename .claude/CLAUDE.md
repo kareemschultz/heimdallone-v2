@@ -171,4 +171,10 @@ Attendance + Leave implementation (Phase 7):
 - [Leave Implementation Plan](docs/architecture/leave-implementation-plan.md) — schema, API, UI decisions, balance/accrual rules
 - [Payroll Readiness Plan](docs/architecture/attendance-leave-payroll-readiness-plan.md) — data flow from attendance+leave into payroll
 - [Analytics & Reporting Plan](docs/architecture/analytics-reporting-plan.md) — charts, stat tiles, PDF export, per-module analytics
-- [Payroll Implementation Plan](docs/architecture/payroll-implementation-plan.md) — Phase 8 spec: entities, engine, Guyana rules, UI, RBAC
+- [Payroll Implementation Plan](docs/architecture/payroll-implementation-plan.md) — Phase 8 spec: entities, engine, Guyana rules, UI, RBAC, Caribbean country research
+
+Payroll engine (Phase 8C):
+
+- `packages/payroll-engine/` — pure TypeScript calculation engine, zero dependencies
+- Country rules registry: `src/countries/registry.ts` — lookup by countryCode + effectiveYear
+- Guyana 2026 implemented; Barbados 2026 and Trinidad 2026 researched but deferred

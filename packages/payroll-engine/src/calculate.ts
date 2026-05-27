@@ -4,7 +4,7 @@ import {
 	detectPostCalcWarnings,
 	detectWarnings,
 } from "./blockers";
-import { guyana2026 } from "./countries/guyana-2026";
+import { resolveCountryRules } from "./countries/registry";
 import { divideCents, toCents } from "./money";
 import type {
 	CalculationExplanation,
@@ -41,8 +41,6 @@ const addExplanation = (
 ): void => {
 	ctx.explanations.push({ step, label, formula, result });
 };
-
-const resolveCountryRules = (_input: PayrollInput): CountryRules => guyana2026;
 
 const resolvePayItemAmount = (
 	item: PayItemInput,
@@ -530,16 +528,21 @@ const computeTaxAndPostTax = (
 };
 
 export const calculatePayroll = (input: PayrollInput): PayrollPreviewResult => {
-	const ctx: CalcContext = {
-		input,
-		rules: resolveCountryRules(input),
-		lineItems: [],
-		explanations: [],
-		sortOrder: 0,
-	};
-
 	const preBlockers = detectBlockers(input);
 	const preWarnings = detectWarnings(input);
+
+	const { countryCode, effectiveYear } = input.countryProfile;
+	const rules = resolveCountryRules(countryCode, effectiveYear);
+	if (!rules) {
+		preBlockers.push({
+			code: "MISSING_COUNTRY_PROFILE",
+			severity: "blocker",
+			message: `Payroll rules for ${countryCode} ${effectiveYear} are not implemented yet.`,
+			resolution: "Contact support or select a supported country/year.",
+			resolutionLink: "/app/payroll/settings",
+		});
+	}
+
 	const hasCriticalBlocker = preBlockers.some(
 		(b) =>
 			b.code === "NO_CONTRACT" ||
@@ -549,6 +552,14 @@ export const calculatePayroll = (input: PayrollInput): PayrollPreviewResult => {
 	if (hasCriticalBlocker) {
 		return emptyResult(input, preBlockers, preWarnings);
 	}
+
+	const ctx: CalcContext = {
+		input,
+		rules: rules as CountryRules,
+		lineItems: [],
+		explanations: [],
+		sortOrder: 0,
+	};
 
 	const rawBasePay = computeBasePay(ctx);
 	addLine(ctx, {

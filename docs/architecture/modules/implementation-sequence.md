@@ -162,7 +162,7 @@ Cross-cutting:
 
 | Module | What's needed |
 |--------|--------------|
-| Payroll | Caribbean tax bracket specifics (GY PAYE, TT PAYE, JM PAYE). NIS rates for GY/TT/JM. Employer contribution calculations. Bank file format for local banks. |
+| Payroll | GY 2026 ✅ implemented. BB 2026 + TT 2026 researched (rates documented in payroll-implementation-plan.md) — need official verification before production. TT 2027 NIS rate change (19.2%) needs separate module. JM PAYE still unresearched. Bank file formats for local banks still needed. |
 | Biometric | ZKTeco SDK/protocol documentation. Anviz cloud API docs. Test device availability. |
 | Geofencing | GPS accuracy requirements for Caribbean field operations. Mobile app capabilities. |
 | Performance | OKR framework preferences for Caribbean organizations. Appraisal cycle norms. |
