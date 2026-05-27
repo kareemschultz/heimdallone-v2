@@ -4,10 +4,12 @@ import {
 	Archive,
 	Briefcase,
 	Building,
+	CalendarDays,
 	Check,
 	Clock,
 	Edit,
 	Plus,
+	Trash2,
 	Undo,
 	Users,
 	X,
@@ -27,7 +29,8 @@ type SettingsTab =
 	| "roles"
 	| "workTypes"
 	| "employeeTypes"
-	| "shifts";
+	| "shifts"
+	| "holidays";
 
 interface EditingItem {
 	departmentId?: string;
@@ -58,6 +61,7 @@ function OrganizationSettingsPage() {
 			icon: <Users size={13} />,
 		},
 		{ key: "shifts", label: "Shifts", icon: <Clock size={13} /> },
+		{ key: "holidays", label: "Holidays", icon: <CalendarDays size={13} /> },
 	];
 
 	return (
@@ -236,6 +240,8 @@ function OrganizationSettingsPage() {
 			)}
 
 			{tab === "shifts" && <ShiftSection />}
+
+			{tab === "holidays" && <HolidaySection />}
 		</div>
 	);
 }
@@ -1433,6 +1439,163 @@ function ShiftSection() {
 								Select a shift to view its schedule.
 							</div>
 						)}
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ─── Holiday Section ──────────────────────────────────────
+
+interface HolidayForm {
+	id?: string;
+	name: string;
+	startDate: string;
+	endDate: string;
+	isRecurring: boolean;
+}
+
+function HolidaySection() {
+	const qc = useQueryClient();
+	const { data, isLoading } = useQuery(
+		orpc.hrCore.holidays.list.queryOptions({ input: {} })
+	);
+	const holidays = (data as { id: string; name: string; startDate: string; endDate: string | null; isRecurring: boolean }[]) ?? [];
+
+	const [editing, setEditing] = useState<HolidayForm | null>(null);
+	const [saving, setSaving] = useState(false);
+	const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null);
+
+	const startCreate = () => {
+		setEditing({ name: "", startDate: "", endDate: "", isRecurring: false });
+	};
+
+	const startEdit = (h: { id: string; name: string; startDate: string; endDate: string | null; isRecurring: boolean }) => {
+		const fmt = (d: string | null) => { if (!d) return ""; try { return new Date(d).toISOString().slice(0, 10); } catch { return ""; } };
+		setEditing({ id: h.id, name: h.name, startDate: fmt(h.startDate), endDate: fmt(h.endDate), isRecurring: h.isRecurring });
+	};
+
+	const handleSave = async () => {
+		if (!editing || !editing.name.trim() || !editing.startDate) return;
+		if (editing.endDate && editing.startDate && editing.endDate < editing.startDate) { toast.error("End date cannot be before start date."); return; }
+		setSaving(true);
+		try {
+			if (editing.id) {
+				await client.hrCore.holidays.update({ id: editing.id, name: editing.name.trim(), startDate: editing.startDate, endDate: editing.endDate || undefined, isRecurring: editing.isRecurring });
+				toast.success("Holiday updated");
+			} else {
+				await client.hrCore.holidays.create({ name: editing.name.trim(), startDate: editing.startDate, endDate: editing.endDate || undefined, isRecurring: editing.isRecurring });
+				toast.success("Holiday added");
+			}
+			qc.invalidateQueries();
+			setEditing(null);
+		} catch (err: unknown) { toast.error(err instanceof Error ? err.message : "Something went wrong"); } finally { setSaving(false); }
+	};
+
+	const handleDelete = async () => {
+		if (!confirmDelete) return;
+		try { await client.hrCore.holidays.delete({ id: confirmDelete.id }); qc.invalidateQueries(); toast.success("Holiday removed"); setConfirmDelete(null); }
+		catch (err: unknown) { toast.error(err instanceof Error ? err.message : "Could not delete"); setConfirmDelete(null); }
+	};
+
+	const fmtDisplay = (d: string | null) => {
+		if (!d) return "—";
+		try { return new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }); } catch { return d; }
+	};
+
+	return (
+		<div className="card card-pad">
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+				<div>
+					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Holidays</h4>
+					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
+						Public holidays affect leave calculations, attendance records, and payroll. Recurring holidays repeat every year automatically.
+					</p>
+				</div>
+				<button className="btn btn-primary btn-sm" onClick={startCreate} type="button">
+					<Plus size={12} />
+					Add holiday
+				</button>
+			</div>
+
+			{editing && (
+				<div style={{ display: "flex", gap: 8, alignItems: "flex-end", flexWrap: "wrap", padding: "12px 14px", marginBottom: 12, background: "var(--bg-3)", borderRadius: 12, border: "1px solid var(--line)" }}>
+					<div style={{ flex: "1 1 180px" }}>
+						<label className="label" style={{ marginBottom: 4 }}>Holiday name</label>
+						<input autoFocus className="input" onChange={(e) => setEditing({ ...editing, name: e.target.value })} onKeyDown={(e) => { if (e.key === "Enter") handleSave(); if (e.key === "Escape") setEditing(null); }} placeholder="e.g., Independence Day" style={{ height: 34 }} value={editing.name} />
+					</div>
+					<div style={{ flex: "0 0 150px" }}>
+						<label className="label" style={{ marginBottom: 4 }}>Starts</label>
+						<input className="input" onChange={(e) => setEditing({ ...editing, startDate: e.target.value })} style={{ height: 34 }} type="date" value={editing.startDate} />
+					</div>
+					<div style={{ flex: "0 0 150px" }}>
+						<label className="label" style={{ marginBottom: 4 }}>Ends (optional)</label>
+						<input className="input" onChange={(e) => setEditing({ ...editing, endDate: e.target.value })} style={{ height: 34 }} type="date" value={editing.endDate} />
+					</div>
+					<label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "12.5px", color: "var(--fg-2)", cursor: "pointer", paddingBottom: 6 }}>
+						<input checked={editing.isRecurring} onChange={(e) => setEditing({ ...editing, isRecurring: e.target.checked })} style={{ accentColor: "var(--accent)" }} type="checkbox" />
+						Repeats every year
+					</label>
+					<button className="btn btn-primary btn-sm" disabled={saving || !editing.name.trim() || !editing.startDate} onClick={handleSave} type="button">
+						<Check size={12} />
+						{editing.id ? "Save" : "Add"}
+					</button>
+					<button className="btn btn-ghost btn-sm" onClick={() => setEditing(null)} type="button">
+						<X size={12} />
+					</button>
+				</div>
+			)}
+
+			{isLoading ? (
+				<div style={{ padding: "40px 0", textAlign: "center", color: "var(--fg-3)", fontSize: "13px" }}>Loading…</div>
+			) : holidays.length === 0 ? (
+				<div style={{ padding: "40px 0", textAlign: "center" }}>
+					<div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 48, height: 48, borderRadius: 12, background: "var(--bg-3)", color: "var(--fg-3)", margin: "0 auto 12px" }}>
+						<CalendarDays size={22} />
+					</div>
+					<h4 style={{ fontSize: "15px", fontWeight: 600, color: "var(--fg)", marginBottom: 4 }}>No holidays set up yet</h4>
+					<p style={{ color: "var(--fg-3)", fontSize: "13px", maxWidth: 360, margin: "0 auto" }}>
+						Add public holidays so time off, attendance, and payroll can calculate correctly later.
+					</p>
+				</div>
+			) : (
+				<table className="tbl">
+					<thead><tr><th>Holiday</th><th>Start Date</th><th>End Date</th><th style={{ width: 100 }}>Recurring</th><th style={{ width: 80 }} /></tr></thead>
+					<tbody>
+						{holidays.map((h) => (
+							<tr key={h.id}>
+								<td style={{ fontWeight: 500 }}>{h.name}</td>
+								<td className="mono" style={{ color: "var(--fg-2)" }}>{fmtDisplay(h.startDate)}</td>
+								<td className="mono" style={{ color: "var(--fg-2)" }}>{fmtDisplay(h.endDate)}</td>
+								<td>
+									{h.isRecurring
+										? <span className="badge badge-accent"><span className="badge-dot" />Yearly</span>
+										: <span style={{ color: "var(--fg-4)", fontSize: "12px" }}>One-time</span>}
+								</td>
+								<td>
+									<div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+										<button className="btn btn-ghost btn-sm" onClick={() => startEdit(h)} title="Edit" type="button"><Edit size={12} /></button>
+										<button className="btn btn-ghost btn-sm" onClick={() => setConfirmDelete({ id: h.id, name: h.name })} style={{ color: "var(--danger)" }} title="Delete" type="button"><Trash2 size={12} /></button>
+									</div>
+								</td>
+							</tr>
+						))}
+					</tbody>
+				</table>
+			)}
+
+			{confirmDelete && (
+				<div style={{ position: "fixed", inset: 0, zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(8,9,12,0.6)" }}>
+					<div style={{ background: "var(--bg-2)", border: "1px solid var(--line)", borderRadius: 16, padding: "24px", maxWidth: 400, width: "100%" }}>
+						<h4 style={{ marginBottom: 8 }}>Remove {confirmDelete.name}?</h4>
+						<p style={{ fontSize: "13px", color: "var(--fg-3)", marginBottom: 20 }}>
+							This holiday will be permanently removed. Future leave and attendance calculations will no longer account for it.
+						</p>
+						<div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+							<button className="btn btn-outline btn-sm" onClick={() => setConfirmDelete(null)} type="button">Cancel</button>
+							<button className="btn btn-sm" onClick={handleDelete} style={{ background: "var(--danger-soft)", color: "var(--danger)" }} type="button">Remove holiday</button>
+						</div>
 					</div>
 				</div>
 			)}
