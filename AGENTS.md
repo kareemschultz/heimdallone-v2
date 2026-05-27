@@ -154,7 +154,8 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 - Phase 7D: **Complete** — Attendance UI (records table, clock panel, detail drawer, corrections view, bulk actions)
 - Phase 7E: **Complete** — Leave DB schema (7 tables, 5 enums), migration, seed (5 types, 24 balances, 7 requests)
 - Phase 7F: **Complete** — Leave oRPC router (24 procedures), RBAC scoping, balance deduction, audit events
-- Next: Phase 7G — Leave UI
+- Phase 7G: **Complete** — Leave UI (balance cards, request form, approval queue, upcoming leave, cancellation)
+- Next: Phase 7H — Payroll-readiness QA/RBAC/usability pass
 
 ### Key Architecture Files
 - `.claude/CLAUDE.md` — Full project instructions with doc references

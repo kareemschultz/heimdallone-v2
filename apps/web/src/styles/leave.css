@@ -1,0 +1,165 @@
+/* Leave status pills */
+.pill-status.ls-requested {
+	color: var(--warning);
+	background: var(--warning-soft);
+	border-color: transparent;
+}
+.pill-status.ls-approved {
+	color: var(--success);
+	background: var(--success-soft);
+	border-color: transparent;
+}
+.pill-status.ls-rejected {
+	color: var(--danger);
+	background: var(--danger-soft);
+	border-color: transparent;
+}
+.pill-status.ls-cancelled {
+	color: var(--fg-4);
+	background: var(--bg-3);
+	border-color: transparent;
+}
+
+/* Balance cards */
+.leave-balances {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 10px;
+	margin-bottom: 20px;
+}
+.leave-bal-card {
+	position: relative;
+	padding: 16px;
+	overflow: hidden;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.leave-bal-card .bal-stripe {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 4px;
+	height: 100%;
+}
+.leave-bal-card .bal-name {
+	margin-left: 8px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg);
+}
+.leave-bal-card .bal-days {
+	margin: 8px 0 2px 8px;
+	font-size: 26px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.leave-bal-card .bal-sub {
+	margin-left: 8px;
+	font-size: 11px;
+	color: var(--fg-3);
+}
+.leave-bal-card .bal-tag {
+	display: inline-block;
+	padding: 1px 6px;
+	margin-top: 6px;
+	margin-left: 8px;
+	font-size: 10px;
+	border-radius: 4px;
+}
+.leave-bal-card .bal-tag.paid {
+	color: var(--success);
+	background: var(--success-soft);
+}
+.leave-bal-card .bal-tag.unpaid {
+	color: var(--warning);
+	background: var(--warning-soft);
+}
+
+/* Request sheet */
+.leave-sheet {
+	position: fixed;
+	top: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 201;
+	display: flex;
+	flex-direction: column;
+	width: min(460px, 90vw);
+	overflow-y: auto;
+	background: var(--bg-1);
+	border-left: 1px solid var(--line);
+}
+.leave-sheet-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 18px 20px;
+	border-bottom: 1px solid var(--line);
+}
+.leave-sheet-head h4 {
+	font-size: 15px;
+	font-weight: 600;
+}
+.leave-sheet-body {
+	flex: 1;
+	padding: 20px;
+}
+.leave-sheet-foot {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	padding: 14px 20px;
+	border-top: 1px solid var(--line);
+}
+
+/* Helper callout */
+.leave-helper {
+	padding: 10px 14px;
+	margin-bottom: 14px;
+	font-size: 12px;
+	line-height: 1.5;
+	color: var(--info);
+	background: var(--info-soft);
+	border-radius: 8px;
+}
+
+/* Upcoming leave list */
+.upcoming-leave {
+	margin-top: 20px;
+}
+.upcoming-leave h3 {
+	margin-bottom: 10px;
+	font-size: 14px;
+	font-weight: 600;
+}
+.upcoming-item {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	padding: 10px 12px;
+	margin-bottom: 6px;
+	font-size: 13px;
+	background: var(--bg-2);
+	border-radius: 8px;
+}
+.upcoming-item .up-dot {
+	flex-shrink: 0;
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+}
+.upcoming-item .up-name {
+	flex: 1;
+	font-weight: 500;
+}
+.upcoming-item .up-dates {
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.upcoming-item .up-days {
+	min-width: 50px;
+	font-size: 12px;
+	color: var(--fg-2);
+	text-align: right;
+}
