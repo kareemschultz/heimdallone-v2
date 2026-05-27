@@ -171,3 +171,4 @@ Attendance + Leave implementation (Phase 7):
 - [Leave Implementation Plan](docs/architecture/leave-implementation-plan.md) — schema, API, UI decisions, balance/accrual rules
 - [Payroll Readiness Plan](docs/architecture/attendance-leave-payroll-readiness-plan.md) — data flow from attendance+leave into payroll
 - [Analytics & Reporting Plan](docs/architecture/analytics-reporting-plan.md) — charts, stat tiles, PDF export, per-module analytics
+- [Payroll Implementation Plan](docs/architecture/payroll-implementation-plan.md) — Phase 8 spec: entities, engine, Guyana rules, UI, RBAC

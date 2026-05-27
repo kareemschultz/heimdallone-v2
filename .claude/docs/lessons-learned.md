@@ -325,3 +325,25 @@ Living document. Updated after each major task or unexpected issue.
 31. **Balance cards with color-coded stripes** — Leave balance cards use left-border colors matching the leave type. This provides instant visual grouping without needing icons. Shows available days (large), used + carry-forward (small), and paid/unpaid badge.
 
 32. **Analytics planning as a separate doc** — Rather than scattering chart/reporting specs across each module spec, a single `analytics-reporting-plan.md` covers all modules, shared primitives, PDF export, and security constraints. Module specs cross-reference it.
+
+---
+
+## Session: 2026-05-27 — Phase 8A (Payroll Spec Finalization)
+
+### Gotchas Discovered
+
+69. **Payroll engine must be a pure calculation library** — The engine takes typed PayrollInput and returns PayrollPreviewResult with zero side effects. No DB reads, no HTTP calls. This makes it unit-testable, deterministic, and portable. The oRPC router is the only adapter layer. Mixing DB queries into calculation logic (as v1 did) makes testing and auditing much harder.
+
+70. **Normalized payslip_line_item table vs JSON lineItems** — The payroll-spec.md initially proposed storing line items as JSON within the payslip. For analytics, reporting, and auditing, a normalized `payslip_line_item` table is necessary. You can't efficiently query "total housing allowance paid this quarter" from a JSON blob. Store a summary `explanation` JSON for fast rendering alongside the normalized rows.
+
+71. **Country payroll profiles must be org-scoped, not global** — Initially proposed as global reference data, but orgs may customize rates (e.g., different insurance providers, additional statutory deductions). Making them per-org allows customization while seeding from templates.
+
+72. **Filing status auto-creation from country profiles** — When creating a GY country profile, the system should auto-seed a "GY Standard PAYE" filing status with correct brackets. Otherwise, orgs must manually create filing statuses, which is error-prone for non-technical users.
+
+### Patterns That Worked
+
+33. **Exhaustive payroll input contract** — Defining PayrollInput, PayrollPreviewResult, PayrollBlocker, PayrollWarning, and ProjectedPayResult as TypeScript interfaces in the spec doc creates a clear boundary between "what the engine receives" and "what the engine produces". Every cross-module join is documented in one place.
+
+34. **Payroll blocker/warning classification** — Splitting issues into blockers (prevent processing) and warnings (flag for review) with plain-language messages and resolution links is a repeatable pattern for any workflow with prerequisites. The "why blocked?" panel is the most important UX element for non-technical users.
+
+35. **Spec-before-implement for the highest-risk module** — Payroll affects real money. The Phase 8A spec covers 12 entities, 20+ TypeScript interfaces, 17-step calculation order, 9 blockers, 9 warnings, 10 UI routes, and 10 open questions — all documented before any code is written. This is the right level of rigor for payroll.
