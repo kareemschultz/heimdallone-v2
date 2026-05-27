@@ -297,3 +297,5 @@ Living document. Updated after each major task or unexpected issue.
 26. **Security review caught IDOR in eventsCreateManual** — The `authorizedProcedure("attendance", "create")` gate limits to HR roles, but the handler accepted any `employeeId` without scope checking. Added `checkScopeForMutation()` call to prevent cross-employee writes by unauthorized actors.
 
 27. **Parallel research agents** — Running Odoo docs and GitHub research agents simultaneously produced comprehensive results in ~3 minutes vs sequential which would have taken ~6 minutes. Background agents are ideal for web-research-heavy spec phases.
+
+28. **Every foreign key input must be tenant-verified** — Phase 7F leave API had 4 IDOR vulnerabilities caught by security review: `balancesAssign` (employee + leaveType), `balancesAdjust` (employee), `allocationsCreate` (leaveType), `restrictionsCreate` (departmentId). Pattern: any procedure accepting an entity ID as input must verify that entity belongs to `orgId(context)` before using it. `authorizedProcedure` gates role access but NOT tenant ownership of referenced entities. This applies to all future routers — payroll, recruitment, etc.
