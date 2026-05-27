@@ -6,7 +6,7 @@
 Phase 5B:  HR Core (employees, org settings, documents, audit) ✅
 Phase 6:   Contracts ✅ (6A-6E complete, verified end-to-end)
 Phase 7:   Attendance + Leave ✅
-Phase 8:   Payroll ← NEXT (8A spec done, 8B–8I implementation)
+Phase 8:   Payroll ← IN PROGRESS (8A–8C done, 8D–8J remaining)
 Phase 9:   Recruitment + Onboarding (can parallelize)
 Phase 10:  Offboarding
 Phase 11:  Biometric + Geofencing
@@ -22,7 +22,9 @@ Phase 15:  Analytics + Dashboards + Reports
 - **Phase 6E**: ✅ Payroll/attendance/leave/biometric spec enrichment, GRA 2026 rates verified, gy-taxcalc + v1 inspected
 - **Phase 7**: ✅ Attendance + Leave complete (schema, API, UI, QA/security pass — 7A through 7H)
 - **Phase 8A**: ✅ Payroll spec finalization — [payroll-implementation-plan.md](../payroll-implementation-plan.md)
-- **Phase 8B–8I**: Next — Payroll implementation (schema → engine → API → UI → analytics → QA)
+- **Phase 8B**: ✅ Payroll DB schema + migration + seed (12 tables, 12 enums, GY 2026 profile)
+- **Phase 8C**: ✅ Payroll calculation engine (`packages/payroll-engine/`) — 16 tests, 71 assertions
+- **Phase 8D–8J**: Next — API → settings UI + setup wizard → run wizard → payslip/PDF/templates → analytics → QA → branding/onboarding polish
 
 ## Dependency Graph
 

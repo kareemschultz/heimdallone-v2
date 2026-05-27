@@ -703,3 +703,27 @@ Phase 6 used a custom inline `ContractSheet` (a fixed-position modal with backdr
 ### Employee Dropdown Scaling
 
 ContractSheet, employee create wizard, and employee edit sheet load employees via `pageSize: 100` for select dropdowns. Capped at 100 employees. For orgs with >100 employees, Phase 7+ should add search-as-you-type (debounced query on keystroke) rather than increasing the page size cap.
+
+### Onboarding Wizard Primitive (Phase 8E/8J)
+
+The guided company setup wizard needs a multi-step wizard primitive with:
+- Step progress indicator (numbered steps, current highlight)
+- Save-and-resume (persist wizard state to localStorage or DB)
+- Skip optional steps
+- "Recommended" badge on defaults
+- Per-step validation before advancing
+- Readiness checklist component (✅/❌ items with fix links)
+- Setup completion score display
+
+The existing `WizardForm` (#17) covers basic multi-step forms. The onboarding wizard extends this with progress persistence, skip logic, and a completion dashboard. Consider building `OnboardingWizard` as a separate primitive that wraps `WizardForm` steps with progress tracking and a readiness checklist view.
+
+### Template Preview Primitive (Phase 8G)
+
+Payslip and report template selection needs a template preview component:
+- Grid of template thumbnails
+- Click to preview full-size with sample data
+- Selected template highlighted
+- "Use this template" action
+- Template name and description
+
+This is a specialized selection UI — not a generic primitive. Build inline in the payroll settings page, extract if reused by report templates.

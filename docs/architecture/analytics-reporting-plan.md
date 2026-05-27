@@ -199,16 +199,34 @@ Use **@react-pdf/renderer** for structured payroll documents (payslips, pay regi
 
 ---
 
+## Company Branding in Reports
+
+All PDF reports and payslip exports use the organization's branding profile:
+- Company logo (falls back to report logo → payslip logo → company logo)
+- Primary/accent colors for headers and accents
+- Company address, phone, email, website in footer
+- Tax/NIS registration numbers where required
+- Custom footer text
+- Optional signature/stamp image
+
+Template choices (Classic, Modern, Compact, Detailed, Statutory) are selected per-org and can be overridden per-run. Preview uses sample data unless viewing an authorized employee.
+
+All exports are audit-logged. PDFs enforce tenant isolation — no cross-tenant data leakage.
+
+---
+
 ## Implementation Phases
 
 | Phase | Scope | Depends On |
 |-------|-------|-----------|
 | **8** (Payroll) | Payroll stat tiles, pay run summary, cost trend | Payroll engine |
+| **8G** (Templates) | Payslip template foundation, PDF export basics | Payroll API |
+| **8J** (Branding) | Company branding profile, template customization, onboarding wizard polish | Phase 8I |
 | **9** (Analytics) | Shared StatTile + ChartCard primitives, install shadcn Chart | Recharts dependency |
 | **9** (Analytics) | Attendance analytics (6 procedures + 6 widgets) | Phase 7 attendance API |
 | **9** (Analytics) | Leave analytics (6 procedures + 6 widgets) | Phase 7 leave API |
 | **9** (Analytics) | Executive dashboard chart widgets | All module APIs |
-| **10** (Reports) | PDF export: payslips, pay register | Payroll engine |
+| **10** (Reports) | PDF export: payslips, pay register, report templates | Payroll engine |
 | **10** (Reports) | PDF export: attendance/leave reports | Analytics procedures |
 | **10** (Reports) | Chart snapshot export | ChartCard component |
 

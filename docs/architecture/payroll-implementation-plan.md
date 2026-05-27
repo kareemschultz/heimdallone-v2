@@ -1281,6 +1281,200 @@ payroll.analytics.payVariance       → [{ employeeId, name, prevGross, currGros
 
 ---
 
+## Company Branding and Document Template System
+
+### Company Branding Profile
+
+Each organization stores branding configuration used across payslips, reports, and PDF exports:
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `companyLogo` | file/URL | Primary company logo |
+| `reportLogo` | file/URL | Optional alternate logo for reports |
+| `payslipLogo` | file/URL | Optional alternate logo for payslips |
+| `primaryColor` | hex string | Brand primary color |
+| `accentColor` | hex string | Brand accent color |
+| `companyAddress` | text | Full company address |
+| `phone` | text | Company phone |
+| `email` | text | Company email |
+| `website` | text | Company website |
+| `taxRegistrationNumber` | text | Tax/TIN number |
+| `nisRegistrationNumber` | text | NIS employer number |
+| `employerRegistrationNumber` | text | Labour/employer registration |
+| `defaultReportFooter` | text | Footer text for reports |
+| `signatureImage` | file/URL | Optional signature/stamp image (deferred) |
+
+Dark/light-safe logo handling: if `reportLogo` or `payslipLogo` is not set, fall back to `companyLogo`. PDF and print layouts should use the appropriate variant.
+
+### Payslip Templates
+
+Multiple template choices for payslip rendering:
+
+| Template | Style | Best For |
+|----------|-------|----------|
+| **Classic** | Traditional tabular layout | Government/formal orgs |
+| **Modern** | Clean card-based layout | Tech/startup companies |
+| **Compact** | Minimal single-page | Small businesses |
+| **Detailed** | Full line-item breakdown | Audit-heavy orgs |
+| **Statutory** | Government-mandated format | Public sector compliance |
+
+Template features:
+- Preview template before saving (uses sample/fake data)
+- Company logo and brand colors applied
+- Employee-friendly gross-to-net breakdown
+- Line-item explanation text from `CalculationExplanation[]`
+- Employer contribution section (optional, toggleable)
+- Year-to-date totals (deferred — requires YTD accumulation)
+- QR code or verification code (deferred)
+- PDF export-ready layout (print-safe margins, page breaks)
+- Mobile-friendly employee view (separate from PDF layout — responsive HTML)
+
+### Report Templates
+
+| Report | Phase | Description |
+|--------|-------|-------------|
+| Payroll run summary | 8G | Per-run totals, employee list, issue summary |
+| Attendance summary | 8H | Monthly attendance by employee/department |
+| Leave balance report | 8H | Current balances, accrual, usage |
+| Employee profile PDF | Later | Full employee record export |
+| Audit report | 8I | Change log, overrides, approvals |
+| Statutory report export | Later | Government filing formats |
+| Manager team report | Later | Team payroll/attendance summary |
+
+### Template Customization
+
+Per-organization settings:
+- Choose payslip template
+- Choose logo (company, report, or payslip logo)
+- Choose color theme (primary + accent)
+- Show/hide sections (employer contributions, YTD, explanations)
+- Custom footer text
+- Custom notes field
+- Optional signature/stamp image
+- Save as organization default
+- Allow per-run override (deferred)
+
+### Template Security/Privacy
+
+- Payslip templates obey salary/pay visibility RBAC rules
+- Employees see only their own payslips
+- All PDF exports are audit-logged
+- PDFs must not leak cross-tenant data (org isolation)
+- Template preview uses sample/fake data unless previewing an authorized employee's actual payslip
+
+---
+
+## Guided Company Setup and Onboarding Wizard
+
+### Purpose
+
+Make Heimdallone easy for non-technical HR/payroll staff to start using. A lot of HR/payroll systems fail because users log in and see 40 empty menus. Heimdallone should guide them: "Let's set up your company in 10 steps." / "Payroll is 82% ready. Fix these 3 items before running payroll."
+
+### Wizard Steps
+
+**Step 1: Company Profile**
+- Company name, logo, address, contact info
+- Country, currency, timezone
+- Tax/NIS/employer registration numbers
+
+**Step 2: Country Payroll Setup**
+- Choose country → auto-loads country profile
+- Choose tax year
+- Choose default currency
+- Enable Guyana PAYE/NIS profile (or other country)
+- Plain-language helper text for each field
+- Auto-create default filing status where safe
+
+**Step 3: Organization Structure**
+- Departments, job positions, job roles
+- Managers, work locations
+- Can skip and add later
+
+**Step 4: Work Schedule**
+- Shifts, work days, break rules
+- Overtime policy (multipliers, approval required)
+- Public holiday policy
+- Saturday/Sunday/holiday rate defaults
+
+**Step 5: Holidays**
+- Choose country → import standard holidays
+- Review/edit/add custom holidays
+
+**Step 6: Leave Setup**
+- Choose leave policy preset: Basic / Standard HR / Generous / Custom
+- Create leave types, accrual/carry-forward settings
+- Approval flow configuration
+
+**Step 7: Attendance Setup**
+- Manual attendance only (biometric/geofence deferred)
+- Grace time, missing checkout policy
+- Approval rules
+
+**Step 8: Payroll Items**
+- Choose presets: PAYE, NIS, overtime, transport, meal, insurance, credit union, loan repayment
+- Allow custom pay item creation
+- Assign to departments or all employees
+
+**Step 9: Employees/Contracts**
+- Create employee (or import later)
+- Assign contracts with salary, wage type, pay frequency
+- Check for missing active contracts
+
+**Step 10: Readiness Checklist**
+- Employees configured ✅/❌
+- Active contracts present ✅/❌
+- Holidays imported ✅/❌
+- Leave types configured ✅/❌
+- Attendance policy configured ✅/❌
+- Country payroll profile active ✅/❌
+- Pay items configured ✅/❌
+- First payroll period created ✅/❌
+- Setup completion score (e.g., "82% ready")
+- Direct links to fix missing items
+
+### Wizard UX Requirements
+
+- Progress indicator (step X of 10)
+- Save and resume later
+- Skip optional steps
+- "Recommended" defaults highlighted
+- Plain-language helper text for every field
+- Dropdowns with common presets
+- Sample previews where applicable
+- "Why this matters" tooltips
+- Setup completion score on dashboard
+- Direct links from readiness checklist to fix pages
+
+---
+
+## Setup Presets and Business Templates
+
+Industry presets that pre-configure work schedule, attendance, overtime, leave, payroll items, and template choices:
+
+| Preset | Work Schedule | OT Policy | Leave Types | Payslip Template |
+|--------|--------------|-----------|-------------|------------------|
+| **Small Business / Office** | Mon–Fri 8h | Standard 1.5× | Basic (annual, sick) | Modern |
+| **Retail / Shop** | 6-day week | Sat 1.5× Sun 2× | Standard | Compact |
+| **Construction / Field** | Mon–Sat, variable | Aggressive OT | Basic + safety | Classic |
+| **Security / Shift Workers** | Rotating shifts | Night 1.25× | Standard | Detailed |
+| **School** | Term-based | Minimal | Standard + study | Classic |
+| **Clinic / Medical** | Mon–Sat | Standard | Standard + medical | Detailed |
+| **Warehouse / Logistics** | Mon–Fri | Standard | Basic | Compact |
+| **Government / Public Sector** | Mon–Fri strict | Statutory only | Generous | Statutory |
+| **NGO / Nonprofit** | Flexible | Standard | Generous | Modern |
+
+Each preset suggests: work schedule, attendance rules, overtime policy, leave types, payroll items, payslip template, and reports dashboard layout.
+
+### Implementation Layering
+
+**Layer 1 (Now — Phase 8C):** Document branding, templates, onboarding, setup presets in architecture docs.
+
+**Layer 2 (During Payroll — Phase 8E/8G):** Build basic payroll settings wizard, payslip template foundation, and PDF export.
+
+**Layer 3 (After Payroll MVP — Phase 8J or 14/15):** Build full company onboarding wizard, template marketplace-style choices, report designer, and advanced branding.
+
+---
+
 ## Implementation Sequence
 
 | Sub-phase | Scope | Depends On | Estimated Size |
@@ -1289,11 +1483,12 @@ payroll.analytics.payVariance       → [{ employeeId, name, prevGross, currGros
 | **8B** | Payroll DB schema + migration + seed | 8A | ~500 lines schema, ~300 lines seed |
 | **8C** | Payroll calculation engine (`packages/payroll-engine/`) | 8A | ~1500 lines pure logic |
 | **8D** | Payroll oRPC API (~30 procedures) | 8B + 8C | ~1500 lines router |
-| **8E** | Payroll settings + pay items UI | 8D | ~800 lines (settings page, pay item CRUD) |
+| **8E** | Payroll settings + pay items UI + first setup wizard | 8D | ~1000 lines (settings, pay item CRUD, wizard step 1–2) |
 | **8F** | Payroll run wizard + payslip preview | 8D | ~1200 lines (wizard steps, preview table) |
-| **8G** | Employee payslip view + PDF export | 8D | ~600 lines (payslip detail, PDF template) |
+| **8G** | Payslip view + PDF export + template foundation | 8D | ~800 lines (payslip detail, PDF template, branding) |
 | **8H** | Payroll analytics/reports | 8D | ~800 lines (charts, report tables) |
 | **8I** | Payroll QA/RBAC/compliance pass | 8E–8H | Security review, browser verification |
+| **8J** | Company branding/templates/onboarding polish | 8I | ~1200 lines (full wizard, template choices, presets) |
 
 **Rationale for this sequence**:
 - 8B (schema) must come first — everything depends on tables existing.
