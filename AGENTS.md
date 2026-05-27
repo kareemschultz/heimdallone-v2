@@ -153,7 +153,8 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 - Phase 7C: **Complete** — Attendance oRPC router (17 procedures), RBAC scoping, audit events
 - Phase 7D: **Complete** — Attendance UI (records table, clock panel, detail drawer, corrections view, bulk actions)
 - Phase 7E: **Complete** — Leave DB schema (7 tables, 5 enums), migration, seed (5 types, 24 balances, 7 requests)
-- Next: Phase 7F — Leave oRPC API
+- Phase 7F: **Complete** — Leave oRPC router (24 procedures), RBAC scoping, balance deduction, audit events
+- Next: Phase 7G — Leave UI
 
 ### Key Architecture Files
 - `.claude/CLAUDE.md` — Full project instructions with doc references
