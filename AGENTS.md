@@ -124,3 +124,41 @@ Biome's linter will catch most issues automatically. Focus your attention on:
 ---
 
 Most formatting and common issues are automatically fixed by Biome. Run `bun x ultracite fix` before committing to ensure compliance.
+
+---
+
+## Heimdallone Project Context
+
+Heimdallone v2 is a multi-tenant HRMS/payroll/workforce platform.
+
+### Stack
+- Bun + Turborepo monorepo
+- TanStack Start + React (frontend)
+- Hono + oRPC (API server)
+- Better Auth + Organization/Admin plugins (auth/RBAC, 9 tenant roles)
+- Drizzle ORM + PostgreSQL (central Postgres)
+- Tailwind CSS v4 + Heimdallone design handoff CSS (dark-first, gold-accent)
+- shadcn/ui with `base-lyra` style (@base-ui/react, NOT Radix)
+
+### Implementation Pattern
+Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **D** (UI) → **E** (QA/RBAC).
+
+### Current Status (2026-05-27)
+- HR Core: **Complete** (employees, org settings, holidays, CRUD, RBAC/scope)
+- Contracts: **Phase 6 complete** (schema, API, UI — verified end-to-end; 6E QA/docs closure done)
+- Phase 6E: **Complete** — Contracts QA, payroll/attendance/leave/biometric spec enrichment, gy-taxcalc + v1 inspection, GRA 2026 rate verification, payroll engine architecture, quality-of-life requirements
+- Next: Phase 7A — Attendance + Leave spec review/update
+
+### Key Architecture Files
+- `.claude/CLAUDE.md` — Full project instructions with doc references
+- `docs/architecture/` — Schema specs, API specs, UI plans, implementation plans
+- `docs/horilla-extraction/` — Module extraction docs from Horilla/OpenHRMS
+- `packages/db/src/schema/` — Drizzle schema (`auth.ts`, `hr-core.ts`)
+- `packages/api/src/routers/` — oRPC routers
+- `packages/api/src/utils/` — Audit, scope, error utilities
+- `packages/auth/src/permissions.ts` — 9 tenant roles with resource/action definitions
+
+### Design Fidelity Rule
+- Handoff CSS classes (`.tbl`, `.badge`, `.tabs`, `.filter-chip`, etc.) are first choice
+- shadcn used only for behavior/accessibility where handoff has no equivalent
+- No visual drift toward default shadcn styling

@@ -3,9 +3,9 @@
 ## Recommended Order
 
 ```
-Phase 5B:  HR Core (employees, org settings, documents, audit)
-Phase 6:   Contracts
-Phase 7:   Attendance + Leave (can parallelize)
+Phase 5B:  HR Core (employees, org settings, documents, audit) ✅
+Phase 6:   Contracts ✅ (6A-6E complete, verified end-to-end)
+Phase 7:   Attendance + Leave (can parallelize) ← NEXT
 Phase 8:   Payroll
 Phase 9:   Recruitment + Onboarding (can parallelize)
 Phase 10:  Offboarding
@@ -15,6 +15,12 @@ Phase 13:  Performance / PMS
 Phase 14:  Automations + Notifications
 Phase 15:  Analytics + Dashboards + Reports
 ```
+
+### Phase Status (2026-05-27)
+- **Phase 5**: ✅ HR Core MVP complete (employees, org settings, holidays, RBAC)
+- **Phase 6**: ✅ Contracts complete (schema, API, UI — verified; 6E QA/docs closure done)
+- **Phase 6E**: ✅ Payroll/attendance/leave/biometric spec enrichment, GRA 2026 rates verified, gy-taxcalc + v1 inspected
+- **Phase 7**: Next — Attendance + Leave spec review/update, then implementation
 
 ## Dependency Graph
 

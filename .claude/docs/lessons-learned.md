@@ -181,3 +181,95 @@ Living document. Updated after each major task or unexpected issue.
 7. **Employee with no employee profile** — A Better Auth user who is a member of an org but has no `employee_profile` record. This is valid (platform admins, external users). The scope system returns empty results for such users rather than errors.
 
 8. **Manager with no direct reports** — A user with `manager` role but no employees have `reportingManagerId` pointing to them. They see only themselves in the list. This is correct behavior.
+
+---
+
+## Session: 2026-05-27 — Phase 6B–6D Contracts
+
+### Gotchas Discovered
+
+40. **oRPC error JSON is in `.json` field, not `.error`** — When inspecting oRPC error responses via curl, the error details are nested under `.json.message` (e.g. `{"json":{"message":"...", "code":"..."}}`). Not under `.error`. The TypeScript client unwraps this transparently.
+
+41. **Biome `noExcessiveCognitiveComplexity` triggers on deep JSX ternaries** — A 5-level nested ternary in JSX (for conditional labels) contributed ~15 complexity points alone, causing the component function to exceed the 20-point threshold. Fix: extract to a module-level helper function with early-return `if` statements. Each nested ternary level adds +1 to the base cost plus +n for nesting depth.
+
+42. **`noArrayIndexKey` on skeleton loading rows** — Biome flags `key={i}` when `i` is from `.map((_, i) => ...)` even for pure placeholder skeleton rows. Fix: pre-define a string array of keys (`const SKELETON_ROW_KEYS = ["sk-r0", ...]`) at module level and iterate over it.
+
+43. **Modal backdrop as `div onClick` triggers three a11y errors** — A `<div onClick={closeModal}>` as a backdrop triggers `noStaticElementInteractions`, `useKeyWithClickEvents`, and `noNoninteractiveElementInteractions` simultaneously. Clean fix: split the backdrop from the layout container — use an absolutely-positioned `<button type="button">` for the backdrop and a sibling `<div>` with `position: relative` for the modal content. The button receives `onClick`, has no nesting conflict, and is semantically interactive.
+
+44. **`contractsRouter` spread pattern** — `contractsRouter` exports `{ filingStatuses: {...}, contracts: {...} }` and is spread onto `appRouter` with `...contractsRouter`. This means the oRPC client paths are `orpc.contracts.*` and `orpc.filingStatuses.*` (flat) — NOT `orpc.contractsRouter.contracts.*`. The spread flattens the namespace.
+
+45. **Active contract sync to `employee_work_info.basicSalary`** — Activating a contract writes back to `employeeWorkInfo`. When verifying activation, check both the contract status AND `employeeWorkInfo.basicSalary` to confirm the sync worked.
+
+### Patterns That Worked
+
+16. **Status lens pattern for filtered views** — Instead of a dropdown filter, use a segmented control of 5 status lenses (All / Draft / Active / Expiring Soon / Terminated). Each lens maps to a server-side `status` filter (or `expiring_soon` for the date-window case). The segmented control matches the handoff design and provides zero-friction navigation between views.
+
+17. **Auto-suggest contract name on employee+date selection** — When the user picks an employee and start date in the create form, auto-populate the contract name as `{firstName} {lastName} — {year} Employment Agreement`. Only override if the field is empty or still matches the auto-suggestion pattern. Reduces friction without locking the user in.
+
+18. **`validateForm()` extracted from `handleSave()`** — Moving validation logic into a separate `validateForm(): boolean` function defined inside the component (but outside `handleSave`) reduces `handleSave`'s cognitive complexity enough to pass Biome's threshold. The function uses closure variables from the component state — no need to thread parameters.
+
+---
+
+## Session: 2026-05-27 — Phase 6D Verification + Bug Fixes
+
+### Gotchas Discovered
+
+46. **`fmtDate()` display formatter used as form state initializer causes silent API corruption** — `fmtDate(null)` returns `"—"` (em-dash U+2014). An em-dash is truthy, so `endDate || null` passes `"—"` through to the API call as a real date string. `new Date("—")` is an `Invalid Date`, which causes a 500. Fix: use `date ? new Date(date).toISOString().slice(0, 10) : ""` for date input state initialization — never reuse a display helper for form state.
+
+47. **`pageSize: 200` scattered across 3 files when procedure enforces `max(100)`** — The `hrCore/employees/list` procedure has a Zod `.max(100)` constraint on `pageSize`. Three callers passed `200`, each getting a 400. There's nothing at the call site to warn you — the constraint is invisible until runtime. Fix: changed all three to `100`. Future mitigation: a shared query options helper constant.
+
+48. **HMR circular import fails silently, page requires full reload** — TanStack Router's `routeTree.gen.ts` creates circular import chains. When a hot-replaced file is in such a chain, Vite's HMR logs `"failed to apply HMR as it's within a circular import"` and falls back to a full page reload. If the reload also fails (`Cannot access 'X' before initialization`), the page stays stale — navigate to it again explicitly to force a fresh load.
+
+49. **`[active]` in accessibility snapshot ≠ dropdown is open** — When using Playwright's `browser_snapshot`, a button showing `[active]` means it has the browser focus state, not that its associated dropdown is currently rendered. The dropdown items only appear in the snapshot when the menu is actually mounted in the DOM. Use `browser_take_screenshot` to visually confirm the menu is open before trying to click items inside it.
+
+### Patterns That Worked
+
+19. **Separate display formatter from form state initializer for dates** — Keep two distinct patterns: `fmtDate(d)` for display (returns `"—"` on null), and `d ? new Date(d).toISOString().slice(0, 10) : ""` inline for `useState` initialization (returns empty string on null). An empty string is falsy, correctly passing `endDate || null` checks.
+
+20. **Evaluate-then-click for Playwright menus** — When `browser_snapshot` doesn't capture dropdown items (they're in the DOM but outside the a11y tree), use `browser_evaluate` with `Array.from(document.querySelectorAll('button')).find(b => b.textContent.trim() === 'Label')?.click()` instead. This works because `evaluate` inspects the live DOM, not the a11y snapshot.
+
+21. **Server-side pagination pattern (`pageSize: 50`, prev/next)** — Both `contracts/index.tsx` and `employees/index.tsx` use identical pagination: `const [page, setPage] = useState(1)` + `const pageSize = 50` + `totalPages = Math.ceil(total / pageSize)` + conditional `<div className="pagination">` only when `totalPages > 1`. No infinite scroll. Replicate this pattern for all list pages in Phase 7+.
+
+### Edge Cases to Watch
+
+9. **Dropdown selects that load employee lists are capped at 100** — ContractSheet, employee create wizard, and employee edit sheet all load the employee list via `pageSize: 100` for their dropdowns. An org with >100 employees will not see all employees in the select. Phase 7 should add search-as-you-type to these dropdowns rather than increasing the cap.
+
+---
+
+## Session: 2026-05-27 — Phase 6E QA/Docs + Payroll/Attendance/Leave Prep
+
+### Gotchas Discovered
+
+50. **Payroll must be designed for non-technical users** — payroll clerks, office managers, and small business owners who previously used spreadsheets. Every screen needs tooltips, helper text, plain-language labels, and guided setup checklists. This is not optional — it's a core design principle.
+
+51. **Projected pay depends on Contracts + Attendance + Leave** — live projected pay for hourly/daily workers requires: an active contract (wage type + rate), validated attendance records (hours worked), approved leave (deduction impact), and country payroll profile (tax projection). If any is missing, the projection must explain why it cannot be calculated.
+
+52. **Biometric/time attendance data is evidence, not payroll truth** — raw biometric punches, GPS check-ins, and manual clock-in/out are evidence of presence. They feed into attendance records, which must be validated by a manager before they become payroll source of truth. Device/geofence problems should never silently affect pay.
+
+53. **Estimates must be clearly separated from finalized payroll** — every projected pay screen must include "This is not your final payslip", "Based on approved hours only", and `isEstimate: true` in API responses. Projection data must be excluded from export/download flows.
+
+54. **Saturday OT is NOT statutory in Guyana** — the Labour Act specifies 1.5× for weekday overtime and 2× for Sunday/public holiday, but has no distinct Saturday rate. Saturday premium is per employer work schedule (Mon-Fri vs Mon-Sat). The payroll engine must handle this via work schedule configuration, not hardcoded rates.
+
+55. **Qualification allowances are public-sector salary supplements, not tax deductions** — ACCA ($15K), Masters ($22K), PhD ($32K) per month are government salary top-ups, not universal deductions. Model as configurable employer allowances in the pay item system.
+
+56. **Guyana has no statutory gratuity** — gratuity is employer-specific (common in public sector). Severance pay is governed by the Termination of Employment and Severance Pay Act: 1 week per year of service. Model gratuity as configurable per-employer, not statutory.
+
+57. **GRA 2026 PAYE thresholds changed from 2025** — personal allowance raised from $130K→$140K/month, 25% band ceiling from $260K→$280K/month. Payroll engine must support versioned rates per country+year to handle annual budget changes.
+
+### Patterns That Worked
+
+22. **Verification table with source URLs** — marking each rate as verified/unverified with the source URL prevents assumptions and makes annual re-verification straightforward.
+
+23. **Evidence pipeline pattern** — documenting the full chain from raw event → validated record → payroll gives everyone (dev, QA, HR, auditor) a clear mental model of how time data becomes money.
+
+24. **Cross-referencing gy-taxcalc and v1** — inspecting both tools side-by-side identified which concepts to reuse (frequency conversion, accrual), which to redesign (client-side → server-side), and which to avoid (monolithic routers, no helper text).
+
+25. **Parallel doc research** — using agents to read v1 codebase, gy-taxcalc, and Horilla extraction docs simultaneously saved significant time on a doc-heavy phase.
+
+### Edge Cases to Watch
+
+10. **Salary masking must remain server-side** — even in payroll projection and payslip views. Non-privileged roles should never receive salary data for other employees in API responses. Self-scope resolves own data only.
+
+11. **gy-taxcalc is a useful internal reference but official rules must be verified** — rates match 2026 GRA notices, but annual budget changes require re-verification. The payroll engine must version rules per country+year.
+
+12. **Old HeimdallOne v1 can inspire features but v2 remains the only implementation target** — v1 had production-grade payroll (75K+ lines) but monolithic routers, no helper text, and brittle edge cases. Carry forward the concepts (versioned rules, accrual, reversal), avoid the patterns (19K-line files, non-transactional finalization).

@@ -93,3 +93,72 @@ Manages physical attendance devices (ZKTeco, Anviz, COSEC, Dahua, eTimeOffice), 
 ## Implementation Readiness
 
 **Needs HR Core + Attendance**. Device integration requires network access to physical devices. Geofencing requires GPS-capable clients (mobile app).
+
+---
+
+## Payroll Readiness and Time Evidence Pipeline
+
+> Added Phase 6E (2026-05-27). Defines how biometric/geofence data feeds into attendance and ultimately payroll.
+
+### Evidence Pipeline
+
+```
+Biometric Punch (K40/Anviz/COSEC/Dahua)
+    │
+    ├── Device sync → raw_punch_event (pending)
+    │
+    ├── Employee mapping → match deviceUserId → employeeId
+    │     │
+    │     ├── Mapped → attendance_event created (source: biometric)
+    │     └── Unmapped → raw_punch_event (status: unmapped) → resolution queue
+    │
+    └── attendance_event feeds into attendance pipeline
+         (see attendance-spec.md: Payroll Readiness Pipeline)
+
+Geofence Check-In (mobile GPS)
+    │
+    ├── Location captured → check_in_location_log
+    │
+    ├── Validate against employee's allowed work sites
+    │     │
+    │     ├── Within radius → attendance_event created normally
+    │     └── Outside radius → exception created, manager approval required
+    │
+    └── Override approved → attendance_event created with geofence_override flag
+```
+
+### Rules
+
+1. **Biometric punches are raw evidence** — they prove a device registered a user at a time. They do NOT directly create payable hours.
+2. **Unmapped punches are quarantined** — they cannot affect attendance or payroll until mapped to an employee.
+3. **Device clock drift must be handled** — if device time differs from server by >5 minutes, flag as exception.
+4. **Duplicate biometric punches** — same user, same device, within 2 minutes: deduplicate, keep first.
+5. **Geofence violations block attendance** — unless manager explicitly overrides.
+6. **GPS accuracy affects geofence validation** — if accuracy > 100m, warn but don't block (buildings can degrade GPS).
+7. **All evidence is auditable** — raw punches, geofence logs, and overrides are never deleted.
+
+### Device Health and Payroll Impact
+
+| Status | Meaning | Payroll Impact |
+|--------|---------|---------------|
+| Live (synced < 1h ago) | Device working normally | None — punches flowing |
+| Stale (synced 1-24h ago) | Possible connectivity issue | Warning: "Some punches may be delayed" |
+| Offline (synced > 24h ago) | Device disconnected | Alert: "No biometric data from {device}. Employees must clock in manually." |
+| Sync error | Last sync had errors | Warning: "{N} punches failed to import" |
+
+### Unmapped Event Resolution
+
+- Queue shows: device name, device user ID, punch time, direction
+- Resolution: map device user to employee (one-time, persists for future punches)
+- Batch resolution: "Auto-map by employee badge number" if convention matches
+- Unresolved after N days: escalate to HR with reminder
+
+### Quality-of-Life Requirements (Biometric/Geofencing)
+
+- **Device dashboard**: map view of locations, color-coded by health
+- **Sync status**: last sync time, events imported, errors — always visible
+- **Setup wizard**: select device type → enter credentials → test connection → map employees
+- **Unmapped queue**: badge count on sidebar, inline resolution
+- **Map-based site creation**: click to place center, drag to set radius
+- **Employee-facing**: "You checked in from {location}. Within range of {site name}." or "Outside range — notify your manager."
+- **Override audit trail**: every geofence override logged with who approved and why

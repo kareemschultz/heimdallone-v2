@@ -670,3 +670,36 @@ interface WizardFormProps {
 | **Phase 7+** (defer until needed) | ApprovalQueue, AuditTimeline |
 
 **Rationale**: Tier 1 primitives are needed for the employee list page (the first real page with live data). Tier 2 primitives can be built as the employee module grows (settings, create wizard, filters). Approval/timeline are only needed when request/approval workflows land in Phase 7-8.
+
+---
+
+## Implementation Notes (updated 2026-05-27)
+
+### Server-Side Pagination Pattern (proven in Phase 5–6)
+
+Both `employees/index.tsx` and `contracts/index.tsx` use this inline pagination pattern — no shared component needed:
+
+```typescript
+const [page, setPage] = useState(1);
+const pageSize = 50;
+// ... useQuery with { page, pageSize } ...
+const totalPages = Math.ceil(total / pageSize);
+// Render:
+{totalPages > 1 && (
+  <div className="pagination">
+    <button disabled={page <= 1} onClick={() => setPage(page - 1)}>←</button>
+    <span>{page} / {totalPages}</span>
+    <button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>→</button>
+  </div>
+)}
+```
+
+The `pagination` and `pager` CSS classes are in the per-module CSS file. No shared component needed until 3+ modules repeat this pattern with identical structure.
+
+### ContractSheet vs EntitySheet
+
+Phase 6 used a custom inline `ContractSheet` (a fixed-position modal with backdrop button) rather than the `EntitySheet` primitive. This was intentional: contracts have a complex multi-section form that doesn't fit the `EntitySheet` field-list API. For Phase 7+, consider whether a more flexible `EntitySheet` variant (accepts arbitrary children instead of a field list) is worth building, or keep the per-module sheet pattern.
+
+### Employee Dropdown Scaling
+
+ContractSheet, employee create wizard, and employee edit sheet load employees via `pageSize: 100` for select dropdowns. Capped at 100 employees. For orgs with >100 employees, Phase 7+ should add search-as-you-type (debounced query on keystroke) rather than increasing the page size cap.

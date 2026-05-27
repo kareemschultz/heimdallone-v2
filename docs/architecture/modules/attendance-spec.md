@@ -141,3 +141,184 @@ Uses existing `attendance:create/read/correct`. Self-scope for check-in. Manager
 ## Implementation Readiness
 
 **Needs HR Core + Contracts**. Shifts and shift schedules from HR Core provide minimum hours. Contract wage type affects overtime pay calculation (deferred to Payroll phase).
+
+---
+
+## Payroll Readiness and Time Evidence Pipeline
+
+> Added Phase 6E (2026-05-27). Defines how attendance data flows into payroll.
+
+### Pipeline Overview
+
+```
+Raw Event (biometric punch / manual clock / geofence check-in / mobile GPS)
+    │
+    ▼
+Attendance Event (paired clock-in/out, source tagged)
+    │
+    ▼
+Daily Attendance Record (worked hours, minimum hours, overtime candidate)
+    │
+    ▼
+Exception Detection (missing clock-out, duplicate punch, late/early, geofence mismatch)
+    │
+    ▼
+Correction/Regularization (employee requests fix → manager approves)
+    │
+    ▼
+Validated Attendance Record (manager/HR confirmed)
+    │
+    ▼
+Approved Work Record (payable hours, overtime approved)
+    │
+    ▼
+Payroll Projection → Payroll Review → Finalized Payroll
+```
+
+### Pipeline Rules
+
+1. **Raw biometric punches are evidence, not payroll truth** — a punch proves presence, not payable hours
+2. **Raw GPS/geofence events are evidence, not payroll truth** — validates location, doesn't replace attendance records
+3. **Manual clock-in/out is evidence, not payroll truth** — same validation pipeline as biometric
+4. **Missing clock-out creates an exception** — system detects, alerts, auto-checkout configurable
+5. **Duplicate punches create an exception** — deduplicated automatically, logged for audit
+6. **Device sync conflicts create an exception** — conflicting punches from two devices
+7. **Geofence mismatch creates an exception** — requires manager override approval
+8. **Late/early/overtime are calculated but reviewable** — manager can override before payroll
+9. **Approved work records are payroll source of truth** — only validated records feed payroll
+10. **Corrections must be auditable** — before/after with approver and timestamp
+11. **Managers/HR must approve corrections before payroll uses them**
+12. **Payroll shows whether hours are approved, pending, or blocked** per employee
+13. **Device/geofence problems never silently affect pay** — exceptions block payroll until resolved
+14. **Employees see disputed/pending time issues** — "3 days need attention" in self-service
+15. **All data must be explainable and reviewable** — trace back to raw events
+
+### Attendance Data Types for Payroll
+
+| Data Type | Definition | Payroll Impact |
+|-----------|------------|---------------|
+| Raw attendance events | Individual clock-in/out timestamps | None directly — fed into records |
+| Daily attendance records | One per employee per day | Worked hours calculation |
+| Work records | Approved daily summary with classification | Source of truth for payroll |
+| Payable hours | Hours that count toward compensation | Rate × hours for hourly/daily |
+| Expected hours | Scheduled hours from shift | Overtime and absence calculation |
+| Approved hours | Validated by manager | Feed directly into payroll |
+| Pending hours | Recorded but not validated | Excluded from payroll, shown as warning |
+| Overtime candidate hours | Worked - minimum from shift | Pending OT approval |
+| Late/early records | Arrivals/departures outside grace | May trigger deductions (configurable) |
+| Unpaid absence candidates | No attendance and no approved leave | Deducted from salary |
+| Correction requests | Employee-submitted fixes awaiting approval | Cannot affect payroll until approved |
+
+### Day Classification (Overtime Rate Types)
+
+Priority order for each day (from v1 + Horilla + Labour Act):
+
+1. **Public holiday** → 2× rate (statutory)
+2. **Sunday** → 2× rate (statutory)
+3. **Saturday (not scheduled workday)** → 1.5× rate
+4. **Saturday (scheduled workday)** → regular rate, OT after minimum hours
+5. **Scheduled weekday** → regular (first N hours) + OT (1.5× beyond minimum)
+
+**Configuration**: Work schedule determines which days are "scheduled". Mon-Fri employers: Saturday = premium. Mon-Sat employers: Saturday = regular until OT.
+
+### Break Auto-Deduction
+
+- Configurable lunch/break deduction per shift
+- Rule: "Deduct {breakMinutes} if worked > {minimumMinutesForBreak}"
+- Example: "Deduct 60 min lunch if employee worked more than 6 hours"
+- Prevents over-counting when employees don't clock out for breaks
+
+### Logical Shift Date Attribution
+
+- Punches attributed to the shift START date, not calendar date
+- Critical for overnight shifts: clock-in 22:00 May 15, clock-out 06:00 May 16 → both attributed to May 15
+- Prevents payroll misalignment between attendance and pay periods
+
+### Pay Period Aggregation
+
+Before each payroll run, attendance aggregated per employee per period:
+- Total approved worked minutes
+- Total approved overtime minutes (by rate type: weekday/Saturday/Sunday/holiday)
+- Total pending/unvalidated minutes (shown as warning)
+- Total absent days (no attendance, no leave)
+- Late arrivals count + total minutes
+- Exception count (unresolved issues)
+
+### Attendance Cutoff Before Payroll
+
+- Configurable: "Attendance for period must be finalized by {date}"
+- After cutoff: no corrections without override
+- Payroll run validates: "All attendance validated?" → proceeds or shows warnings
+- Blocked employees listed with specific unresolved exceptions
+
+### Payroll-Blocking Exceptions
+
+| Exception | Message | Resolution |
+|-----------|---------|------------|
+| Missing clock-out | "Maya didn't clock out on May 15" | Add manual clock-out or correction |
+| Unvalidated attendance | "3 days not confirmed by manager" | Manager validates |
+| Unapproved overtime | "12 hours OT pending approval" | Manager approves/rejects |
+| Pending correction | "Correction awaiting review" | Manager approves/rejects |
+| Geofence violation | "Checked in from unauthorized location" | Manager override |
+| Device sync error | "Conflicting punches from two devices" | HR resolves |
+
+### Staff-Friendly Correction UX
+
+- **"I forgot to clock in"** — one-click button, pre-filled correction form
+- **"I forgot to clock out"** — auto-suggests shift end time
+- **"My hours are wrong"** — inline edit with reason field
+- **Correction categories**: Forgot clock-in, Forgot clock-out, Wrong time, System error, Different location
+- **Manager inbox**: grouped by employee, diff view (before → after), approve/reject with note
+
+### Time Summary Report
+
+Per-employee per-period:
+- Total worked hours (regular, OT, Saturday, Sunday, holiday breakdown)
+- Total expected hours, approved vs pending hours
+- Late arrivals, early departures (count + minutes)
+- Absences (with/without leave), exceptions resolved
+- Payroll readiness: ✅ Ready / ⚠️ Warnings / ❌ Blocked
+
+### "Why Is This Time Blocked?" Panel
+
+For each blocked record: what happened, why it matters, how to fix, who can fix, direct action link.
+
+### Manager Approval Queue
+
+- Pending validations, OT approvals, correction requests in a single inbox
+- Grouped by employee, sorted by priority/date
+- Bulk approve with review step
+- One-click approve/reject with optional reason
+
+### Employee Self-Service Time View
+
+- Check-in/out button with elapsed timer
+- Today's attendance status
+- This period's summary (worked hours, OT, exceptions)
+- "3 items need attention" badge for unresolved exceptions
+- Correction request history
+
+### Device Sync Troubleshooting
+
+- Last sync time with health badge
+- Pending punch count
+- Device offline alerts
+- "Contact IT if sync > 24 hours" escalation
+
+### Correction History / Audit Trail
+
+Per-employee: all corrections (approved/rejected), original → corrected, who/when/why, linked payroll period.
+
+### Quality-of-Life Requirements (Attendance)
+
+- Saved views: "Today", "This Week", "Pending Validation", "Pending OT", "Exceptions"
+- Smart filters: date range, department, shift, validation status, OT status
+- Contextual empty states: "No records for today. Check-ins will appear as employees clock in."
+- Role-specific dashboards: employee check-in + own records; manager team grid + approval queue
+- Bulk actions with review: select → review → validate all / approve all OT
+- Sticky summary: period totals at top of view
+- Tooltips: "Validated = manager confirmed these hours"
+- Export-ready: time summary CSV, attendance report PDF
+- Mobile-friendly: check-in button, timer, today's status
+- Status badges: Present (green), Half Day (amber), Absent (red), Holiday (blue), Conflict (red)
+- Notification hooks: "Forgot to check out" (future Phase 14)

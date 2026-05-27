@@ -222,11 +222,113 @@ Salary values: visible to HR/admin/payroll. Masked or hidden for employee/manage
 
 | Phase | Scope |
 |-------|-------|
-| **6A** (this doc) | Spec review — done |
-| **6B** | Drizzle schema (`contract`, `filing_status`, 3 pgEnums) + migration + seed data |
-| **6C** | oRPC router (`contracts.*`, `filingStatuses.*`) with scope/audit/errors |
-| **6D** | UI: `/app/payroll/contracts`, employee profile contract card, create/edit sheet |
-| **6E** | QA: type check, build, role verification, salary sync test, docs update |
+| **6A** | Spec review — **done** |
+| **6B** | Drizzle schema (`contract`, `filing_status`, 3 pgEnums) + migration + seed data — **done** |
+| **6C** | oRPC router (`contracts.*`, `filingStatuses.*`) with scope/audit/errors — **done** (12/12 live checks passed) |
+| **6D** | UI: `/app/contracts`, employee profile payroll tab, create/edit sheet, activate/terminate dialogs — **done** |
+| **6E** | QA/RBAC/usability closure + payroll/attendance/leave prep docs — **done** |
+
+---
+
+## Phase 6 Verification Results (2026-05-27)
+
+### End-to-End Flows Verified (Browser)
+
+1. **Create contract** — Draft created successfully, auto-suggested name, all fields persisted
+2. **Edit contract** — Updated salary and end date on draft, changes saved correctly
+3. **Activate contract** — Draft → Active, salary synced to `employee_work_info.basicSalary`
+4. **Activation conflict** — Attempting to activate a second contract returned friendly error toast: "An active contract already exists"
+5. **Terminate contract** — Active → Terminated with confirmation dialog, employee now has no active contract
+6. **Employee profile payroll tab** — Active contract summary card renders correctly with salary, wage type, dates
+7. **Console check** — 0 errors on contracts page after all fixes
+
+### Bugs Fixed During Verification
+
+| # | Bug | Root Cause | Fix |
+|---|-----|-----------|-----|
+| 1 | 500 on `contracts/update` — `"—"` date | `fmtDate(null)` returns em-dash (truthy), passed to API as date string | Use `toISOString().slice(0,10)` for form state, not display formatter |
+| 2 | 400 on employee profile payroll tab | `pageSize: 200` in `employees/$id.tsx` exceeds Zod `max(100)` | Changed to `pageSize: 100` |
+| 3 | 400 on employee create wizard | `pageSize: 200` in `employees/create.tsx` same issue | Changed to `pageSize: 100` |
+
+### Contract State Machine (Implemented)
+
+```
+Draft ──── activate() ───→ Active ──── terminate() ───→ Terminated
+                             │
+                             │ (endDate < today, on-read check)
+                             ▼
+                           Expired
+```
+
+- **Draft → Active**: Sets `employee_work_info.basicSalary` + `salaryCurrency`. Blocked if another active contract exists.
+- **Active → Terminated**: Deliberate HR action. Clears the "active contract" for the employee.
+- **Active → Expired**: On-read detection when `endDate < today`. Not a manual action.
+- **No reverse transitions**: Terminated/Expired contracts cannot be reactivated. Create a new contract instead.
+
+### One-Active-Contract-Per-Employee Rule
+
+- Enforced server-side in `contracts.activate` procedure
+- Before activating, queries for existing active contract for the same `employeeId`
+- Returns `CONFLICT` error with message: "An active contract already exists for {name}. Terminate or expire it first."
+- One draft also enforced: cannot create a second draft for same employee
+
+### Salary Sync Behavior
+
+- On activation: `employee_work_info.basicSalary = contract.baseSalary`, `salaryCurrency = contract.salaryCurrency`
+- Sync is immediate and atomic within the same transaction
+- Audited as a separate audit event (contract status change + work info salary update)
+
+### RBAC Scope Behavior (Implemented)
+
+| Role | Behavior |
+|------|----------|
+| tenant_owner / tenant_admin / hr_admin | Full CRUD + activate/terminate on all contracts |
+| payroll_admin | Read-only access to all contracts (needs salary visibility for payroll) |
+| auditor | Read-only access to all contracts |
+| manager | Limited scope — deferred; currently treated as self-scope only |
+| employee | Own contracts only (self-scope via `resolveCurrentEmployee`) |
+
+### Salary/Rate Masking Rules
+
+- Salary values are visible to: tenant_owner, tenant_admin, hr_admin, payroll_admin
+- Auditor: can see salary values (read-only, needed for audit function)
+- Employee: sees own contract salary (self-scope)
+- Manager: sees own only (manager-scope for reports' contracts deferred)
+- Masking enforcement is server-side — non-privileged roles never receive salary data for other employees
+
+### Deviations from Original Spec
+
+| Deviation | Reason |
+|-----------|--------|
+| No archive/restore workflow | Status enum IS the lifecycle. `terminated` is the terminal state. No separate archive flag needed — contracts aren't "archived" like employees. |
+| Manager scope deferred | Manager seeing direct reports' contracts adds complexity without Phase 6 value. Treated as self-scope only. Will expand in Phase 7+ when manager dashboards are built. |
+| Route at `/app/contracts` not `/app/payroll/contracts` | Contracts are a standalone module bridge — they belong to HR Core conceptually but feed Payroll. Top-level route avoids nesting under a payroll route that doesn't exist yet. Will evaluate route reorganization when Payroll UI is built in Phase 8. |
+| No auto-expire scheduled job | On-read check during list queries. Sufficient for Phase 6. Scheduled job can be added when payroll requires guaranteed expiry timing. |
+| No contract document upload UI | `documentUrl` field exists in schema but the upload UI is deferred. Value can be set via API. Phase 8+ will add file upload component. |
+
+### Remaining Gaps
+
+| Gap | Phase | Notes |
+|-----|-------|-------|
+| Filing status CRUD UI | Phase 8 | Entity exists in schema + API but no UI page yet. Can be created via seed or API. |
+| Contract templates | Phase 8+ | Pre-filled contract templates for common positions |
+| Probation period tracking | Phase 8+ | `probationEndDate` field not yet in schema |
+| Contract renewal workflow | Phase 8+ | Auto-create new draft from expiring contract |
+| Contract comparison (diff) | Phase 10+ | Compare two contracts side-by-side |
+| Bulk contract generation | Phase 10+ | Create contracts for multiple employees at once |
+| Auto-expire scheduled job | Phase 8 | Replace on-read check with cron for payroll reliability |
+| Employee dropdown search-as-you-type | Phase 7 | Dropdowns capped at 100 employees; needs search for large orgs |
+
+### Known Pre-Existing Lint Debt (Not Caused by Contracts)
+
+| File | Issue | Origin |
+|------|-------|--------|
+| `sign-in-form.tsx` | References `/dashboard` route (doesn't exist) | Auth scaffold |
+| `employees/$id.tsx` | Unused variables | Pre-existing from Phase 5D |
+| `app/route.tsx` | `.meta` property type, unused variables | TanStack Router scaffold |
+| `settings.tsx` | `Date` vs `string` type cast | Pre-existing from Phase 5B.4 |
+
+These are pre-existing and not introduced by Contracts work. Documented here to prevent confusion during quality gate runs.
 
 ---
 

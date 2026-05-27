@@ -149,3 +149,153 @@ Uses existing `leave_request:create/read/approve/reject/cancel` and `holiday:cre
 ## Implementation Readiness
 
 **Needs HR Core**. Attendance needed only for compensatory leave (deferred). Payroll needed only for leave encashment (deferred).
+
+---
+
+## Payroll Readiness: Leave-to-Payroll Integration
+
+> Added Phase 6E (2026-05-27). Defines how leave data affects payroll calculations.
+
+### Paid vs Unpaid Leave Impact
+
+| Leave Type | Payroll Impact |
+|-----------|----------------|
+| **Paid leave** | No salary deduction. Employee receives full pay for the period. Leave days counted as "worked" for payroll. |
+| **Unpaid leave** | Salary deducted: `dailyRate × unpaidLeaveDays`. For hourly workers: hours not worked are not paid. |
+| **Half-day leave (paid)** | Half the daily deduction applied if unpaid; no deduction if paid. |
+| **Half-day leave (unpaid)** | `dailyRate × 0.5` deducted per half-day. |
+
+### Leave → Payroll Data Flow
+
+```
+Approved Leave Request
+    │
+    ├── Paid leave → No payroll deduction, counted as worked day
+    │
+    └── Unpaid leave → Deduction calculated:
+                        Monthly: dailyRate × unpaidDays
+                        Daily: days not paid
+                        Hourly: hours not worked (from shift schedule)
+```
+
+### Approved Leave Feeds Payroll
+
+- Only **approved** leave requests are used in payroll calculations
+- Leave approval date must be before payroll cutoff for the period
+- Late-approved leave (after cutoff) creates a payroll warning, not auto-deduction
+- Approved leave creates work records with type "leave" (paid or unpaid)
+
+### Pending Leave Creates Payroll Warning
+
+- If an employee has pending leave requests overlapping the pay period:
+  - Show warning in payroll preview: "Maya has 2 pending leave requests (May 10–12). Approve or reject before finalizing payroll."
+  - Payroll can proceed but with explicit acknowledgment
+  - The pending leave is NOT deducted — only approved leave affects pay
+
+### Rejected Leave and Attendance
+
+- Rejected leave does NOT create a payroll deduction
+- If the employee was absent during the rejected leave dates AND has no attendance records:
+  - Creates an attendance exception: "Absent without approved leave on May 10–12"
+  - HR/manager must resolve: mark as unpaid absence, add manual attendance, or re-request leave
+
+### Holidays/Company Leave Interaction
+
+- Public holidays and company leave days are excluded from leave request day counts (if configured per leave type)
+- Holiday during leave period: day is not deducted from balance AND not counted as unpaid
+- Company leave day (e.g., every Sunday): same exclusion applies
+- Payroll treats holidays as worked days (paid) regardless of leave status
+
+### Leave Cutoff Before Payroll
+
+- Configurable: "Leave requests for this period must be finalized by {date}"
+- After cutoff: pending requests shown as warnings in payroll
+- Payroll admin decides: include as deduction or defer to next period
+
+### Leave Balance/Accrual Dependency
+
+- Payroll does not directly modify leave balances
+- Leave approval deducts from balance (leave module responsibility)
+- Payroll reads the deduction impact (paid/unpaid days) from approved requests
+- Leave accrual happens independently of payroll (configured per leave type)
+
+### Leave Encashment (Future Phase)
+
+- Employee cashes out remaining leave balance for monetary value
+- Creates a one-time allowance on the next payslip
+- Amount: `remainingDays × dailyRate`
+- Requires: payroll engine (Phase 8+)
+- Deducted from leave balance upon payslip finalization
+
+### Leave-to-Payroll Summary
+
+Per-employee per-period summary for payroll:
+- Total approved paid leave days
+- Total approved unpaid leave days
+- Total pending leave days (warning)
+- Deduction amount (unpaid leave × daily rate)
+- Holiday days in period
+- Company leave days in period
+- "Leave clean" status: ✅ All resolved / ⚠️ Pending requests / ❌ Rejected leave with no attendance
+
+### "Why Payroll Is Blocked?" Panel (Leave)
+
+| Issue | Message | Resolution |
+|-------|---------|------------|
+| Pending leave overlapping period | "2 leave requests pending for Maya (May 10–12)" | Approve or reject |
+| Rejected leave + no attendance | "Maya was absent May 10–12 without approved leave" | Add attendance or re-request leave |
+| Leave balance discrepancy | "Leave balance negative after approval — verify allocations" | HR reviews balance |
+| Carry-forward expired mid-request | "Maya's carry-forward days expired before approval" | Re-calculate or allocate |
+
+### Employee-Friendly Leave Balance View
+
+- Balance cards per leave type with visual progress (e.g., "12 of 18 days used")
+- "Available now: 6 days" prominent display
+- Carry-forward balance shown separately: "2 carry-forward days (expire March 31)"
+- Pending requests shown: "3 days pending approval"
+- Accrual forecast: "You'll earn 1.5 more days by end of month"
+- History: approved, rejected, cancelled requests with dates
+
+### Manager/HR Approval Queue
+
+- All pending leave requests sorted by date submitted
+- Team conflict indicator: "2 team members already on leave May 10–12"
+- Balance check: "Approving will leave Maya with 3 remaining days"
+- Bulk approve/reject with review step
+- Quick reject with reason template: "Team coverage required", "Insufficient notice", "Custom"
+
+### Leave Policy Helper Text
+
+- On leave type configuration: "Paid leave means the employee is paid as if they worked. Unpaid leave deducts from their salary."
+- On accrual: "Accrual of 1.5 days per month means the employee earns 18 leave days per year."
+- On carry-forward: "Carry-forward lets employees keep unused leave days into the next period. Set a max to prevent accumulation."
+- On restrictions: "Restrict dates to prevent leave requests during busy periods (e.g., year-end close)."
+
+### Country-Specific Leave Rules (Future)
+
+- Minimum statutory leave days per country (e.g., Guyana Labour Act: 12 working days annual leave after 1 year)
+- Maternity leave rules per country
+- Sick leave rules per country
+- Public holiday calendar per country
+- Configurable per country payroll profile
+
+### Audit Trail (Leave)
+
+- Every leave request: created, approved, rejected, cancelled — with who/when
+- Balance changes: allocated, deducted, carry-forward applied, expired — with who/when
+- Leave type configuration changes: who changed what settings and when
+- Linked to payroll: which payslip used this leave deduction
+
+### Quality-of-Life Requirements (Leave)
+
+- Saved views: "My Requests", "Pending Approval", "Team Calendar", "All Balances"
+- Smart filters: leave type, status, date range, department
+- Contextual empty states: "No leave requests yet. Take time off when you need it."
+- Role-specific dashboards: employee sees balances + requests; manager sees team calendar + approval queue
+- Bulk actions: bulk approve, bulk allocate leave to new employees
+- Tooltips: "Half-day leave: take the morning or afternoon off"
+- Preview before submit: "This will use 3 of your 12 remaining annual leave days"
+- Mobile-friendly: request leave from phone, view balance
+- Searchable history: search by employee, type, date
+- Status badges: Pending (amber), Approved (green), Rejected (red), Cancelled (gray)
+- Notification hooks: "Your leave was approved" (future Phase 14)
