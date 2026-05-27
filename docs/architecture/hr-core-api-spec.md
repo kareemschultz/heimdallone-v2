@@ -301,3 +301,89 @@ async function createAuditEvent(db: DrizzleDB, event: {
 ```
 
 Called explicitly after each successful mutation. Not a middleware — gives control over what's logged per procedure.
+
+---
+
+## Implemented in Phase 5B.2
+
+### Procedures implemented (42)
+
+| Router | Procedures |
+|--------|-----------|
+| `departments` | list, getById, create, update, archive |
+| `jobPositions` | list, getById, create, update, archive |
+| `jobRoles` | list, create, update, archive |
+| `workTypes` | list, create, update, archive |
+| `employeeTypes` | list, create, update, archive |
+| `shifts` | list, getById, create, update, archive, schedules.list, schedules.upsert |
+| `employees` | list (paginated with joins), getById, create, update, archive, restore |
+| `employees.workInfo` | get, update |
+| `employees.bankDetails` | get (with role-based masking), update (upsert) |
+| `employees.documents` | list, create, approve, reject, delete |
+| `holidays` | list, create, update, delete |
+| `audit` | list (paginated) |
+
+### Permissions currently reused
+
+No new RBAC resources were added. All org structure CRUD (departments, positions, shifts, etc.) uses `employee:create/update`. This is intentionally broad for MVP — a single HR admin permission gates all org config. Granular resources (`department:create`, `shift:update`) deferred.
+
+### Audit utility behavior
+
+- `createAuditEvent()` in `packages/api/src/utils/audit.ts` inserts into the generic `audit_event` table
+- `diffChanges()` computes `{field, oldValue, newValue}[]` for update events
+- Called after every successful mutation (create, update, archive, restore, approve, reject)
+- Most mutations log action-level audit (not field-level diff). Field-level diff implemented for `departmentUpdate` as a pattern; can be expanded.
+
+### Bank masking behavior
+
+- `employees.bankDetails.get` checks `context.memberRole` server-side
+- Privileged roles (`tenant_owner`, `tenant_admin`, `hr_admin`, `payroll_admin`): full data returned
+- All other roles: `accountNumber` → `****XXXX` (last 4 only), `bankCode1` → `****XX` (last 2 only)
+- Masking is server-side — the client never receives unmasked data for non-privileged roles
+
+### Known limitations (Phase 5B.2)
+
+1. **Manager-scope not implemented** — `employee:read` permission currently returns all org employees regardless of reporting relationship. Manager should only see direct reports.
+2. **Employee self-scope not implemented** — Employees with `employee:read` see all org employees. Should only see own profile.
+3. **No `session.userId → employeeProfile` mapping** — The router does not yet resolve the logged-in user's employee profile. Needed for self-scope and manager-scope.
+4. **Granular RBAC deferred** — All org structure CRUD uses `employee:create/update` instead of specific resources.
+5. **Field-level audit diffs sparse** — Most mutations only log the action, not which fields changed. Should be expanded for salary, department, manager, and bank detail changes.
+6. **No duplicate email error handling** — `employees.create` will fail with a raw DB error if email is duplicate. Should catch and return a friendly CONFLICT error.
+7. **No circular reporting manager check** — `workInfo.update` allows setting a reporting manager that creates a cycle.
+
+---
+
+## Required Before Production
+
+### Manager-scope and employee self-scope
+
+The current implementation allows any user with `employee:read` to see all employees in the org. Before production:
+
+1. **Map session user to employee profile**: Query `employeeProfile` where `userId = session.user.id` to get the logged-in user's employee record and their `reportingManagerId`.
+2. **Self-scope**: Employee role queries must filter to `employeeProfile.userId = session.user.id`.
+3. **Manager-scope**: Manager role queries must filter to `employeeWorkInfo.reportingManagerId = currentEmployee.id`.
+4. **Implementation location**: A middleware or helper in `packages/api/src/utils/` that resolves `session.userId → employeeProfile` and injects `currentEmployeeId` + `isManager` into context.
+
+### Granular RBAC resources
+
+Evaluate adding these resources to `permissions.ts`:
+- `department:create/read/update/archive`
+- `job_position:create/read/update/archive`
+- `shift:create/read/update/archive`
+- `work_type:create/read/update/archive`
+
+This allows roles like "manager" to read departments but not create them, without needing `employee:create` permission.
+
+### Field-level audit for sensitive updates
+
+These mutations must log field-level diffs:
+- `employees.workInfo.update` — especially `basicSalary`, `departmentId`, `reportingManagerId`
+- `employees.bankDetails.update` — all fields (financial data)
+- `employees.update` — especially `email`, `badgeId`
+
+### Multi-org tenant isolation testing
+
+Before production, test with 2+ organizations to verify:
+- No data leaks across orgs
+- Unique constraints work per-org (same email in different orgs is OK)
+- Archiving in one org doesn't affect another

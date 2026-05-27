@@ -103,3 +103,21 @@ Living document. Updated after each major task or unexpected issue.
 3. **Horilla's company scoping pattern** — Every model uses `HorillaCompanyManager` with a related field path for tenant isolation. Heimdallone uses Better Auth Organization `activeOrganizationId` instead. When translating, replace all company FK patterns with organization-scoped oRPC middleware.
 
 4. **Horilla's request→approve pattern** — Used by 8+ modules (leave, shift, work type, attendance correction, asset, reimbursement, resignation, document). Heimdallone should build a reusable approval workflow primitive rather than reimplementing per module.
+
+---
+
+## Session: 2026-05-26 — Phase 5B.2 HR Core API
+
+### Gotchas Discovered
+
+27. **Manager/self-scope needs explicit employeeProfile mapping** — The session provides `session.user.id` (Better Auth user ID), but scoping queries to "my direct reports" or "my own profile" requires resolving `user.id → employeeProfile.id → employeeWorkInfo.reportingManagerId`. This mapping doesn't exist as middleware yet. Must be built before any role-scoped list queries are correct.
+
+28. **`employee:read` is too broad for employee/manager UI** — The current RBAC grants `employee:read` to all roles including `employee` and `manager`. This means any authenticated org member can read ALL employee data via the API. UI hides this, but the API leaks it. Self-scope and manager-scope filters must be enforced server-side before production.
+
+29. **Bank masking must be server-side only** — Account numbers and bank codes must never reach the client for non-privileged roles. The `bankDetailsGet` procedure checks `context.memberRole` and returns masked strings. Never rely on frontend masking — the raw data would still be in the network response.
+
+### Patterns That Worked
+
+8. **`db as never` for audit utility typing** — The `createAuditEvent` function accepts a generic `NodePgDatabase` but the `db` singleton has a specific schema type. Casting `db as never` avoids complex generic threading while maintaining runtime correctness. Not ideal — a properly typed DB utility would be better long-term.
+
+9. **Drizzle `uniqueIndex().where()` for partial indexes** — Drizzle ORM 0.31+ supports partial unique indexes natively with `.where(sql\`...\`)`. No raw SQL migration needed. The generated SQL is exactly what Postgres expects.
