@@ -53,7 +53,9 @@
   "devDependencies": {
     "@Heimdallone/config": "workspace:*",
     "@biomejs/biome": "2.4.15",
+    "@paralleldrive/cuid2": "^3.3.0",
     "@types/bun": "catalog:",
+    "drizzle-orm": "^0.45.2",
     "husky": "latest",
     "lefthook": "latest",
     "turbo": "^2.8.12",
