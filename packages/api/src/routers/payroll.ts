@@ -1420,13 +1420,32 @@ const runsPreview = authorizedProcedure("payroll", "update")
 			);
 			const result = calculatePayroll(payrollInput);
 
+			if (!payrollInput.contract.id) {
+				for (const blocker of result.blockers) {
+					await db.insert(payrollIssue).values({
+						id: createId(),
+						organizationId: orgId(context),
+						payrollRunId: run.id,
+						employeeId: empId,
+						issueType: "blocker",
+						code: blocker.code,
+						message: blocker.message,
+						resolution: blocker.resolution,
+						status: "open",
+					});
+				}
+				blockerCount += result.blockers.length;
+				processedCount++;
+				continue;
+			}
+
 			const payslipId = createId();
 			await db.insert(payslip).values({
 				id: payslipId,
 				organizationId: orgId(context),
 				payrollRunId: run.id,
 				employeeId: empId,
-				contractId: payrollInput.contract.id || "none",
+				contractId: payrollInput.contract.id,
 				periodStart: period.startDate,
 				periodEnd: period.endDate,
 				currency: result.currency,

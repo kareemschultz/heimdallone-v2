@@ -199,11 +199,9 @@ function PayrollDashboard() {
 								</>
 							)}
 							<NavRow
-								disabled
-								href="/app/payroll"
+								href="/app/payroll/run"
 								icon={<Wallet size={16} />}
 								label="Run payroll"
-								note="Coming in Phase 8F"
 								sub="Preview and finalize payroll"
 							/>
 							<NavRow
