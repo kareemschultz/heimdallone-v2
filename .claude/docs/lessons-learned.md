@@ -399,3 +399,15 @@ Living document. Updated after each major task or unexpected issue.
 42. **PayrollInput builder as adapter boundary** — All DB→engine translation happens in `payroll-input-builder.ts`. The router calls `buildPayrollInput()` and passes the result directly to `calculatePayroll()`. No calculation logic in the router, no DB logic in the engine. This keeps both sides independently testable and makes the data flow auditable.
 
 43. **`fromCents()` at API response boundaries** — The engine works in integer cents internally. The router converts back via `fromCents()` only when building the response. DB persistence also uses `fromCents()` to store `numeric(12,2)` values. This ensures no floating-point errors leak into persisted data or API responses.
+
+## Session: 2026-05-27 — Phase 8E Cleanup (Auth/CORS + RBAC)
+
+### Gotchas Discovered
+
+82. **`CORS_ORIGIN` in `.env` must match the Vite dev port** — The server `.env` had `CORS_ORIGIN=http://localhost:3003` but Vite runs on port 3001 (or 3002 if 3001 is occupied). Both Hono's `cors()` middleware and Better Auth's `trustedOrigins` read from this single env var, so one fix covers both. For local dev: `CORS_ORIGIN=http://localhost:3001` (or whatever port Vite starts on).
+
+83. **`authorizedProcedure("payroll", "read")` requires `payroll` in the access control `statement`** — Better Auth's `createAccessControl` rejects authorization checks for resources not in the statement definition at runtime. This produces 403 errors that look like permission denied but are actually "resource not found in ACL". Always add new resources to `packages/auth/src/permissions.ts` statement AND to each role before using them in `authorizedProcedure()`.
+
+### Patterns That Worked
+
+44. **Security review caught missing `canManagePayroll` guard** — The automated security review flagged `reimbursementsCreate` as missing the role check that every sibling handler had. Even though `authorizedProcedure("payroll", "create")` provides an RBAC gate, the `canManagePayroll` check is a defense-in-depth pattern — it limits mutations to specific roles within the already-authorized set.
