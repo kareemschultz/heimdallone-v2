@@ -6,7 +6,7 @@
 Phase 5B:  HR Core (employees, org settings, documents, audit) ✅
 Phase 6:   Contracts ✅ (6A-6E complete, verified end-to-end)
 Phase 7:   Attendance + Leave ✅
-Phase 8:   Payroll ← IN PROGRESS (8A–8C done, 8D–8J remaining)
+Phase 8:   Payroll ← IN PROGRESS (8A–8D done, 8E–8K remaining)
 Phase 9:   Recruitment + Onboarding (can parallelize)
 Phase 10:  Offboarding
 Phase 11:  Biometric + Geofencing

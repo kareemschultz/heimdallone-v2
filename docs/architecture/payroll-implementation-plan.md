@@ -1608,6 +1608,145 @@ If the requested country/year is not in the registry, the engine returns a block
 
 ---
 
+## Bank Deposit, Direct Deposit, and Payment Export Strategy
+
+### First-Version Scope
+
+The first version supports **batch file generation for manual bank portal upload**. No live bank API calls.
+
+**Supported:**
+- Payment batch generation from finalized payroll run
+- Payment batch preview with masked account numbers
+- Employee bank detail validation (missing/invalid blockers)
+- Generic CSV export (safe default for all banks)
+- Export preview — full account numbers only in downloaded file for authorized users
+- Manual mark as submitted / paid / failed / partially paid
+- Export audit log (who generated, when, run, template, row count, total, checksum)
+- Payment total reconciliation against payroll run net pay
+- Re-export after corrections
+- Failed payment handling workflow
+
+**Not supported in first version:**
+- Live bank API payments, SFTP, or host-to-host submission
+- Encrypted file delivery or ISO 20022 pain.001
+- Automatic mark-paid from bank response
+- Multi-currency cross-border transfers or SWIFT
+- Bank account verification API
+- Automatic bank reconciliation
+
+### Payment Batch Lifecycle
+
+```
+Payroll run finalized
+→ Payment batch generated (draft)
+→ Payment batch reviewed (employee bank details validated)
+→ Bank export template selected
+→ Export preview shown (masked accounts, validation status)
+→ Export downloaded (full accounts for authorized users only)
+→ Payroll admin uploads file to bank portal manually
+→ Payroll admin marks batch as submitted
+→ Bank processes payments
+→ Payroll admin marks batch as paid / failed / partially paid
+→ Failed items corrected → optional re-export
+→ Audit trail retained at every step
+```
+
+**Critical rule:** Exporting a file does NOT mean employees have been paid. Only mark as paid after the payroll admin confirms bank processing.
+
+### Proposed Future Entities
+
+Not created now — planned for Phase 8K or later when schema work is allowed.
+
+**`payroll_payment_batch`**: organizationId, payrollRunId, payPeriodId, bankTemplateId (nullable), status (draft/reviewed/exported/submitted/paid/partially_paid/failed/cancelled), totalEmployees, totalAmount, currency, createdBy, exportedBy/At, submittedBy/At, markedPaidBy/At, failureReason, timestamps.
+
+**`payroll_payment_item`**: organizationId, paymentBatchId, payslipId, employeeId, employeeName snapshot, bankName snapshot, branchCode snapshot, accountNumberMasked, amount, currency, paymentReference, status (pending/exported/submitted/paid/failed/skipped), failureReason, timestamps.
+
+**`bank_export_template`**: organizationId, countryCode, bankName, templateName, providerKey, fileFormat (csv/xlsx/fixed_width/xml/iso20022/custom), delimiter, encoding, hasHeader, hasTrailer, requiredFields (jsonb), columnMapping (jsonb), validationRules (jsonb), isActive, isOfficialSpecVerified, notes, timestamps.
+
+**`bank_export_file`**: organizationId, paymentBatchId, templateId, fileName, fileType, fileSize, rowCount, totalAmount, checksum, generatedBy/At, downloadExpiresAt (later), status, timestamps.
+
+### Export Provider Architecture
+
+```typescript
+interface BankExportProvider {
+  providerKey: string;
+  displayName: string;
+  countryCodes: string[];
+  supportedBanks: string[];
+  getRequiredFields(): string[];
+  validateEmployeeBankDetails(details: EmployeeBankDetail[]): ValidationResult[];
+  buildPaymentRows(payslips: Payslip[], bankDetails: BankDetail[]): PaymentRow[];
+  renderPreviewRows(rows: PaymentRow[]): PreviewRow[];
+  renderFile(batch: PaymentBatch): { content: string; filename: string; mimeType: string };
+  getSpecStatus(): "verified" | "planned" | "unverified";
+}
+```
+
+**Provider types:**
+- `GenericCsvBankExportProvider` — first version, works with all banks
+- `GenericExcelBankExportProvider` — later
+- `FixedWidthBankExportProvider` — later, for banks requiring fixed-width formats
+- `Iso20022Pain001Provider` — later, only if a bank explicitly requires it
+- Bank-specific providers (see below) — only after official specs obtained
+
+### Generic CSV Export Format
+
+**Preview columns** (masked): employeeId, employeeName, bankName, branchCode, accountNumberMasked (****1234), accountType, currency, netPay, paymentReference, validationStatus.
+
+**Downloaded CSV columns** (full, authorized users only): employeeId, employeeName, bankName, branchCode, accountNumberFull, accountType, currency, amount, paymentReference, payrollRunId, payPeriodStart, payPeriodEnd, payDate, notes.
+
+Includes totals row (optional), row count, generated timestamp, organization name, payroll run reference. No unnecessary PII (no tax numbers, no addresses, no salary breakdown — only net payment amount).
+
+### Republic Bank EPay / EZPay Research Note
+
+Republic Bank is a priority bank for Guyana, Trinidad & Tobago, and Barbados. The user recalls a payroll product possibly called EZPay, E-Z Pay, ePay, RepublicOnline payroll, or similar — likely mapping to corporate banking salary upload / bulk payments / direct credit file upload.
+
+**Status:** The exact public file specification is not confirmed. Heimdallone must NOT hardcode a Republic Bank format until official specs are obtained. First version uses Generic CSV export. Republic-specific templates become available after obtaining the bank upload template/spec.
+
+**Planned providers:** RepublicBankGenericProvider, RepublicBankGuyanaProvider, RepublicBankTrinidadProvider, RepublicBankBarbadosProvider.
+
+**UI display:** In the payment export screen, Republic Bank should appear as "Planned — requires bank template" until an official file spec is configured.
+
+### Bank Spec Request Checklist
+
+When requesting specs from a bank, ask for: exact product name, salary upload template, sample file with dummy data, required/optional columns, file type (CSV/Excel/fixed-width/XML/ISO 20022), delimiter/encoding, header/trailer rules, batch total/checksum requirements, account number format, branch/routing code rules, account type values, supported currencies, cutoff times, maker/checker workflow, max batch size/amount limits, rejected payment handling, acknowledgement/reconciliation file availability, SFTP/API availability, encryption/signing requirements, testing/sandbox process, technical contact.
+
+### Country/Bank Planning
+
+**Guyana** (first): Generic CSV first. Priority planned templates: Republic Bank (EZPay/ePay), GBTI, Demerara Bank, Citizens Bank, Bank of Baroda, Scotiabank. Bank-specific only after file specs obtained.
+
+**Trinidad & Tobago**: Generic CSV first. Planned: Republic Bank, First Citizens, Scotiabank, RBC, JMMB, CIBC Caribbean.
+
+**Barbados**: Generic CSV first. Planned: Republic Bank, CIBC Caribbean, RBC, Scotiabank.
+
+**Jamaica** (later): NCB, Scotiabank, JN Bank, Sagicor Bank, First Global Bank — after Jamaica payroll rules research.
+
+**Suriname** (later): Republic Bank if applicable, local banks to research.
+
+### Payment Export Blockers/Warnings
+
+**Additional blockers:** `MISSING_BANK_DETAILS`, `INVALID_BANK_DETAILS`, `PAYMENT_TOTAL_MISMATCH`, `BANK_DETAILS_CHANGED_AFTER_FINALIZATION`, `PAYMENT_BATCH_ALREADY_PAID`, `NO_PAYABLE_AMOUNT`.
+
+**Additional warnings:** `ACCOUNT_NAME_MISMATCH`, `BANK_TEMPLATE_NOT_VERIFIED`, `EMPLOYEE_BANK_CHANGED_RECENTLY`, `DUPLICATE_BANK_ACCOUNT`, `MIXED_BANKS_IN_BATCH`, `MANUAL_BANK_UPLOAD_REQUIRED`, `PAYMENT_EXPORT_REGENERATED`.
+
+### Security/Privacy
+
+- Bank account values server-masked except for authorized payroll/admin roles
+- Exports contain sensitive PII — require payroll_admin or tenant_admin/owner permission
+- Every export tenant-scoped, no cross-tenant leakage
+- Audit every export generation, download, and mark submitted/paid/failed
+- Employees and managers must NOT download bank export files
+- Auditors may view export logs read-only, no file download unless explicitly allowed
+- Full account numbers only in downloaded file, never in UI preview
+
+### Payment Export Reports (Future)
+
+- Payment batch summary, bank distribution report, missing bank details report
+- Failed payment report, export audit report, payroll paid vs unpaid summary
+- Payment totals by bank, payment totals by department, payment export history
+
+---
+
 ## Implementation Sequence
 
 | Sub-phase | Scope | Depends On | Estimated Size |
@@ -1615,13 +1754,14 @@ If the requested country/year is not in the registry, the engine returns a block
 | **8A** | Payroll spec finalization (this document) | Phase 7H | Docs only |
 | **8B** | Payroll DB schema + migration + seed | 8A | ~500 lines schema, ~300 lines seed |
 | **8C** | Payroll calculation engine (`packages/payroll-engine/`) | 8A | ~1500 lines pure logic |
-| **8D** | Payroll oRPC API (~30 procedures) | 8B + 8C | ~1500 lines router |
+| **8D** | Payroll oRPC API (~60 procedures) | 8B + 8C | ~2800 lines router + input builder |
 | **8E** | Payroll settings + pay items UI + first setup wizard | 8D | ~1000 lines (settings, pay item CRUD, wizard step 1–2) |
 | **8F** | Payroll run wizard + payslip preview | 8D | ~1200 lines (wizard steps, preview table) |
 | **8G** | Payslip view + PDF export + template foundation | 8D | ~800 lines (payslip detail, PDF template, branding) |
 | **8H** | Payroll analytics/reports | 8D | ~800 lines (charts, report tables) |
 | **8I** | Payroll QA/RBAC/compliance pass | 8E–8H | Security review, browser verification |
 | **8J** | Company branding/templates/onboarding polish | 8I | ~1200 lines (full wizard, template choices, presets) |
+| **8K** | Payment batch + generic bank export | 8I | ~1500 lines (batch entities, CSV provider, export UI) |
 
 **Rationale for this sequence**:
 - 8B (schema) must come first — everything depends on tables existing.

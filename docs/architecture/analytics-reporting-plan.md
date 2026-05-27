@@ -229,6 +229,7 @@ All exports are audit-logged. PDFs enforce tenant isolation — no cross-tenant 
 | **10** (Reports) | PDF export: payslips, pay register, report templates | Payroll engine |
 | **10** (Reports) | PDF export: attendance/leave reports | Analytics procedures |
 | **10** (Reports) | Chart snapshot export | ChartCard component |
+| **8K** (Payments) | Payment batch summary, bank distribution, missing bank details, failed payment report, export audit | Payment batch entities |
 
 ---
 
