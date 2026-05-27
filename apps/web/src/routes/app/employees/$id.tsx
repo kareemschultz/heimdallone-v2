@@ -1,7 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import {
 	Activity,
+	Archive,
 	ArrowRight,
 	ArrowUp,
 	ArrowUpRight,
@@ -10,6 +11,7 @@ import {
 	Check,
 	Clock,
 	Download,
+	Edit,
 	ExternalLink,
 	FileText,
 	Filter,
@@ -20,14 +22,17 @@ import {
 	Play,
 	Plus,
 	TrendingUp,
+	Undo,
 	User,
 	Users,
 	Wallet,
+	X,
 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import "@/styles/employee-profile.css";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/employees/$id")({
 	component: EmployeeProfilePage,
@@ -74,9 +79,16 @@ const ATT_DAYS = [
 	"weekend",
 ];
 
+type EditSection = "personal" | "work" | "bank" | null;
+
 function EmployeeProfilePage() {
 	const { id } = Route.useParams();
+	const navigate = useNavigate();
+	const qc = useQueryClient();
 	const [profileTab, setProfileTab] = useState<ProfileTab>("overview");
+	const [editSection, setEditSection] = useState<EditSection>(null);
+	const [confirmArchive, setConfirmArchive] = useState(false);
+	const [saving, setSaving] = useState(false);
 
 	const {
 		data: emp,
@@ -95,6 +107,64 @@ function EmployeeProfilePage() {
 			input: { employeeId: id },
 		})
 	);
+
+	const { data: depts } = useQuery(
+		orpc.hrCore.departments.list.queryOptions({
+			input: { includeArchived: false },
+		})
+	);
+	const { data: positions } = useQuery(
+		orpc.hrCore.jobPositions.list.queryOptions({
+			input: { includeArchived: false },
+		})
+	);
+	const { data: shifts } = useQuery(
+		orpc.hrCore.shifts.list.queryOptions({ input: { includeArchived: false } })
+	);
+	const { data: workTypes } = useQuery(
+		orpc.hrCore.workTypes.list.queryOptions({
+			input: { includeArchived: false },
+		})
+	);
+	const { data: empTypes } = useQuery(
+		orpc.hrCore.employeeTypes.list.queryOptions({
+			input: { includeArchived: false },
+		})
+	);
+	const { data: empListData } = useQuery(
+		orpc.hrCore.employees.list.queryOptions({
+			input: { isActive: true, page: 1, pageSize: 200 },
+		})
+	);
+
+	const handleArchive = async () => {
+		setSaving(true);
+		try {
+			await client.hrCore.employees.archive({ id });
+			qc.invalidateQueries();
+			toast.success("Employee archived");
+			setConfirmArchive(false);
+			navigate({ to: "/app/employees" });
+		} catch (err: unknown) {
+			toast.error(err instanceof Error ? err.message : "Cannot archive");
+			setConfirmArchive(false);
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const handleRestore = async () => {
+		setSaving(true);
+		try {
+			await client.hrCore.employees.restore({ id });
+			qc.invalidateQueries();
+			toast.success("Employee restored");
+		} catch (err: unknown) {
+			toast.error(err instanceof Error ? err.message : "Cannot restore");
+		} finally {
+			setSaving(false);
+		}
+	};
 
 	const workInfo = emp?.workInfo ?? null;
 
@@ -236,56 +306,43 @@ function EmployeeProfilePage() {
 						</div>
 					</div>
 					<div className="profile-actions">
-						<button className="btn btn-outline btn-sm" type="button">
-							<Info size={12} />
-							Message
+						<button
+							className="btn btn-outline btn-sm"
+							onClick={() => setEditSection("personal")}
+							type="button"
+						>
+							<Edit size={12} />
+							Edit profile
 						</button>
-						<button className="btn btn-outline btn-sm" type="button">
-							<FileText size={12} />
-							View payslip
+						<button
+							className="btn btn-outline btn-sm"
+							onClick={() => setEditSection("work")}
+							type="button"
+						>
+							<Briefcase size={12} />
+							Edit work info
 						</button>
-						<div className="menu-root">
-							<button className="btn btn-outline btn-sm" type="button">
-								<MoreHorizontal size={12} />
+						{emp.isActive ? (
+							<button
+								className="btn btn-outline btn-sm"
+								onClick={() => setConfirmArchive(true)}
+								style={{ color: "var(--danger)" }}
+								type="button"
+							>
+								<Archive size={12} />
+								Archive
 							</button>
-							<div className="menu" data-side="bottom-end">
-								<button className="menu-item" type="button">
-									<span className="menu-icon">
-										<User size={14} />
-									</span>
-									Edit profile
-								</button>
-								<button className="menu-item" type="button">
-									<span className="menu-icon">
-										<Briefcase size={14} />
-									</span>
-									Change role
-								</button>
-								<button className="menu-item" type="button">
-									<span className="menu-icon">
-										<TrendingUp size={14} />
-									</span>
-									Salary adjustment
-								</button>
-								<button className="menu-item" type="button">
-									<span className="menu-icon">
-										<Download size={14} />
-									</span>
-									Export employee record
-								</button>
-								<div className="menu-sep" />
-								<button className="menu-item danger" type="button">
-									<span className="menu-icon">
-										<LogOut size={14} />
-									</span>
-									Initiate offboarding
-								</button>
-							</div>
-						</div>
-						<button className="btn btn-primary btn-sm" type="button">
-							<Play size={12} />
-							Quick action
-						</button>
+						) : (
+							<button
+								className="btn btn-outline btn-sm"
+								onClick={handleRestore}
+								style={{ color: "var(--success)" }}
+								type="button"
+							>
+								<Undo size={12} />
+								Restore
+							</button>
+						)}
 					</div>
 				</div>
 				<div className="profile-tabs">
@@ -483,6 +540,15 @@ function EmployeeProfilePage() {
 							<div className="side-card">
 								<div className="head">
 									<span className="ttl">Banking</span>
+									<button
+										className="icon-btn"
+										onClick={() => setEditSection("bank")}
+										style={{ width: 26, height: 26 }}
+										title="Edit bank details"
+										type="button"
+									>
+										<Edit size={13} />
+									</button>
 								</div>
 								<div className="body field-list">
 									{bankDetails ? (
@@ -1737,6 +1803,486 @@ function EmployeeProfilePage() {
 					</div>
 				</div>
 			)}
+
+			{/* Edit sheets */}
+			{editSection === "personal" && emp && (
+				<EditSheet
+					fields={[
+						{
+							key: "firstName",
+							label: "First name",
+							value: emp.firstName,
+							required: true,
+						},
+						{ key: "lastName", label: "Last name", value: emp.lastName ?? "" },
+						{ key: "phone", label: "Phone", value: emp.phone ?? "" },
+						{ key: "badgeId", label: "Badge ID", value: emp.badgeId ?? "" },
+						{
+							key: "dateOfBirth",
+							label: "Date of birth",
+							value: emp.dateOfBirth
+								? new Date(emp.dateOfBirth).toISOString().slice(0, 10)
+								: "",
+							type: "date",
+						},
+						{
+							key: "gender",
+							label: "Gender",
+							value: emp.gender ?? "",
+							type: "select",
+							options: [
+								{ v: "", l: "Not specified" },
+								{ v: "male", l: "Male" },
+								{ v: "female", l: "Female" },
+								{ v: "other", l: "Other" },
+							],
+						},
+						{ key: "country", label: "Country", value: emp.country ?? "" },
+						{ key: "city", label: "City", value: emp.city ?? "" },
+						{ key: "address", label: "Address", value: emp.address ?? "" },
+					]}
+					onClose={() => setEditSection(null)}
+					onSave={async (fields) => {
+						await client.hrCore.employees.update({ id, ...fields });
+						qc.invalidateQueries();
+						toast.success("Personal information updated");
+						setEditSection(null);
+					}}
+					title="Edit Personal Information"
+				/>
+			)}
+
+			{editSection === "work" && workInfo && (
+				<EditSheet
+					fields={[
+						{
+							key: "departmentId",
+							label: "Department",
+							value: workInfo.departmentId ?? "",
+							type: "select",
+							options: [
+								{ v: "", l: "Not assigned" },
+								...((depts ?? []) as { id: string; name: string }[]).map(
+									(d) => ({ v: d.id, l: d.name })
+								),
+							],
+						},
+						{
+							key: "jobPositionId",
+							label: "Position",
+							value: workInfo.jobPositionId ?? "",
+							type: "select",
+							options: [
+								{ v: "", l: "Not assigned" },
+								...((positions ?? []) as { id: string; name: string }[]).map(
+									(p) => ({ v: p.id, l: p.name })
+								),
+							],
+						},
+						{
+							key: "shiftId",
+							label: "Shift",
+							value: workInfo.shiftId ?? "",
+							type: "select",
+							options: [
+								{ v: "", l: "Not assigned" },
+								...((shifts ?? []) as { id: string; name: string }[]).map(
+									(s) => ({ v: s.id, l: s.name })
+								),
+							],
+						},
+						{
+							key: "workTypeId",
+							label: "Work Arrangement",
+							value: workInfo.workTypeId ?? "",
+							type: "select",
+							options: [
+								{ v: "", l: "Not assigned" },
+								...((workTypes ?? []) as { id: string; name: string }[]).map(
+									(w) => ({ v: w.id, l: w.name })
+								),
+							],
+						},
+						{
+							key: "employeeTypeId",
+							label: "Employment Type",
+							value: workInfo.employeeTypeId ?? "",
+							type: "select",
+							options: [
+								{ v: "", l: "Not assigned" },
+								...((empTypes ?? []) as { id: string; name: string }[]).map(
+									(t) => ({ v: t.id, l: t.name })
+								),
+							],
+						},
+						{
+							key: "reportingManagerId",
+							label: "Reports To",
+							value: workInfo.reportingManagerId ?? "",
+							type: "select",
+							options: [
+								{ v: "", l: "No manager" },
+								...(
+									(
+										empListData as {
+											data: {
+												id: string;
+												firstName: string;
+												lastName: string | null;
+											}[];
+										}
+									)?.data ?? []
+								)
+									.filter((m) => m.id !== id)
+									.map((m) => ({
+										v: m.id,
+										l: `${m.firstName} ${m.lastName ?? ""}`,
+									})),
+							],
+						},
+						{
+							key: "workLocation",
+							label: "Location",
+							value: workInfo.workLocation ?? "",
+						},
+						{
+							key: "joiningDate",
+							label: "Joining Date",
+							value: workInfo.joiningDate
+								? new Date(workInfo.joiningDate).toISOString().slice(0, 10)
+								: "",
+							type: "date",
+						},
+						{
+							key: "basicSalary",
+							label: "Base Salary",
+							value: workInfo.basicSalary ?? "",
+						},
+						{
+							key: "salaryCurrency",
+							label: "Currency",
+							value: workInfo.salaryCurrency ?? "GYD",
+							type: "select",
+							options: [
+								{ v: "GYD", l: "GYD" },
+								{ v: "TTD", l: "TTD" },
+								{ v: "JMD", l: "JMD" },
+								{ v: "USD", l: "USD" },
+							],
+						},
+					]}
+					onClose={() => setEditSection(null)}
+					onSave={async (fields) => {
+						await client.hrCore.employees.workInfo.update({
+							employeeId: id,
+							...fields,
+						});
+						qc.invalidateQueries();
+						toast.success("Work information updated");
+						setEditSection(null);
+					}}
+					title="Edit Work Information"
+				/>
+			)}
+
+			{editSection === "bank" && (
+				<EditSheet
+					fields={[
+						{
+							key: "bankName",
+							label: "Bank Name",
+							value:
+								(bankDetails as { bankName?: string } | null)?.bankName ?? "",
+							required: true,
+						},
+						{
+							key: "accountNumber",
+							label: "Account Number",
+							value:
+								(bankDetails as { accountNumber?: string } | null)
+									?.accountNumber ?? "",
+							required: true,
+						},
+						{
+							key: "branch",
+							label: "Branch",
+							value:
+								(bankDetails as { branch?: string | null } | null)?.branch ??
+								"",
+						},
+						{
+							key: "bankCode1",
+							label: "Bank Code",
+							value:
+								(bankDetails as { bankCode1?: string | null } | null)
+									?.bankCode1 ?? "",
+						},
+					]}
+					onClose={() => setEditSection(null)}
+					onSave={async (fields) => {
+						if (!(fields.bankName && fields.accountNumber)) {
+							toast.error("Bank name and account number are required");
+							return;
+						}
+						await client.hrCore.employees.bankDetails.update({
+							employeeId: id,
+							bankName: fields.bankName,
+							accountNumber: fields.accountNumber,
+							branch: fields.branch || undefined,
+							bankCode1: fields.bankCode1 || undefined,
+						});
+						qc.invalidateQueries();
+						toast.success("Bank details updated");
+						setEditSection(null);
+					}}
+					subtitle="Bank details are visible only to authorized HR and payroll staff."
+					title="Edit Bank Details"
+				/>
+			)}
+
+			{/* Archive confirmation */}
+			{confirmArchive && (
+				<div
+					style={{
+						position: "fixed",
+						inset: 0,
+						zIndex: 200,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						background: "rgba(8,9,12,0.6)",
+					}}
+				>
+					<div
+						style={{
+							background: "var(--bg-2)",
+							border: "1px solid var(--line)",
+							borderRadius: 16,
+							padding: 24,
+							maxWidth: 420,
+							width: "100%",
+						}}
+					>
+						<h4 style={{ marginBottom: 8 }}>Archive {fullName}?</h4>
+						<p
+							style={{
+								fontSize: "13px",
+								color: "var(--fg-3)",
+								marginBottom: 20,
+							}}
+						>
+							Archived employees are hidden from active lists but kept for
+							historical records. You can restore them later.
+						</p>
+						<div
+							style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}
+						>
+							<button
+								className="btn btn-outline btn-sm"
+								onClick={() => setConfirmArchive(false)}
+								type="button"
+							>
+								Cancel
+							</button>
+							<button
+								className="btn btn-sm"
+								disabled={saving}
+								onClick={handleArchive}
+								style={{
+									background: "var(--danger-soft)",
+									color: "var(--danger)",
+								}}
+								type="button"
+							>
+								{saving ? "Archiving…" : "Archive employee"}
+							</button>
+						</div>
+					</div>
+				</div>
+			)}
+		</div>
+	);
+}
+
+// ─── Edit Sheet Component ─────────────────────────────────
+
+interface EditField {
+	key: string;
+	label: string;
+	options?: { v: string; l: string }[];
+	required?: boolean;
+	type?: "text" | "date" | "select";
+	value: string;
+}
+
+function EditSheet({
+	title,
+	subtitle,
+	fields,
+	onClose,
+	onSave,
+}: {
+	title: string;
+	subtitle?: string;
+	fields: EditField[];
+	onClose: () => void;
+	onSave: (values: Record<string, string>) => Promise<void>;
+}) {
+	const [values, setValues] = useState<Record<string, string>>(
+		Object.fromEntries(fields.map((f) => [f.key, f.value]))
+	);
+	const [saving, setSaving] = useState(false);
+
+	const set = (key: string, val: string) =>
+		setValues((v) => ({ ...v, [key]: val }));
+
+	const handleSave = async () => {
+		for (const f of fields) {
+			if (f.required && !values[f.key]?.trim()) {
+				toast.error(`${f.label} is required`);
+				return;
+			}
+		}
+		setSaving(true);
+		try {
+			const changed: Record<string, string> = {};
+			for (const f of fields) {
+				if (values[f.key] !== f.value) {
+					changed[f.key] = values[f.key] ?? "";
+				}
+			}
+			if (Object.keys(changed).length === 0) {
+				onClose();
+				return;
+			}
+			await onSave(changed);
+		} catch (err: unknown) {
+			toast.error(err instanceof Error ? err.message : "Update failed");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	return (
+		<div
+			onClick={(e) => {
+				if (e.target === e.currentTarget) {
+					onClose();
+				}
+			}}
+			style={{
+				position: "fixed",
+				inset: 0,
+				zIndex: 200,
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				background: "rgba(8,9,12,0.6)",
+			}}
+		>
+			<div
+				style={{
+					background: "var(--bg-1)",
+					border: "1px solid var(--line)",
+					borderRadius: 16,
+					padding: 0,
+					maxWidth: 520,
+					width: "100%",
+					maxHeight: "80vh",
+					display: "flex",
+					flexDirection: "column",
+				}}
+			>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+						padding: "16px 20px",
+						borderBottom: "1px solid var(--line)",
+					}}
+				>
+					<div>
+						<h4 style={{ fontSize: "15px", fontWeight: 600 }}>{title}</h4>
+						{subtitle && (
+							<p
+								style={{ fontSize: "12px", color: "var(--fg-3)", marginTop: 2 }}
+							>
+								{subtitle}
+							</p>
+						)}
+					</div>
+					<button
+						className="btn btn-ghost btn-sm"
+						onClick={onClose}
+						type="button"
+					>
+						<X size={14} />
+					</button>
+				</div>
+				<div style={{ padding: "16px 20px", overflowY: "auto", flex: 1 }}>
+					{fields.map((f) => (
+						<div key={f.key} style={{ marginBottom: 14 }}>
+							<label className="label" style={{ marginBottom: 4 }}>
+								{f.label}
+								{f.required && (
+									<span style={{ color: "var(--danger)", marginLeft: 2 }}>
+										*
+									</span>
+								)}
+							</label>
+							{f.type === "select" && f.options ? (
+								<select
+									className="input"
+									onChange={(e) => set(f.key, e.target.value)}
+									style={{ height: 34 }}
+									value={values[f.key] ?? ""}
+								>
+									{f.options.map((o) => (
+										<option key={o.v} value={o.v}>
+											{o.l}
+										</option>
+									))}
+								</select>
+							) : (
+								<input
+									className="input"
+									onChange={(e) => set(f.key, e.target.value)}
+									style={{ height: 34 }}
+									type={f.type === "date" ? "date" : "text"}
+									value={values[f.key] ?? ""}
+								/>
+							)}
+						</div>
+					))}
+				</div>
+				<div
+					style={{
+						display: "flex",
+						gap: 8,
+						justifyContent: "flex-end",
+						padding: "14px 20px",
+						borderTop: "1px solid var(--line)",
+					}}
+				>
+					<button
+						className="btn btn-outline btn-sm"
+						onClick={onClose}
+						type="button"
+					>
+						Cancel
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={saving}
+						onClick={handleSave}
+						type="button"
+					>
+						<Check size={12} />
+						{saving ? "Saving…" : "Save changes"}
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 }
