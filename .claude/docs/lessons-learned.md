@@ -299,3 +299,29 @@ Living document. Updated after each major task or unexpected issue.
 27. **Parallel research agents** — Running Odoo docs and GitHub research agents simultaneously produced comprehensive results in ~3 minutes vs sequential which would have taken ~6 minutes. Background agents are ideal for web-research-heavy spec phases.
 
 28. **Every foreign key input must be tenant-verified** — Phase 7F leave API had 4 IDOR vulnerabilities caught by security review: `balancesAssign` (employee + leaveType), `balancesAdjust` (employee), `allocationsCreate` (leaveType), `restrictionsCreate` (departmentId). Pattern: any procedure accepting an entity ID as input must verify that entity belongs to `orgId(context)` before using it. `authorizedProcedure` gates role access but NOT tenant ownership of referenced entities. This applies to all future routers — payroll, recruitment, etc.
+
+---
+
+## Session: 2026-05-27 — Phase 7D–7H (Attendance UI, Leave Full Stack, QA Pass)
+
+### Gotchas Discovered
+
+64. **TanStack Router flat file vs directory route precedence** — A flat `attendance.tsx` at `routes/app/` takes priority over `attendance/index.tsx` in the same directory. The flat file was a placeholder "Coming Soon" page that blocked the real module UI from rendering. Fix: delete the placeholder flat file. This applies to any module with a directory route — check for leftover placeholders.
+
+65. **Biome noExcessiveCognitiveComplexity limit is 20** — Large React components with inline conditional rendering, map callbacks, and multiple ternaries easily exceed this. Fix: extract sub-components (e.g., `RecordRow`, `RequestActions`, `ClockOutCell`). This is actually good architecture — each extracted component has a clear single responsibility.
+
+66. **oRPC health check returns 405 on GET** — oRPC procedures respond to POST only. A `curl -s /rpc/healthCheck` GET returns 405 METHOD_NOT_SUPPORTED. This is expected, not a server error. Use `curl -X POST` or check `lsof -i :3000` to verify the server is running.
+
+67. **Attendance security: `checkScopeForMutation` must verify org ownership even for HR roles** — The original pattern short-circuited scope checking for HR roles. But a user with HR role in Org A could pass an `employeeId` from Org B. Fix: always verify `employee.organizationId === orgId(context)` regardless of role. The role check determines WHICH employees (self/reports/all), the org check determines THAT the employee belongs to this tenant.
+
+68. **Leave balance deduction on approve needs dual-bucket logic** — When approving leave, deduct from `availableDays` first; if insufficient, overflow to `carryForwardDays`. Also increment `usedDays`. When cancelling approved leave, reverse the deduction. This requires careful tracking of how much came from each bucket — current implementation uses a simple overflow approach.
+
+### Patterns That Worked
+
+29. **Saved-view lenses for every module** — Both attendance (6 lenses) and leave (5 lenses) use the same pattern: a row of buttons that set a filter predicate on the data. This is cheap to implement, highly discoverable, and avoids the complexity of a general-purpose filter builder while covering 90% of daily use cases.
+
+30. **Clock panel as persistent widget** — The attendance check-in/out panel sits above the records table, always visible. It shows elapsed time after check-in. This is more intuitive than hiding check-in behind a button or separate page.
+
+31. **Balance cards with color-coded stripes** — Leave balance cards use left-border colors matching the leave type. This provides instant visual grouping without needing icons. Shows available days (large), used + carry-forward (small), and paid/unpaid badge.
+
+32. **Analytics planning as a separate doc** — Rather than scattering chart/reporting specs across each module spec, a single `analytics-reporting-plan.md` covers all modules, shared primitives, PDF export, and security constraints. Module specs cross-reference it.

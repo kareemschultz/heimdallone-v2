@@ -39,7 +39,7 @@ Tracks employee work hours through check-in/check-out events, computes daily att
 - Batch attendance creation (import)
 - Rotating shift attendance tracking
 - Split shift handling
-- Attendance analytics/dashboards
+- Attendance analytics/dashboards → planned in [analytics-reporting-plan.md](../analytics-reporting-plan.md)
 - Mobile check-in via Expo
 
 ## Proposed Entities

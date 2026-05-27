@@ -1,6 +1,6 @@
 # Leave Implementation Plan
 
-Phase 7E–7G spec. Reviewed and finalized Phase 7A (2026-05-27).
+Phase 7E–7G spec. Reviewed and finalized Phase 7A (2026-05-27). **Implementation complete** — schema (7E), API (7F), UI (7G), QA/security pass (7H) all done.
 
 ---
 

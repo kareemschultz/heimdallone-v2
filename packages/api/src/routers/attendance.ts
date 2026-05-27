@@ -775,6 +775,24 @@ const correctionsCreate = tenantProcedure
 			});
 		}
 
+		if (input.attendanceRecordId) {
+			const [record] = await db
+				.select({ id: attendanceRecord.id })
+				.from(attendanceRecord)
+				.where(
+					and(
+						eq(attendanceRecord.id, input.attendanceRecordId),
+						eq(attendanceRecord.organizationId, orgId(context))
+					)
+				)
+				.limit(1);
+			if (!record) {
+				throw new ORPCError("NOT_FOUND", {
+					message: "Attendance record not found.",
+				});
+			}
+		}
+
 		const correctionId = createId();
 		await db.insert(attendanceCorrection).values({
 			id: correctionId,
@@ -1146,6 +1164,23 @@ async function checkScopeForMutation(
 	targetEmployeeId: string
 ): Promise<void> {
 	const r = (context as { memberRole: string }).memberRole;
+
+	const [targetEmp] = await db
+		.select({ id: employeeProfile.id })
+		.from(employeeProfile)
+		.where(
+			and(
+				eq(employeeProfile.id, targetEmployeeId),
+				eq(employeeProfile.organizationId, context.organizationId)
+			)
+		)
+		.limit(1);
+	if (!targetEmp) {
+		throw new ORPCError("NOT_FOUND", {
+			message: "Employee not found in this organization.",
+		});
+	}
+
 	if (HR_ROLES.includes(r)) {
 		return;
 	}
@@ -1314,7 +1349,8 @@ async function recalculateRecord(
 		.where(
 			and(
 				eq(attendanceRecord.employeeId, employeeId),
-				eq(attendanceRecord.date, eventDate)
+				eq(attendanceRecord.date, eventDate),
+				eq(attendanceRecord.organizationId, organizationId)
 			)
 		);
 }

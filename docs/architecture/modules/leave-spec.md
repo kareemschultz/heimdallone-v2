@@ -32,7 +32,7 @@ Manages employee time-off: leave type configuration with accrual/reset/carry-for
 - Compensatory leave (needs attendance module)
 - Leave encashment (needs payroll module)
 - Leave import/export
-- Leave analytics/trends
+- Leave analytics/trends → planned in [analytics-reporting-plan.md](../analytics-reporting-plan.md)
 - Leave accrual based on service length
 - Pro-rata for mid-year joiners (auto-calculation)
 - Leave calendar integration (Google/Outlook)

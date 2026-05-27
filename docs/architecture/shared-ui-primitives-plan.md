@@ -31,7 +31,7 @@ Phase 4E deliverable. TypeScript interfaces are specification-only — no compon
 | `.check-item`, `.check-icon`, `.check-icon.done/warn/pending` | *(defer)* | Future Checklist |
 | `.avatar`, `.avatar-xs/sm/lg`, `.avatar-sm.online` | *(defer)* | Future Avatar |
 | `.kv`, `.kv-k`, `.kv-v` | *(defer)* | Future KeyValue |
-| `.stat`, `.stat-label`, `.stat-value`, `.stat-delta` | *(defer)* | Future StatCard |
+| `.stat`, `.stat-label`, `.stat-value`, `.stat-delta` | StatTile | **Wrap** — spec'd in [analytics-reporting-plan.md](analytics-reporting-plan.md) |
 | `.timeline`, `.tl-item`, `.tl-dot`, `.tl-time`, `.tl-actor` | AuditTimeline | **Wrap** (CSS in dashboard.css + employee-profile.css) |
 | *(no handoff equivalent)* | ConfirmDialog | **Use shadcn** Dialog/AlertDialog |
 | *(no handoff equivalent)* | WizardForm | **Custom** — compose from handoff tokens |

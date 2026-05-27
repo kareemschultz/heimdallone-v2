@@ -381,6 +381,22 @@ const balancesAdjust = authorizedProcedure("holiday", "update")
 			});
 		}
 
+		const [lt] = await db
+			.select({ id: leaveType.id })
+			.from(leaveType)
+			.where(
+				and(
+					eq(leaveType.id, input.leaveTypeId),
+					eq(leaveType.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!lt) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Leave type not found.",
+			});
+		}
+
 		const [balance] = await db
 			.select()
 			.from(leaveBalance)
@@ -1317,7 +1333,6 @@ const calendarData = authorizedProcedure("leave_request", "read")
 		z.object({
 			startDate: z.string(),
 			endDate: z.string(),
-			departmentId: z.string().optional(),
 		})
 	)
 	.handler(async ({ context, input }) => {

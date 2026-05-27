@@ -55,7 +55,7 @@ Full compensation engine: contracts define base salary, allowances and deduction
 - WPS/GOSI (UAE/Saudi — not needed for Caribbean)
 - Gratuity/severance calculation
 - Insurance tracking
-- Payroll analytics/reports
+- Payroll analytics/reports → planned in [analytics-reporting-plan.md](../analytics-reporting-plan.md)
 - Retroactive salary changes (arrears)
 - Mid-month proration (complex — needs careful spec)
 

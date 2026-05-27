@@ -164,3 +164,10 @@ Contracts implementation (Phase 6):
 
 - [Contracts Implementation Plan](docs/architecture/contracts-implementation-plan.md) — schema, API, UI, RBAC, business rules
 - [Contracts Module Spec](docs/architecture/modules/contracts-spec.md) — original extraction spec
+
+Attendance + Leave implementation (Phase 7):
+
+- [Attendance Implementation Plan](docs/architecture/attendance-implementation-plan.md) — schema, API, UI decisions, payroll integration
+- [Leave Implementation Plan](docs/architecture/leave-implementation-plan.md) — schema, API, UI decisions, balance/accrual rules
+- [Payroll Readiness Plan](docs/architecture/attendance-leave-payroll-readiness-plan.md) — data flow from attendance+leave into payroll
+- [Analytics & Reporting Plan](docs/architecture/analytics-reporting-plan.md) — charts, stat tiles, PDF export, per-module analytics

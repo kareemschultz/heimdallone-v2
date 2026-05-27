@@ -1,6 +1,6 @@
 # Attendance Implementation Plan
 
-Phase 7B–7D spec. Reviewed and finalized Phase 7A (2026-05-27).
+Phase 7B–7D spec. Reviewed and finalized Phase 7A (2026-05-27). **Implementation complete** — schema (7B), API (7C), UI (7D), QA/security pass (7H) all done.
 
 ---
 
