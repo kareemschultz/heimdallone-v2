@@ -146,8 +146,10 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 ### Current Status (2026-05-27)
 - HR Core: **Complete** (employees, org settings, holidays, CRUD, RBAC/scope)
 - Contracts: **Phase 6 complete** (schema, API, UI — verified end-to-end; 6E QA/docs closure done)
-- Phase 6E: **Complete** — Contracts QA, payroll/attendance/leave/biometric spec enrichment, gy-taxcalc + v1 inspection, GRA 2026 rate verification, payroll engine architecture, quality-of-life requirements
-- Next: Phase 7A — Attendance + Leave spec review/update
+- Phase 6E: **Complete** — payroll/attendance/leave spec enrichment, GRA verification, v1+gy-taxcalc inspection
+- Phase 7A: **Complete** — Attendance + Leave implementation plans finalized, payroll-readiness plan created
+- Phase 7B: **Complete** — Attendance DB schema (4 tables, 5 enums), migration, seed (72 records, 73 events, 2 corrections)
+- Next: Phase 7C — Attendance oRPC API
 
 ### Key Architecture Files
 - `.claude/CLAUDE.md` — Full project instructions with doc references

@@ -22,6 +22,13 @@
       "when": 1779862274639,
       "tag": "0002_tough_doctor_doom",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779876416263,
+      "tag": "0003_long_magneto",
+      "breakpoints": true
     }
   ]
 }

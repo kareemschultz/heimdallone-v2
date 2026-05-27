@@ -17,12 +17,12 @@ import {
 
 import { organization, user } from "./auth";
 
-const cuid = () => text("id").primaryKey().$defaultFn(createId);
-const orgRef = () =>
+export const cuid = () => text("id").primaryKey().$defaultFn(createId);
+export const orgRef = () =>
 	text("organization_id")
 		.notNull()
 		.references(() => organization.id, { onDelete: "cascade" });
-const timestamps = {
+export const timestamps = {
 	createdAt: timestamp("created_at").defaultNow().notNull(),
 	updatedAt: timestamp("updated_at")
 		.defaultNow()
