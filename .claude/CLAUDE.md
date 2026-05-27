@@ -159,3 +159,8 @@ HR Core implementation (Phase 5):
 - [HR Core DB Setup](docs/implementation/hr-core-db-setup.md) — tables, migrations, seed, commands
 - [Shared UI Primitives](docs/architecture/shared-ui-primitives-plan.md) — 17 component specs with handoff CSS mapping
 - [Module Spec Backlog](docs/architecture/modules/README.md) — specs for all post-HR-Core modules
+
+Contracts implementation (Phase 6):
+
+- [Contracts Implementation Plan](docs/architecture/contracts-implementation-plan.md) — schema, API, UI, RBAC, business rules
+- [Contracts Module Spec](docs/architecture/modules/contracts-spec.md) — original extraction spec
