@@ -212,12 +212,10 @@ function PayrollDashboard() {
 								sub="Employee payslips and history"
 							/>
 							<NavRow
-								disabled
-								href="/app/payroll"
+								href="/app/payroll/payments"
 								icon={<Clock size={16} />}
-								label="Bank export"
-								note="Coming in Phase 8K"
-								sub="Payment batch and bank file export"
+								label="Payment export"
+								sub="Payment batches and bank file export"
 							/>
 						</div>
 					</div>

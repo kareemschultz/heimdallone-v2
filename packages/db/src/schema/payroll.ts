@@ -722,3 +722,134 @@ export const reimbursementRelations = relations(reimbursement, ({ one }) => ({
 		references: [payslip.id],
 	}),
 }));
+
+// ── Payment batch & export ──────────────────────────────
+
+export const paymentBatchStatusEnum = pgEnum("payment_batch_status", [
+	"draft",
+	"reviewed",
+	"exported",
+	"submitted",
+	"paid",
+	"partially_paid",
+	"failed",
+	"cancelled",
+]);
+
+export const paymentItemStatusEnum = pgEnum("payment_item_status", [
+	"pending",
+	"exported",
+	"submitted",
+	"paid",
+	"failed",
+	"skipped",
+]);
+
+export const payrollPaymentBatch = pgTable(
+	"payroll_payment_batch",
+	{
+		id: cuid(),
+		organizationId: orgRef(),
+		payrollRunId: text("payroll_run_id")
+			.notNull()
+			.references(() => payrollRun.id, { onDelete: "restrict" }),
+		payPeriodId: text("pay_period_id")
+			.notNull()
+			.references(() => payPeriod.id, { onDelete: "restrict" }),
+		status: paymentBatchStatusEnum("status").default("draft").notNull(),
+		totalEmployees: integer("total_employees").default(0).notNull(),
+		totalAmount: numeric("total_amount", { precision: 14, scale: 2 })
+			.default("0")
+			.notNull(),
+		currency: text("currency").notNull(),
+		exportFormat: text("export_format").default("csv").notNull(),
+		createdBy: text("created_by")
+			.notNull()
+			.references(() => user.id, { onDelete: "restrict" }),
+		exportedBy: text("exported_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		exportedAt: timestamp("exported_at"),
+		submittedBy: text("submitted_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		submittedAt: timestamp("submitted_at"),
+		markedPaidBy: text("marked_paid_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		markedPaidAt: timestamp("marked_paid_at"),
+		failureReason: text("failure_reason"),
+		...timestamps,
+	},
+	(t) => [
+		index("payment_batch_org_idx").on(t.organizationId),
+		index("payment_batch_run_idx").on(t.payrollRunId),
+		index("payment_batch_status_idx").on(t.organizationId, t.status),
+	]
+);
+
+export const payrollPaymentItem = pgTable(
+	"payroll_payment_item",
+	{
+		id: cuid(),
+		organizationId: orgRef(),
+		paymentBatchId: text("payment_batch_id")
+			.notNull()
+			.references(() => payrollPaymentBatch.id, { onDelete: "cascade" }),
+		payslipId: text("payslip_id")
+			.notNull()
+			.references(() => payslip.id, { onDelete: "restrict" }),
+		employeeId: text("employee_id")
+			.notNull()
+			.references(() => employeeProfile.id, { onDelete: "restrict" }),
+		employeeName: text("employee_name").notNull(),
+		bankName: text("bank_name"),
+		branchCode: text("branch_code"),
+		accountNumberMasked: text("account_number_masked"),
+		accountHolderName: text("account_holder_name"),
+		amount: numeric("amount", { precision: 12, scale: 2 }).notNull(),
+		currency: text("currency").notNull(),
+		paymentReference: text("payment_reference"),
+		status: paymentItemStatusEnum("status").default("pending").notNull(),
+		failureReason: text("failure_reason"),
+		...timestamps,
+	},
+	(t) => [
+		index("payment_item_batch_idx").on(t.paymentBatchId),
+		index("payment_item_emp_idx").on(t.employeeId),
+		index("payment_item_status_idx").on(t.paymentBatchId, t.status),
+	]
+);
+
+export const payrollPaymentBatchRelations = relations(
+	payrollPaymentBatch,
+	({ one, many }) => ({
+		payrollRun: one(payrollRun, {
+			fields: [payrollPaymentBatch.payrollRunId],
+			references: [payrollRun.id],
+		}),
+		payPeriod: one(payPeriod, {
+			fields: [payrollPaymentBatch.payPeriodId],
+			references: [payPeriod.id],
+		}),
+		items: many(payrollPaymentItem),
+	})
+);
+
+export const payrollPaymentItemRelations = relations(
+	payrollPaymentItem,
+	({ one }) => ({
+		batch: one(payrollPaymentBatch, {
+			fields: [payrollPaymentItem.paymentBatchId],
+			references: [payrollPaymentBatch.id],
+		}),
+		payslip: one(payslip, {
+			fields: [payrollPaymentItem.payslipId],
+			references: [payslip.id],
+		}),
+		employee: one(employeeProfile, {
+			fields: [payrollPaymentItem.employeeId],
+			references: [employeeProfile.id],
+		}),
+	})
+);

@@ -1,6 +1,7 @@
 import { db } from "@Heimdallone/db";
 import {
 	department,
+	employeeBankDetails,
 	employeeProfile,
 	employeeWorkInfo,
 } from "@Heimdallone/db/schema/hr-core";
@@ -12,6 +13,8 @@ import {
 	payItemAssignment,
 	payPeriod,
 	payrollIssue,
+	payrollPaymentBatch,
+	payrollPaymentItem,
 	payrollRun,
 	payrollSetting,
 	payslip,
@@ -42,6 +45,16 @@ const PAYROLL_ROLES = [
 	"hr_admin",
 	"payroll_admin",
 ];
+
+function maskAccountNumber(acctNum: string): string {
+	if (acctNum.length > 4) {
+		return `****${acctNum.slice(-4)}`;
+	}
+	if (acctNum) {
+		return "****";
+	}
+	return "";
+}
 
 function canManagePayroll(r: string): boolean {
 	return PAYROLL_ROLES.includes(r);
@@ -2285,6 +2298,506 @@ const reportsBlockersSummary = authorizedProcedure("payroll", "read")
 	});
 
 // ═══════════════════════════════════════════════════════════════
+// 11. PAYMENT BATCHES
+// ═══════════════════════════════════════════════════════════════
+
+const paymentBatchesList = authorizedProcedure("payroll", "read")
+	.input(
+		z.object({
+			status: z
+				.enum([
+					"draft",
+					"reviewed",
+					"exported",
+					"submitted",
+					"paid",
+					"partially_paid",
+					"failed",
+					"cancelled",
+				])
+				.optional(),
+			page: z.number().int().min(1).default(1),
+			pageSize: z.number().int().min(1).max(100).default(50),
+		})
+	)
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const conditions = [eq(payrollPaymentBatch.organizationId, orgId(context))];
+		if (input.status) {
+			conditions.push(eq(payrollPaymentBatch.status, input.status));
+		}
+		const where = and(...conditions);
+		const [totalResult] = await db
+			.select({ total: count() })
+			.from(payrollPaymentBatch)
+			.where(where);
+		const offset = (input.page - 1) * input.pageSize;
+		const data = await db
+			.select()
+			.from(payrollPaymentBatch)
+			.where(where)
+			.orderBy(desc(payrollPaymentBatch.createdAt))
+			.limit(input.pageSize)
+			.offset(offset);
+		return { data, total: totalResult?.total ?? 0 };
+	});
+
+const paymentBatchesGetById = authorizedProcedure("payroll", "read")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [row] = await db
+			.select()
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.id, input.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!row) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Payment batch not found.",
+			});
+		}
+		const items = await db
+			.select()
+			.from(payrollPaymentItem)
+			.where(eq(payrollPaymentItem.paymentBatchId, row.id))
+			.orderBy(payrollPaymentItem.employeeName);
+		return { ...row, items };
+	});
+
+const paymentBatchesCreate = authorizedProcedure("payroll", "create")
+	.input(z.object({ payrollRunId: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [run] = await db
+			.select()
+			.from(payrollRun)
+			.where(
+				and(
+					eq(payrollRun.id, input.payrollRunId),
+					eq(payrollRun.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!run) {
+			throw new ORPCError("NOT_FOUND", { message: "Payroll run not found." });
+		}
+		if (run.status !== "confirmed" && run.status !== "paid") {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message:
+					"Payment batch can only be created from a confirmed or paid payroll run.",
+			});
+		}
+
+		const payslips = await db
+			.select()
+			.from(payslip)
+			.where(
+				and(
+					eq(payslip.payrollRunId, run.id),
+					eq(payslip.organizationId, orgId(context))
+				)
+			);
+
+		const batchId = createId();
+		let totalAmount = 0;
+
+		await db.insert(payrollPaymentBatch).values({
+			id: batchId,
+			organizationId: orgId(context),
+			payrollRunId: run.id,
+			payPeriodId: run.payPeriodId,
+			status: "draft",
+			totalEmployees: payslips.length,
+			totalAmount: "0",
+			currency: run.currency,
+			createdBy: actorId(context),
+		});
+
+		for (const ps of payslips) {
+			const netPay = Number(ps.netPay);
+			if (netPay <= 0) {
+				continue;
+			}
+
+			const [bank] = await db
+				.select()
+				.from(employeeBankDetails)
+				.where(eq(employeeBankDetails.employeeId, ps.employeeId))
+				.limit(1);
+
+			const [emp] = await db
+				.select({
+					firstName: employeeProfile.firstName,
+					lastName: employeeProfile.lastName,
+				})
+				.from(employeeProfile)
+				.where(eq(employeeProfile.id, ps.employeeId))
+				.limit(1);
+
+			const empName = emp
+				? `${emp.firstName} ${emp.lastName ?? ""}`.trim()
+				: ps.employeeId;
+			const acctNum = bank?.accountNumber ?? "";
+			const masked = maskAccountNumber(acctNum);
+
+			totalAmount += netPay;
+
+			await db.insert(payrollPaymentItem).values({
+				id: createId(),
+				organizationId: orgId(context),
+				paymentBatchId: batchId,
+				payslipId: ps.id,
+				employeeId: ps.employeeId,
+				employeeName: empName,
+				bankName: bank?.bankName ?? null,
+				branchCode: bank?.branch ?? null,
+				accountNumberMasked: masked,
+				accountHolderName: bank ? empName : null,
+				amount: String(netPay),
+				currency: ps.currency,
+				paymentReference: `PAY-${run.id.slice(0, 8)}-${ps.employeeId.slice(0, 6)}`,
+				status: "pending",
+			});
+		}
+
+		await db
+			.update(payrollPaymentBatch)
+			.set({ totalAmount: String(totalAmount), updatedAt: new Date() })
+			.where(eq(payrollPaymentBatch.id, batchId));
+
+		await createAuditEvent(db as never, {
+			organizationId: orgId(context),
+			entityType: "payment_batch",
+			entityId: batchId,
+			action: "create",
+			actorId: actorId(context),
+			metadata: {
+				payrollRunId: run.id,
+				totalEmployees: payslips.length,
+				totalAmount,
+			},
+		});
+
+		return { id: batchId };
+	});
+
+const paymentBatchesMarkReviewed = authorizedProcedure("payroll", "update")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [batch] = await db
+			.select()
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.id, input.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!batch) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Payment batch not found.",
+			});
+		}
+		if (batch.status !== "draft") {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: "Only draft batches can be marked as reviewed.",
+			});
+		}
+		await db
+			.update(payrollPaymentBatch)
+			.set({ status: "reviewed", updatedAt: new Date() })
+			.where(eq(payrollPaymentBatch.id, input.id));
+		await createAuditEvent(db as never, {
+			organizationId: orgId(context),
+			entityType: "payment_batch",
+			entityId: input.id,
+			action: "update",
+			actorId: actorId(context),
+			changes: [{ field: "status", oldValue: "draft", newValue: "reviewed" }],
+		});
+		return { id: input.id };
+	});
+
+const paymentBatchesMarkExported = authorizedProcedure("payroll", "update")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [batch] = await db
+			.select()
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.id, input.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!batch) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Payment batch not found.",
+			});
+		}
+		if (batch.status !== "reviewed") {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: "Only reviewed batches can be exported.",
+			});
+		}
+		await db
+			.update(payrollPaymentBatch)
+			.set({
+				status: "exported",
+				exportedBy: actorId(context),
+				exportedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(eq(payrollPaymentBatch.id, input.id));
+		await db
+			.update(payrollPaymentItem)
+			.set({ status: "exported" })
+			.where(eq(payrollPaymentItem.paymentBatchId, input.id));
+		await createAuditEvent(db as never, {
+			organizationId: orgId(context),
+			entityType: "payment_batch",
+			entityId: input.id,
+			action: "update",
+			actorId: actorId(context),
+			changes: [
+				{ field: "status", oldValue: "reviewed", newValue: "exported" },
+			],
+		});
+		return { id: input.id };
+	});
+
+const paymentBatchesMarkSubmitted = authorizedProcedure("payroll", "update")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [batch] = await db
+			.select()
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.id, input.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!batch) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Payment batch not found.",
+			});
+		}
+		if (batch.status !== "exported") {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: "Only exported batches can be marked as submitted.",
+			});
+		}
+		await db
+			.update(payrollPaymentBatch)
+			.set({
+				status: "submitted",
+				submittedBy: actorId(context),
+				submittedAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(eq(payrollPaymentBatch.id, input.id));
+		await db
+			.update(payrollPaymentItem)
+			.set({ status: "submitted" })
+			.where(eq(payrollPaymentItem.paymentBatchId, input.id));
+		await createAuditEvent(db as never, {
+			organizationId: orgId(context),
+			entityType: "payment_batch",
+			entityId: input.id,
+			action: "update",
+			actorId: actorId(context),
+			changes: [
+				{ field: "status", oldValue: "exported", newValue: "submitted" },
+			],
+		});
+		return { id: input.id };
+	});
+
+const paymentBatchesMarkPaid = authorizedProcedure("payroll", "update")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [batch] = await db
+			.select()
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.id, input.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!batch) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Payment batch not found.",
+			});
+		}
+		if (batch.status !== "submitted") {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message:
+					"Only submitted batches can be marked as paid. Upload the file to your bank first.",
+			});
+		}
+		await db
+			.update(payrollPaymentBatch)
+			.set({
+				status: "paid",
+				markedPaidBy: actorId(context),
+				markedPaidAt: new Date(),
+				updatedAt: new Date(),
+			})
+			.where(eq(payrollPaymentBatch.id, input.id));
+		await db
+			.update(payrollPaymentItem)
+			.set({ status: "paid" })
+			.where(eq(payrollPaymentItem.paymentBatchId, input.id));
+		await createAuditEvent(db as never, {
+			organizationId: orgId(context),
+			entityType: "payment_batch",
+			entityId: input.id,
+			action: "update",
+			actorId: actorId(context),
+			changes: [{ field: "status", oldValue: "submitted", newValue: "paid" }],
+		});
+		return { id: input.id };
+	});
+
+const paymentBatchesMarkFailed = authorizedProcedure("payroll", "update")
+	.input(z.object({ id: z.string(), reason: z.string().min(1) }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [batch] = await db
+			.select()
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.id, input.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!batch) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Payment batch not found.",
+			});
+		}
+		await db
+			.update(payrollPaymentBatch)
+			.set({
+				status: "failed",
+				failureReason: input.reason,
+				updatedAt: new Date(),
+			})
+			.where(eq(payrollPaymentBatch.id, input.id));
+		await createAuditEvent(db as never, {
+			organizationId: orgId(context),
+			entityType: "payment_batch",
+			entityId: input.id,
+			action: "update",
+			actorId: actorId(context),
+			changes: [
+				{
+					field: "status",
+					oldValue: batch.status,
+					newValue: "failed",
+				},
+			],
+			metadata: { failureReason: input.reason },
+		});
+		return { id: input.id };
+	});
+
+const paymentBatchesGenerateCsv = authorizedProcedure("payroll", "read")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [batch] = await db
+			.select()
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.id, input.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!batch) {
+			throw new ORPCError("NOT_FOUND", {
+				message: "Payment batch not found.",
+			});
+		}
+		const items = await db
+			.select()
+			.from(payrollPaymentItem)
+			.where(eq(payrollPaymentItem.paymentBatchId, batch.id))
+			.orderBy(payrollPaymentItem.employeeName);
+
+		const header =
+			"employeeId,employeeName,bankName,branchCode,accountNumber,currency,amount,paymentReference";
+		const rows = items.map((item) => {
+			const acct = item.accountNumberMasked ?? "";
+			return [
+				item.employeeId,
+				`"${item.employeeName}"`,
+				`"${item.bankName ?? ""}"`,
+				item.branchCode ?? "",
+				acct,
+				item.currency,
+				item.amount,
+				item.paymentReference ?? "",
+			].join(",");
+		});
+
+		const csv = [header, ...rows].join("\n");
+
+		await createAuditEvent(db as never, {
+			organizationId: orgId(context),
+			entityType: "payment_batch",
+			entityId: input.id,
+			action: "update",
+			actorId: actorId(context),
+			metadata: { action: "csv_generated", rowCount: items.length },
+		});
+
+		return {
+			csv,
+			fileName: `payment-batch-${batch.id.slice(0, 8)}.csv`,
+			rowCount: items.length,
+			totalAmount: batch.totalAmount,
+		};
+	});
+
+// ═══════════════════════════════════════════════════════════════
 // ROUTER EXPORT
 // ═══════════════════════════════════════════════════════════════
 
@@ -2358,5 +2871,16 @@ export const payrollRouter = {
 		dashboardSummary: reportsDashboardSummary,
 		costByDepartment: reportsCostByDepartment,
 		blockersSummary: reportsBlockersSummary,
+	},
+	paymentBatches: {
+		list: paymentBatchesList,
+		getById: paymentBatchesGetById,
+		create: paymentBatchesCreate,
+		markReviewed: paymentBatchesMarkReviewed,
+		markExported: paymentBatchesMarkExported,
+		markSubmitted: paymentBatchesMarkSubmitted,
+		markPaid: paymentBatchesMarkPaid,
+		markFailed: paymentBatchesMarkFailed,
+		generateCsv: paymentBatchesGenerateCsv,
 	},
 };
