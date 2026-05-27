@@ -1,6 +1,7 @@
 import type { RouterClient } from "@orpc/server";
 
 import { protectedProcedure, publicProcedure } from "../index";
+import { attendanceRouter } from "./attendance";
 import { contractsRouter } from "./contracts";
 import { hrCoreRouter } from "./hr-core";
 
@@ -12,6 +13,7 @@ export const appRouter = {
 	})),
 	hrCore: hrCoreRouter,
 	...contractsRouter,
+	attendance: attendanceRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;
