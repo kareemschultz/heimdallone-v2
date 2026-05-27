@@ -136,8 +136,10 @@ Technology references for this project (researched from live docs):
 - [oRPC Reference](.claude/docs/orpc-reference.md) — server/client/middleware patterns with Hono
 - [Design Handoff Summary](.claude/docs/design-handoff-summary.md) — tokens, screens, interactions, sample data
 - [Horilla Module Map](.claude/docs/horilla-module-map.md) — Horilla module → Heimdallone concept mapping
+- [shadcn/ui Reference](.claude/docs/shadcn-reference.md) — components, Field/Form pattern, Data Table, charts, blocks, skills (uses @base-ui/react NOT Radix)
 
 Design source of truth: `design_handoff_heimdallone/` (committed to git). Open the HTML files directly — the CSS rule is the answer.
+Note: This project uses shadcn `base-lyra` style (@base-ui/react), NOT Radix. shadcn skill is installed.
 
 - [Lessons Learned & Gotchas](.claude/docs/lessons-learned.md) — edge cases, patterns, mistakes to avoid
 
