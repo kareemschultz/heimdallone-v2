@@ -1,5 +1,8 @@
 import { roles, type TenantRole } from "@Heimdallone/auth/permissions";
+import { db } from "@Heimdallone/db";
+import { member } from "@Heimdallone/db/schema/auth";
 import { ORPCError, os } from "@orpc/server";
+import { and, eq } from "drizzle-orm";
 
 import type { Context } from "./context";
 
@@ -37,11 +40,22 @@ const requireActiveOrganization = o.middleware(async ({ context, next }) => {
 		});
 	}
 
+	const userId = context.session.user.id;
+	const [memberRecord] = await db
+		.select({ role: member.role })
+		.from(member)
+		.where(
+			and(eq(member.userId, userId), eq(member.organizationId, activeOrgId))
+		)
+		.limit(1);
+
+	const memberRole = memberRecord?.role ?? "employee";
+
 	return next({
 		context: {
 			session: context.session,
 			organizationId: activeOrgId,
-			memberRole: "member" as string,
+			memberRole,
 		},
 	});
 });

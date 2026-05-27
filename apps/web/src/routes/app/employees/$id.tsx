@@ -1,3 +1,4 @@
+import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	Activity,
@@ -26,6 +27,7 @@ import {
 import { useState } from "react";
 
 import "@/styles/employee-profile.css";
+import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/employees/$id")({
 	component: EmployeeProfilePage,
@@ -73,7 +75,109 @@ const ATT_DAYS = [
 ];
 
 function EmployeeProfilePage() {
+	const { id } = Route.useParams();
 	const [profileTab, setProfileTab] = useState<ProfileTab>("overview");
+
+	const {
+		data: emp,
+		isLoading,
+		isError,
+	} = useQuery(orpc.hrCore.employees.getById.queryOptions({ input: { id } }));
+
+	const { data: workInfo } = useQuery(
+		orpc.hrCore.employees.workInfo.get.queryOptions({
+			input: { employeeId: id },
+		})
+	);
+
+	const { data: bankDetails } = useQuery(
+		orpc.hrCore.employees.bankDetails.get.queryOptions({
+			input: { employeeId: id },
+		})
+	);
+
+	const { data: docs } = useQuery(
+		orpc.hrCore.employees.documents.list.queryOptions({
+			input: { employeeId: id },
+		})
+	);
+
+	if (isLoading) {
+		return (
+			<div className="page" data-tab-scope>
+				<div className="crumbs">
+					<span>
+						<Link style={{ color: "var(--fg-3)" }} to="/app/employees">
+							Employees
+						</Link>
+					</span>
+					<span className="sep">/</span>
+					<span>Loading…</span>
+				</div>
+				<div
+					style={{
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						padding: "80px 24px",
+						color: "var(--fg-3)",
+						fontSize: "13px",
+					}}
+				>
+					Loading employee profile…
+				</div>
+			</div>
+		);
+	}
+
+	if (isError || !emp) {
+		return (
+			<div className="page" data-tab-scope>
+				<div className="crumbs">
+					<span>
+						<Link style={{ color: "var(--fg-3)" }} to="/app/employees">
+							Employees
+						</Link>
+					</span>
+					<span className="sep">/</span>
+					<span>Not found</span>
+				</div>
+				<div
+					style={{
+						display: "flex",
+						flexDirection: "column",
+						alignItems: "center",
+						gap: 12,
+						padding: "80px 24px",
+						textAlign: "center",
+					}}
+				>
+					<h4
+						style={{
+							fontSize: "15px",
+							fontWeight: 600,
+							color: "var(--fg)",
+						}}
+					>
+						Employee not found
+					</h4>
+					<p style={{ fontSize: "13px", color: "var(--fg-3)" }}>
+						This employee may have been archived or doesn't exist.
+					</p>
+					<Link className="btn btn-outline btn-sm" to="/app/employees">
+						Back to employees
+					</Link>
+				</div>
+			</div>
+		);
+	}
+
+	const fullName = `${emp.firstName}${emp.lastName ? ` ${emp.lastName}` : ""}`;
+	const initials =
+		`${emp.firstName.charAt(0)}${emp.lastName ? emp.lastName.charAt(0) : ""}`.toUpperCase();
+	const positionLabel = workInfo
+		? [workInfo.jobPositionId ? "Position" : null].filter(Boolean).join("")
+		: "";
 
 	return (
 		<div className="page" data-tab-scope>
@@ -84,31 +188,37 @@ function EmployeeProfilePage() {
 					</Link>
 				</span>
 				<span className="sep">/</span>
-				<span>Rohan Gopaul</span>
+				<span>{fullName}</span>
 			</div>
 
 			{/* Profile header */}
 			<div className="profile-head">
 				<div className="profile-cover" />
 				<div className="profile-id">
-					<div className="profile-avatar">RG</div>
+					<div className="profile-avatar">{initials}</div>
 					<div className="profile-meta">
-						<h1>Rohan Gopaul</h1>
+						<h1>{fullName}</h1>
 						<div className="sub">
 							<span style={{ color: "var(--fg-2)" }}>
-								Senior Engineer · Engineering
+								{[workInfo?.jobPositionId, workInfo?.departmentId].filter(
+									Boolean
+								).length > 0
+									? "Employee"
+									: "Employee"}
 							</span>
 							<span className="sep">·</span>
 							<span className="mono" style={{ color: "var(--fg-3)" }}>
-								EMP-00214
+								{emp.badgeId ?? "—"}
 							</span>
 							<span className="sep">·</span>
-							<span className="cc-badge" style={{ height: "22px" }}>
-								<span style={{ fontSize: "11px" }}>GY</span>
-								Guyana
-							</span>
+							{emp.country && (
+								<span className="cc-badge" style={{ height: "22px" }}>
+									<span style={{ fontSize: "11px" }}>{emp.country}</span>
+									{emp.country}
+								</span>
+							)}
 							<span
-								className="pill-status active"
+								className={`pill-status ${emp.isActive ? "active" : "archived"}`}
 								style={{
 									height: "22px",
 									display: "inline-flex",
@@ -117,12 +227,14 @@ function EmployeeProfilePage() {
 									padding: "0 9px",
 									borderRadius: "99px",
 									fontSize: "11px",
-									background: "var(--success-soft)",
-									color: "var(--success)",
+									background: emp.isActive
+										? "var(--success-soft)"
+										: "var(--bg-3)",
+									color: emp.isActive ? "var(--success)" : "var(--fg-3)",
 								}}
 							>
 								<span className="badge-dot" />
-								Active · Permanent
+								{emp.isActive ? "Active" : "Archived"}
 							</span>
 							<span className="badge" style={{ height: "22px", gap: "6px" }}>
 								<span
@@ -269,25 +381,34 @@ function EmployeeProfilePage() {
 								<div className="body field-list">
 									<div className="kv">
 										<span className="k">Employee ID</span>
-										<span className="v">EMP-00214</span>
+										<span className="v">{emp.badgeId ?? "—"}</span>
 									</div>
 									<div className="kv">
 										<span className="k">Email</span>
 										<span className="v" style={{ fontSize: "11.5px" }}>
-											rohan@atlas-shipping.com
+											{emp.email}
 										</span>
 									</div>
 									<div className="kv">
 										<span className="k">Phone</span>
-										<span className="v">+592 ••• 4218</span>
+										<span className="v">{emp.phone ?? "—"}</span>
 									</div>
 									<div className="kv">
-										<span className="k">National ID</span>
-										<span className="v">GY-NID-••••-7741</span>
+										<span className="k">Gender</span>
+										<span className="v">
+											{emp.gender
+												? emp.gender.charAt(0).toUpperCase() +
+													emp.gender.slice(1)
+												: "—"}
+										</span>
 									</div>
 									<div className="kv">
 										<span className="k">Date of birth</span>
-										<span className="v">1992-04-12</span>
+										<span className="v">
+											{emp.dateOfBirth
+												? new Date(emp.dateOfBirth).toISOString().slice(0, 10)
+												: "—"}
+										</span>
 									</div>
 								</div>
 							</div>
@@ -298,82 +419,96 @@ function EmployeeProfilePage() {
 								</div>
 								<div className="body field-list">
 									<div className="kv">
-										<span className="k">Role</span>
-										<span className="v plain">Senior Engineer</span>
-									</div>
-									<div className="kv">
-										<span className="k">Department</span>
-										<span className="v plain">Engineering</span>
-									</div>
-									<div className="kv">
-										<span className="k">Manager</span>
-										<span className="v plain">Maya Persaud</span>
+										<span className="k">Position</span>
+										<span className="v plain">
+											{workInfo?.jobPositionId ? "Set" : "—"}
+										</span>
 									</div>
 									<div className="kv">
 										<span className="k">Location</span>
-										<span className="v plain">Georgetown, GY</span>
+										<span className="v plain">
+											{workInfo?.workLocation ?? "—"}
+											{emp.country ? `, ${emp.country}` : ""}
+										</span>
 									</div>
 									<div className="kv">
-										<span className="k">Contract</span>
-										<span className="v plain">Permanent</span>
+										<span className="k">Work Type</span>
+										<span className="v plain">
+											{workInfo?.workTypeId ? "Configured" : "—"}
+										</span>
+									</div>
+									<div className="kv">
+										<span className="k">Shift</span>
+										<span className="v plain">
+											{workInfo?.shiftId ? "Configured" : "—"}
+										</span>
 									</div>
 									<div className="kv">
 										<span className="k">Joined</span>
-										<span className="v">2024-03-18</span>
+										<span className="v">
+											{workInfo?.joiningDate
+												? new Date(workInfo.joiningDate)
+														.toISOString()
+														.slice(0, 10)
+												: "—"}
+										</span>
 									</div>
 									<div className="kv">
-										<span className="k">Tenure</span>
-										<span className="v">2y · 6m</span>
+										<span className="k">Salary</span>
+										<span className="v">
+											{workInfo?.basicSalary
+												? `${Number(workInfo.basicSalary).toLocaleString()} ${workInfo.salaryCurrency}`
+												: "—"}
+										</span>
 									</div>
 								</div>
 							</div>
 
 							<div className="side-card">
 								<div className="head">
-									<span className="ttl">Payroll · GY</span>
-									<span className="badge">
-										<span
-											className="badge-dot"
-											style={{ background: "var(--accent)" }}
-										/>
-										v2026.1
-									</span>
+									<span className="ttl">Banking</span>
 								</div>
 								<div className="body field-list">
-									<div className="kv">
-										<span className="k">Country</span>
-										<span
-											className="v plain"
+									{bankDetails ? (
+										<>
+											<div className="kv">
+												<span className="k">Currency</span>
+												<span className="v">
+													{workInfo?.salaryCurrency ?? "GYD"}
+												</span>
+											</div>
+											<div className="kv">
+												<span className="k">Bank</span>
+												<span className="v plain">{bankDetails.bankName}</span>
+											</div>
+											<div className="kv">
+												<span className="k">Account</span>
+												<span className="v">{bankDetails.accountNumber}</span>
+											</div>
+											{bankDetails.branch && (
+												<div className="kv">
+													<span className="k">Branch</span>
+													<span className="v plain">{bankDetails.branch}</span>
+												</div>
+											)}
+											{bankDetails.bankCode1 && (
+												<div className="kv">
+													<span className="k">Bank Code</span>
+													<span className="v">{bankDetails.bankCode1}</span>
+												</div>
+											)}
+										</>
+									) : (
+										<div
 											style={{
-												display: "inline-flex",
-												alignItems: "center",
-												gap: "8px",
+												fontSize: "12.5px",
+												color: "var(--fg-3)",
+												padding: "8px 0",
 											}}
 										>
-											<span style={{ fontSize: "11px" }}>GY</span>
-											Guyana
-										</span>
-									</div>
-									<div className="kv">
-										<span className="k">Currency</span>
-										<span className="v">GYD</span>
-									</div>
-									<div className="kv">
-										<span className="k">PAYE band</span>
-										<span className="v">28%</span>
-									</div>
-									<div className="kv">
-										<span className="k">NIS number</span>
-										<span className="v">GY-NIS-9482-1147</span>
-									</div>
-									<div className="kv">
-										<span className="k">Pay schedule</span>
-										<span className="v plain">Monthly · last working day</span>
-									</div>
-									<div className="kv">
-										<span className="k">Bank</span>
-										<span className="v plain">Republic Bank · •••• 4421</span>
-									</div>
+											No bank details configured.
+										</div>
+									)}
 								</div>
 							</div>
 						</div>
