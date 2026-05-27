@@ -1,11 +1,20 @@
 import { db } from "@Heimdallone/db";
 import * as schema from "@Heimdallone/db/schema/index";
+import { ORPCError } from "@orpc/server";
 import { createId } from "@paralleldrive/cuid2";
 import { and, count, desc, eq, ilike, or, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { authorizedProcedure, tenantProcedure } from "../index";
 import { createAuditEvent, diffChanges } from "../utils/audit";
+import {
+	canMutateEmployees,
+	canReadAllEmployees,
+	canReadFullBankDetails,
+	checkReportingManagerCycle,
+	getDirectReportIds,
+	resolveCurrentEmployee,
+} from "../utils/employee-scope";
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -769,6 +778,29 @@ const employeeList = authorizedProcedure("employee", "read")
 			);
 		}
 
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canReadAllEmployees(role)) {
+			const currentEmp = await resolveCurrentEmployee(
+				orgId(context),
+				actorId(context)
+			);
+			if (!currentEmp) {
+				return { data: [], total: 0 };
+			}
+			if (role === "manager") {
+				const reportIds = await getDirectReportIds(currentEmp.id);
+				const allowedIds = [currentEmp.id, ...reportIds];
+				conditions.push(
+					sql`${schema.employeeProfile.id} IN (${sql.join(
+						allowedIds.map((id) => sql`${id}`),
+						sql`, `
+					)})`
+				);
+			} else {
+				conditions.push(eq(schema.employeeProfile.id, currentEmp.id));
+			}
+		}
+
 		const where = and(...conditions);
 		const offset = (input.page - 1) * input.pageSize;
 
@@ -830,6 +862,25 @@ const employeeList = authorizedProcedure("employee", "read")
 const employeeGetById = authorizedProcedure("employee", "read")
 	.input(z.object({ id: z.string() }))
 	.handler(async ({ context, input }) => {
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canReadAllEmployees(role)) {
+			const currentEmp = await resolveCurrentEmployee(
+				orgId(context),
+				actorId(context)
+			);
+			if (!currentEmp) {
+				throw new ORPCError("FORBIDDEN", { message: "Access denied" });
+			}
+			if (role === "manager") {
+				const reportIds = await getDirectReportIds(currentEmp.id);
+				if (input.id !== currentEmp.id && !reportIds.includes(input.id)) {
+					throw new ORPCError("FORBIDDEN", { message: "Access denied" });
+				}
+			} else if (input.id !== currentEmp.id) {
+				throw new ORPCError("FORBIDDEN", { message: "Access denied" });
+			}
+		}
+
 		const [emp] = await db
 			.select()
 			.from(schema.employeeProfile)
@@ -841,7 +892,7 @@ const employeeGetById = authorizedProcedure("employee", "read")
 			)
 			.limit(1);
 		if (!emp) {
-			throw new Error("NOT_FOUND");
+			throw new ORPCError("NOT_FOUND", { message: "Employee not found" });
 		}
 
 		const [workRow] = await db
@@ -951,6 +1002,47 @@ const employeeCreate = authorizedProcedure("employee", "create")
 		})
 	)
 	.handler(async ({ context, input }) => {
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canMutateEmployees(role)) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Only HR administrators can create employees.",
+			});
+		}
+
+		const [existingEmail] = await db
+			.select({ id: schema.employeeProfile.id })
+			.from(schema.employeeProfile)
+			.where(
+				and(
+					eq(schema.employeeProfile.organizationId, orgId(context)),
+					eq(schema.employeeProfile.email, input.email)
+				)
+			)
+			.limit(1);
+		if (existingEmail) {
+			throw new ORPCError("CONFLICT", {
+				message: "An employee with this email already exists.",
+			});
+		}
+
+		if (input.badgeId) {
+			const [existingBadge] = await db
+				.select({ id: schema.employeeProfile.id })
+				.from(schema.employeeProfile)
+				.where(
+					and(
+						eq(schema.employeeProfile.organizationId, orgId(context)),
+						eq(schema.employeeProfile.badgeId, input.badgeId)
+					)
+				)
+				.limit(1);
+			if (existingBadge) {
+				throw new ORPCError("CONFLICT", {
+					message: "This badge ID is already assigned to another employee.",
+				});
+			}
+		}
+
 		const empId = createId();
 		const [emp] = await db
 			.insert(schema.employeeProfile)
@@ -1026,6 +1118,12 @@ const employeeUpdate = authorizedProcedure("employee", "update")
 		})
 	)
 	.handler(async ({ context, input }) => {
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canMutateEmployees(role)) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Only HR administrators can edit employees.",
+			});
+		}
 		const { id, ...fields } = input;
 		const updates: Record<string, unknown> = {};
 		for (const [k, v] of Object.entries(fields)) {
@@ -1063,6 +1161,12 @@ const employeeUpdate = authorizedProcedure("employee", "update")
 const employeeArchive = authorizedProcedure("employee", "terminate")
 	.input(z.object({ id: z.string() }))
 	.handler(async ({ context, input }) => {
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canMutateEmployees(role)) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Only HR administrators can archive employees.",
+			});
+		}
 		const [managerCount] = await db
 			.select({ c: count() })
 			.from(schema.employeeWorkInfo)
@@ -1095,6 +1199,12 @@ const employeeArchive = authorizedProcedure("employee", "terminate")
 const employeeRestore = authorizedProcedure("employee", "update")
 	.input(z.object({ id: z.string() }))
 	.handler(async ({ context, input }) => {
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canMutateEmployees(role)) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Only HR administrators can restore employees.",
+			});
+		}
 		const [restored] = await db
 			.update(schema.employeeProfile)
 			.set({ isActive: true })
@@ -1151,7 +1261,27 @@ const workInfoUpdate = authorizedProcedure("employee", "update")
 		})
 	)
 	.handler(async ({ context, input }) => {
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canMutateEmployees(role)) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Only HR administrators can edit work information.",
+			});
+		}
+
 		const { employeeId, ...fields } = input;
+
+		if (fields.reportingManagerId) {
+			const isCycle = await checkReportingManagerCycle(
+				employeeId,
+				fields.reportingManagerId
+			);
+			if (isCycle) {
+				throw new ORPCError("BAD_REQUEST", {
+					message: "This manager assignment would create a reporting loop.",
+				});
+			}
+		}
+
 		const updates: Record<string, unknown> = {};
 		for (const [k, v] of Object.entries(fields)) {
 			if (v !== undefined) {
@@ -1233,6 +1363,12 @@ const bankDetailsUpdate = authorizedProcedure("employee", "update")
 		})
 	)
 	.handler(async ({ context, input }) => {
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canReadFullBankDetails(role)) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Only HR and payroll administrators can edit bank details.",
+			});
+		}
 		const { employeeId, ...fields } = input;
 		const existing = await db
 			.select()

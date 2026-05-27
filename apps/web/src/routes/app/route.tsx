@@ -44,7 +44,7 @@ type OrgContext = {
 	userEmail: string;
 };
 
-const OrgCtx = createContext<OrgContext>({
+export const OrgCtx = createContext<OrgContext>({
 	orgName: "Atlas Shipping",
 	orgSlug: "atlas-shipping",
 	memberRole: "employee",

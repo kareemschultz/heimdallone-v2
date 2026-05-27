@@ -28,11 +28,15 @@ import {
 	Wallet,
 	X,
 } from "lucide-react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/employee-profile.css";
+import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
+
+const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
+const BANK_ROLES = [...HR_ROLES, "payroll_admin"];
 
 export const Route = createFileRoute("/app/employees/$id")({
 	component: EmployeeProfilePage,
@@ -85,6 +89,9 @@ function EmployeeProfilePage() {
 	const { id } = Route.useParams();
 	const navigate = useNavigate();
 	const qc = useQueryClient();
+	const org = useContext(OrgCtx);
+	const canEdit = HR_ROLES.includes(org.memberRole);
+	const canEditBank = BANK_ROLES.includes(org.memberRole);
 	const [profileTab, setProfileTab] = useState<ProfileTab>("overview");
 	const [editSection, setEditSection] = useState<EditSection>(null);
 	const [confirmArchive, setConfirmArchive] = useState(false);
@@ -306,43 +313,48 @@ function EmployeeProfilePage() {
 						</div>
 					</div>
 					<div className="profile-actions">
-						<button
-							className="btn btn-outline btn-sm"
-							onClick={() => setEditSection("personal")}
-							type="button"
-						>
-							<Edit size={12} />
-							Edit profile
-						</button>
-						<button
-							className="btn btn-outline btn-sm"
-							onClick={() => setEditSection("work")}
-							type="button"
-						>
-							<Briefcase size={12} />
-							Edit work info
-						</button>
-						{emp.isActive ? (
-							<button
-								className="btn btn-outline btn-sm"
-								onClick={() => setConfirmArchive(true)}
-								style={{ color: "var(--danger)" }}
-								type="button"
-							>
-								<Archive size={12} />
-								Archive
-							</button>
-						) : (
-							<button
-								className="btn btn-outline btn-sm"
-								onClick={handleRestore}
-								style={{ color: "var(--success)" }}
-								type="button"
-							>
-								<Undo size={12} />
-								Restore
-							</button>
+						{canEdit && (
+							<>
+								<button
+									className="btn btn-outline btn-sm"
+									onClick={() => setEditSection("personal")}
+									type="button"
+								>
+									<Edit size={12} />
+									Edit profile
+								</button>
+								<button
+									className="btn btn-outline btn-sm"
+									onClick={() => setEditSection("work")}
+									type="button"
+								>
+									<Briefcase size={12} />
+									Edit work info
+								</button>
+							</>
 						)}
+						{canEdit &&
+							(emp.isActive ? (
+								<button
+									className="btn btn-outline btn-sm"
+									onClick={() => setConfirmArchive(true)}
+									style={{ color: "var(--danger)" }}
+									type="button"
+								>
+									<Archive size={12} />
+									Archive
+								</button>
+							) : (
+								<button
+									className="btn btn-outline btn-sm"
+									onClick={handleRestore}
+									style={{ color: "var(--success)" }}
+									type="button"
+								>
+									<Undo size={12} />
+									Restore
+								</button>
+							))}
 					</div>
 				</div>
 				<div className="profile-tabs">
@@ -540,15 +552,17 @@ function EmployeeProfilePage() {
 							<div className="side-card">
 								<div className="head">
 									<span className="ttl">Banking</span>
-									<button
-										className="icon-btn"
-										onClick={() => setEditSection("bank")}
-										style={{ width: 26, height: 26 }}
-										title="Edit bank details"
-										type="button"
-									>
-										<Edit size={13} />
-									</button>
+									{canEditBank && (
+										<button
+											className="icon-btn"
+											onClick={() => setEditSection("bank")}
+											style={{ width: 26, height: 26 }}
+											title="Edit bank details"
+											type="button"
+										>
+											<Edit size={13} />
+										</button>
+									)}
 								</div>
 								<div className="body field-list">
 									{bankDetails ? (
