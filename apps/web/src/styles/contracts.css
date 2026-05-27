@@ -1,0 +1,172 @@
+/* Contract status pill overrides */
+.pill-status.cs-draft {
+	color: var(--fg-3);
+	background: var(--bg-3);
+}
+.pill-status.cs-active {
+	color: var(--success);
+	background: var(--success-soft);
+}
+.pill-status.cs-expiring {
+	color: var(--warning);
+	background: var(--warning-soft);
+}
+.pill-status.cs-expired {
+	color: var(--fg-4);
+	background: var(--bg-4);
+}
+.pill-status.cs-terminated {
+	color: var(--danger);
+	background: var(--danger-soft);
+}
+
+/* Contract sheet — wider modal for the create/edit form */
+.contract-sheet {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 580px;
+	max-height: 88vh;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+}
+.contract-sheet-head {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-bottom: 1px solid var(--line);
+}
+.contract-sheet-body {
+	flex: 1;
+	padding: 20px;
+	overflow-y: auto;
+}
+.contract-sheet-body .field-group {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 14px;
+	margin-bottom: 14px;
+}
+.contract-sheet-body .field-group.full {
+	grid-template-columns: 1fr;
+}
+.contract-sheet-body .field-section {
+	padding-top: 16px;
+	margin-top: 16px;
+	border-top: 1px solid var(--line);
+}
+.contract-sheet-body .section-label {
+	margin-bottom: 12px;
+	font-size: 10.5px;
+	font-weight: 500;
+	color: var(--fg-4);
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+}
+.contract-sheet-foot {
+	display: flex;
+	flex-shrink: 0;
+	gap: 8px;
+	justify-content: flex-end;
+	padding: 14px 20px;
+	border-top: 1px solid var(--line);
+}
+
+/* Confirmation dialogs */
+.confirm-dialog {
+	width: 100%;
+	max-width: 440px;
+	padding: 24px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 16px;
+}
+.confirm-dialog h4 {
+	margin-bottom: 8px;
+	font-size: 15px;
+}
+.confirm-dialog .desc {
+	margin-bottom: 16px;
+	font-size: 13px;
+	line-height: 1.6;
+	color: var(--fg-3);
+}
+.confirm-dialog .contract-info {
+	padding: 12px 14px;
+	margin-bottom: 20px;
+	background: var(--bg-3);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.confirm-dialog .contract-info .row {
+	display: flex;
+	gap: 16px;
+	align-items: baseline;
+	justify-content: space-between;
+	padding: 2px 0;
+	font-size: 12.5px;
+}
+.confirm-dialog .contract-info .row .k {
+	flex-shrink: 0;
+	color: var(--fg-3);
+}
+.confirm-dialog .contract-info .row .v {
+	font-weight: 500;
+	color: var(--fg);
+	text-align: right;
+}
+.confirm-dialog .dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+}
+.confirm-dialog textarea.input {
+	height: 76px;
+	padding-top: 8px;
+	resize: vertical;
+}
+
+/* Contract history on employee profile */
+.contract-history {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+.contract-card {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+	padding: 12px 0;
+	border-bottom: 1px solid var(--line);
+}
+.contract-card:last-child {
+	padding-bottom: 0;
+	border-bottom: 0;
+}
+.contract-card .cc-meta {
+	flex: 1;
+	min-width: 0;
+}
+.contract-card .cc-name {
+	margin-bottom: 3px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg);
+}
+.contract-card .cc-sub {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 11.5px;
+	color: var(--fg-3);
+}
+.contract-card .cc-salary {
+	flex-shrink: 0;
+	font-family: "JetBrains Mono", ui-monospace, monospace;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--accent);
+}

@@ -296,6 +296,88 @@ export const employeeDocument = pgTable(
 	]
 );
 
+export const contractWageTypeEnum = pgEnum("contract_wage_type", [
+	"daily",
+	"monthly",
+	"hourly",
+]);
+export const contractPayFrequencyEnum = pgEnum("contract_pay_frequency", [
+	"weekly",
+	"monthly",
+	"semi_monthly",
+]);
+export const contractStatusEnum = pgEnum("contract_status", [
+	"draft",
+	"active",
+	"expired",
+	"terminated",
+]);
+
+export const filingStatus = pgTable(
+	"filing_status",
+	{
+		id: cuid(),
+		organizationId: orgRef(),
+		name: text("name").notNull(),
+		basedOn: text("based_on").default("taxable_gross_pay").notNull(),
+		brackets: jsonb("brackets").notNull(),
+		isActive: boolean("is_active").default(true).notNull(),
+		...timestamps,
+	},
+	(t) => [unique("filing_status_org_name_uq").on(t.organizationId, t.name)]
+);
+
+export const contract = pgTable(
+	"contract",
+	{
+		id: cuid(),
+		organizationId: orgRef(),
+		employeeId: text("employee_id")
+			.notNull()
+			.references(() => employeeProfile.id, { onDelete: "restrict" }),
+		contractName: text("contract_name").notNull(),
+		startDate: date("start_date", { mode: "date" }).notNull(),
+		endDate: date("end_date", { mode: "date" }),
+		wageType: contractWageTypeEnum("wage_type").notNull(),
+		payFrequency: contractPayFrequencyEnum("pay_frequency").notNull(),
+		baseSalary: numeric("base_salary", { precision: 12, scale: 2 }).notNull(),
+		salaryCurrency: text("salary_currency").default("GYD").notNull(),
+		filingStatusId: text("filing_status_id").references(() => filingStatus.id, {
+			onDelete: "set null",
+		}),
+		status: contractStatusEnum("status").default("draft").notNull(),
+		departmentId: text("department_id").references(() => department.id, {
+			onDelete: "set null",
+		}),
+		jobPositionId: text("job_position_id").references(() => jobPosition.id, {
+			onDelete: "set null",
+		}),
+		shiftId: text("shift_id").references(() => shift.id, {
+			onDelete: "set null",
+		}),
+		workTypeId: text("work_type_id").references(() => workType.id, {
+			onDelete: "set null",
+		}),
+		noticePeriodDays: integer("notice_period_days").default(30).notNull(),
+		documentUrl: text("document_url"),
+		deductLeaveFromBasicPay: boolean("deduct_leave_from_basic_pay")
+			.default(true)
+			.notNull(),
+		notes: text("notes"),
+		...timestamps,
+	},
+	(t) => [
+		index("contract_org_idx").on(t.organizationId),
+		index("contract_employee_idx").on(t.employeeId),
+		index("contract_employee_status_idx").on(t.employeeId, t.status),
+		unique("contract_employee_period_uq").on(
+			t.employeeId,
+			t.startDate,
+			t.endDate
+		),
+	]
+);
+
 export const auditEvent = pgTable(
 	"audit_event",
 	{
@@ -364,6 +446,7 @@ export const employeeProfileRelations = relations(
 			references: [employeeBankDetails.employeeId],
 		}),
 		documents: many(employeeDocument),
+		contracts: many(contract),
 		user: one(user, {
 			fields: [employeeProfile.userId],
 			references: [user.id],
@@ -429,3 +512,34 @@ export const employeeDocumentRelations = relations(
 		}),
 	})
 );
+
+export const filingStatusRelations = relations(filingStatus, ({ many }) => ({
+	contracts: many(contract),
+}));
+
+export const contractRelations = relations(contract, ({ one }) => ({
+	employee: one(employeeProfile, {
+		fields: [contract.employeeId],
+		references: [employeeProfile.id],
+	}),
+	filingStatus: one(filingStatus, {
+		fields: [contract.filingStatusId],
+		references: [filingStatus.id],
+	}),
+	department: one(department, {
+		fields: [contract.departmentId],
+		references: [department.id],
+	}),
+	jobPosition: one(jobPosition, {
+		fields: [contract.jobPositionId],
+		references: [jobPosition.id],
+	}),
+	shift: one(shift, {
+		fields: [contract.shiftId],
+		references: [shift.id],
+	}),
+	workType: one(workType, {
+		fields: [contract.workTypeId],
+		references: [workType.id],
+	}),
+}));

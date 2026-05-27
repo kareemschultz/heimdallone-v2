@@ -36,13 +36,13 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
 
-type OrgContext = {
+interface OrgContext {
+	memberRole: string;
 	orgName: string;
 	orgSlug: string;
-	memberRole: string;
-	userName: string;
 	userEmail: string;
-};
+	userName: string;
+}
 
 export const OrgCtx = createContext<OrgContext>({
 	orgName: "Atlas Shipping",
@@ -54,6 +54,7 @@ export const OrgCtx = createContext<OrgContext>({
 
 const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"overview",
+	"contracts",
 	"leave",
 	"documents",
 	"settings",
@@ -61,6 +62,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 const MANAGER_VISIBLE_KEYS = new Set([
 	"overview",
 	"employees",
+	"contracts",
 	"attendance",
 	"leave",
 	"documents",
@@ -130,6 +132,12 @@ const NAV = [
 				meta: "●",
 				metaAccent: true,
 			},
+			{
+				key: "contracts",
+				label: "Contracts",
+				icon: FileText,
+				href: "/app/contracts",
+			},
 		],
 	},
 	{
@@ -175,7 +183,7 @@ const NAV = [
 	},
 ] as const;
 
-function HeimdallLogo({ size = 22 }: { size?: number }) {
+function _HeimdallLogo({ size = 22 }: { size?: number }) {
 	return (
 		<svg
 			aria-hidden="true"
@@ -240,7 +248,7 @@ function ThemeToggle() {
 
 function useCurrentNavKey(): string {
 	const matches = useMatches();
-	const lastMatch = matches[matches.length - 1];
+	const lastMatch = matches.at(-1);
 	const path = lastMatch?.pathname ?? "/app";
 	if (path === "/app" || path === "/app/") {
 		return "overview";
@@ -620,7 +628,7 @@ function AppSidebar() {
 }
 
 function AppTopbar() {
-	const [theme, setTheme] = useState("dark");
+	const [_theme, setTheme] = useState("dark");
 	const [syncMenuOpen, setSyncMenuOpen] = useState(false);
 	const [notifMenuOpen, setNotifMenuOpen] = useState(false);
 	const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -632,7 +640,7 @@ function AppTopbar() {
 		}
 	}, []);
 
-	const toggleTheme = (t: string) => {
+	const _toggleTheme = (t: string) => {
 		setTheme(t);
 		document.documentElement.setAttribute("data-theme", t);
 		try {
@@ -654,7 +662,7 @@ function AppTopbar() {
 		};
 		document.addEventListener("keydown", handler);
 		return () => document.removeEventListener("keydown", handler);
-	}, []);
+	}, [closeAll]);
 
 	return (
 		<div className="topbar">

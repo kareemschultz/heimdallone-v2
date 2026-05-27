@@ -2,13 +2,23 @@
   "hooks": {
     "PostToolUse": [
       {
+        "matcher": "Write|Edit",
         "hooks": [
           {
-            "command": "bun fix --skip=correctness/noUnusedImports",
-            "type": "command"
+            "type": "command",
+            "command": "bun fix --skip=correctness/noUnusedImports"
           }
-        ],
-        "matcher": "Write|Edit"
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '{\"systemMessage\": \"Quality gates: bun run check-types && bun run build && bun run check | Docs: lessons-learned.md, AGENTS.md, memory/project_current_status.md\"}'"
+          }
+        ]
       }
     ]
   }

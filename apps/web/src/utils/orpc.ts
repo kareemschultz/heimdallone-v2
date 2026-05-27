@@ -23,7 +23,7 @@ const link = new RPCLink({
 	url:
 		typeof window === "undefined"
 			? `${process.env.VITE_SERVER_URL || "http://localhost:3000"}/rpc`
-			: "/rpc",
+			: `${window.location.origin}/rpc`,
 	fetch(url, options) {
 		return fetch(url, {
 			...options,

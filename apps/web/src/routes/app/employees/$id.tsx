@@ -15,15 +15,10 @@ import {
 	ExternalLink,
 	FileText,
 	Filter,
-	Info,
 	LayoutDashboard,
-	LogOut,
-	MoreHorizontal,
-	Play,
 	Plus,
 	TrendingUp,
 	Undo,
-	User,
 	Users,
 	Wallet,
 	X,
@@ -32,11 +27,13 @@ import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/employee-profile.css";
+import "@/styles/contracts.css";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
 
 const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
 const BANK_ROLES = [...HR_ROLES, "payroll_admin"];
+const SALARY_VISIBLE_ROLES = [...BANK_ROLES];
 
 export const Route = createFileRoute("/app/employees/$id")({
 	component: EmployeeProfilePage,
@@ -140,8 +137,12 @@ function EmployeeProfilePage() {
 	);
 	const { data: empListData } = useQuery(
 		orpc.hrCore.employees.list.queryOptions({
-			input: { isActive: true, page: 1, pageSize: 200 },
+			input: { isActive: true, page: 1, pageSize: 100 },
 		})
+	);
+
+	const { data: contractsData } = useQuery(
+		orpc.contracts.getByEmployeeId.queryOptions({ input: { employeeId: id } })
 	);
 
 	const handleArchive = async () => {
@@ -1426,6 +1427,14 @@ function EmployeeProfilePage() {
 			{/* Tab: Payroll */}
 			{profileTab === "payroll" && (
 				<div className="tab-panel active">
+					<ContractSection
+						canSeeSalary={SALARY_VISIBLE_ROLES.includes(org.memberRole)}
+						contracts={
+							(contractsData as ContractHistoryItem[] | undefined) ?? []
+						}
+						employeeId={id}
+						isHr={canEdit}
+					/>
 					<div className="widget">
 						<div className="widget-head">
 							<span className="ttl">Pay-run history · 9 runs</span>
@@ -2114,6 +2123,246 @@ function EmployeeProfilePage() {
 					</div>
 				</div>
 			)}
+		</div>
+	);
+}
+
+// ─── Contract Section (payroll tab) ──────────────────────
+
+interface ContractHistoryItem {
+	baseSalary: string | null;
+	contractName: string;
+	endDate: Date | null;
+	id: string;
+	payFrequency: "weekly" | "monthly" | "semi_monthly";
+	salaryCurrency: string;
+	startDate: Date;
+	status: "draft" | "active" | "expired" | "terminated";
+	wageType: "daily" | "monthly" | "hourly";
+}
+
+const CONTRACT_STATUS_CLASS: Record<string, string> = {
+	active: "pill-status cs-active",
+	draft: "pill-status cs-draft",
+	expired: "pill-status cs-expired",
+	terminated: "pill-status cs-terminated",
+};
+
+function fmtContractDate(d: Date | null | string | undefined): string {
+	if (!d) {
+		return "—";
+	}
+	return new Date(d).toISOString().slice(0, 10);
+}
+
+function ContractSection({
+	contracts,
+	canSeeSalary,
+	isHr,
+	employeeId,
+}: {
+	contracts: ContractHistoryItem[];
+	canSeeSalary: boolean;
+	isHr: boolean;
+	employeeId: string;
+}) {
+	const active = contracts.find((c) => c.status === "active");
+	const history = contracts.filter((c) => c !== active);
+
+	return (
+		<div className="widget" style={{ marginBottom: 20 }}>
+			<div className="widget-head">
+				<span className="ttl">Contract</span>
+				{isHr && (
+					<Link
+						className="btn btn-ghost btn-sm"
+						search={{}}
+						to="/app/contracts"
+					>
+						Manage contracts
+						<ExternalLink size={11} />
+					</Link>
+				)}
+			</div>
+			<div className="widget-body">
+				{contracts.length === 0 ? (
+					<div
+						style={{
+							fontSize: "12.5px",
+							color: "var(--fg-3)",
+							padding: "8px 0",
+						}}
+					>
+						No contracts on file.{" "}
+						{isHr && (
+							<Link
+								search={{}}
+								style={{ color: "var(--accent)" }}
+								to="/app/contracts"
+							>
+								Create one →
+							</Link>
+						)}
+					</div>
+				) : (
+					<>
+						{active && (
+							<div
+								style={{
+									background: "var(--bg-3)",
+									borderRadius: 10,
+									padding: "12px 14px",
+									marginBottom: history.length > 0 ? 16 : 0,
+								}}
+							>
+								<div
+									style={{
+										display: "flex",
+										alignItems: "flex-start",
+										justifyContent: "space-between",
+										gap: 12,
+										marginBottom: 8,
+									}}
+								>
+									<div>
+										<div
+											style={{
+												fontSize: "13px",
+												fontWeight: 600,
+												color: "var(--fg)",
+												marginBottom: 2,
+											}}
+										>
+											{active.contractName}
+										</div>
+										<div
+											style={{
+												fontSize: "11.5px",
+												color: "var(--fg-3)",
+												display: "flex",
+												gap: 8,
+												flexWrap: "wrap",
+											}}
+										>
+											<span>
+												{active.wageType === "monthly"
+													? "Monthly salary"
+													: active.wageType === "daily"
+														? "Daily rate"
+														: "Hourly rate"}
+											</span>
+											<span>·</span>
+											<span>
+												{active.payFrequency === "monthly"
+													? "Paid monthly"
+													: active.payFrequency === "weekly"
+														? "Paid weekly"
+														: "Paid semi-monthly"}
+											</span>
+											<span>·</span>
+											<span>From {fmtContractDate(active.startDate)}</span>
+											{active.endDate && (
+												<>
+													<span>·</span>
+													<span>Until {fmtContractDate(active.endDate)}</span>
+												</>
+											)}
+										</div>
+									</div>
+									<div style={{ flexShrink: 0, textAlign: "right" }}>
+										{canSeeSalary && active.baseSalary ? (
+											<div
+												className="mono"
+												style={{
+													fontSize: "16px",
+													fontWeight: 700,
+													color: "var(--accent)",
+												}}
+											>
+												{Number(active.baseSalary).toLocaleString()}
+											</div>
+										) : null}
+										{canSeeSalary && active.baseSalary && (
+											<div
+												style={{
+													fontSize: "11px",
+													color: "var(--fg-3)",
+													marginTop: 1,
+												}}
+											>
+												{active.salaryCurrency} / mo
+											</div>
+										)}
+										<span
+											className="pill-status cs-active"
+											style={{ marginTop: 6 }}
+										>
+											<span className="badge-dot" />
+											Active
+										</span>
+									</div>
+								</div>
+							</div>
+						)}
+
+						{history.length > 0 && (
+							<>
+								<div
+									style={{
+										fontSize: "10.5px",
+										fontWeight: 500,
+										color: "var(--fg-4)",
+										textTransform: "uppercase",
+										letterSpacing: "0.06em",
+										marginBottom: 8,
+									}}
+								>
+									History
+								</div>
+								<div className="contract-history">
+									{history.map((c) => (
+										<div className="contract-card" key={c.id}>
+											<div className="cc-meta">
+												<div className="cc-name">{c.contractName}</div>
+												<div className="cc-sub">
+													<span>{fmtContractDate(c.startDate)}</span>
+													{c.endDate && (
+														<>
+															<span>→</span>
+															<span>{fmtContractDate(c.endDate)}</span>
+														</>
+													)}
+												</div>
+											</div>
+											{canSeeSalary && c.baseSalary && (
+												<span className="cc-salary">
+													{Number(c.baseSalary).toLocaleString()}{" "}
+													<span
+														style={{
+															fontSize: "11px",
+															color: "var(--fg-3)",
+															fontWeight: 400,
+														}}
+													>
+														{c.salaryCurrency}
+													</span>
+												</span>
+											)}
+											<span
+												className={
+													CONTRACT_STATUS_CLASS[c.status] ?? "pill-status"
+												}
+											>
+												{c.status.charAt(0).toUpperCase() + c.status.slice(1)}
+											</span>
+										</div>
+									))}
+								</div>
+							</>
+						)}
+					</>
+				)}
+			</div>
 		</div>
 	);
 }

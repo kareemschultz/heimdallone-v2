@@ -4,7 +4,6 @@ import {
 	ArrowLeft,
 	ArrowRight,
 	Briefcase,
-	Building,
 	Check,
 	Settings,
 	User,
@@ -125,7 +124,7 @@ function EmployeeCreatePage() {
 	);
 	const { data: empListData } = useQuery(
 		orpc.hrCore.employees.list.queryOptions({
-			input: { isActive: true, page: 1, pageSize: 200 },
+			input: { isActive: true, page: 1, pageSize: 100 },
 		})
 	);
 
