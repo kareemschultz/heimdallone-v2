@@ -159,10 +159,10 @@ function EmployeesPage() {
 						<Download size={13} />
 						Export
 					</button>
-					<button className="btn btn-primary" type="button">
+					<Link className="btn btn-primary" to="/app/employees/create">
 						<Plus size={13} />
 						Add employee
-					</button>
+					</Link>
 				</div>
 			</div>
 
