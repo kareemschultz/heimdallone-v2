@@ -843,7 +843,78 @@ const employeeGetById = authorizedProcedure("employee", "read")
 		if (!emp) {
 			throw new Error("NOT_FOUND");
 		}
-		return emp;
+
+		const [workRow] = await db
+			.select({
+				id: schema.employeeWorkInfo.id,
+				employeeId: schema.employeeWorkInfo.employeeId,
+				departmentId: schema.employeeWorkInfo.departmentId,
+				departmentName: schema.department.name,
+				jobPositionId: schema.employeeWorkInfo.jobPositionId,
+				jobPositionName: schema.jobPosition.name,
+				jobRoleId: schema.employeeWorkInfo.jobRoleId,
+				jobRoleName: schema.jobRole.name,
+				shiftId: schema.employeeWorkInfo.shiftId,
+				shiftName: schema.shift.name,
+				workTypeId: schema.employeeWorkInfo.workTypeId,
+				workTypeName: schema.workType.name,
+				employeeTypeId: schema.employeeWorkInfo.employeeTypeId,
+				employeeTypeName: schema.employeeType.name,
+				reportingManagerId: schema.employeeWorkInfo.reportingManagerId,
+				workLocation: schema.employeeWorkInfo.workLocation,
+				workEmail: schema.employeeWorkInfo.workEmail,
+				workPhone: schema.employeeWorkInfo.workPhone,
+				joiningDate: schema.employeeWorkInfo.joiningDate,
+				basicSalary: schema.employeeWorkInfo.basicSalary,
+				salaryCurrency: schema.employeeWorkInfo.salaryCurrency,
+			})
+			.from(schema.employeeWorkInfo)
+			.leftJoin(
+				schema.department,
+				eq(schema.employeeWorkInfo.departmentId, schema.department.id)
+			)
+			.leftJoin(
+				schema.jobPosition,
+				eq(schema.employeeWorkInfo.jobPositionId, schema.jobPosition.id)
+			)
+			.leftJoin(
+				schema.jobRole,
+				eq(schema.employeeWorkInfo.jobRoleId, schema.jobRole.id)
+			)
+			.leftJoin(
+				schema.shift,
+				eq(schema.employeeWorkInfo.shiftId, schema.shift.id)
+			)
+			.leftJoin(
+				schema.workType,
+				eq(schema.employeeWorkInfo.workTypeId, schema.workType.id)
+			)
+			.leftJoin(
+				schema.employeeType,
+				eq(schema.employeeWorkInfo.employeeTypeId, schema.employeeType.id)
+			)
+			.where(eq(schema.employeeWorkInfo.employeeId, input.id))
+			.limit(1);
+
+		let reportingManagerName: string | null = null;
+		if (workRow?.reportingManagerId) {
+			const [mgr] = await db
+				.select({
+					firstName: schema.employeeProfile.firstName,
+					lastName: schema.employeeProfile.lastName,
+				})
+				.from(schema.employeeProfile)
+				.where(eq(schema.employeeProfile.id, workRow.reportingManagerId))
+				.limit(1);
+			if (mgr) {
+				reportingManagerName = `${mgr.firstName}${mgr.lastName ? ` ${mgr.lastName}` : ""}`;
+			}
+		}
+
+		return {
+			...emp,
+			workInfo: workRow ? { ...workRow, reportingManagerName } : null,
+		};
 	});
 
 const employeeCreate = authorizedProcedure("employee", "create")

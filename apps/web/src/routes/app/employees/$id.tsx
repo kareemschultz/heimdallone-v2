@@ -84,12 +84,6 @@ function EmployeeProfilePage() {
 		isError,
 	} = useQuery(orpc.hrCore.employees.getById.queryOptions({ input: { id } }));
 
-	const { data: workInfo } = useQuery(
-		orpc.hrCore.employees.workInfo.get.queryOptions({
-			input: { employeeId: id },
-		})
-	);
-
 	const { data: bankDetails } = useQuery(
 		orpc.hrCore.employees.bankDetails.get.queryOptions({
 			input: { employeeId: id },
@@ -101,6 +95,8 @@ function EmployeeProfilePage() {
 			input: { employeeId: id },
 		})
 	);
+
+	const workInfo = emp?.workInfo ?? null;
 
 	if (isLoading) {
 		return (
@@ -175,10 +171,6 @@ function EmployeeProfilePage() {
 	const fullName = `${emp.firstName}${emp.lastName ? ` ${emp.lastName}` : ""}`;
 	const initials =
 		`${emp.firstName.charAt(0)}${emp.lastName ? emp.lastName.charAt(0) : ""}`.toUpperCase();
-	const positionLabel = workInfo
-		? [workInfo.jobPositionId ? "Position" : null].filter(Boolean).join("")
-		: "";
-
 	return (
 		<div className="page" data-tab-scope>
 			<div className="crumbs">
@@ -200,11 +192,9 @@ function EmployeeProfilePage() {
 						<h1>{fullName}</h1>
 						<div className="sub">
 							<span style={{ color: "var(--fg-2)" }}>
-								{[workInfo?.jobPositionId, workInfo?.departmentId].filter(
-									Boolean
-								).length > 0
-									? "Employee"
-									: "Employee"}
+								{[workInfo?.jobPositionName, workInfo?.departmentName]
+									.filter(Boolean)
+									.join(" · ") || "Employee"}
 							</span>
 							<span className="sep">·</span>
 							<span className="mono" style={{ color: "var(--fg-3)" }}>
@@ -421,7 +411,25 @@ function EmployeeProfilePage() {
 									<div className="kv">
 										<span className="k">Position</span>
 										<span className="v plain">
-											{workInfo?.jobPositionId ? "Set" : "—"}
+											{workInfo?.jobPositionName ?? "Not assigned"}
+										</span>
+									</div>
+									<div className="kv">
+										<span className="k">Department</span>
+										<span className="v plain">
+											{workInfo?.departmentName ?? "Not assigned"}
+										</span>
+									</div>
+									{workInfo?.jobRoleName && (
+										<div className="kv">
+											<span className="k">Specialization</span>
+											<span className="v plain">{workInfo.jobRoleName}</span>
+										</div>
+									)}
+									<div className="kv">
+										<span className="k">Reports To</span>
+										<span className="v plain">
+											{workInfo?.reportingManagerName ?? "Not assigned"}
 										</span>
 									</div>
 									<div className="kv">
@@ -431,16 +439,24 @@ function EmployeeProfilePage() {
 											{emp.country ? `, ${emp.country}` : ""}
 										</span>
 									</div>
+									{workInfo?.employeeTypeName && (
+										<div className="kv">
+											<span className="k">Employment Type</span>
+											<span className="v plain">
+												{workInfo.employeeTypeName}
+											</span>
+										</div>
+									)}
 									<div className="kv">
-										<span className="k">Work Type</span>
+										<span className="k">Work Arrangement</span>
 										<span className="v plain">
-											{workInfo?.workTypeId ? "Configured" : "—"}
+											{workInfo?.workTypeName ?? "Not assigned"}
 										</span>
 									</div>
 									<div className="kv">
 										<span className="k">Shift</span>
 										<span className="v plain">
-											{workInfo?.shiftId ? "Configured" : "—"}
+											{workInfo?.shiftName ?? "Not assigned"}
 										</span>
 									</div>
 									<div className="kv">
