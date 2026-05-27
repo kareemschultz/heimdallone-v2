@@ -55,3 +55,12 @@ temp
 
 # Raw ZIP archives (large binaries — extracted contents tracked separately)
 *.zip
+
+# TanStack Router generated route tree (auto-regenerated on dev/build)
+**/routeTree.gen.ts
+
+# Playwright MCP artifacts (test logs, page snapshots)
+.playwright-mcp/
+
+# Screenshots from visual testing sessions
+screenshots/
