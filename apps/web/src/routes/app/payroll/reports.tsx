@@ -158,6 +158,25 @@ function PayrollReportsPage() {
 				/>
 			</div>
 
+			<div
+				style={{
+					marginBottom: 14,
+					padding: "10px 16px",
+					background: "var(--bg-1)",
+					border: "1px solid var(--line)",
+					borderRadius: 12,
+					fontSize: 12,
+					color: "var(--fg-3)",
+					lineHeight: 1.6,
+				}}
+			>
+				<strong style={{ color: "var(--fg-2)" }}>What these mean:</strong>{" "}
+				<strong>Total gross</strong> is everything employees earned before
+				deductions. <strong>Total net</strong> is the actual take-home pay.{" "}
+				<strong>Total deductions</strong> is PAYE income tax plus NIS plus any
+				loan or post-tax deduction amounts.
+			</div>
+
 			<div className="payroll-grid">
 				<div className="left-col">
 					{/* Payslip status distribution */}
@@ -228,24 +247,24 @@ function PayrollReportsPage() {
 						</div>
 						<div className="side-body">
 							<ExportPlaceholder
+								icon={<DollarSign size={14} />}
+								label="Bank file export"
+								note="Available in Payments tab"
+							/>
+							<ExportPlaceholder
 								icon={<Download size={14} />}
-								label="Export CSV"
-								note="Planned for Phase 8K"
+								label="Payroll CSV export"
+								note="Coming soon"
 							/>
 							<ExportPlaceholder
 								icon={<FileText size={14} />}
 								label="Payroll summary PDF"
-								note="Planned for Phase 8K"
+								note="Coming soon"
 							/>
 							<ExportPlaceholder
 								icon={<FileText size={14} />}
-								label="Statutory reports"
-								note="Planned for Phase 8K"
-							/>
-							<ExportPlaceholder
-								icon={<DollarSign size={14} />}
-								label="Bank export"
-								note="Planned for Phase 8K"
+								label="Statutory reports (PAYE / NIS)"
+								note="Coming soon"
 							/>
 						</div>
 					</div>
@@ -636,7 +655,7 @@ function IssuesSummaryTable({ issues }: { issues: Record<string, unknown>[] }) {
 										className={`badge ${issueBadge(b.issueType as string)}`}
 										style={{ fontSize: 10 }}
 									>
-										{b.issueType as string}
+										{issueTypeLabel(b.issueType as string)}
 									</span>
 								</td>
 								<td className="num-cell">{b.total as number}</td>
@@ -654,6 +673,16 @@ function issueBadge(issueType: string): string {
 		return "badge-danger";
 	}
 	return "badge-warning";
+}
+
+function issueTypeLabel(issueType: string): string {
+	if (issueType === "blocker") {
+		return "Needs fixing";
+	}
+	if (issueType === "warning") {
+		return "Needs review";
+	}
+	return issueType;
 }
 
 function computeTotals(

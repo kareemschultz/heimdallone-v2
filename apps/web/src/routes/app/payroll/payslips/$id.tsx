@@ -105,6 +105,20 @@ function PayslipDetailPage() {
 	}
 
 	const isDraft = slip.status === "draft";
+	const netPayValue = Number(slip.netPay ?? 0);
+	const isNegativeNet = Number.isFinite(netPayValue) && netPayValue < 0;
+	const friendlyStatus = ((): string => {
+		if (slip.status === "draft") {
+			return "Preview";
+		}
+		if (slip.status === "confirmed") {
+			return "Finalized";
+		}
+		if (slip.status === "paid") {
+			return "Paid";
+		}
+		return String(slip.status ?? "");
+	})();
 
 	return (
 		<div className="page">
@@ -127,7 +141,7 @@ function PayslipDetailPage() {
 							className={`badge ${payslipBadge(slip.status as string)}`}
 							style={{ fontSize: 10 }}
 						>
-							{slip.status as string}
+							{friendlyStatus}
 						</span>
 					</p>
 				</div>
@@ -189,6 +203,32 @@ function PayslipDetailPage() {
 				>
 					<strong>Preview only</strong> — This payslip is not finalized. Final
 					payslip is created only after payroll is confirmed.
+				</div>
+			)}
+
+			{isNegativeNet && (
+				<div
+					className="no-print"
+					style={{
+						marginBottom: 14,
+						padding: "12px 16px",
+						background: "var(--warning-soft)",
+						border: "1px solid var(--warning)",
+						borderRadius: 12,
+						fontSize: 12.5,
+						color: "var(--fg-2)",
+						lineHeight: 1.6,
+					}}
+				>
+					<strong style={{ color: "var(--warning)" }}>
+						Needs review — blocked preview
+					</strong>
+					<div style={{ marginTop: 4 }}>
+						Deductions on this payslip are larger than gross pay, which would
+						result in a negative net. This is not a valid finalized payslip — a
+						payroll administrator must review and adjust loans, deductions, or
+						hours before confirming.
+					</div>
 				</div>
 			)}
 
@@ -364,14 +404,25 @@ function PayslipDetailPage() {
 				</div>
 			</div>
 
-			{/* Calculation explanation — screen only, not printed */}
+			{/* Calculation explanation — screen only, not printed, collapsible */}
 			{explanations.length > 0 && (
-				<div className="emp-table no-print" style={{ marginTop: 14 }}>
-					<div className="emp-head">
+				<details className="emp-table no-print" style={{ marginTop: 14 }}>
+					<summary
+						className="emp-head"
+						style={{
+							cursor: "pointer",
+							listStyle: "none",
+							userSelect: "none",
+						}}
+					>
 						<span style={{ fontWeight: 600, fontSize: 14 }}>
 							How this was calculated
 						</span>
-					</div>
+						<span style={{ fontSize: 11, color: "var(--fg-3)" }}>
+							{explanations.length} step{explanations.length === 1 ? "" : "s"} —
+							click to expand
+						</span>
+					</summary>
 					<div style={{ padding: 16 }}>
 						{explanations.map((e) => (
 							<div className="fact-row" key={e.step as number}>
@@ -382,7 +433,7 @@ function PayslipDetailPage() {
 							</div>
 						))}
 					</div>
-				</div>
+				</details>
 			)}
 		</div>
 	);

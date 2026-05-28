@@ -429,3 +429,39 @@ Living document. Updated after each major task or unexpected issue.
 ### Compliance Note
 
 Payroll calculations are not production-compliance-certified. Official statutory verification and payroll QA sign-off are required before production use. Guyana 2026 PAYE/NIS logic is implemented per research but needs GRA confirmation. Barbados/Trinidad rules are documented but not implemented.
+
+---
+
+## Session: 2026-05-28 — Phase 8J.1 Module Tabs + UX Clarity Polish
+
+### Gotchas Discovered
+
+87. **Phase commits can be misleading.** A commit titled "Phase 8J.1" was pushed earlier with only ~15% of the spec implemented (PayrollTabs component + 2 security fixes only). Verify with `git show --stat <sha>` against the original spec checklist — never trust the title alone.
+
+88. **Multiple Edit calls to the same file in one message** run sequentially with re-reads between them, so they don't fight each other. But the PostToolUse formatter hook may rewrite the file after each Edit — old_string targeting reformatted regions on the next Edit needs a re-Read.
+
+89. **`useFilenamingConvention` Biome rule still triggers on TSX after directory routing.** TanStack file-route paths like `payslips/$id.tsx` are valid because the `$` segment is at the directory level. PascalCase component file names (`PayrollTabs.tsx`) trigger the rule — use kebab-case (`payroll-tabs.tsx`) for the file, keep PascalCase for the exported component.
+
+### Patterns That Worked
+
+46. **Module tabs as a product standard.** A single `ModuleTabs` (or per-module like `PayrollTabs`) component rendered immediately under the page-header dramatically improved cross-page navigation. Pattern: a `Tab[]` array with `{ key, label, href, group, adminOnly }`, role filter, and an explicit `resolveActiveTab(path)` so the active state survives child routes (e.g. payslips list and payslips/$id both highlight "Payslips"). Recommended for Attendance, Leave, Employee Profile, Contracts.
+
+47. **Plain-language UX wins.** Replacing engineering jargon with task-oriented language reduced ambiguity: "blocker" → "Needs fixing / Cannot continue", "warning" → "Needs review", "draft" → "Preview", "confirmed" → "Finalized". Raw enum/audit codes (e.g. `NEGATIVE_NET_PAY`) are demoted to small secondary text — useful for support but not the primary signal.
+
+48. **Status legends inline beat tooltips.** A 1-line inline legend at the top of the payslips list ("Preview … not finalized · Finalized … visible to employees · Paid … bank confirmed") removed the need for tooltips and made the status badges self-explanatory.
+
+49. **Collapsible explanations via `<details>`/`<summary>`.** The calculation-explanation panel on payslip detail used to be a permanently-rendered table that pushed the actual payslip below the fold on dense periods. Switching to `<details>` with `cursor: pointer` and `listStyle: none` keeps the same handoff visual, hides the noise by default, and works without JS state.
+
+50. **Negative net pay is not a valid finalized payslip.** If the engine returns net < 0 (deductions exceed gross), the UI must surface a "Needs review — blocked preview" banner and never let the payslip look like a normal final document. The clamp-to-zero behavior remains in the engine for safety; the UI's job is to make the reviewer take action.
+
+51. **Filter pills > tabs for intra-page categorisation.** Module-level `PayrollTabs` are for page navigation. Inside a single page (Pay Items, Loans, Reimbursements), small segmented filter "pills" with client-side filtering are the right primitive — they don't change the URL, they filter the table in place. Use server-side filter where the API supports it, fall back to client-side for derived categories (e.g. "Statutory" derived from `isStatutory` flag).
+
+### Edge Cases to Watch
+
+3. **CSV formula injection.** Excel evaluates any cell whose value starts with `=`, `+`, `-`, `@`, tab, or carriage-return as a formula. The Phase 8J.1 commit included a `csvCell()` helper that prefixes such values with a single quote and properly escapes quotes/commas/newlines. Any future CSV export from user-controlled fields must use this helper.
+
+4. **State machine guards on terminal states.** `paymentBatchesMarkFailed` and similar transitions must reject calls when the batch is already in a terminal state (`paid`, `cancelled`, `failed`). Without the guard, a UI race or replayed network request can transition out of paid/cancelled and corrupt the audit trail.
+
+### Compliance Note (carried forward)
+
+Manual bank confirmation only. Exporting a bank file is **not** payment. "Mark as paid" requires positive confirmation from the bank portal. Republic Bank / EZPay templates require official specs before they may be enabled — Generic CSV is the only format until then.

@@ -25,7 +25,13 @@ export const Route = createFileRoute("/app/payroll/pay-items")({
 });
 
 type PayItemType = "allowance" | "deduction";
-type ViewMode = "all" | "allowance" | "deduction";
+type ViewMode =
+	| "all"
+	| "earnings"
+	| "allowance"
+	| "deduction"
+	| "statutory"
+	| "employer";
 
 function taxTimingLabel(item: Record<string, unknown>): string {
 	if ((item.type as string) !== "deduction") {
@@ -47,6 +53,38 @@ function amountOrRateCell(item: Record<string, unknown>): string {
 	return "—";
 }
 
+function matchesViewMode(
+	item: Record<string, unknown>,
+	mode: ViewMode
+): boolean {
+	if (mode === "all") {
+		return true;
+	}
+	const category = String(item.category ?? "").toLowerCase();
+	const itemType = String(item.type ?? "").toLowerCase();
+	const isStatutory = Boolean(item.isStatutory);
+	const isEmployerContribution = Boolean(item.isEmployerContribution);
+	if (mode === "earnings") {
+		return (
+			category === "earning" ||
+			(itemType === "allowance" && !isStatutory && category !== "allowance")
+		);
+	}
+	if (mode === "allowance") {
+		return itemType === "allowance" && !isStatutory;
+	}
+	if (mode === "deduction") {
+		return itemType === "deduction" && !isStatutory;
+	}
+	if (mode === "statutory") {
+		return isStatutory;
+	}
+	if (mode === "employer") {
+		return isEmployerContribution || category === "employer_contribution";
+	}
+	return true;
+}
+
 function PayItemsPage() {
 	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
@@ -57,18 +95,25 @@ function PayItemsPage() {
 	const [showCreate, setShowCreate] = useState(false);
 	const [showAssign, setShowAssign] = useState<string | null>(null);
 
+	const serverType =
+		viewMode === "allowance" || viewMode === "deduction" ? viewMode : undefined;
+
 	const { data: items, isLoading } = useQuery(
 		orpc.payroll.payItems.list.queryOptions({
 			input: {
-				type: viewMode === "all" ? undefined : viewMode,
+				type: serverType,
 				includeInactive: true,
 			},
 		})
 	);
 
-	const filtered = (items ?? []).filter((item: { title: string }) =>
-		item.title.toLowerCase().includes(search.toLowerCase())
-	);
+	const filtered = ((items ?? []) as Record<string, unknown>[])
+		.filter((item) =>
+			String(item.title ?? "")
+				.toLowerCase()
+				.includes(search.toLowerCase())
+		)
+		.filter((item) => matchesViewMode(item, viewMode));
 
 	async function handleArchive(id: string, title: string) {
 		try {
@@ -123,7 +168,16 @@ function PayItemsPage() {
 				</div>
 				<div className="toolbar-divider" />
 				<div className="segmented">
-					{(["all", "allowance", "deduction"] as const).map((mode) => (
+					{(
+						[
+							"all",
+							"earnings",
+							"allowance",
+							"deduction",
+							"statutory",
+							"employer",
+						] as const
+					).map((mode) => (
 						<button
 							className={`seg-btn ${viewMode === mode ? "active" : ""}`}
 							key={mode}
@@ -131,8 +185,11 @@ function PayItemsPage() {
 							type="button"
 						>
 							{mode === "all" && "All"}
+							{mode === "earnings" && "Earnings"}
 							{mode === "allowance" && "Allowances"}
 							{mode === "deduction" && "Deductions"}
+							{mode === "statutory" && "Statutory"}
+							{mode === "employer" && "Employer Contributions"}
 						</button>
 					))}
 				</div>

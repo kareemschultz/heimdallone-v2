@@ -727,3 +727,45 @@ Payslip and report template selection needs a template preview component:
 - Template name and description
 
 This is a specialized selection UI — not a generic primitive. Build inline in the payroll settings page, extract if reused by report templates.
+
+---
+
+## ModuleTabs Pattern (Phase 8J.1)
+
+Phase 8J.1 introduced the **ModuleTabs** pattern: a horizontal tab strip rendered directly under each page header within a multi-page module, providing one-click navigation across the module's pages without leaving the module shell.
+
+**Reference implementation:** `apps/web/src/features/payroll/payroll-tabs.tsx` (`PayrollTabs`).
+
+### Why a per-module component, not a single shared primitive?
+- The tabs are part of the module's information architecture, not a generic chrome element.
+- Tab labels, ordering, grouping, role gating, and active-state resolution are module-specific.
+- Each module's tabs reference module routes typed against TanStack Router — a generic component would erase these types.
+- The shared CSS (`.payroll-tabs`, `.payroll-tab`, `.payroll-tab.active`) lives in `apps/web/src/styles/payroll.css` and is reusable; the component itself is per-module.
+
+### Tab definition shape (per module)
+```ts
+interface Tab {
+  key: string;                           // stable identifier
+  label: string;                         // user-facing plain-language label
+  href: string;                          // route href, typed against router
+  group?: "work" | "setup" | "payments"; // visual grouping (optional)
+  adminOnly?: boolean;                   // gate by role
+  disabled?: boolean;                    // future tabs look planned, not broken
+}
+```
+
+### Required behaviour
+- **Role-aware visibility.** Admin / payroll-admin / hr-admin see the full set. Employees see overview + their own data tabs (`payslips`). Auditors see read-only tabs. Managers do not see payroll tabs by default. Future modules follow the same pattern with their own role mapping.
+- **Mobile-friendly horizontal scroll.** `display: flex; overflow-x: auto; scrollbar-width: none;` so narrow viewports get a scrollable strip rather than a wrapped row.
+- **Active state survives child routes.** `payslips/$id` highlights the "Payslips" tab. Implemented via a tiny `resolveActiveTab(path)` function that prefix-matches on a normalised path (trailing slash stripped).
+- **Plain labels, not route names.** "Run Payroll", not "/run".
+- **Future / disabled tabs must not look broken.** Render as planned items if surfaced (e.g. greyed with a "Coming soon" hint), or omit entirely until ready.
+- **Rounded, modern styling matching the app.** Inherits the handoff token palette via the shared `.payroll-tabs` CSS.
+
+### Recommended next implementations
+- **Attendance**: Overview · Records · Approvals · Geofencing · Devices · Reports
+- **Leave**: Overview · My Leave · Calendar · Requests · Balances · Types · Reports
+- **Employee Profile**: Personal · Job · Pay · Documents · Attendance · Leave · Performance · Notes
+- **Contracts**: Active · Drafts · Renewals · Expired · Templates
+
+When adding ModuleTabs to a new module, copy the `PayrollTabs` pattern into `apps/web/src/features/<module>/<module>-tabs.tsx` and add module-specific CSS classes (`.attendance-tabs`, `.leave-tabs`, etc.) that share the same visual tokens as `.payroll-tabs`. The CSS can be lifted into a shared `module-tabs.css` if visual drift between modules becomes a maintenance issue.

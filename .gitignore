@@ -63,5 +63,5 @@ temp
 .playwright-mcp/
 
 # Screenshots from visual testing sessions
-screenshots/
+# screenshots/ are committed so other agents can see the latest UI state
 screenshots-review/

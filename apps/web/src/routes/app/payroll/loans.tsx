@@ -30,7 +30,7 @@ export const Route = createFileRoute("/app/payroll/loans")({
 	component: LoansPage,
 });
 
-type LoanFilter = "active" | "settled" | "written_off" | "all";
+type LoanFilter = "active" | "settled" | "advances" | "written_off" | "all";
 
 function LoansPage() {
 	const org = useContext(OrgCtx);
@@ -43,17 +43,21 @@ function LoansPage() {
 	const [showCreate, setShowCreate] = useState(false);
 	const [expandedLoan, setExpandedLoan] = useState<string | null>(null);
 
+	const isAdvancesFilter = filter === "advances";
 	const { data, isLoading } = useQuery(
 		orpc.payroll.loans.list.queryOptions({
 			input: {
-				status: filter === "all" ? undefined : filter,
+				status: filter === "all" || isAdvancesFilter ? undefined : filter,
 				page,
 				pageSize: 50,
 			},
 		})
 	);
 
-	const loans = data?.data ?? [];
+	const rawLoans = (data?.data ?? []) as Record<string, unknown>[];
+	const loans = isAdvancesFilter
+		? rawLoans.filter((l) => (l.type as string) === "advance")
+		: rawLoans;
 	const total = data?.total ?? 0;
 	const totalPages = Math.ceil(total / 50);
 
@@ -109,7 +113,7 @@ function LoansPage() {
 				</div>
 				<div className="toolbar-divider" />
 				<div className="segmented">
-					{(["active", "settled", "all"] as const).map((f) => (
+					{(["active", "settled", "advances", "all"] as const).map((f) => (
 						<button
 							className={`seg-btn ${filter === f ? "active" : ""}`}
 							key={f}

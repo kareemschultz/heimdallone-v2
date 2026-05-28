@@ -1796,3 +1796,63 @@ When requesting specs from a bank, ask for: exact product name, salary upload te
 9. **Concurrent payroll runs**: Two admins click "Run Payroll" simultaneously. How to prevent? Recommendation: Unique constraint on (employeeId, periodStart, periodEnd, payrollRunId) prevents duplicate payslips. The UI should check for existing draft runs before creating a new one.
 
 10. **Holiday pay for hourly/daily workers**: Are holidays paid for non-salaried employees? Recommendation: Configurable per org — add `paidHolidaysForHourly` boolean to payroll_setting. Default: true (Labour Act requires holiday pay).
+
+---
+
+## Phase 8J.1 — Module Tabs + UX Clarity Polish (2026-05-28)
+
+Phase 8J.1 sits between functional completeness (8K) and the start of Phase 9. Its sole purpose is to take the payroll module — which is feature-complete — and make every page understandable without engineering context.
+
+### Deliverables
+
+1. **PayrollTabs module navigation** (`apps/web/src/features/payroll/payroll-tabs.tsx`).
+   - 9 tabs grouped as Work / Setup / Payments: Overview · Run Payroll · Payslips · Reports · Settings · Pay Items · Loans · Reimbursements · Payments.
+   - Role-aware: admin sees the full set, employees see Overview + Payslips only, auditors get read-only access where the tab supports it.
+   - Mobile-friendly horizontal scroll (`overflow-x: auto` with hidden scrollbar) so the strip never wraps awkwardly on narrow viewports.
+   - Active-state resolution survives child routes (e.g. `payslips/$id` still highlights "Payslips").
+   - Rendered directly under the page-header on every payroll page.
+
+2. **Page-by-page clarity polish.**
+   - **Overview**: Quick-access flattened list replaced by three labelled groups (Payroll Work / Setup / Payments). The "Run payroll" entry gets a "Recommended" badge once readiness ≥ 80%. Setup checklist now opens with a one-paragraph explanation of what the checklist actually does.
+   - **Run Payroll**: 5-step indicator already in place. Jargon swept across the wizard — "blocker" → "Needs fixing / Cannot continue", "warning" → "Needs review", raw codes (`NEGATIVE_NET_PAY`, `NO_CONTRACT`, etc.) demoted to small secondary text under humanized issue labels. Sum cards relabelled "Need fixing" / "Need review". Finalize button copy updated.
+   - **Payslips list**: Inline legend explains Preview / Finalized / Paid statuses. Status badges show friendly labels rather than raw enum values.
+   - **Payslip detail**: Added a "Needs review — blocked preview" banner when net pay is negative (deductions exceed gross). The engine still clamps to zero for safety; the UI prevents the page from looking like a normal final payslip. The calculation-explanation block switched from always-rendered to a `<details>` element so it doesn't crowd the actual payslip.
+   - **Reports**: Added a "what these mean" helper paragraph under the metric tiles. Export placeholders updated — bank file points to the Payments tab; PDF / statutory exports marked "Coming soon". Issue summary badges use friendly labels.
+   - **Settings**: Reordered to General → Overtime → Work schedule → Country rules → Payslip numbering. The Policies section was folded into Work schedule. "Country rules" gets a main-column section explaining that statutory PAYE / NIS rules come from the active country profile shown in the right column. "Payslip numbering" added as a placeholder explaining that custom formats are planned.
+   - **Pay Items**: Filter set extended from 3 pills (All / Allowances / Deductions) to 6 (All / Earnings / Allowances / Deductions / Statutory / Employer Contributions). Server type filter still applies for the two cases the API supports; the remaining filters apply client-side by `category` / `isStatutory` / `isEmployerContribution`.
+   - **Loans**: Filter set extended from 3 to 4 by adding "Advances" — filters loans where `type === 'advance'`.
+   - **Reimbursements**: Pills already matched spec (Requested / Approved / Paid / Rejected / All).
+   - **Payments**: Already in place — manual bank export copy ("Exporting a bank file does not mean employees have been paid …") confirms that "Mark as paid" requires positive bank confirmation.
+
+3. **Jargon sweep.** A single consistent vocabulary across the module:
+   - "Blocker" → "Needs fixing" / "Cannot continue"
+   - "Warning" → "Needs review"
+   - "Draft" → "Preview"
+   - "Confirmed" → "Finalized"
+   - Raw codes (`NEGATIVE_NET_PAY`, mutation/payload/enum/FK/orgId terminology) never appear as primary text.
+
+4. **Security fixes already landed in the first 8J.1 pass (commit `13f54d7`):**
+   - CSV formula injection — `csvCell()` helper in `packages/api/src/routers/payroll.ts` escapes `=/+/-/@/\t/\r` prefixes, doubles quotes, and wraps fields containing `,` `"` `\n` `\r`. Top-level regexes per `noTopLevelRegex` lint rule.
+   - Payment-batch state machine — `paymentBatchesMarkFailed` rejects transitions from terminal states (`paid`, `cancelled`, `failed`).
+
+### Out of Scope
+- New schema, migrations, or engine changes (none).
+- New payment methods or live bank transfers (deferred until official bank specs are available).
+- Module-tabs implementation in Attendance / Leave / Employee Profile / Contracts (recommended next, but not done in this phase).
+
+### Quality Gates
+- `bun run check-types`: 26 errors (exact pre-existing baseline; no new errors introduced).
+- `bun run build`: passes.
+- `bun test packages/payroll-engine`: 17/17 pass, 76 expect() calls.
+- `bun run check` (Ultracite): 225 errors (exact baseline maintained).
+
+### Product Standards Set in 8J.1
+
+These now apply to all future modules:
+
+1. **Module tabs are a product standard.** Each multi-page module exposes a tabs strip under the page header. Reference: `PayrollTabs`. Recommended next implementations: Attendance, Leave, Employee Profile, Contracts.
+2. **Plain-language UX.** Never surface raw enum or audit codes as primary text. They may appear as small secondary text for support/debugging.
+3. **Manual payment confirmation only.** "Mark as paid" requires bank confirmation; exporting a bank file is not payment. Bank-specific formats require official documentation before enablement.
+
+### Compliance Note (carried forward)
+Payroll calculations are not production-compliance-certified. Official statutory verification and payroll QA sign-off are required before production use. Guyana 2026 PAYE/NIS logic is implemented per research but needs GRA confirmation. Barbados/Trinidad rules are documented but not implemented.

@@ -143,19 +143,20 @@ Heimdallone v2 is a multi-tenant HRMS/payroll/workforce platform.
 ### Implementation Pattern
 Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **D** (UI) → **E** (QA/RBAC).
 
-### Current Status (2026-05-27)
-- HR Core: **Complete** (employees, org settings, holidays, CRUD, RBAC/scope)
-- Contracts: **Phase 6 complete** (schema, API, UI — verified end-to-end; 6E QA/docs closure done)
-- Phase 6E: **Complete** — payroll/attendance/leave spec enrichment, GRA verification, v1+gy-taxcalc inspection
-- Phase 7A: **Complete** — Attendance + Leave implementation plans finalized, payroll-readiness plan created
-- Phase 7B: **Complete** — Attendance DB schema (4 tables, 5 enums), migration, seed (72 records, 73 events, 2 corrections)
-- Phase 7A.1: **Complete** — Odoo HRMS research, feature gap review, spec enrichment
-- Phase 7C: **Complete** — Attendance oRPC router (17 procedures), RBAC scoping, audit events
-- Phase 7D: **Complete** — Attendance UI (records table, clock panel, detail drawer, corrections view, bulk actions)
-- Phase 7E: **Complete** — Leave DB schema (7 tables, 5 enums), migration, seed (5 types, 24 balances, 7 requests)
-- Phase 7F: **Complete** — Leave oRPC router (24 procedures), RBAC scoping, balance deduction, audit events
-- Phase 7G: **Complete** — Leave UI (balance cards, request form, approval queue, upcoming leave, cancellation)
-- Next: Phase 7H — Payroll-readiness QA/RBAC/usability pass
+### Current Status (2026-05-28)
+- HR Core (Phase 5): **Complete**
+- Contracts (Phase 6): **Complete** end-to-end
+- Phase 6E: **Complete** — payroll/attendance/leave spec enrichment, GRA verification
+- Attendance + Leave (Phase 7): **Complete** through 7H (QA/RBAC pass)
+- Payroll (Phase 8): **Complete** through 8K + 8J.1 polish
+  - 8A spec → 8B schema → 8C engine → 8D API → 8E setup UI → 8F run wizard → 8G payslips → 8H reports → 8I QA/RBAC → 8J branding → 8K payment batch + CSV bank export → 8J.1 module tabs + UX clarity polish
+  - 17/17 engine tests, 225 lint baseline maintained, browser-verified
+- Next: Phase 9 (Recruitment + Onboarding) per [implementation-sequence.md](docs/architecture/modules/implementation-sequence.md)
+
+### Product Standards (set during Phase 8J.1)
+- **Module tabs are a product standard.** Each multi-page module exposes its sub-pages via a tabs strip immediately under the page header (`PayrollTabs` in `apps/web/src/features/payroll/payroll-tabs.tsx` is the reference). Future module tabs are recommended for Attendance, Leave, Employee Profile, and Contracts.
+- **Plain-language UX.** Never surface raw enum or audit codes as primary text. "Blocker" → "Needs fixing / Cannot continue". "Warning" → "Needs review". "draft" → "Preview". "confirmed" → "Finalized". Raw codes may appear as small secondary text for debugging.
+- **No payment automation.** "Marked as paid" only after manual bank confirmation. Exporting a bank file is not payment. No bank-specific export format without official documentation.
 
 ### Key Architecture Files
 - `.claude/CLAUDE.md` — Full project instructions with doc references

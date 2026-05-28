@@ -6,7 +6,7 @@
 Phase 5B:  HR Core (employees, org settings, documents, audit) ✅
 Phase 6:   Contracts ✅ (6A-6E complete, verified end-to-end)
 Phase 7:   Attendance + Leave ✅
-Phase 8:   Payroll ← IN PROGRESS (8A–8D done, 8E–8K remaining)
+Phase 8:   Payroll ✅ (8A–8K + 8J.1 module-tabs / UX clarity polish)
 Phase 9:   Recruitment + Onboarding (can parallelize)
 Phase 10:  Offboarding
 Phase 11:  Biometric + Geofencing
@@ -16,7 +16,7 @@ Phase 14:  Automations + Notifications
 Phase 15:  Analytics + Dashboards + Reports
 ```
 
-### Phase Status (2026-05-27)
+### Phase Status (2026-05-28)
 - **Phase 5**: ✅ HR Core MVP complete (employees, org settings, holidays, RBAC)
 - **Phase 6**: ✅ Contracts complete (schema, API, UI — verified; 6E QA/docs closure done)
 - **Phase 6E**: ✅ Payroll/attendance/leave/biometric spec enrichment, GRA 2026 rates verified, gy-taxcalc + v1 inspected
@@ -32,7 +32,14 @@ Phase 15:  Analytics + Dashboards + Reports
 - **Phase 8I**: ✅ QA/RBAC/compliance pass — 9 tenant-FK security fixes, browser-verified all 8 payroll pages
 - **Phase 8J**: ✅ Branding, templates, onboarding polish — checklist badges, helper copy, compliance notes, template selector
 - **Phase 8K**: ✅ Payment batch + generic CSV bank export — schema, API, UI, batch lifecycle
-- **Phase 8J.1**: ✅ Payroll tabs navigation + UX clarity polish — PayrollTabs component across all 10 payroll pages, CSV injection fix, state machine guard
+- **Phase 8J.1**: ✅ Payroll tabs navigation + UX clarity polish — completed in two passes:
+  - First pass (commit `13f54d7`): PayrollTabs component across all 10 payroll pages, CSV injection fix (`csvCell()` helper), payment-batch state machine terminal-state guard.
+  - Second pass (this phase): Overview regrouped into Payroll Work / Setup / Payments with "Recommended" highlight on the readiness-met next step; Run wizard jargon swept ("blocker" → "Needs fixing / Cannot continue", "warning" → "Needs review", raw issue codes demoted to small secondary text); Payslips list status legend (Preview / Finalized / Paid); Payslip detail negative net-pay "Needs review — blocked preview" banner and collapsible `<details>` calculation explanation; Reports "what these mean" helper text and updated export-placeholder copy; Settings reordered into General / Overtime / Work schedule / Country rules / Payslip numbering; Pay Items 6-pill filter (All / Earnings / Allowances / Deductions / Statutory / Employer Contributions); Loans pill set extended with Advances; Payments already in place per spec. Module-tabs are now a product standard — see [shared-ui-primitives-plan.md](../shared-ui-primitives-plan.md#moduletabs-pattern).
+
+### Product Standards Set in 8J.1
+- **Module tabs are a product standard.** Recommended next implementations: Attendance, Leave, Employee Profile, Contracts. The reference implementation is `apps/web/src/features/payroll/payroll-tabs.tsx`.
+- **Plain-language UX.** Never surface raw enum or audit codes as primary text. Codes may appear as small secondary text for support/debugging.
+- **Manual payment confirmation only.** "Mark as paid" requires bank confirmation; exporting a bank file is not payment.
 
 ## Dependency Graph
 

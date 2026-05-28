@@ -167,61 +167,71 @@ function PayrollDashboard() {
 						</div>
 					)}
 
-					<div className="emp-table">
-						<div className="emp-head">
-							<span style={{ fontWeight: 600, fontSize: 14 }}>
-								Quick access
-							</span>
-						</div>
-						<div style={{ padding: 4 }}>
-							{canManage && (
-								<>
-									<NavRow
-										href="/app/payroll/settings"
-										icon={<Settings size={16} />}
-										label="Payroll settings"
-										sub="Currency, overtime, work schedule"
-									/>
-									<NavRow
-										href="/app/payroll/pay-items"
-										icon={<FileText size={16} />}
-										label="Pay items"
-										sub="Allowances, deductions, tax items"
-									/>
-									<NavRow
-										href="/app/payroll/loans"
-										icon={<CreditCard size={16} />}
-										label="Loans & advances"
-										sub="Employee loans, salary advances"
-									/>
-									<NavRow
-										href="/app/payroll/reimbursements"
-										icon={<ReceiptText size={16} />}
-										label="Reimbursements"
-										sub="Expense claims, leave encashment"
-									/>
-								</>
-							)}
+					<NavGroup
+						sub="Run payroll, view payslips, reports"
+						title="Payroll work"
+					>
+						<NavRow
+							href="/app/payroll/run"
+							icon={<Wallet size={16} />}
+							label="Run payroll"
+							recommended={readinessPercent >= 80}
+							sub={
+								readinessPercent >= 80
+									? "Setup complete — recommended next step"
+									: "Preview and finalize payroll"
+							}
+						/>
+						<NavRow
+							href="/app/payroll/payslips"
+							icon={<Banknote size={16} />}
+							label="Payslips"
+							sub="Employee payslips and history"
+						/>
+					</NavGroup>
+
+					{canManage && (
+						<NavGroup sub="Configure how payroll calculates pay" title="Setup">
 							<NavRow
-								href="/app/payroll/run"
-								icon={<Wallet size={16} />}
-								label="Run payroll"
-								sub="Preview and finalize payroll"
+								href="/app/payroll/settings"
+								icon={<Settings size={16} />}
+								label="Payroll settings"
+								sub="Currency, overtime, work schedule"
 							/>
 							<NavRow
-								href="/app/payroll/payslips"
-								icon={<Banknote size={16} />}
-								label="Payslips"
-								sub="Employee payslips and history"
+								href="/app/payroll/pay-items"
+								icon={<FileText size={16} />}
+								label="Pay items"
+								sub="Allowances, deductions, tax items"
 							/>
+							<NavRow
+								href="/app/payroll/loans"
+								icon={<CreditCard size={16} />}
+								label="Loans & advances"
+								sub="Employee loans, salary advances"
+							/>
+							<NavRow
+								href="/app/payroll/reimbursements"
+								icon={<ReceiptText size={16} />}
+								label="Reimbursements"
+								sub="Expense claims, leave encashment"
+							/>
+						</NavGroup>
+					)}
+
+					{canManage && (
+						<NavGroup
+							sub="Bank file export and payment tracking"
+							title="Payments"
+						>
 							<NavRow
 								href="/app/payroll/payments"
 								icon={<Clock size={16} />}
-								label="Payment export"
-								sub="Payment batches and bank file export"
+								label="Payment batches"
+								sub="Create bank files and track payment status"
 							/>
-						</div>
-					</div>
+						</NavGroup>
+					)}
 				</div>
 
 				<div className="right-col">
@@ -233,6 +243,17 @@ function PayrollDashboard() {
 							</span>
 						</div>
 						<div className="side-body">
+							<div
+								style={{
+									padding: "0 0 10px",
+									fontSize: 11.5,
+									color: "var(--fg-3)",
+									lineHeight: 1.55,
+								}}
+							>
+								This checklist shows what payroll needs before you can run it.
+								Required items must be done. Optional items are recommended.
+							</div>
 							{readinessPercent >= 80 ? (
 								<div
 									style={{
@@ -422,6 +443,29 @@ function PayrollDashboard() {
 	);
 }
 
+function NavGroup({
+	title,
+	sub,
+	children,
+}: {
+	title: string;
+	sub: string;
+	children: React.ReactNode;
+}) {
+	return (
+		<div className="emp-table">
+			<div
+				className="emp-head"
+				style={{ flexDirection: "column", alignItems: "flex-start", gap: 2 }}
+			>
+				<span style={{ fontWeight: 600, fontSize: 14 }}>{title}</span>
+				<span style={{ fontSize: 11.5, color: "var(--fg-3)" }}>{sub}</span>
+			</div>
+			<div style={{ padding: 4 }}>{children}</div>
+		</div>
+	);
+}
+
 function NavRow({
 	icon,
 	label,
@@ -429,6 +473,7 @@ function NavRow({
 	href,
 	disabled,
 	note,
+	recommended,
 }: {
 	icon: React.ReactNode;
 	label: string;
@@ -436,6 +481,7 @@ function NavRow({
 	href: string;
 	disabled?: boolean;
 	note?: string;
+	recommended?: boolean;
 }) {
 	const content = (
 		<div
@@ -447,6 +493,7 @@ function NavRow({
 				borderBottom: "1px solid var(--line)",
 				cursor: disabled ? "default" : "pointer",
 				opacity: disabled ? 0.5 : 1,
+				background: recommended ? "var(--accent-soft)" : undefined,
 			}}
 		>
 			<div
@@ -456,15 +503,41 @@ function NavRow({
 					justifyContent: "center",
 					width: 34,
 					height: 34,
-					background: "var(--bg-3)",
+					background: recommended ? "var(--accent)" : "var(--bg-3)",
 					borderRadius: 10,
-					color: "var(--fg-2)",
+					color: recommended ? "white" : "var(--fg-2)",
 				}}
 			>
 				{icon}
 			</div>
 			<div style={{ flex: 1 }}>
-				<div style={{ fontSize: 13, fontWeight: 500 }}>{label}</div>
+				<div
+					style={{
+						fontSize: 13,
+						fontWeight: 500,
+						display: "flex",
+						alignItems: "center",
+						gap: 8,
+					}}
+				>
+					{label}
+					{recommended && (
+						<span
+							style={{
+								fontSize: 9,
+								padding: "2px 6px",
+								borderRadius: 4,
+								background: "var(--accent)",
+								color: "white",
+								fontWeight: 600,
+								letterSpacing: "0.04em",
+								textTransform: "uppercase",
+							}}
+						>
+							Recommended
+						</span>
+					)}
+				</div>
 				<div style={{ fontSize: 11.5, color: "var(--fg-3)", marginTop: 1 }}>
 					{note ? <em>{note}</em> : sub}
 				</div>

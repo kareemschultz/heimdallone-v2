@@ -83,6 +83,48 @@ function PayslipsPage() {
 
 			<PayrollTabs />
 
+			<div
+				style={{
+					marginBottom: 14,
+					padding: "10px 16px",
+					background: "var(--bg-1)",
+					border: "1px solid var(--line)",
+					borderRadius: 12,
+					fontSize: 12,
+					color: "var(--fg-3)",
+					lineHeight: 1.6,
+				}}
+			>
+				<strong style={{ color: "var(--fg-2)" }}>What the status means:</strong>{" "}
+				<span style={{ marginLeft: 6 }}>
+					<span
+						className="badge badge-outline"
+						style={{ fontSize: 9, marginRight: 4 }}
+					>
+						Preview
+					</span>
+					payroll has not been finalized yet.
+				</span>
+				<span style={{ marginLeft: 12 }}>
+					<span
+						className="badge badge-success"
+						style={{ fontSize: 9, marginRight: 4 }}
+					>
+						Finalized
+					</span>
+					payroll has been confirmed and is visible to employees.
+				</span>
+				<span style={{ marginLeft: 12 }}>
+					<span
+						className="badge badge-accent"
+						style={{ fontSize: 9, marginRight: 4 }}
+					>
+						Paid
+					</span>
+					marked as paid after bank confirmation.
+				</span>
+			</div>
+
 			{canManage && (
 				<div className="toolbar">
 					<div className="search-wrap">
@@ -210,7 +252,7 @@ function PayslipsPage() {
 											className={`badge ${payslipBadge(s.status as string)}`}
 											style={{ fontSize: 10 }}
 										>
-											{s.status as string}
+											{payslipStatusLabel(s.status as string)}
 										</span>
 									</td>
 									<td style={{ textAlign: "right" }}>
@@ -283,6 +325,19 @@ function payslipBadge(status: string): string {
 		return "badge-accent";
 	}
 	return "badge-outline";
+}
+
+function payslipStatusLabel(status: string): string {
+	if (status === "draft") {
+		return "Preview";
+	}
+	if (status === "confirmed") {
+		return "Finalized";
+	}
+	if (status === "paid") {
+		return "Paid";
+	}
+	return status;
 }
 
 function fmtDate(d: string | Date): string {

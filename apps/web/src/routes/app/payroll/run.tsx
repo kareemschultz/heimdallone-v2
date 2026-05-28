@@ -27,6 +27,25 @@ const PAYROLL_ROLES = [
 	"payroll_admin",
 ];
 
+const ISSUE_CODE_LABELS: Record<string, string> = {
+	NO_CONTRACT: "No active contract",
+	MISSING_SALARY: "Missing salary",
+	MISSING_COUNTRY_PROFILE: "Missing country profile",
+	MISSING_FILING_STATUS: "Missing filing status",
+	NEGATIVE_NET_PAY: "Deductions exceed gross pay",
+	DUPLICATE_PAYSLIP: "Duplicate payslip",
+	MISSING_CLOCK_OUT: "Missing clock-out",
+	ABSENT_WITHOUT_LEAVE: "Absent without leave",
+	PENDING_LEAVE: "Pending leave requests",
+	UNVALIDATED_ATTENDANCE: "Unvalidated attendance",
+	LOW_CONFIDENCE: "Low confidence estimate",
+	LOAN_EXCEEDS_THRESHOLD: "Loan exceeds threshold",
+};
+
+function humanizeIssueCode(code: string): string {
+	return ISSUE_CODE_LABELS[code] ?? code.replace(/_/g, " ").toLowerCase();
+}
+
 export const Route = createFileRoute("/app/payroll/run")({
 	component: PayrollRunWizard,
 });
@@ -556,7 +575,7 @@ function ReviewStep({
 							size={14}
 							style={{ verticalAlign: -2, marginRight: 6 }}
 						/>
-						{blockers.length} blocker(s) — cannot finalize
+						{blockers.length} item(s) need fixing — cannot continue
 					</div>
 					{blockers.map((b) => (
 						<div
@@ -567,13 +586,16 @@ function ReviewStep({
 								borderBottom: "1px dashed var(--line)",
 							}}
 						>
-							<strong>{b.code as string}:</strong> {b.message as string}
-							{b.resolution && (
-								<span style={{ color: "var(--fg-3)" }}>
-									{" "}
-									— {b.resolution as string}
-								</span>
-							)}
+							<div style={{ fontWeight: 500 }}>
+								{humanizeIssueCode(b.code as string)}
+							</div>
+							<div style={{ marginTop: 2, color: "var(--fg-3)" }}>
+								{b.message as string}
+								{b.resolution ? ` — ${b.resolution as string}` : ""}
+							</div>
+							<div style={{ fontSize: 10, color: "var(--fg-4)", marginTop: 1 }}>
+								{b.code as string}
+							</div>
 						</div>
 					))}
 				</div>
@@ -601,7 +623,7 @@ function ReviewStep({
 							size={14}
 							style={{ verticalAlign: -2, marginRight: 6 }}
 						/>
-						{warnings.length} warning(s) — review recommended
+						{warnings.length} item(s) need review
 					</div>
 					{warnings.map((w) => (
 						<div
@@ -612,7 +634,14 @@ function ReviewStep({
 								borderBottom: "1px dashed var(--line)",
 							}}
 						>
-							{w.message as string}
+							<div>{w.message as string}</div>
+							{w.code && (
+								<div
+									style={{ fontSize: 10, color: "var(--fg-4)", marginTop: 1 }}
+								>
+									{w.code as string}
+								</div>
+							)}
 						</div>
 					))}
 				</div>
@@ -675,7 +704,7 @@ function ReviewStep({
 												className="badge badge-danger"
 												style={{ fontSize: 10 }}
 											>
-												Blocked
+												Needs fixing
 											</span>
 										) : (
 											<span
@@ -728,7 +757,7 @@ function ReviewStep({
 				>
 					<ShieldCheck size={13} />
 					{previewResult.blockerCount > 0
-						? `${previewResult.blockerCount} blocker(s) — cannot confirm`
+						? `${previewResult.blockerCount} need fixing — cannot continue`
 						: "Proceed to confirm"}
 				</button>
 			</div>
@@ -1075,11 +1104,11 @@ function FinalizeStep({
 						</span>
 					</div>
 					<div className="sum-card">
-						<span className="lbl">Blockers</span>
+						<span className="lbl">Need fixing</span>
 						<span className="val">{previewResult.blockerCount}</span>
 					</div>
 					<div className="sum-card">
-						<span className="lbl">Warnings</span>
+						<span className="lbl">Need review</span>
 						<span className="val">{previewResult.warningCount}</span>
 					</div>
 				</div>
@@ -1096,7 +1125,7 @@ function FinalizeStep({
 							marginBottom: 16,
 						}}
 					>
-						Cannot confirm — {previewResult.blockerCount} unresolved blocker(s).
+						Cannot continue — {previewResult.blockerCount} item(s) need fixing.
 						Go back and resolve them first.
 					</div>
 				)}
