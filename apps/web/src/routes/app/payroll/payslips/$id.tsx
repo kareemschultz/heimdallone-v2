@@ -5,6 +5,7 @@ import { useContext } from "react";
 
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
+import { PayrollTabs } from "@/features/payroll/payroll-tabs";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
 
@@ -144,6 +145,10 @@ function PayslipDetailPage() {
 						Print / Save as PDF
 					</button>
 				</div>
+			</div>
+
+			<div className="no-print">
+				<PayrollTabs />
 			</div>
 
 			<div

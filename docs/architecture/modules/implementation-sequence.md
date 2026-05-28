@@ -32,6 +32,7 @@ Phase 15:  Analytics + Dashboards + Reports
 - **Phase 8I**: ✅ QA/RBAC/compliance pass — 9 tenant-FK security fixes, browser-verified all 8 payroll pages
 - **Phase 8J**: ✅ Branding, templates, onboarding polish — checklist badges, helper copy, compliance notes, template selector
 - **Phase 8K**: ✅ Payment batch + generic CSV bank export — schema, API, UI, batch lifecycle
+- **Phase 8J.1**: ✅ Payroll tabs navigation + UX clarity polish — PayrollTabs component across all 10 payroll pages, CSV injection fix, state machine guard
 
 ## Dependency Graph
 

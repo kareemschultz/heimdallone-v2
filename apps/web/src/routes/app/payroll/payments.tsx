@@ -16,6 +16,7 @@ import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
+import { PayrollTabs } from "@/features/payroll/payroll-tabs";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
 
@@ -90,6 +91,8 @@ function PaymentsPage() {
 					Create payment batch
 				</button>
 			</div>
+
+			<PayrollTabs />
 
 			<div
 				style={{

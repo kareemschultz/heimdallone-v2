@@ -56,6 +56,21 @@ function maskAccountNumber(acctNum: string): string {
 	return "";
 }
 
+const CSV_FORMULA_TRIGGER = /^[=+\-@\t\r]/;
+const CSV_NEEDS_QUOTE = /[",\n\r]/;
+
+function csvCell(value: unknown): string {
+	let s = String(value ?? "");
+	if (CSV_FORMULA_TRIGGER.test(s)) {
+		s = `'${s}`;
+	}
+	s = s.replace(/"/g, '""');
+	if (CSV_NEEDS_QUOTE.test(s)) {
+		return `"${s}"`;
+	}
+	return s;
+}
+
 function canManagePayroll(r: string): boolean {
 	return PAYROLL_ROLES.includes(r);
 }
@@ -2709,6 +2724,11 @@ const paymentBatchesMarkFailed = authorizedProcedure("payroll", "update")
 				message: "Payment batch not found.",
 			});
 		}
+		if (["paid", "cancelled", "failed"].includes(batch.status)) {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: `Cannot mark a ${batch.status} batch as failed.`,
+			});
+		}
 		await db
 			.update(payrollPaymentBatch)
 			.set({
@@ -2764,19 +2784,18 @@ const paymentBatchesGenerateCsv = authorizedProcedure("payroll", "read")
 
 		const header =
 			"employeeId,employeeName,bankName,branchCode,accountNumber,currency,amount,paymentReference";
-		const rows = items.map((item) => {
-			const acct = item.accountNumberMasked ?? "";
-			return [
-				item.employeeId,
-				`"${item.employeeName}"`,
-				`"${item.bankName ?? ""}"`,
-				item.branchCode ?? "",
-				acct,
-				item.currency,
-				item.amount,
-				item.paymentReference ?? "",
-			].join(",");
-		});
+		const rows = items.map((item) =>
+			[
+				csvCell(item.employeeId),
+				csvCell(item.employeeName),
+				csvCell(item.bankName ?? ""),
+				csvCell(item.branchCode ?? ""),
+				csvCell(item.accountNumberMasked ?? ""),
+				csvCell(item.currency),
+				csvCell(item.amount),
+				csvCell(item.paymentReference ?? ""),
+			].join(",")
+		);
 
 		const csv = [header, ...rows].join("\n");
 

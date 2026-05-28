@@ -1,5 +1,46 @@
 /* ============ Payroll page ============ */
 
+/* Module tab navigation */
+.payroll-tabs {
+	display: flex;
+	gap: 2px;
+	padding: 4px;
+	margin-bottom: 18px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.payroll-tabs::-webkit-scrollbar {
+	display: none;
+}
+.payroll-tab {
+	padding: 8px 14px;
+	font-family: inherit;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--fg-3);
+	white-space: nowrap;
+	text-decoration: none;
+	cursor: pointer;
+	background: transparent;
+	border: 0;
+	border-radius: 10px;
+	transition:
+		background 120ms ease,
+		color 120ms ease;
+}
+.payroll-tab:hover {
+	color: var(--fg);
+	background: var(--bg-3);
+}
+.payroll-tab.active {
+	color: var(--fg);
+	background: var(--bg-3);
+	box-shadow: var(--shadow-sm);
+}
+
 /* Pay-run banner */
 .runbar {
 	display: grid;

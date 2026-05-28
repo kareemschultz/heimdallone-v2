@@ -17,6 +17,7 @@ import { useContext } from "react";
 
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
+import { PayrollTabs } from "@/features/payroll/payroll-tabs";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
 
@@ -85,6 +86,8 @@ function PayrollDashboard() {
 					</p>
 				</div>
 			</div>
+
+			<PayrollTabs />
 
 			<div className="sum-row" style={{ marginBottom: 18 }}>
 				<div className={`sum-card ${readinessPercent >= 80 ? "accent" : ""}`}>
