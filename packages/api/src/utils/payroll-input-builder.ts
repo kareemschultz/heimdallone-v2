@@ -320,8 +320,12 @@ async function buildCountryProfile(
 		insurancePremiumCapAmount: toCents(
 			Number(profile.insurancePremiumCapAmount ?? 0)
 		),
-		employeeNISRate: Number(profile.employeeNISRate),
-		employerNISRate: Number(profile.employerNISRate),
+		// Phase 8J.3 fix #2: DB stores NIS rates as percent (e.g. "5.60" for 5.6%)
+		// but the engine's percentOfCents() multiplies cents by a decimal
+		// (so 5.6% must be 0.056). Without this divide-by-100, NIS deductions
+		// land at ~560% of base — a money-correctness bug.
+		employeeNISRate: Number(profile.employeeNISRate) / 100,
+		employerNISRate: Number(profile.employerNISRate) / 100,
 		nisMaxEarnings: toCents(Number(profile.nisMaxEarnings ?? 0)),
 	};
 }

@@ -1923,3 +1923,63 @@ modules, no schema changes, no engine changes.
 - `bun run build`: passes.
 - `bun test packages/payroll-engine`: 17/17 pass, 76 expect() calls.
 - `bun run check`: 225 errors (exact lint baseline maintained).
+
+---
+
+## Phase 8J.3 — Payroll/RBAC Correctness Fixes (2026-05-28)
+
+Phase 8J.3 fixed six concrete correctness/security bugs and documented four
+limitations for follow-up. No new features, no schema changes.
+
+### Bugs fixed
+
+1. **RBAC lockout at the API layer.** `requirePermission` in
+   `packages/api/src/index.ts` now normalizes `owner → tenant_owner` and
+   `admin → tenant_admin` before the role lookup. Member / employee /
+   manager intentionally NOT promoted.
+
+2. **NIS rate unit mismatch.** `buildCountryProfileInput` in
+   `packages/api/src/utils/payroll-input-builder.ts` divides DB percent
+   values by 100 before passing to the engine. New engine test pins the
+   "decimal in, percent of base out" contract.
+
+3. **Unpaid leave double-counted.** `calculate.ts` gross now uses the
+   full `rawBasePay`; unpaid-leave deduction appears once in
+   `totalDeductions`. Test updated to assert the corrected math.
+
+4. **Duplicate active payment batches blocked.** `paymentBatchesCreate`
+   rejects when a non-terminal batch (any status other than
+   cancelled/failed) already exists for the same payroll run.
+
+5. **`runsMarkPaid` requires a paid payment batch.** No more bypassing
+   the bank-confirmation gate.
+
+6. **CSV export header + filename clarified.** Header reads
+   `accountNumberMasked`; filename suffixed with `-preview`.
+
+### Limitations documented (not fixed in this phase)
+
+7. **Bank details encryption** — plaintext in Postgres; masking is
+   API-layer only. Add pgcrypto/column-level encryption before production.
+
+8. **`contractPayFrequencyEnum` lacks `fortnightly`.** Payroll engine
+   supports it; the contracts enum is `weekly / monthly / semi_monthly`.
+   Add via migration before payroll runs can target fortnightly contracts.
+
+9. **No `dependentChildren` source-of-truth column.** Engine reads from
+   payroll input but no HR Core field carries the number. Child allowance
+   silently computes to zero. Either add `employee_profile.dependentChildren`
+   (HR Core change) or display "child allowance disabled — missing data"
+   on payslips.
+
+10. **Attendance period completeness.** A single clock-in still looks
+    "complete" to the input builder. Need an attendance-period status
+    (open/closed) or a confidence reduction when worked days are far below
+    scheduled days, plus a blocker for severe gaps.
+
+### Quality gates
+- `bun run check-types`: 26 baseline ✅
+- `bun run build`: passes ✅
+- `bun test packages/payroll-engine`: 18/18 pass (was 17/17 — added the NIS
+  unit-contract test) ✅
+- `bun run check`: 225 baseline ✅

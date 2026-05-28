@@ -574,14 +574,20 @@ export const calculatePayroll = (input: PayrollInput): PayrollPreviewResult => {
 		explanation: "Base salary for the period",
 	});
 
+	// Phase 8J.3 fix #3: unpaid leave was being subtracted TWICE — once by
+	// reducing basePay before grossPay, and again as a line item in
+	// totalDeductions. Fix: gross uses the FULL rawBasePay; the unpaid-leave
+	// deduction appears once in totalDeductions and as a visible payslip line.
+	// Allowances that scale on base (e.g. % of basic) still scale against
+	// the adjusted basePay so they aren't paid for unworked days.
 	const { adjustedBasePay: basePay, deduction: unpaidLeaveDeduction } =
 		computeUnpaidLeave(ctx, rawBasePay);
 	const ot = computeOvertime(ctx);
 	const allowances = computeAllowances(ctx, basePay);
 
 	const grossPay =
-		basePay + ot.total + allowances.taxable + allowances.nonTaxable;
-	addExplanation(ctx, 9, "Gross pay", "basePay + OT + allowances", grossPay);
+		rawBasePay + ot.total + allowances.taxable + allowances.nonTaxable;
+	addExplanation(ctx, 9, "Gross pay", "rawBasePay + OT + allowances", grossPay);
 
 	const { preTax, employerContrib } = computePreTaxDeductions(
 		ctx,

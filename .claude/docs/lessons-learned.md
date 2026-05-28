@@ -517,3 +517,34 @@ Manual bank confirmation only. Exporting a bank file is **not** payment. "Mark a
 58. **`candidate_converted_employee_uq UNIQUE` constraint on `candidate.convertedEmployeeId`.** Enforces the conversion procedure's idempotency at the DB layer. Even if two API calls race, only one can complete the conversion; the second will hit the unique violation and the API can return the existing `employeeId` instead of creating a duplicate employee record. Cheaper and more correct than relying on application-level locks.
 
 59. **Soft-delete column on primary entities; not on audit rows.** `recruitment_requisition`, `job_opening`, `candidate`, `candidate_application`, `interview`, `offer`, `candidate_document`, `recruitment_note` carry `deleted_at`. Append-only history (`application_stage_history`, `interview_feedback`, `offer_approval`) does not — those tables are write-once and the audit value comes from being immutable.
+
+---
+
+## Session: 2026-05-28 — Phase 8J.3 Payroll/RBAC Correctness Fixes
+
+### Critical Bugs Found and Fixed
+
+94. **`requirePermission` used the raw `memberRole` string for the role-table lookup.** When Better Auth assigns the org creator role `"owner"`, the lookup `roles["owner"]` returned undefined and the middleware threw "Unknown role: owner". Phase 8J.2 fixed the UI but the API was still locked. Fix: a `normalizeRole()` helper inside `packages/api/src/index.ts` translates `owner → tenant_owner` and `admin → tenant_admin` BEFORE the lookup. Member/employee/manager are NOT promoted — they map to themselves.
+
+95. **NIS rate unit mismatch at the API↔engine boundary was producing 100× too much NIS.** DB stores percent strings (`"5.60"` for 5.6%) but the engine's `percentOfCents(cents, rate)` does `Math.round(cents * rate)` — i.e. it expects a DECIMAL multiplier (0.056). The input builder passed the raw `Number("5.60") = 5.6`, so NIS landed at 560% of base. Engine tests passed because the test fixture used 0.056 directly — the bug lived precisely in the boundary code that wasn't covered. Fix: divide DB percent values by 100 in `buildCountryProfileInput` AND add an explicit engine test that pins the decimal contract.
+
+96. **Unpaid leave was deducted twice in net pay.** `computeUnpaidLeave` returned `adjustedBasePay = basePay - deduction` AND the same deduction was added into `totalDeductions`. So `netPay = (reducedGross) - (deductions + unpaidLeave) = realNet - unpaidLeave`. Fix per Phase 8J.3 spec: gross uses the full `rawBasePay`; the unpaid-leave line stays in `totalDeductions`. Allowances that scale on base still scale against the adjusted basePay so they don't pay for unworked days. Engine test updated to assert `result.grossPay === normalResult.grossPay` AND `result.netPay === normalResult.netPay - unpaidAmount`.
+
+97. **No guard against duplicate active payment batches on a payroll run.** `paymentBatchesCreate` would happily create a second batch when one already existed. Fix: query for non-terminal (`cancelled`/`failed`) batches first; throw `PRECONDITION_FAILED` if a blocking one exists. Re-exporting after a paid batch still requires explicit cancellation — we don't silently overwrite payment history.
+
+98. **`runsMarkPaid` bypassed the payment-batch workflow.** A user could mark the run paid without ever creating a batch, never confirming with the bank. Fix: require at least one `payrollPaymentBatch.status='paid'` for the run before allowing the transition.
+
+99. **CSV export header advertised "accountNumber" while the data is masked.** Renamed the header column to `accountNumberMasked` and prefixed the filename with `-preview` so no one downstream mistakes this for a bank-ready file. Real bank exports need per-bank format specs (Republic Bank / EZPay) and are deferred.
+
+### Patterns That Worked
+
+60. **A single `normalizeRole()` helper next to `requirePermission`** is cheaper than promoting either role family into the ACL. The ACL stays clean (one role per concept), the seed continues to upgrade the creator to `tenant_owner` (Phase 9B fix), and existing data that's still on the Better Auth defaults still works at the API boundary.
+
+61. **Pin the unit contract in a test, not just the math.** The NIS bug existed for two phases because the engine tests used decimal fixtures and the DB stored percents — neither side caught the boundary. The new "NIS rate unit" test in `calculate.test.ts` explicitly asserts "decimal in, percent of base out" so future drift across the boundary is caught by `bun test`.
+
+### Edge Cases to Watch (deferred — Phase 8J.4 or later)
+
+8. **Bank details encryption at rest.** `employee_bank_details.account_number` is plaintext in Postgres. Masking happens at the API layer; an attacker with DB access reads the raw value. Document for compliance review; introduce column-level encryption (e.g. pgcrypto) before production.
+9. **Fortnightly contract pay frequency.** Payroll supports `weekly / monthly / fortnightly / custom` but `contractPayFrequencyEnum` is `weekly / monthly / semi_monthly` only. Need a migration to add `fortnightly` and ideally `custom`; until then the UI must not let users select an unsupported frequency from a contract form.
+10. **Dependent children count source-of-truth.** Engine reads `dependentChildren` from payroll input, but no `employee_profile` column tracks it. Currently the child allowance computes to zero silently. Either add the column (HR Core change) or surface a visible "child allowance disabled — no source data" warning on payslips.
+11. **Attendance completeness for "ready to run" payroll.** The current input builder builds attendance input from whatever records exist. A period with a single clock-in for one employee still looks "complete" to the engine. We need a `attendance_period_status` (open/closed/locked) or a confidence reduction when worked days < scheduled days, and a blocker when the gap is large.

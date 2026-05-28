@@ -1677,6 +1677,28 @@ const runsMarkPaid = authorizedProcedure("payroll", "update")
 			});
 		}
 
+		// Phase 8J.3 fix #5: Don't allow the payroll run to be marked paid
+		// without a matching paid payment batch. Direct markPaid bypassed the
+		// bank-confirmation gate the payment-batches workflow exists for.
+		// Cancellation flow: cancel the run instead; do not mark it paid.
+		const paidBatches = await db
+			.select({ id: payrollPaymentBatch.id })
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.payrollRunId, run.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context)),
+					eq(payrollPaymentBatch.status, "paid")
+				)
+			)
+			.limit(1);
+		if (paidBatches.length === 0) {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message:
+					"Mark a payment batch as paid first (after bank confirmation). Payroll runs cannot be marked paid directly.",
+			});
+		}
+
 		await db
 			.update(payrollRun)
 			.set({
@@ -2405,6 +2427,33 @@ const paymentBatchesCreate = authorizedProcedure("payroll", "create")
 			});
 		}
 
+		// Phase 8J.3 fix #4: Block creating a new payment batch when a
+		// non-terminal batch already exists for this run. "Terminal" =
+		// paid / cancelled / failed. Re-exporting after a successful paid
+		// batch still requires explicit cancellation + a new batch — we
+		// don't silently overwrite payment history.
+		const existingBatches = await db
+			.select({
+				id: payrollPaymentBatch.id,
+				status: payrollPaymentBatch.status,
+			})
+			.from(payrollPaymentBatch)
+			.where(
+				and(
+					eq(payrollPaymentBatch.payrollRunId, run.id),
+					eq(payrollPaymentBatch.organizationId, orgId(context))
+				)
+			);
+		const TERMINAL_BATCH_STATUSES = ["cancelled", "failed"];
+		const blockingBatch = existingBatches.find(
+			(b) => !TERMINAL_BATCH_STATUSES.includes(b.status)
+		);
+		if (blockingBatch) {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: `A payment batch already exists for this payroll run (status: ${blockingBatch.status}). Cancel it first or work with the existing batch.`,
+			});
+		}
+
 		const payslips = await db
 			.select()
 			.from(payslip)
@@ -2773,8 +2822,13 @@ const paymentBatchesGenerateCsv = authorizedProcedure("payroll", "read")
 			.where(eq(payrollPaymentItem.paymentBatchId, batch.id))
 			.orderBy(payrollPaymentItem.employeeName);
 
+		// Phase 8J.3 fix #6: Header used to say "accountNumber" while the
+		// data is masked (****1234). Rename to make the preview status
+		// explicit — full account numbers are NEVER produced by this
+		// procedure. A real bank-ready export requires per-bank format
+		// specs (Republic Bank / EZPay) and is deferred.
 		const header =
-			"employeeId,employeeName,bankName,branchCode,accountNumber,currency,amount,paymentReference";
+			"employeeId,employeeName,bankName,branchCode,accountNumberMasked,currency,amount,paymentReference";
 		const rows = items.map((item) =>
 			[
 				csvCell(item.employeeId),
@@ -2801,7 +2855,9 @@ const paymentBatchesGenerateCsv = authorizedProcedure("payroll", "read")
 
 		return {
 			csv,
-			fileName: `payment-batch-${batch.id.slice(0, 8)}.csv`,
+			// Phase 8J.3 fix #6: prefix "preview-" so users don't mistake this
+			// for a bank-ready file. Real bank exports need per-bank format specs.
+			fileName: `payment-batch-${batch.id.slice(0, 8)}-preview.csv`,
 			rowCount: items.length,
 			totalAmount: batch.totalAmount,
 		};

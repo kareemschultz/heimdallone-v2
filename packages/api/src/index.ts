@@ -64,18 +64,33 @@ export const tenantProcedure = protectedProcedure.use(
 	requireActiveOrganization
 );
 
+// Phase 8J.3 fix #1: Better Auth's organization plugin assigns
+// "owner" / "admin" as default roles for org creator/admins. Our custom
+// ACL ships the strings "tenant_owner" / "tenant_admin". Without
+// normalization, the seeded owner is locked out at every authorizedProcedure.
+// Member/employee/manager roles intentionally do NOT get promoted here.
+function normalizeRole(role: string): string {
+	if (role === "owner") {
+		return "tenant_owner";
+	}
+	if (role === "admin") {
+		return "tenant_admin";
+	}
+	return role;
+}
+
 export function requirePermission(resource: string, action: string) {
 	return o.middleware(async ({ context, next }) => {
 		const ctx = context as unknown as {
 			memberRole: string;
 		};
 
-		const roleName = ctx.memberRole as TenantRole;
+		const roleName = normalizeRole(ctx.memberRole) as TenantRole;
 		const roleObj = roles[roleName];
 
 		if (!roleObj) {
 			throw new ORPCError("FORBIDDEN", {
-				message: `Unknown role: ${roleName}`,
+				message: `Unknown role: ${ctx.memberRole}`,
 			});
 		}
 
@@ -96,7 +111,13 @@ export function requirePermission(resource: string, action: string) {
 export function requireTenantRole(...allowedRoles: string[]) {
 	return o.middleware(async ({ context, next }) => {
 		const ctx = context as unknown as { memberRole: string };
-		if (!allowedRoles.includes(ctx.memberRole)) {
+		const normalized = normalizeRole(ctx.memberRole);
+		if (
+			!(
+				allowedRoles.includes(ctx.memberRole) ||
+				allowedRoles.includes(normalized)
+			)
+		) {
 			throw new ORPCError("FORBIDDEN", {
 				message: `Required role: ${allowedRoles.join(" | ")}`,
 			});

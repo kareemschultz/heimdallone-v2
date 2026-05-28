@@ -59,12 +59,24 @@ describe("calculatePayroll", () => {
 		const normalResult = calculatePayroll(monthlySalariedNormal);
 
 		expect(result.isPayrollReady).toBe(true);
-		expect(result.basePay).toBeLessThan(normalResult.basePay);
-		expect(result.grossPay).toBeLessThan(normalResult.grossPay);
+
+		// Phase 8J.3 fix #3 — gross is now FULL base + OT + allowances
+		// (unpaid leave only appears as a deduction line). Without the fix,
+		// gross was reduced AND the deduction line was also subtracted —
+		// i.e. unpaid leave hit net pay twice.
+		expect(result.grossPay).toBe(normalResult.grossPay);
 
 		const unpaidLine = result.lineItems.find((l) => l.code === "UNPAID_LEAVE");
 		expect(unpaidLine).toBeDefined();
 		expect(unpaidLine?.amount).toBeLessThan(0);
+
+		// Net = normal net minus exactly one unpaid-leave deduction.
+		const unpaidAmount = Math.abs(unpaidLine?.amount ?? 0);
+		expect(result.netPay).toBe(normalResult.netPay - unpaidAmount);
+
+		// basePay return value is the post-unpaid-leave figure (preserved
+		// for backwards compatibility with payslip rendering).
+		expect(result.basePay).toBeLessThan(normalResult.basePay);
 	});
 
 	test("employee with taxable allowance", () => {
@@ -216,6 +228,28 @@ describe("calculatePayroll", () => {
 		).toContain("BB");
 		expect(result.confidence).toBe("cannot_estimate");
 		expect(result.grossPay).toBe(0);
+	});
+
+	test("NIS rate unit — decimal in, percent of base out (Phase 8J.3 fix #2)", () => {
+		// The DB stores NIS rates as percent strings ("5.60" for 5.6%) but
+		// the engine treats `employeeNISRate` as a decimal multiplier (0.056).
+		// The input-builder divides DB values by 100 before passing here.
+		// This test pins the engine's contract so the boundary can't drift.
+		const result = calculatePayroll(monthlySalariedNormal);
+		const grossPay = result.grossPay;
+		const ceiling = 28_000_000;
+		const nisBase = Math.min(grossPay, ceiling);
+
+		// Profile fixture uses 0.056 (decimal) — see fixtures/guyana-2026.ts.
+		const expectedEmployeeNis = Math.round(nisBase * 0.056);
+		const expectedEmployerNis = Math.round(nisBase * 0.084);
+
+		expect(result.employeeNis).toBe(expectedEmployeeNis);
+		expect(result.employerNis).toBe(expectedEmployerNis);
+
+		// Sanity: if someone passed 5.6 (percent units) instead of 0.056,
+		// NIS would be 100x larger than gross. Confirm we're nowhere near that.
+		expect(result.employeeNis).toBeLessThan(grossPay);
 	});
 
 	test("deterministic rounding — same input always same output", () => {
