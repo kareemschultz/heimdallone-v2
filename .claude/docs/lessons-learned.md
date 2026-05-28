@@ -572,3 +572,33 @@ Manual bank confirmation only. Exporting a bank file is **not** payment. "Mark a
 12. **`feedbackSubmit` allows the interviewer to self-submit even if their org role is `employee` or `manager`.** Necessary for real interviewers who aren't recruiters/HR. The procedure verifies (a) the actor's `resolveCurrentEmployee` ID matches `interviewerEmployeeId`, AND (b) that employee is on the interview's `interviewerEmployeeIds` JSON array. The "self" path is exclusive to `manager` and `employee` roles — recruiters / HR / admin always succeed via `canManageRecruitment`.
 
 13. **Manager scoping on `jobsList` requires `resolveCurrentEmployee` returning non-null.** A manager-role user without an employee profile sees an empty list (not all openings). Documented in the file with an explicit early-return.
+
+---
+
+## Session: 2026-05-28 — Phase 9C.1 Manager-Scope Security Fix
+
+### Bug Found by Automated Security Review
+
+100. **IDOR via manager-role enumeration in recruitment router.** Phase 9C added `manager` to `canViewRecruitment` and scoped `jobsList`/`jobsGet` per-opening. But every OTHER read path — `applicationsList`, `applicationsGet`, `applicationsStageHistory`, `interviewsList`, `interviewsGet`, `feedbackList`, `offersList`, `offersGet`, `offerApprovalsList`, `candidatesList`, `candidatesGet`, `documentsList` — accepted any tenant-scoped ID and returned data without checking opening ownership. A manager could enumerate IDs (or be handed an ID from the UI of another manager's opening) and read applications / interviews / offers / candidates for openings they don't manage.
+
+### Fix
+
+Two helpers added next to the verify-helpers:
+- `getManagerOpeningIds(orgId, actorId)` — returns the set of `job_opening.id` where the actor's resolved employee is the hiring manager.
+- `ensureManagerCanAccessOpening(orgId, actorId, role, jobOpeningId)` — throws FORBIDDEN if `role === "manager"` and the user doesn't manage that opening.
+
+Then patched every affected handler:
+- `applicationsList` / `interviewsList` / `offersList` — added `if (role === "manager") filters.push(inArray(...))` narrowing via opening IDs.
+- `applicationsGet` / `interviewsGet` / `offersGet` / `applicationsStageHistory` / `feedbackList` / `offerApprovalsList` — added `await ensureManagerCanAccessOpening(...)` after the verify-* call, navigating `offer → application` or `interview → application` to find the parent opening.
+- `candidatesList` / `candidatesGet` — restricted to `canManageRecruitment OR auditor` (managers no longer get a direct candidate-browsing view; they navigate via applications which are opening-scoped).
+- `documentsList` — restricted to `canManageRecruitment` (resumes / IDs / signed offers are PII).
+
+### Patterns That Worked
+
+68. **List-narrowing pattern: pre-fetch the manager's opening IDs, then `inArray(table.fk, ids)`.** Cheaper than a JOIN subquery, returns the empty list short-circuit when the manager has no openings. For interview/offer lists that don't carry a direct opening FK, do TWO subqueries: opening IDs → application IDs → filter on the application FK.
+
+69. **Get-narrowing pattern: `await verifyXxx(...)` then `await ensureManagerCanAccessOpening(...)`.** The first call confirms the row exists in the tenant; the second confirms the manager owns the parent opening. Two small queries; no need for a join in TypeScript.
+
+### Edge Cases to Watch
+
+14. **The interviewer-self-submit path for `feedbackSubmit` still allows manager/employee role.** That's the spec — interviewers (any role) can submit feedback for interviews they're on. Confirmed safe because we still verify (a) the actor's `resolveCurrentEmployee.id` matches `interviewerEmployeeId` AND (b) that ID is in the interview's `interviewerEmployeeIds` JSONB array. A manager-as-interviewer is a strictly weaker capability than manager-as-hiring-manager.

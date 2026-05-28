@@ -188,6 +188,64 @@ async function verifyOffer(orgIdValue: string, id: string) {
 	return row;
 }
 
+// Manager scoping (Phase 9C security review):
+// A user with role `manager` may only see opening-related data for openings
+// they manage (`jobOpening.hiringManagerEmployeeId === resolveCurrentEmployee.id`).
+// These two helpers narrow lists and individual reads accordingly. Recruiter /
+// HR / admin / owner / auditor are unaffected — they see all org data.
+async function getManagerOpeningIds(
+	orgIdValue: string,
+	actorIdValue: string
+): Promise<string[]> {
+	const me = await resolveCurrentEmployee(orgIdValue, actorIdValue);
+	if (!me) {
+		return [];
+	}
+	const rows = await db
+		.select({ id: jobOpening.id })
+		.from(jobOpening)
+		.where(
+			and(
+				eq(jobOpening.organizationId, orgIdValue),
+				eq(jobOpening.hiringManagerEmployeeId, me.id),
+				isNull(jobOpening.deletedAt)
+			)
+		);
+	return rows.map((r) => r.id);
+}
+
+async function ensureManagerCanAccessOpening(
+	orgIdValue: string,
+	actorIdValue: string,
+	roleValue: string,
+	jobOpeningId: string
+): Promise<void> {
+	if (roleValue !== "manager") {
+		return;
+	}
+	const me = await resolveCurrentEmployee(orgIdValue, actorIdValue);
+	if (!me) {
+		throw new ORPCError("FORBIDDEN", {
+			message: "You can only view openings you manage.",
+		});
+	}
+	const [opening] = await db
+		.select({ hiringManagerEmployeeId: jobOpening.hiringManagerEmployeeId })
+		.from(jobOpening)
+		.where(
+			and(
+				eq(jobOpening.id, jobOpeningId),
+				eq(jobOpening.organizationId, orgIdValue)
+			)
+		)
+		.limit(1);
+	if (!opening || opening.hiringManagerEmployeeId !== me.id) {
+		throw new ORPCError("FORBIDDEN", {
+			message: "You can only view openings you manage.",
+		});
+	}
+}
+
 async function verifyEmployeeInOrg(
 	orgIdValue: string,
 	employeeId: string
@@ -916,7 +974,11 @@ const candidatesList = authorizedProcedure("applicant", "read")
 		})
 	)
 	.handler(async ({ context, input }) => {
-		if (!canViewRecruitment(role(context))) {
+		// Phase 9C security review: candidate browsing is PII. Managers navigate
+		// via applications to their managed openings; they do NOT directly list
+		// candidates. Auditors retain read access (redactCandidateSensitive
+		// strips DOB/gender/address for them).
+		if (!canManageRecruitment(role(context)) && role(context) !== "auditor") {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
 		const filters = [
@@ -954,7 +1016,10 @@ const candidatesList = authorizedProcedure("applicant", "read")
 const candidatesGet = authorizedProcedure("applicant", "read")
 	.input(z.object({ id: z.string() }))
 	.handler(async ({ context, input }) => {
-		if (!canViewRecruitment(role(context))) {
+		// Phase 9C security review: see candidatesList rationale. Managers do
+		// NOT have a direct candidate-detail view — they navigate via applications
+		// to their managed openings, which the applicationsGet path scopes.
+		if (!canManageRecruitment(role(context)) && role(context) !== "auditor") {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
 		const c = await verifyCandidate(orgId(context), input.id);
@@ -1174,6 +1239,18 @@ const applicationsList = authorizedProcedure("applicant", "read")
 		if (input.stage) {
 			filters.push(eq(candidateApplication.stage, input.stage));
 		}
+		// Phase 9C security review: manager scope. A manager-role user may only
+		// see applications tied to openings they manage.
+		if (role(context) === "manager") {
+			const openingIds = await getManagerOpeningIds(
+				orgId(context),
+				actorId(context)
+			);
+			if (openingIds.length === 0) {
+				return { data: [], total: 0, page: input.page };
+			}
+			filters.push(inArray(candidateApplication.jobOpeningId, openingIds));
+		}
 		const offset = (input.page - 1) * input.pageSize;
 		const rows = await db
 			.select()
@@ -1199,7 +1276,15 @@ const applicationsGet = authorizedProcedure("applicant", "read")
 		if (!canViewRecruitment(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		return await verifyApplication(orgId(context), input.id);
+		const app = await verifyApplication(orgId(context), input.id);
+		// Phase 9C security review: manager-scope.
+		await ensureManagerCanAccessOpening(
+			orgId(context),
+			actorId(context),
+			role(context),
+			app.jobOpeningId
+		);
+		return app;
 	});
 
 const applicationsCreate = authorizedProcedure("applicant", "create")
@@ -1462,7 +1547,14 @@ const applicationsStageHistory = authorizedProcedure("applicant", "read")
 		if (!canViewRecruitment(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		await verifyApplication(orgId(context), input.applicationId);
+		const app = await verifyApplication(orgId(context), input.applicationId);
+		// Phase 9C security review: manager-scope.
+		await ensureManagerCanAccessOpening(
+			orgId(context),
+			actorId(context),
+			role(context),
+			app.jobOpeningId
+		);
 		const rows = await db
 			.select()
 			.from(applicationStageHistory)
@@ -1506,6 +1598,35 @@ const interviewsList = authorizedProcedure("interview", "read")
 		if (input.status) {
 			filters.push(eq(interview.status, input.status));
 		}
+		// Phase 9C security review: manager-scope. Restrict to interviews whose
+		// application belongs to a job opening the manager owns.
+		if (role(context) === "manager") {
+			const openingIds = await getManagerOpeningIds(
+				orgId(context),
+				actorId(context)
+			);
+			if (openingIds.length === 0) {
+				return { data: [], total: 0, page: input.page };
+			}
+			const managerAppIds = await db
+				.select({ id: candidateApplication.id })
+				.from(candidateApplication)
+				.where(
+					and(
+						eq(candidateApplication.organizationId, orgId(context)),
+						inArray(candidateApplication.jobOpeningId, openingIds)
+					)
+				);
+			if (managerAppIds.length === 0) {
+				return { data: [], total: 0, page: input.page };
+			}
+			filters.push(
+				inArray(
+					interview.applicationId,
+					managerAppIds.map((r) => r.id)
+				)
+			);
+		}
 		const offset = (input.page - 1) * input.pageSize;
 		const rows = await db
 			.select()
@@ -1531,7 +1652,18 @@ const interviewsGet = authorizedProcedure("interview", "read")
 		if (!canViewRecruitment(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		return await verifyInterview(orgId(context), input.id);
+		const inter = await verifyInterview(orgId(context), input.id);
+		// Phase 9C security review: manager-scope via interview → application → opening.
+		if (role(context) === "manager") {
+			const app = await verifyApplication(orgId(context), inter.applicationId);
+			await ensureManagerCanAccessOpening(
+				orgId(context),
+				actorId(context),
+				role(context),
+				app.jobOpeningId
+			);
+		}
+		return inter;
 	});
 
 const interviewsSchedule = authorizedProcedure("interview", "create")
@@ -1676,7 +1808,17 @@ const feedbackList = authorizedProcedure("interview", "read")
 		if (!canViewRecruitment(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		await verifyInterview(orgId(context), input.interviewId);
+		const inter = await verifyInterview(orgId(context), input.interviewId);
+		// Phase 9C security review: manager-scope.
+		if (role(context) === "manager") {
+			const app = await verifyApplication(orgId(context), inter.applicationId);
+			await ensureManagerCanAccessOpening(
+				orgId(context),
+				actorId(context),
+				role(context),
+				app.jobOpeningId
+			);
+		}
 		return await db
 			.select()
 			.from(interviewFeedback)
@@ -1797,6 +1939,34 @@ const offersList = authorizedProcedure("offer", "read")
 		if (input.status) {
 			filters.push(eq(offer.status, input.status));
 		}
+		// Phase 9C security review: manager-scope via offer → application → opening.
+		if (role(context) === "manager") {
+			const openingIds = await getManagerOpeningIds(
+				orgId(context),
+				actorId(context)
+			);
+			if (openingIds.length === 0) {
+				return { data: [], total: 0, page: input.page };
+			}
+			const managerAppIds = await db
+				.select({ id: candidateApplication.id })
+				.from(candidateApplication)
+				.where(
+					and(
+						eq(candidateApplication.organizationId, orgId(context)),
+						inArray(candidateApplication.jobOpeningId, openingIds)
+					)
+				);
+			if (managerAppIds.length === 0) {
+				return { data: [], total: 0, page: input.page };
+			}
+			filters.push(
+				inArray(
+					offer.applicationId,
+					managerAppIds.map((r) => r.id)
+				)
+			);
+		}
 		const offset = (input.page - 1) * input.pageSize;
 		const rows = await db
 			.select()
@@ -1823,6 +1993,16 @@ const offersGet = authorizedProcedure("offer", "read")
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
 		const o = await verifyOffer(orgId(context), input.id);
+		// Phase 9C security review: manager-scope via offer → application → opening.
+		if (role(context) === "manager") {
+			const app = await verifyApplication(orgId(context), o.applicationId);
+			await ensureManagerCanAccessOpening(
+				orgId(context),
+				actorId(context),
+				role(context),
+				app.jobOpeningId
+			);
+		}
 		return redactOfferCompensation(o, role(context));
 	});
 
@@ -2032,7 +2212,17 @@ const offerApprovalsList = authorizedProcedure("offer", "read")
 		if (!canViewRecruitment(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		await verifyOffer(orgId(context), input.offerId);
+		const o = await verifyOffer(orgId(context), input.offerId);
+		// Phase 9C security review: manager-scope via offer → application → opening.
+		if (role(context) === "manager") {
+			const app = await verifyApplication(orgId(context), o.applicationId);
+			await ensureManagerCanAccessOpening(
+				orgId(context),
+				actorId(context),
+				role(context),
+				app.jobOpeningId
+			);
+		}
 		return await db
 			.select()
 			.from(offerApproval)
@@ -2118,7 +2308,10 @@ const documentsList = authorizedProcedure("document", "read")
 		})
 	)
 	.handler(async ({ context, input }) => {
-		if (!canViewRecruitment(role(context))) {
+		// Phase 9C security review: candidate documents (resumes, IDs, signed
+		// offers) are PII. Restrict to canManageRecruitment. Managers route
+		// through application-scoped detail views; auditors don't see PII files.
+		if (!canManageRecruitment(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
 		if (!(input.candidateId || input.applicationId)) {
