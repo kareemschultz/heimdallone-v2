@@ -6,6 +6,7 @@ import { contractsRouter } from "./contracts";
 import { hrCoreRouter } from "./hr-core";
 import { leaveRouter } from "./leave";
 import { payrollRouter } from "./payroll";
+import { recruitmentRouter } from "./recruitment";
 
 export const appRouter = {
 	healthCheck: publicProcedure.handler(() => "OK"),
@@ -18,6 +19,7 @@ export const appRouter = {
 	attendance: attendanceRouter,
 	leave: leaveRouter,
 	payroll: payrollRouter,
+	recruitment: recruitmentRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;

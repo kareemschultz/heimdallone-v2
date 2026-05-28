@@ -548,3 +548,27 @@ Manual bank confirmation only. Exporting a bank file is **not** payment. "Mark a
 9. **Fortnightly contract pay frequency.** Payroll supports `weekly / monthly / fortnightly / custom` but `contractPayFrequencyEnum` is `weekly / monthly / semi_monthly` only. Need a migration to add `fortnightly` and ideally `custom`; until then the UI must not let users select an unsupported frequency from a contract form.
 10. **Dependent children count source-of-truth.** Engine reads `dependentChildren` from payroll input, but no `employee_profile` column tracks it. Currently the child allowance computes to zero silently. Either add the column (HR Core change) or surface a visible "child allowance disabled — no source data" warning on payslips.
 11. **Attendance completeness for "ready to run" payroll.** The current input builder builds attendance input from whatever records exist. A period with a single clock-in for one employee still looks "complete" to the engine. We need a `attendance_period_status` (open/closed/locked) or a confidence reduction when worked days < scheduled days, and a blocker when the gap is large.
+
+---
+
+## Session: 2026-05-28 — Phase 9C Recruitment oRPC API
+
+### Patterns That Worked
+
+62. **Six tenant-verify helpers eliminate the Phase 8I IDOR pattern by construction.** `verifyRequisition / verifyJobOpening / verifyCandidate / verifyApplication / verifyInterview / verifyOffer` each take `(orgId, id)`, run the `WHERE id = ? AND organization_id = ? AND deleted_at IS NULL` query, and throw `NOT_FOUND` if the row doesn't exist for that tenant. Every procedure that takes one of those IDs calls the matching `verify*` BEFORE any other DB work. Once a row is verified, subsequent UPDATE/DELETE WHERE clauses still include the org filter as defense in depth. Result: 50 procedures, zero IDOR patterns possible.
+
+63. **JSON FK arrays need a batch tenant-verify helper.** `interview.interviewerEmployeeIds` is a JSONB array of employee IDs. A naive insert would let a recruiter slip in employee IDs from another tenant. `verifyEmployeesInOrg(orgId, ids)` selects all matching employees in the org with `inArray(...)`, builds a Set of found IDs, and rejects with `BAD_REQUEST` listing the missing ones. One round trip; defense in depth equivalent to per-element verification.
+
+64. **Terminal-state move-backward needs an explicit override flag + audit metadata.** `applicationsMoveStage` accepts `adminOverride: boolean` in the input. Moves OUT of `hired / rejected / withdrawn` require both the flag AND `isOwnerOrAdmin(role)`. The audit row records `metadata: { adminOverride: true, note }` so the move is recoverable / explainable later. Recruiter alone cannot un-reject; owner alone cannot un-reject silently.
+
+65. **Sensitive fields stripped at API boundary, not in DB.** Candidate DOB/gender/address and offer baseAmount/variableAmount are full values in the DB row. `redactCandidateSensitive(row, role)` and `redactOfferCompensation(row, role)` produce a copy with those fields nulled when the caller doesn't pass the visibility threshold. The DB row stays canonical; the API output is role-shaped. Same pattern HR Core uses for bank details.
+
+66. **Email normalization at the boundary, NOT in the DB.** Candidate emails are `email.trim().toLowerCase()` on create and update. The `candidate_org_email_uq` unique index then catches collisions at the DB layer. Two-layer: API normalizes, DB enforces. Result: "ALICE@example.com" and "alice@example.com" can't both exist for the same tenant.
+
+67. **`offerTransition(allowedFrom[], newStatus, requireOwnerOrAdmin)` factory makes 7 offer state-transitions one line each.** The factory bakes in the verify, status-check, patch-builder, and audit-write. Six other procedures (send / accept / reject / expire / withdraw / approve) became one line each instead of duplicating the same 30-line boilerplate. Same idea applied to `interviewsTransition` and `jobsTransition`.
+
+### Edge Cases to Watch (in 9D / 9H)
+
+12. **`feedbackSubmit` allows the interviewer to self-submit even if their org role is `employee` or `manager`.** Necessary for real interviewers who aren't recruiters/HR. The procedure verifies (a) the actor's `resolveCurrentEmployee` ID matches `interviewerEmployeeId`, AND (b) that employee is on the interview's `interviewerEmployeeIds` JSON array. The "self" path is exclusive to `manager` and `employee` roles — recruiters / HR / admin always succeed via `canManageRecruitment`.
+
+13. **Manager scoping on `jobsList` requires `resolveCurrentEmployee` returning non-null.** A manager-role user without an employee profile sees an empty list (not all openings). Documented in the file with an explicit early-return.

@@ -29,3 +29,12 @@ export function canManagePayroll(role: MemberRole): boolean {
 export function canViewPayroll(role: MemberRole): boolean {
 	return canManagePayroll(role) || role === "auditor";
 }
+
+// Recruitment (Phase 9C)
+export function canManageRecruitment(role: MemberRole): boolean {
+	return canManageHR(role) || role === "recruiter";
+}
+
+export function canViewRecruitment(role: MemberRole): boolean {
+	return canManageRecruitment(role) || role === "auditor" || role === "manager";
+}

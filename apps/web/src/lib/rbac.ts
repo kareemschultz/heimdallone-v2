@@ -40,3 +40,15 @@ export function isEmployee(role: MemberRole): boolean {
 export function isManager(role: MemberRole): boolean {
 	return role === "manager";
 }
+
+// Recruitment (Phase 9C)
+// Recruiters and HR can create/update; admins + owner inherit via canManageHR.
+export function canManageRecruitment(role: MemberRole): boolean {
+	return canManageHR(role) || role === "recruiter";
+}
+
+// Hiring managers can VIEW their own opening's data (the per-opening filter is
+// enforced server-side); auditors can view aggregates.
+export function canViewRecruitment(role: MemberRole): boolean {
+	return canManageRecruitment(role) || role === "auditor" || role === "manager";
+}
