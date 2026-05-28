@@ -1,0 +1,185 @@
+import { useQuery } from "@tanstack/react-query";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Briefcase } from "lucide-react";
+import { useContext, useState } from "react";
+
+import "@/styles/recruitment.css";
+import { EmptyState } from "@/components/empty-state";
+import { RecruitmentTabs } from "@/features/recruitment/recruitment-tabs";
+import { canManageRecruitment } from "@/lib/rbac";
+import { OrgCtx } from "@/routes/app/route";
+import { orpc } from "@/utils/orpc";
+
+export const Route = createFileRoute("/app/recruitment/jobs/")({
+	component: JobsListPage,
+});
+
+type JobStatus = "draft" | "open" | "paused" | "closed" | "cancelled";
+
+const STATUS_FILTERS: { key: JobStatus | "all"; label: string }[] = [
+	{ key: "all", label: "All" },
+	{ key: "draft", label: "Draft" },
+	{ key: "open", label: "Open" },
+	{ key: "paused", label: "Paused" },
+	{ key: "closed", label: "Closed" },
+	{ key: "cancelled", label: "Cancelled" },
+];
+
+const STATUS_LABEL: Record<JobStatus, string> = {
+	draft: "Draft",
+	open: "Open",
+	paused: "Paused",
+	closed: "Closed",
+	cancelled: "Cancelled",
+};
+
+const STATUS_TONE: Record<JobStatus, string> = {
+	draft: "badge",
+	open: "badge badge-success",
+	paused: "badge badge-warning",
+	closed: "badge",
+	cancelled: "badge badge-muted",
+};
+
+function JobsListPage() {
+	const org = useContext(OrgCtx);
+	const canManage = canManageRecruitment(org.memberRole);
+	const [filter, setFilter] = useState<JobStatus | "all">("all");
+
+	const jobs = useQuery(
+		orpc.recruitment.jobs.list.queryOptions({
+			input: {
+				status: filter === "all" ? undefined : filter,
+				page: 1,
+				pageSize: 50,
+			},
+		})
+	);
+
+	const rows = jobs.data?.data ?? [];
+
+	return (
+		<div className="page">
+			<div className="page-header">
+				<div>
+					<div className="crumbs">
+						<span>Heimdallone</span>
+						<span className="sep">/</span>
+						<span>Recruitment</span>
+						<span className="sep">/</span>
+						<span>Jobs</span>
+					</div>
+					<h1 className="page-title">Jobs</h1>
+					<p className="page-sub">
+						Posted jobs and drafts. Open jobs accept new candidates.
+					</p>
+				</div>
+				{canManage && (
+					<div className="page-actions">
+						<button className="btn btn-primary btn-sm" disabled type="button">
+							New job
+						</button>
+					</div>
+				)}
+			</div>
+
+			<RecruitmentTabs />
+
+			<div
+				className="filter-row"
+				style={{
+					display: "flex",
+					flexWrap: "wrap",
+					gap: 6,
+					marginBottom: 14,
+				}}
+			>
+				{STATUS_FILTERS.map((f) => (
+					<button
+						className={`filter-chip ${filter === f.key ? "active" : ""}`}
+						key={f.key}
+						onClick={() => setFilter(f.key)}
+						type="button"
+					>
+						{f.label}
+					</button>
+				))}
+			</div>
+
+			{jobs.isLoading && (
+				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
+					Loading jobs…
+				</div>
+			)}
+
+			{!jobs.isLoading && rows.length === 0 && (
+				<div className="card card-pad">
+					<EmptyState
+						description={
+							filter === "all"
+								? "Create your first job to start collecting candidates."
+								: `No jobs with status “${filter}”.`
+						}
+						icon={<Briefcase size={20} />}
+						title={
+							filter === "all" ? "No jobs yet" : "No jobs match this filter"
+						}
+					/>
+				</div>
+			)}
+
+			{!jobs.isLoading && rows.length > 0 && (
+				<div className="card" style={{ overflow: "hidden" }}>
+					<table className="tbl">
+						<thead>
+							<tr>
+								<th>Title</th>
+								<th>Status</th>
+								<th style={{ textAlign: "right" }}>Vacancies</th>
+								<th>Work location</th>
+								<th>Employment type</th>
+								<th>Opened</th>
+							</tr>
+						</thead>
+						<tbody>
+							{rows.map((job) => (
+								<tr key={job.id}>
+									<td>
+										<Link
+											params={{ id: job.id }}
+											style={{
+												fontWeight: 600,
+												color: "var(--fg)",
+												textDecoration: "none",
+											}}
+											to="/app/recruitment/jobs/$id"
+										>
+											{job.title}
+										</Link>
+									</td>
+									<td>
+										<span className={STATUS_TONE[job.status as JobStatus]}>
+											{STATUS_LABEL[job.status as JobStatus] ?? job.status}
+										</span>
+									</td>
+									<td style={{ textAlign: "right" }}>{job.vacancyCount}</td>
+									<td style={{ color: "var(--fg-2)" }}>
+										{job.workLocation ?? "—"}
+									</td>
+									<td style={{ color: "var(--fg-2)" }}>
+										{job.employmentType ?? "—"}
+									</td>
+									<td style={{ color: "var(--fg-3)" }}>
+										{job.publishedAt
+											? new Date(job.publishedAt).toLocaleDateString()
+											: "—"}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+			)}
+		</div>
+	);
+}
