@@ -499,3 +499,21 @@ Manual bank confirmation only. Exporting a bank file is **not** payment. "Mark a
 5. **Candidate document downloads — audit or not?** MVP says no (write traffic on every read). Re-evaluate when the audit log gets a "downloads" sub-channel; for now, presigned URL expiry serves as the security boundary.
 6. **Pipeline stage rename retroactivity.** `pipelineConfig` JSONB on `job_opening` overrides stage labels per opening. Deleting / hiding a stage that still has candidates would orphan them — the override schema must be defensive: only allow hide on stages with zero open applications, or block the operation entirely.
 7. **`onboarding_template_task.defaultAssigneeRole` is a string until the IT module exists.** When the Asset / IT module lands, the "it_admin" string should become a proper enum or FK to a role mapping table. Until then, treat unrecognised assignee-role strings as "needs HR triage" so the new hire isn't blocked by a typo in a template.
+
+---
+
+## Session: 2026-05-28 — Phase 9B Recruitment DB Schema + Seed
+
+### Gotchas Discovered
+
+92. **`db:migrate` reports success even when the target DB is different from what you expected.** The drizzle.config loads `DATABASE_URL` from `apps/server/.env`, which on this dev box points to `Heimdallone` (capital H) — not the older `karetech_erp` from the Phase 8 incident logs. Verify via `\l` and the URL itself before assuming tables landed in the wrong place.
+
+93. **Seed scripts naturally trigger 4 biome rules at once.** `noNonNullAssertion` (on safe `arr[i]!` patterns), `noNamespaceImport` (the `import * as schema` convention), `noExcessiveCognitiveComplexity` (a long imperative `main()`), and `noUnusedVariables` (destructuring more than you use). The clean fix is a **file-level `// biome-ignore-all` header**, not a refactor — seed scripts are one-shot data generators and refactoring them into "real code" produces worse code, not better.
+
+### Patterns That Worked
+
+57. **`offer_approval` table with `sequence` column shipped even though MVP uses sequence=1 only.** Phase 9A open question Q1 recommended shipping the multi-step approval schema now to avoid a future migration. The cost was one extra table + one index. The benefit is that adding a second approver in the future is one new row, not a schema change.
+
+58. **`candidate_converted_employee_uq UNIQUE` constraint on `candidate.convertedEmployeeId`.** Enforces the conversion procedure's idempotency at the DB layer. Even if two API calls race, only one can complete the conversion; the second will hit the unique violation and the API can return the existing `employeeId` instead of creating a duplicate employee record. Cheaper and more correct than relying on application-level locks.
+
+59. **Soft-delete column on primary entities; not on audit rows.** `recruitment_requisition`, `job_opening`, `candidate`, `candidate_application`, `interview`, `offer`, `candidate_document`, `recruitment_note` carry `deleted_at`. Append-only history (`application_stage_history`, `interview_feedback`, `offer_approval`) does not — those tables are write-once and the audit value comes from being immutable.

@@ -149,7 +149,7 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 - Phase 6E: **Complete** — payroll/attendance/leave spec enrichment, GRA verification
 - Attendance + Leave (Phase 7): **Complete** through 7H (QA/RBAC pass)
 - Payroll (Phase 8): **Complete** through 8K + 8J.1/8J.2 polish
-- Recruitment + Onboarding (Phase 9): **In progress** — 9A spec done (see `docs/architecture/recruitment-onboarding-implementation-plan.md`); 9B (DB schema) is the next code-touching phase.
+- Recruitment + Onboarding (Phase 9): **In progress** — 9A spec done; 9B Recruitment DB schema + seed done (11 tables, 10 enums, migration `0008_large_mindworm.sql`); 9C Recruitment oRPC API is next.
   - 8A spec → 8B schema → 8C engine → 8D API → 8E setup UI → 8F run wizard → 8G payslips → 8H reports → 8I QA/RBAC → 8J branding → 8K payment batch + CSV bank export → 8J.1 module tabs + UX clarity polish → 8J.2 role normalization + EmptyState + payslip labels
   - 17/17 engine tests, 225 lint baseline maintained, browser-verified
 - Next: Phase 9 (Recruitment + Onboarding) per [implementation-sequence.md](docs/architecture/modules/implementation-sequence.md)
