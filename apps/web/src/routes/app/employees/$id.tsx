@@ -28,12 +28,9 @@ import { toast } from "sonner";
 
 import "@/styles/employee-profile.css";
 import "@/styles/contracts.css";
+import { canManageHR, canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
-
-const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
-const BANK_ROLES = [...HR_ROLES, "payroll_admin"];
-const SALARY_VISIBLE_ROLES = [...BANK_ROLES];
 
 export const Route = createFileRoute("/app/employees/$id")({
 	component: EmployeeProfilePage,
@@ -87,8 +84,8 @@ function EmployeeProfilePage() {
 	const navigate = useNavigate();
 	const qc = useQueryClient();
 	const org = useContext(OrgCtx);
-	const canEdit = HR_ROLES.includes(org.memberRole);
-	const canEditBank = BANK_ROLES.includes(org.memberRole);
+	const canEdit = canManageHR(org.memberRole);
+	const canEditBank = canManagePayroll(org.memberRole);
 	const [profileTab, setProfileTab] = useState<ProfileTab>("overview");
 	const [editSection, setEditSection] = useState<EditSection>(null);
 	const [confirmArchive, setConfirmArchive] = useState(false);
@@ -1428,7 +1425,7 @@ function EmployeeProfilePage() {
 			{profileTab === "payroll" && (
 				<div className="tab-panel active">
 					<ContractSection
-						canSeeSalary={SALARY_VISIBLE_ROLES.includes(org.memberRole)}
+						canSeeSalary={canManagePayroll(org.memberRole)}
 						contracts={
 							(contractsData as ContractHistoryItem[] | undefined) ?? []
 						}

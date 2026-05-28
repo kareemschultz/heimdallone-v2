@@ -1856,3 +1856,70 @@ These now apply to all future modules:
 
 ### Compliance Note (carried forward)
 Payroll calculations are not production-compliance-certified. Official statutory verification and payroll QA sign-off are required before production use. Guyana 2026 PAYE/NIS logic is implemented per research but needs GRA confirmation. Barbados/Trinidad rules are documented but not implemented.
+
+---
+
+## Phase 8J.2 — UX/Security Polish from Screenshot Audit (2026-05-28)
+
+Phase 8J.2 is a small targeted polish/security pass that fixes the top three
+findings from `docs/reviews/phase-8j1-screenshot-ux-audit.md`. No new
+modules, no schema changes, no engine changes.
+
+### Deliverables
+
+1. **Role string normalization (security blocker fix).**
+   - New helpers: `apps/web/src/lib/rbac.ts` and
+     `packages/api/src/utils/role-helpers.ts` — same function names on both
+     sides of the wire: `canManageHR`, `canManagePayroll`, `canViewPayroll`,
+     `isOwnerOrAdmin`, `isTenantOwner`, `isTenantAdmin`.
+   - Each helper accepts BOTH Better Auth's default strings (`"owner"`,
+     `"admin"`) AND our custom strings (`"tenant_owner"`, `"tenant_admin"`).
+   - Migrated all inline `PAYROLL_ROLES` / `HR_ROLES` arrays in:
+     - Frontend: `apps/web/src/features/payroll/payroll-tabs.tsx`,
+       `apps/web/src/routes/app/route.tsx`,
+       `apps/web/src/routes/app/payroll/{index,run,payslips/index,payslips/$id,reports,settings,reimbursements,payments}.tsx`,
+       `apps/web/src/routes/app/leave/index.tsx`,
+       `apps/web/src/routes/app/attendance/index.tsx`,
+       `apps/web/src/routes/app/employees/{index,$id}.tsx`,
+       `apps/web/src/routes/app/contracts/index.tsx`
+     - Backend: `packages/api/src/utils/employee-scope.ts`,
+       `packages/api/src/routers/{payroll,contracts,attendance,leave,hr-core}.ts`
+   - `scripts/seed-dev.ts` patched: after `/organization/create` (which
+     auto-assigns Better Auth's default role `"owner"` to the creator),
+     call `auth.api.updateMemberRole` to promote to `"tenant_owner"` so
+     future seeds match the ACL. Existing data is handled by the
+     dual-role-string helpers — no DB migration required.
+
+2. **Payslips filter pill labels.**
+   - Segmented buttons in `apps/web/src/routes/app/payroll/payslips/index.tsx`
+     now call `payslipStatusLabel(f)` instead of capitalising the raw enum.
+   - User-facing: All / Preview / Finalized / Paid — consistent with the
+     status legend above and the per-row badges below.
+
+3. **EmptyState primitive.**
+   - New: `apps/web/src/components/empty-state.tsx` — props per the
+     [shared-ui-primitives-plan.md](shared-ui-primitives-plan.md#emptystate-primitive-phase-8j2).
+   - Applied to Pay Items, Loans, Reimbursements (the payroll pages where
+     skeleton-on-empty was most visible in the audit screenshots).
+   - Employees and Contracts already shipped bespoke empty-state markup —
+     left in place.
+
+4. **Optional polish.**
+   - HR sync chip in `apps/web/src/routes/app/route.tsx` got a `title`
+     tooltip and relabelled to "Last HR sync · 14:42" so it self-explains
+     as demo data until real telemetry exists.
+   - Compliance score `/100` was already in place in
+     `apps/web/src/routes/app/index.tsx` (just too small to be visible in
+     the audit screenshot).
+
+### Out of scope (deferred to later phases)
+- Empty-state migration for Attendance (and Contracts copy refresh).
+- Module-tabs on Attendance / Leave / Employee Profile / Contracts.
+- Audit findings #5 (Coming Soon template duplication), #8 (leave grid
+  density), #9 (settings loading state), #10 (compliance ledger grouping).
+
+### Quality gates
+- `bun run check-types`: 26 errors (exact pre-existing baseline).
+- `bun run build`: passes.
+- `bun test packages/payroll-engine`: 17/17 pass, 76 expect() calls.
+- `bun run check`: 225 errors (exact lint baseline maintained).

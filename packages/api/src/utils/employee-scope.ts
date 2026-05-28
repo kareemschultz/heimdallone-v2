@@ -5,11 +5,7 @@ import {
 } from "@Heimdallone/db/schema/hr-core";
 import { and, eq } from "drizzle-orm";
 
-const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
-
-const PAYROLL_ROLES = [...HR_ROLES, "payroll_admin"];
-
-const READ_ALL_ROLES = [...PAYROLL_ROLES, "auditor"];
+import { canManageHR, canManagePayroll, canViewPayroll } from "./role-helpers";
 
 export async function resolveCurrentEmployee(
 	organizationId: string,
@@ -47,15 +43,15 @@ export async function getDirectReportIds(
 }
 
 export function canReadAllEmployees(role: string): boolean {
-	return READ_ALL_ROLES.includes(role);
+	return canViewPayroll(role);
 }
 
 export function canMutateEmployees(role: string): boolean {
-	return HR_ROLES.includes(role);
+	return canManageHR(role);
 }
 
 export function canReadFullBankDetails(role: string): boolean {
-	return PAYROLL_ROLES.includes(role);
+	return canManagePayroll(role);
 }
 
 export function isReadOnlyRole(role: string): boolean {

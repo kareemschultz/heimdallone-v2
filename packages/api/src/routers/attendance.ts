@@ -26,8 +26,7 @@ const actorId = (ctx: { session: { user: { id: string } } }) =>
 	ctx.session.user.id;
 const role = (ctx: unknown) => (ctx as { memberRole: string }).memberRole;
 
-const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
-const PAYROLL_ROLES = [...HR_ROLES, "payroll_admin"];
+import { canManageHR, canManagePayroll } from "../utils/role-helpers";
 
 async function scopedEmployeeIds(
 	organizationId: string,
@@ -564,7 +563,7 @@ const recordsApproveOvertime = authorizedProcedure("attendance", "correct")
 const recordsApprovePayroll = authorizedProcedure("attendance", "correct")
 	.input(z.object({ ids: z.array(z.string()).min(1).max(100) }))
 	.handler(async ({ context, input }) => {
-		if (!PAYROLL_ROLES.includes(role(context))) {
+		if (!canManagePayroll(role(context))) {
 			throw new ORPCError("FORBIDDEN", {
 				message: "Only HR and payroll admins can approve records for payroll.",
 			});
@@ -626,7 +625,7 @@ const recordsLockForPayroll = authorizedProcedure("attendance", "correct")
 		})
 	)
 	.handler(async ({ context, input }) => {
-		if (!PAYROLL_ROLES.includes(role(context))) {
+		if (!canManagePayroll(role(context))) {
 			throw new ORPCError("FORBIDDEN", {
 				message: "Only HR and payroll admins can lock records for payroll.",
 			});
@@ -1033,7 +1032,7 @@ const settingsUpdate = authorizedProcedure("attendance", "correct")
 		})
 	)
 	.handler(async ({ context, input }) => {
-		if (!HR_ROLES.includes(role(context))) {
+		if (!canManageHR(role(context))) {
 			throw new ORPCError("FORBIDDEN", {
 				message: "Only HR admins can update attendance settings.",
 			});
@@ -1181,7 +1180,7 @@ async function checkScopeForMutation(
 		});
 	}
 
-	if (HR_ROLES.includes(r)) {
+	if (canManageHR(r)) {
 		return;
 	}
 

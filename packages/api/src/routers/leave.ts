@@ -28,7 +28,7 @@ const actorId = (ctx: { session: { user: { id: string } } }) =>
 	ctx.session.user.id;
 const role = (ctx: unknown) => (ctx as { memberRole: string }).memberRole;
 
-const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
+import { canManageHR } from "../utils/role-helpers";
 
 async function scopedEmployeeIds(
 	organizationId: string,
@@ -70,7 +70,7 @@ async function checkApprovalScope(
 	targetEmployeeId: string
 ): Promise<void> {
 	const r = role(context);
-	if (HR_ROLES.includes(r)) {
+	if (canManageHR(r)) {
 		return;
 	}
 
@@ -861,7 +861,7 @@ const requestsCancel = authorizedProcedure("leave_request", "cancel")
 			throw new ORPCError("NOT_FOUND", { message: "Leave request not found." });
 		}
 
-		const isHR = HR_ROLES.includes(role(context));
+		const isHR = canManageHR(role(context));
 		if (!isHR && request.employeeId !== currentEmp.id) {
 			throw new ORPCError("FORBIDDEN", {
 				message: "You can only cancel your own leave requests.",
@@ -1060,7 +1060,7 @@ const allocationsList = authorizedProcedure("leave_request", "read")
 const allocationsApprove = authorizedProcedure("leave_request", "approve")
 	.input(z.object({ id: z.string() }))
 	.handler(async ({ context, input }) => {
-		if (!HR_ROLES.includes(role(context))) {
+		if (!canManageHR(role(context))) {
 			throw new ORPCError("FORBIDDEN", {
 				message: "Only HR admins can approve allocation requests.",
 			});
@@ -1132,7 +1132,7 @@ const allocationsApprove = authorizedProcedure("leave_request", "approve")
 const allocationsReject = authorizedProcedure("leave_request", "reject")
 	.input(z.object({ id: z.string(), rejectReason: z.string().min(1) }))
 	.handler(async ({ context, input }) => {
-		if (!HR_ROLES.includes(role(context))) {
+		if (!canManageHR(role(context))) {
 			throw new ORPCError("FORBIDDEN", {
 				message: "Only HR admins can reject allocation requests.",
 			});

@@ -17,15 +17,9 @@ import { toast } from "sonner";
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
+import { canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
-
-const PAYROLL_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-];
 
 const ISSUE_CODE_LABELS: Record<string, string> = {
 	NO_CONTRACT: "No active contract",
@@ -69,7 +63,7 @@ const STEPS: { key: WizardStep; label: string; num: number }[] = [
 function PayrollRunWizard() {
 	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
-	const canManage = PAYROLL_ROLES.includes(org.memberRole);
+	const canManage = canManagePayroll(org.memberRole);
 
 	const [step, setStep] = useState<WizardStep>("period");
 	const [selectedPeriodId, setSelectedPeriodId] = useState<string | null>(null);

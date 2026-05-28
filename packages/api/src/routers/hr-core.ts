@@ -15,6 +15,7 @@ import {
 	getDirectReportIds,
 	resolveCurrentEmployee,
 } from "../utils/employee-scope";
+import { canManagePayroll } from "../utils/role-helpers";
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -1332,13 +1333,7 @@ const bankDetailsGet = authorizedProcedure("employee", "read")
 		}
 
 		const role = (context as unknown as { memberRole: string }).memberRole;
-		const privilegedRoles = [
-			"tenant_owner",
-			"tenant_admin",
-			"hr_admin",
-			"payroll_admin",
-		];
-		if (!privilegedRoles.includes(role)) {
+		if (!canManagePayroll(role)) {
 			return {
 				...details,
 				accountNumber: maskAccountNumber(details.accountNumber),

@@ -6,18 +6,12 @@ import { useContext, useState } from "react";
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
+import { canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
 
 const SK_ROWS = ["r0", "r1", "r2", "r3", "r4"];
 const SK_CELLS = ["c0", "c1", "c2", "c3", "c4", "c5", "c6"];
-
-const PAYROLL_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-];
 
 export const Route = createFileRoute("/app/payroll/payslips/")({
 	component: PayslipsPage,
@@ -27,7 +21,7 @@ type StatusFilter = "all" | "draft" | "confirmed" | "paid";
 
 function PayslipsPage() {
 	const org = useContext(OrgCtx);
-	const canManage = PAYROLL_ROLES.includes(org.memberRole);
+	const canManage = canManagePayroll(org.memberRole);
 	const isEmployee =
 		org.memberRole === "employee" || org.memberRole === "manager";
 
@@ -148,7 +142,7 @@ function PayslipsPage() {
 								}}
 								type="button"
 							>
-								{f === "all" ? "All" : f.charAt(0).toUpperCase() + f.slice(1)}
+								{f === "all" ? "All" : payslipStatusLabel(f)}
 							</button>
 						))}
 					</div>

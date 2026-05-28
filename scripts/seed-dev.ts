@@ -115,7 +115,7 @@ async function main() {
 
 	const orgData = orgResult.json as {
 		id: string;
-		members?: Array<{ role: string }>;
+		members?: Array<{ id: string; role: string }>;
 	};
 	const orgId = orgData.id;
 	console.log(`   Org ID: ${orgId}`);
@@ -131,6 +131,26 @@ async function main() {
 		activeCookie
 	);
 	console.log("   Active org set ✓");
+
+	// 3a. Promote creator's membership from default "owner" to "tenant_owner".
+	// Better Auth assigns "owner" by default on /organization/create. Our ACL
+	// (packages/auth/src/permissions.ts) ships the custom role "tenant_owner".
+	// Without this step, the seeded owner can't pass UI checks that expect
+	// "tenant_owner". See docs/reviews/phase-8j1-screenshot-ux-audit.md #1.
+	try {
+		await auth.api.updateMemberRole({
+			body: {
+				memberId: orgData.members?.[0]?.id ?? "",
+				role: "tenant_owner",
+				organizationId: orgId,
+			},
+			headers: new Headers({ Cookie: activeCookie, Origin: BASE }),
+		});
+		console.log("   Owner promoted to tenant_owner ✓");
+	} catch (err) {
+		const msg = err instanceof Error ? err.message : String(err);
+		console.warn(`   Owner role promotion skipped: ${msg}`);
+	}
 
 	// 4. Create remaining users and add as members
 	console.log("\n3. Creating users and adding as members");

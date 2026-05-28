@@ -18,11 +18,9 @@ import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/contracts.css";
+import { canManageHR, canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
-
-const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
-const SALARY_VISIBLE_ROLES = [...HR_ROLES, "payroll_admin"];
 
 export const Route = createFileRoute("/app/contracts/")({
 	component: ContractsPage,
@@ -200,8 +198,8 @@ const SKELETON_CELL_KEYS = [
 function ContractsPage() {
 	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
-	const canEdit = HR_ROLES.includes(org.memberRole);
-	const canSeeSalary = SALARY_VISIBLE_ROLES.includes(org.memberRole);
+	const canEdit = canManageHR(org.memberRole);
+	const canSeeSalary = canManagePayroll(org.memberRole);
 
 	const [lens, setLens] = useState<StatusLens>("All");
 	const [search, setSearch] = useState("");

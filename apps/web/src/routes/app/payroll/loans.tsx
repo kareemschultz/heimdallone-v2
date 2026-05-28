@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import {
 	CheckCircle,
 	ChevronDown,
+	CreditCard,
 	Plus,
 	Search,
 	SkipForward,
@@ -12,6 +13,7 @@ import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
+import { EmptyState } from "@/components/empty-state";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -180,15 +182,20 @@ function LoansPage() {
 							))}
 						{!isLoading && loans.length === 0 && (
 							<tr>
-								<td
-									colSpan={canManage ? 8 : 7}
-									style={{
-										textAlign: "center",
-										padding: 40,
-										color: "var(--fg-3)",
-									}}
-								>
-									No loans found
+								<td colSpan={canManage ? 8 : 7} style={{ padding: 0 }}>
+									<EmptyState
+										action={
+											canManage
+												? {
+														label: "Create loan",
+														onClick: () => setShowCreate(true),
+													}
+												: undefined
+										}
+										description="Loans and salary advances will appear here when they are added."
+										icon={<CreditCard size={20} />}
+										title="No active loans or advances"
+									/>
 								</td>
 							</tr>
 						)}

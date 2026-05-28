@@ -35,6 +35,7 @@ import {
 import { createContext, useContext, useEffect, useState } from "react";
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
+import { canViewPayroll } from "@/lib/rbac";
 
 interface OrgContext {
 	memberRole: string;
@@ -258,15 +259,7 @@ function useCurrentNavKey(): string {
 }
 
 function isNavItemVisible(key: string, role: string): boolean {
-	if (
-		[
-			"tenant_owner",
-			"tenant_admin",
-			"hr_admin",
-			"payroll_admin",
-			"auditor",
-		].includes(role)
-	) {
+	if (canViewPayroll(role)) {
 		return true;
 	}
 	if (role === "employee") {
@@ -694,10 +687,11 @@ function AppTopbar() {
 						height: "26px",
 						padding: "0 10px",
 					}}
+					title="Last HR data sync — sample data only in this demo build. Click for details."
 					type="button"
 				>
 					<span className="badge-dot" />
-					HR sync · 14:42
+					Last HR sync · 14:42
 				</button>
 				<div
 					className="menu"

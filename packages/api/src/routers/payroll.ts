@@ -39,13 +39,6 @@ const actorId = (ctx: { session: { user: { id: string } } }) =>
 	ctx.session.user.id;
 const role = (ctx: unknown) => (ctx as { memberRole: string }).memberRole;
 
-const PAYROLL_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-];
-
 function maskAccountNumber(acctNum: string): string {
 	if (acctNum.length > 4) {
 		return `****${acctNum.slice(-4)}`;
@@ -71,9 +64,7 @@ function csvCell(value: unknown): string {
 	return s;
 }
 
-function canManagePayroll(r: string): boolean {
-	return PAYROLL_ROLES.includes(r);
-}
+import { canManagePayroll, isOwnerOrAdmin } from "../utils/role-helpers";
 
 // ═══════════════════════════════════════════════════════════════
 // 1. SETTINGS
@@ -2028,7 +2019,7 @@ const issuesResolve = authorizedProcedure("payroll", "update")
 const issuesOverride = authorizedProcedure("payroll", "update")
 	.input(z.object({ id: z.string(), reason: z.string().min(1) }))
 	.handler(async ({ context, input }) => {
-		if (!["tenant_owner", "tenant_admin"].includes(role(context))) {
+		if (!isOwnerOrAdmin(role(context))) {
 			throw new ORPCError("FORBIDDEN", {
 				message: "Only org admins can override payroll issues.",
 			});

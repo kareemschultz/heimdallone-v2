@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Archive, Plus, Search, UserPlus } from "lucide-react";
+import { Archive, FileText, Plus, Search, UserPlus } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
+import { EmptyState } from "@/components/empty-state";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -247,15 +248,20 @@ function PayItemsPage() {
 							))}
 						{!isLoading && filtered.length === 0 && (
 							<tr>
-								<td
-									colSpan={canManage ? 8 : 7}
-									style={{
-										textAlign: "center",
-										padding: 40,
-										color: "var(--fg-3)",
-									}}
-								>
-									No pay items found
+								<td colSpan={canManage ? 8 : 7} style={{ padding: 0 }}>
+									<EmptyState
+										action={
+											canManage
+												? {
+														label: "Add pay item",
+														onClick: () => setShowCreate(true),
+													}
+												: undefined
+										}
+										description="Create allowances, deductions, and statutory items before running payroll."
+										icon={<FileText size={20} />}
+										title="No pay items yet"
+									/>
 								</td>
 							</tr>
 						)}

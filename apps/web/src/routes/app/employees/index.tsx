@@ -15,10 +15,9 @@ import {
 import { useContext, useEffect, useState } from "react";
 
 import "@/styles/employees.css";
+import { canManageHR } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
-
-const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
 
 export const Route = createFileRoute("/app/employees/")({
 	component: EmployeesPage,
@@ -50,7 +49,7 @@ function getInitials(first: string, last: string | null): string {
 
 function EmployeesPage() {
 	const org = useContext(OrgCtx);
-	const canEdit = HR_ROLES.includes(org.memberRole);
+	const canEdit = canManageHR(org.memberRole);
 	const [density, setDensity] = useState<Density>("default");
 	const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 	const [drawerOpen, setDrawerOpen] = useState(false);

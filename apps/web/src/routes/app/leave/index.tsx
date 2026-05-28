@@ -14,11 +14,13 @@ import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/leave.css";
+import { canManageHR } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
 
-const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
-const APPROVAL_ROLES = [...HR_ROLES, "manager"];
+function canApproveLeave(role: string): boolean {
+	return canManageHR(role) || role === "manager";
+}
 
 export const Route = createFileRoute("/app/leave/")({
 	component: LeavePage,
@@ -140,8 +142,8 @@ const SKELETON_CELLS = ["sc0", "sc1", "sc2", "sc3", "sc4", "sc5", "sc6"];
 
 function LeavePage() {
 	const org = useContext(OrgCtx);
-	const canApprove = APPROVAL_ROLES.includes(org.memberRole);
-	const isHR = HR_ROLES.includes(org.memberRole);
+	const canApprove = canApproveLeave(org.memberRole);
+	const isHR = canManageHR(org.memberRole);
 
 	const [lens, setLens] = useState<LeaveLens>("My requests");
 	const [search, setSearch] = useState("");

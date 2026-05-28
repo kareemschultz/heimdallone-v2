@@ -1,15 +1,8 @@
 import { Link, useMatches } from "@tanstack/react-router";
 import { useContext } from "react";
 
+import { canManagePayroll, canViewPayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
-
-const PAYROLL_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-];
-const READONLY_ROLES = [...PAYROLL_ROLES, "auditor"];
 
 interface Tab {
 	adminOnly?: boolean;
@@ -88,8 +81,8 @@ export function PayrollTabs() {
 	const matches = useMatches();
 	const currentPath = matches.at(-1)?.pathname ?? "/app/payroll";
 
-	const canAdmin = PAYROLL_ROLES.includes(org.memberRole);
-	const canRead = READONLY_ROLES.includes(org.memberRole);
+	const canAdmin = canManagePayroll(org.memberRole);
+	const canRead = canViewPayroll(org.memberRole);
 	const isEmployee = org.memberRole === "employee";
 
 	const visibleTabs = TABS.filter((tab) => {

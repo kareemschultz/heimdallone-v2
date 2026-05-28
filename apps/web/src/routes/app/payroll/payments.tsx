@@ -23,12 +23,7 @@ import { client, orpc } from "@/utils/orpc";
 const SK_ROWS = ["r0", "r1", "r2", "r3", "r4"];
 const SK_CELLS = ["c0", "c1", "c2", "c3", "c4", "c5", "c6"];
 
-const PAYROLL_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-];
+import { canManagePayroll } from "@/lib/rbac";
 
 export const Route = createFileRoute("/app/payroll/payments")({
 	component: PaymentsPage,
@@ -37,7 +32,7 @@ export const Route = createFileRoute("/app/payroll/payments")({
 function PaymentsPage() {
 	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
-	const canManage = PAYROLL_ROLES.includes(org.memberRole);
+	const canManage = canManagePayroll(org.memberRole);
 
 	const [showCreate, setShowCreate] = useState(false);
 	const [selectedBatchId, setSelectedBatchId] = useState<string | null>(null);

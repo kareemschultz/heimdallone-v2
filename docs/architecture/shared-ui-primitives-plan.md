@@ -769,3 +769,62 @@ interface Tab {
 - **Contracts**: Active · Drafts · Renewals · Expired · Templates
 
 When adding ModuleTabs to a new module, copy the `PayrollTabs` pattern into `apps/web/src/features/<module>/<module>-tabs.tsx` and add module-specific CSS classes (`.attendance-tabs`, `.leave-tabs`, etc.) that share the same visual tokens as `.payroll-tabs`. The CSS can be lifted into a shared `module-tabs.css` if visual drift between modules becomes a maintenance issue.
+
+---
+
+## EmptyState Primitive (Phase 8J.2)
+
+Phase 8J.2 introduced the **EmptyState** primitive, implemented at
+`apps/web/src/components/empty-state.tsx`. It replaces ad-hoc "No X found"
+table-row markup with a consistent, friendly empty display.
+
+### When to use
+
+- `isLoading === false && rows.length === 0` (data has loaded and is empty)
+- **Never** as a substitute for a loading skeleton (that's the
+  `isLoading === true` branch's job)
+
+### Props
+
+```ts
+interface EmptyStateProps {
+  title: string;                          // required, 14px bold
+  description?: string;                   // optional, 12.5px supporting line
+  icon?: React.ReactNode;                 // optional lucide icon — rendered
+                                          //   in a 48×48 rounded panel
+  action?: EmptyStateAction;              // optional primary button or link
+  secondaryAction?: EmptyStateAction;     // optional secondary button or link
+  compact?: boolean;                      // tighter padding for nested use
+}
+
+interface EmptyStateAction {
+  label: string;
+  onClick?: () => void;                   // either onClick or href
+  href?: string;                          // renders as <a> instead of button
+}
+```
+
+### Inside tables
+
+Wrap inside a single `<td colSpan={n} style={{ padding: 0 }}>` row so the
+EmptyState spans the full table width without inheriting cell padding.
+
+### Skeleton vs Empty vs Error — the rule
+
+| State                                            | Renders               |
+|--------------------------------------------------|-----------------------|
+| `isLoading === true`                             | Skeleton rows         |
+| `isLoading === false && error`                   | Error banner + retry  |
+| `isLoading === false && !error && rows.length === 0` | `<EmptyState />`  |
+| `isLoading === false && rows.length > 0`         | Actual rows           |
+
+### Adopted in Phase 8J.2
+
+- Pay Items
+- Loans
+- Reimbursements
+
+Employees and Contracts already had bespoke per-page empty markup (with smart
+copy that varies on search/filter state) and were left alone. Future tables
+should default to `<EmptyState />` unless the bespoke version genuinely
+needs to switch copy on multiple filter dimensions.

@@ -30,16 +30,12 @@ const actorId = (ctx: { session: { user: { id: string } } }) =>
 	ctx.session.user.id;
 const memberRole = (ctx: unknown) => (ctx as { memberRole: string }).memberRole;
 
-// Roles that may see raw salary values (same pattern as bank details masking)
-const SALARY_VISIBLE_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-];
+import { canManagePayroll } from "../utils/role-helpers";
 
+// Roles that may see raw salary values (same pattern as bank details masking).
+// Matches "can manage payroll" — payroll_admin + HR_ROLES.
 function canSeeSalary(role: string): boolean {
-	return SALARY_VISIBLE_ROLES.includes(role);
+	return canManagePayroll(role);
 }
 
 // On-read auto-expire: active contracts past their end date are treated as expired.

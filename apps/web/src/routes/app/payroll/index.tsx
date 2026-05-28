@@ -18,15 +18,9 @@ import { useContext } from "react";
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
+import { canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
-
-const PAYROLL_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-];
 
 export const Route = createFileRoute("/app/payroll/")({
 	component: PayrollDashboard,
@@ -34,7 +28,7 @@ export const Route = createFileRoute("/app/payroll/")({
 
 function PayrollDashboard() {
 	const org = useContext(OrgCtx);
-	const canManage = PAYROLL_ROLES.includes(org.memberRole);
+	const canManage = canManagePayroll(org.memberRole);
 
 	const { data: settings } = useQuery(
 		orpc.payroll.settings.get.queryOptions({})

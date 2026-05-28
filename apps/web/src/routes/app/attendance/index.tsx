@@ -17,12 +17,13 @@ import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/attendance.css";
+import { canManageHR, canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
 
-const HR_ROLES = ["tenant_owner", "tenant_admin", "hr_admin"];
-const PAYROLL_ROLES = [...HR_ROLES, "payroll_admin"];
-const CORRECTION_ROLES = [...HR_ROLES, "manager"];
+function canCorrectAttendance(role: string): boolean {
+	return canManageHR(role) || role === "manager";
+}
 
 export const Route = createFileRoute("/app/attendance/")({
 	component: AttendancePage,
@@ -280,8 +281,8 @@ const SKELETON_CELL_KEYS = [
 function AttendancePage() {
 	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
-	const canEdit = CORRECTION_ROLES.includes(org.memberRole);
-	const canPayroll = PAYROLL_ROLES.includes(org.memberRole);
+	const canEdit = canCorrectAttendance(org.memberRole);
+	const canPayroll = canManagePayroll(org.memberRole);
 
 	const [lens, setLens] = useState<AttLens>("All");
 	const [search, setSearch] = useState("");
@@ -975,7 +976,7 @@ function RecordDetailDrawer({
 		}
 	}
 
-	const canAct = CORRECTION_ROLES.includes(memberRole);
+	const canAct = canCorrectAttendance(memberRole);
 
 	return (
 		<div className="att-detail">
@@ -1177,7 +1178,7 @@ function RecordDetailDrawer({
 
 function CorrectionsView({ memberRole }: { memberRole: string }) {
 	const qc = useQueryClient();
-	const canReview = CORRECTION_ROLES.includes(memberRole);
+	const canReview = canCorrectAttendance(memberRole);
 	const [rejectingId, setRejectingId] = useState<string | null>(null);
 	const [rejectNote, setRejectNote] = useState("");
 

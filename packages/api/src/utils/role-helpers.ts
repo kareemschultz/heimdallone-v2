@@ -1,0 +1,31 @@
+// Server-side mirror of apps/web/src/lib/rbac.ts. Keep these in sync.
+// See docs/reviews/phase-8j1-screenshot-ux-audit.md Finding #1.
+
+export type MemberRole = string;
+
+const OWNER_ROLES = new Set(["owner", "tenant_owner"]);
+const ADMIN_ROLES = new Set(["admin", "tenant_admin"]);
+
+export function isTenantOwner(role: MemberRole): boolean {
+	return OWNER_ROLES.has(role);
+}
+
+export function isTenantAdmin(role: MemberRole): boolean {
+	return ADMIN_ROLES.has(role);
+}
+
+export function isOwnerOrAdmin(role: MemberRole): boolean {
+	return isTenantOwner(role) || isTenantAdmin(role);
+}
+
+export function canManageHR(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "hr_admin";
+}
+
+export function canManagePayroll(role: MemberRole): boolean {
+	return canManageHR(role) || role === "payroll_admin";
+}
+
+export function canViewPayroll(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}

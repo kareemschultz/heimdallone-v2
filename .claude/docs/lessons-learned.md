@@ -465,3 +465,21 @@ Payroll calculations are not production-compliance-certified. Official statutory
 ### Compliance Note (carried forward)
 
 Manual bank confirmation only. Exporting a bank file is **not** payment. "Mark as paid" requires positive confirmation from the bank portal. Republic Bank / EZPay templates require official specs before they may be enabled — Generic CSV is the only format until then.
+
+---
+
+## Session: 2026-05-28 — Phase 8J.2 Role Normalization + EmptyState
+
+### Gotchas Discovered
+
+90. **Better Auth's `/organization/create` auto-assigns the creator role `"owner"` regardless of the ACL.** Our ACL ships custom roles (`tenant_owner`, `tenant_admin`, etc.) but the org-create endpoint ignores them — the creator is always added with role `"owner"`. If UI checks expect the custom role string, the actual seeded owner is locked out of their own org's admin actions. Always either normalize the role check to accept both strings, OR promote the creator's membership immediately after `/organization/create` via `auth.api.updateMemberRole`. We did both.
+
+91. **Skeleton rows shown when data is empty look indistinguishable from a forever-loading state.** The rule is: skeleton only while `isLoading === true`. Once `isLoading === false && rows.length === 0`, render a proper `<EmptyState />` with title + description + (optional) primary action. Bespoke per-page empty markup is fine, but it must visibly differ from the skeleton row.
+
+### Patterns That Worked
+
+52. **Centralized RBAC helpers for both sides of the wire.** `apps/web/src/lib/rbac.ts` (frontend) and `packages/api/src/utils/role-helpers.ts` (backend) export the same function names — `canManageHR`, `canManagePayroll`, `canViewPayroll`, `isOwnerOrAdmin`. Each accepts both the Better Auth default role names (`owner`, `admin`) AND our custom ones (`tenant_owner`, `tenant_admin`). Removing inline `PAYROLL_ROLES = [...]` literals from 12+ files made the role-string bug impossible to repeat per file. New code should import the helpers, never re-declare role arrays.
+
+53. **Always normalize external/auth-provider role strings before authorization checks.** Anytime a third-party plugin (Better Auth, Clerk, Auth.js, etc.) assigns its own canonical role names alongside your custom ones, write a small helper that accepts both. This is the cheapest insurance against a brittle role lockout.
+
+54. **Shared EmptyState primitive instead of per-table empty markup.** A single `<EmptyState />` component with `title / description / icon / action / secondaryAction` props replaces a dozen ad-hoc "No X found" `<tr><td colSpan>` blocks. Per-table `colSpan` is preserved by wrapping the EmptyState inside `<td colSpan={n} style={{ padding: 0 }}>` so it spans the table without re-styling.

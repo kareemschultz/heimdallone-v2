@@ -14,16 +14,9 @@ import { useContext, useState } from "react";
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
+import { canViewPayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
-
-const PAYROLL_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-	"auditor",
-];
 
 export const Route = createFileRoute("/app/payroll/reports")({
 	component: PayrollReportsPage,
@@ -31,7 +24,7 @@ export const Route = createFileRoute("/app/payroll/reports")({
 
 function PayrollReportsPage() {
 	const org = useContext(OrgCtx);
-	const canView = PAYROLL_ROLES.includes(org.memberRole);
+	const canView = canViewPayroll(org.memberRole);
 
 	const [selectedRunId, setSelectedRunId] = useState<string | null>(null);
 

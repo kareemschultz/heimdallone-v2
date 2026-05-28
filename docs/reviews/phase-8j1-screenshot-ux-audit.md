@@ -12,6 +12,36 @@ This is a **read-only audit**. No UI changes have been made. The recommendation 
 
 ---
 
+## Status update — 2026-05-28 (Phase 8J.2)
+
+Findings #1, #2, #3 were fixed in Phase 8J.2 (see commit referenced in
+`memory/project_current_status.md` and `docs/architecture/payroll-implementation-plan.md`).
+
+- **#1 Owner role string mismatch — FIXED.** New helpers
+  `apps/web/src/lib/rbac.ts` and `packages/api/src/utils/role-helpers.ts`
+  accept both `owner`/`tenant_owner` and `admin`/`tenant_admin`. All
+  payroll/HR pages and routers migrated off inline `PAYROLL_ROLES` /
+  `HR_ROLES` arrays. `scripts/seed-dev.ts` now promotes the creator's
+  membership to `tenant_owner` so future seeds match the ACL.
+- **#2 Payslips filter pills — FIXED.** The segmented buttons now use
+  `payslipStatusLabel()` so "Draft / Confirmed" render as
+  "Preview / Finalized" consistent with the badge legend.
+- **#3 Skeleton-on-empty — FIXED for the affected payroll pages.**
+  New `<EmptyState />` primitive at `apps/web/src/components/empty-state.tsx`,
+  applied to Pay Items, Loans, Reimbursements. Employees and Contracts
+  already had bespoke empty-state rendering and were left alone.
+- **#6 HR sync chip — partial fix.** Added a `title` tooltip and
+  relabelled to "Last HR sync · 14:42" so the chip self-explains until
+  it's wired to real telemetry.
+- **#7 Compliance score — already correct.** The KPI already shows
+  `98/100`; the `/100` is rendered in a smaller secondary span that
+  wasn't visible at screenshot scale.
+
+Findings #4, #5, #8, #9, #10 remain deferred until specific module work
+picks them up.
+
+---
+
 ## TL;DR
 
 - **One blocker found** (owner role string mismatch) that prevents the org owner from running payroll or managing payment exports against their own tenant.

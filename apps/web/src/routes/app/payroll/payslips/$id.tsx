@@ -6,15 +6,9 @@ import { useContext } from "react";
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
+import { canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
-
-const PAYROLL_ROLES = [
-	"tenant_owner",
-	"tenant_admin",
-	"hr_admin",
-	"payroll_admin",
-];
 
 export const Route = createFileRoute("/app/payroll/payslips/$id")({
 	component: PayslipDetailPage,
@@ -23,7 +17,7 @@ export const Route = createFileRoute("/app/payroll/payslips/$id")({
 function PayslipDetailPage() {
 	const { id } = Route.useParams();
 	const org = useContext(OrgCtx);
-	const canManage = PAYROLL_ROLES.includes(org.memberRole);
+	const canManage = canManagePayroll(org.memberRole);
 	const isEmployee = org.memberRole === "employee";
 
 	const adminQuery = useQuery({
