@@ -483,3 +483,19 @@ Manual bank confirmation only. Exporting a bank file is **not** payment. "Mark a
 53. **Always normalize external/auth-provider role strings before authorization checks.** Anytime a third-party plugin (Better Auth, Clerk, Auth.js, etc.) assigns its own canonical role names alongside your custom ones, write a small helper that accepts both. This is the cheapest insurance against a brittle role lockout.
 
 54. **Shared EmptyState primitive instead of per-table empty markup.** A single `<EmptyState />` component with `title / description / icon / action / secondaryAction` props replaces a dozen ad-hoc "No X found" `<tr><td colSpan>` blocks. Per-table `colSpan` is preserved by wrapping the EmptyState inside `<td colSpan={n} style={{ padding: 0 }}>` so it spans the table without re-styling.
+
+---
+
+## Session: 2026-05-28 — Phase 9A Recruitment + Onboarding Planning
+
+### Patterns That Worked
+
+55. **Plan-only phases produce better code, not just better docs.** Phase 9A's only deliverable is `recruitment-onboarding-implementation-plan.md`. The exercise forced explicit decisions on stage modelling (enum + per-opening JSON, not a separate `recruitment_stage` table), role modelling (`hiring_manager` is per-opening FK, not a global role), and template-snapshot semantics (snapshot to `onboarding_task` at instance creation, not live-bound). Each of those would have been a costly refactor mid-9D / 9G.
+
+56. **Spec the conversion procedure before either side's schema lands.** `recruitment.candidates.convertToEmployee` is the single point where Recruitment and HR Core / Contracts / Onboarding touch. Specifying it as one transactional procedure (with explicit rollback semantics + idempotency via `candidate.convertedEmployeeId UNIQUE`) keeps both sides' schemas honest. The schema columns that exist solely to support this procedure (the convertedEmployeeId link, the applicationId link on `employee_onboarding`, the offer's amount/frequency carried over to a contract draft) are now obvious decisions, not last-minute additions.
+
+### Edge Cases to Watch (for 9B+)
+
+5. **Candidate document downloads — audit or not?** MVP says no (write traffic on every read). Re-evaluate when the audit log gets a "downloads" sub-channel; for now, presigned URL expiry serves as the security boundary.
+6. **Pipeline stage rename retroactivity.** `pipelineConfig` JSONB on `job_opening` overrides stage labels per opening. Deleting / hiding a stage that still has candidates would orphan them — the override schema must be defensive: only allow hide on stages with zero open applications, or block the operation entirely.
+7. **`onboarding_template_task.defaultAssigneeRole` is a string until the IT module exists.** When the Asset / IT module lands, the "it_admin" string should become a proper enum or FK to a role mapping table. Until then, treat unrecognised assignee-role strings as "needs HR triage" so the new hire isn't blocked by a typo in a template.

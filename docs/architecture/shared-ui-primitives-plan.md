@@ -828,3 +828,33 @@ Employees and Contracts already had bespoke per-page empty markup (with smart
 copy that varies on search/filter state) and were left alone. Future tables
 should default to `<EmptyState />` unless the bespoke version genuinely
 needs to switch copy on multiple filter dimensions.
+
+---
+
+## Planned Primitives for Phase 9 (Recruitment + Onboarding)
+
+These primitives are spec'd in `docs/architecture/recruitment-onboarding-implementation-plan.md` and will be implemented in their respective phases:
+
+### `KanbanBoard` — Phase 9D
+
+Drag-and-drop board with columns and cards. Generic over the card payload type so the same component serves recruitment pipeline (candidate cards) and any future kanban-style view.
+
+- **Location**: `apps/web/src/components/kanban-board.tsx`
+- **Required behavior**: column drag-to-reorder is OUT of scope at MVP; only card moves between columns matter. Card moves emit `onCardMove(cardId, fromColumn, toColumn)` so callers can wire optimistic updates + API mutation + audit log.
+- **Accessibility**: keyboard support (focus card → arrow keys + space to move) is required. Mouse-only kanban regresses users on mobile/touch and screen readers.
+
+### `TaskChecklist` — Phase 9G
+
+Vertical list of grouped tasks with status chips, due dates, assignee avatars, and a one-click complete toggle. Used by the per-employee onboarding checklist and any future task-list view (helpdesk, performance review tasks, etc.).
+
+- **Location**: `apps/web/src/components/task-checklist.tsx`
+- **Grouping**: by category (`document` / `equipment` / `policy` / `training` / `introduction` / `other`).
+- **Required behavior**: optimistic toggle on complete with revert on API failure; rendering of overdue tasks with the `Needs review` style; empty state inside the checklist when a category has no tasks.
+
+### `CandidateCard` — possibly Phase 9D
+
+The card body rendered inside `KanbanBoard` columns. If the candidate-list table re-uses the same compact card shape, this gets promoted to a primitive; otherwise it stays inline inside the kanban board.
+
+### `CalendarView` — Phase 9D (for interviews)
+
+Month / week calendar. Prefer wrapping an established third-party library (FullCalendar, etc.) over hand-rolling — calendars have many edge cases (timezone, DST, recurring events) that we should not solve from scratch.
