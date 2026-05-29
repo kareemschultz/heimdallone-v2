@@ -706,7 +706,7 @@ function NotesSection({ query }: { query: ReturnType<typeof useQuery> }) {
 								style={{ color: "var(--fg-3)", flexShrink: 0 }}
 							/>
 							<span style={{ fontSize: 12, color: "var(--fg-3)" }}>
-								{note.authorUserId.slice(0, 8)}…
+								Team member
 							</span>
 						</div>
 						<span

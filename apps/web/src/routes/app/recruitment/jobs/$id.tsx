@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Users } from "lucide-react";
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/recruitment.css";
@@ -117,6 +117,19 @@ function JobDetailPage() {
 			input: { jobOpeningId: id, page: 1, pageSize: 50 },
 		})
 	);
+	// Resolve candidate names for the applications table (TODO 9I: denormalize).
+	const candidates = useQuery(
+		orpc.recruitment.candidates.list.queryOptions({
+			input: { page: 1, pageSize: 100 },
+		})
+	);
+	const candidateNameById = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const c of candidates.data?.data ?? []) {
+			map.set(c.id, [c.firstName, c.lastName].filter(Boolean).join(" "));
+		}
+		return map;
+	}, [candidates.data]);
 
 	const status = (job.data?.status ?? "draft") as JobStatus;
 	const isTerminal = status === "closed" || status === "cancelled";
@@ -240,7 +253,11 @@ function JobDetailPage() {
 			</div>
 
 			{tab === "overview" ? (
-				<OverviewTab applications={applications} job={job.data} />
+				<OverviewTab
+					applications={applications}
+					candidateNameById={candidateNameById}
+					job={job.data}
+				/>
 			) : (
 				<SettingsTab
 					canManage={canManage}
@@ -283,6 +300,7 @@ function JobDetailPage() {
 function OverviewTab({
 	job,
 	applications,
+	candidateNameById,
 }: {
 	job:
 		| {
@@ -296,6 +314,7 @@ function OverviewTab({
 	applications: ReturnType<
 		typeof useQuery<{ data: ApplicationRow[]; total: number; page: number }>
 	>;
+	candidateNameById: Map<string, string>;
 }) {
 	const apps = applications.data?.data ?? [];
 	return (
@@ -344,7 +363,7 @@ function OverviewTab({
 												style={{ color: "var(--fg)", textDecoration: "none" }}
 												to="/app/recruitment/candidates/$id"
 											>
-												{app.candidateId.slice(0, 8)}…
+												{candidateNameById.get(app.candidateId) ?? "Candidate"}
 											</Link>
 										</td>
 										<td>
