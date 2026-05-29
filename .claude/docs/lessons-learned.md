@@ -623,3 +623,11 @@ Then patched every affected handler:
 
 15. **`jobsUpdate` rejects edits once status is `closed`/`cancelled`** — mirror this in the UI (disable Edit with a tooltip) but keep relying on the API to enforce it. Terminal job states have no transitions (no reopen).
 16. **Job FK fields `departmentId`/`jobPositionId`/`recruiterUserId` are stored but NOT server-verified**, and `jobsUpdate` doesn't even accept them. Do not expose them as form inputs until the API gains `verify*` checks (9I), or a client could persist arbitrary/cross-tenant IDs.
+
+## Session: 2026-05-29 — Phase 9D checkpoint 8 (Interview row actions)
+
+75. **A try/catch that maps a DB unique-violation to a friendly error must check `err.cause`, not just `err.message`.** `feedbackSubmit` wrapped its insert and threw `CONFLICT` only when `err.message.includes("<constraint>")` — but Drizzle wraps the pg error, so the constraint name AND the Postgres `23505` code live on `err.cause`, leaving `err.message` as the query text. The catch silently missed every duplicate and leaked a raw 500. Fix: inspect `cause.code === "23505"` and `cause.message` too. **Rule: when catching DB constraint violations, read the cause chain + the SQLSTATE code, not the top-level message.** Surfaced only by browser-submitting feedback against a row that already had seeded feedback.
+
+76. **Prevent the conflicting action in the UI, don't just handle the error.** The Add-feedback dialog now fetches existing feedback and removes interviewers who already submitted (one-feedback-per-interviewer unique constraint), showing "All interviewers have already given feedback" when none remain. Server returns CONFLICT as the backstop, but the happy path never offers a duplicate. General pattern: when a unique constraint governs an action, filter the choices so the user can't pick a value that will collide.
+
+77. **Resolving FK IDs to names cross-module:** interview `interviewerEmployeeIds` are `employeeProfile` IDs; resolve via `orpc.hrCore.employees.list` (recruiter + auditor both have `employee:read`, verified before relying on it) into an id→name `Map`, with a `Interviewer <id-prefix>` fallback so a missing/paged-out employee never shows a blank. Never render the raw FK ID as primary text.
