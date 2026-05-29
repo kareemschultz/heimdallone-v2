@@ -330,9 +330,20 @@ function PipelinePage() {
 								>
 									<MoveMenu
 										currentStage={card.stage as ActiveStage}
-										onSelect={(to) =>
-											moveMutation.mutate({ id: card.id, toStage: to })
-										}
+										onSelect={(to) => {
+											const verdict = canMoveStage(
+												card,
+												card.stage as ActiveStage,
+												to
+											);
+											if (!verdict.allowed) {
+												if (verdict.reason) {
+													toast.error(verdict.reason);
+												}
+												return;
+											}
+											moveMutation.mutate({ id: card.id, toStage: to });
+										}}
 									/>
 									<button
 										className="btn btn-sm"

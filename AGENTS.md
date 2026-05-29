@@ -151,10 +151,12 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 - Payroll (Phase 8): **Complete** through 8K + 8J.1/8J.2/8J.3 polish + correctness fixes
 - Recruitment + Onboarding (Phase 9): **In progress**
   - 9A (spec) ✅ → 9B (DB schema + seed) ✅ → 9C (oRPC API, 50 procedures) ✅ → 9C.1 manager-scope IDOR fix ✅
-  - 9D (Recruitment UI) **CHECKPOINT 2** ✅: Overview + Jobs list/detail + Candidates list + KanbanBoard primitive (@dnd-kit) + Pipeline page (job-scoped, drag/Move-menu, Reject dialog, one-step-backward policy).
+  - 9D (Recruitment UI) **CHECKPOINT 2** ✅ + cleanup (`5004616`): Overview + Jobs list/detail + Candidates list + KanbanBoard primitive (@dnd-kit/core only) + Pipeline page (job-scoped, drag/Move-menu, Reject dialog, one-step-backward policy, plain-language errors, `onMoveError` prop).
   - 9D remaining: Interviews list, Offers list+detail, Reports, full Candidate detail (5 tabs), Job create/edit forms.
   - 18/18 payroll-engine tests, 225 lint baseline maintained.
-- Next: Phase 9D checkpoint 3 — Interviews list (#91). Then Offers (#92), Reports (#93), Onboarding (9E–9G), candidate-to-employee conversion (9H), QA pass (9I).
+  - **Browser verification VERIFIED ✅ (2026-05-29)** via Playwright on `:3002` against a healthy local API (DB password synced from Infisical into `apps/server/.env`; full process restart). Confirmed: recruiter login → pipeline loads → job picker → drag forward (new→screening) → drag one-back (screening→new) → Move-menu one-step rule (3-back blocked with toast "Move back one stage at a time."; 1-back allowed) → Reject dialog submits + candidate leaves board + Rejected count increments → 0 steady-state console errors. Role matrix: owner/admin/hr_admin/recruiter manage (Move+Reject present); auditor read-only (board visible, 0 Move/Reject); manager scoped (Reports tab hidden, sees only managed openings); employee no access (Pipeline tab hidden).
+  - **Defect found + fixed during verification**: the "Move to" menu's `onSelect` bypassed `canMoveStage` (only the drag path enforced the policy). Fixed so the menu applies the identical guard + toast. (`pipeline.tsx`)
+- Next: Phase 9D checkpoint 3 — Interviews list (#91).
 
 ### Product Standards (set during Phase 8J.1, extended in 8J.2)
 - **Module tabs are a product standard.** Each multi-page module exposes its sub-pages via a tabs strip immediately under the page header (`PayrollTabs` in `apps/web/src/features/payroll/payroll-tabs.tsx` is the reference). Future module tabs are recommended for Attendance, Leave, Employee Profile, and Contracts.
