@@ -43,6 +43,7 @@
     "db:down": "turbo -F @Heimdallone/db db:down",
     "check": "ultracite check",
     "fix": "ultracite fix",
+    "audit:permissions": "bun scripts/audit-permissions.ts",
     "prepare": "husky"
   },
   "dependencies": {
