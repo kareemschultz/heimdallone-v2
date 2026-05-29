@@ -151,10 +151,10 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 - Payroll (Phase 8): **Complete** through 8K + 8J.1/8J.2/8J.3 polish + correctness fixes
 - Recruitment + Onboarding (Phase 9): **In progress**
   - 9A (spec) ✅ → 9B (DB schema + seed) ✅ → 9C (oRPC API, 50 procedures) ✅ → 9C.1 manager-scope IDOR fix ✅
-  - 9D (Recruitment UI) **CHECKPOINT 1** ✅: route folder + `RecruitmentTabs` + recruitment.css + Overview dashboard + Jobs list/detail + Candidates list. Sub-route stubs for pipeline/interviews/offers/$id/reports/candidates/$id.
-  - 9D remaining: Pipeline (KanbanBoard with @dnd-kit), Interviews, Offers list+detail, Reports, full Candidate detail (5 tabs), Job create/edit forms.
+  - 9D (Recruitment UI) **CHECKPOINT 2** ✅: Overview + Jobs list/detail + Candidates list + KanbanBoard primitive (@dnd-kit) + Pipeline page (job-scoped, drag/Move-menu, Reject dialog, one-step-backward policy).
+  - 9D remaining: Interviews list, Offers list+detail, Reports, full Candidate detail (5 tabs), Job create/edit forms.
   - 18/18 payroll-engine tests, 225 lint baseline maintained.
-- Next: Phase 9D checkpoint 2 — KanbanBoard primitive + Pipeline page. Then Onboarding (9E–9G), candidate-to-employee conversion (9H), QA pass (9I).
+- Next: Phase 9D checkpoint 3 — Interviews list (#91). Then Offers (#92), Reports (#93), Onboarding (9E–9G), candidate-to-employee conversion (9H), QA pass (9I).
 
 ### Product Standards (set during Phase 8J.1, extended in 8J.2)
 - **Module tabs are a product standard.** Each multi-page module exposes its sub-pages via a tabs strip immediately under the page header (`PayrollTabs` in `apps/web/src/features/payroll/payroll-tabs.tsx` is the reference). Future module tabs are recommended for Attendance, Leave, Employee Profile, and Contracts.
