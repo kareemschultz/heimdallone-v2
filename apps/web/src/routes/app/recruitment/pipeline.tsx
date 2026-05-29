@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { GitPullRequestArrow, X } from "lucide-react";
 import { useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -49,6 +49,7 @@ const REJECT_REASONS: { key: string; label: string }[] = [
 interface PipelineCard {
 	appliedAt: Date;
 	candidateEmail: string;
+	candidateId: string;
 	candidateName: string;
 	id: string;
 	stage: AnyStage;
@@ -83,6 +84,9 @@ function PipelinePage() {
 	const [rejectingId, setRejectingId] = useState<string | null>(null);
 	const [rejectReason, setRejectReason] = useState<string>("not_qualified");
 	const [rejectFeedback, setRejectFeedback] = useState<string>("");
+	const [quickViewCandidateId, setQuickViewCandidateId] = useState<
+		string | null
+	>(null);
 
 	const openings = useQuery(
 		orpc.recruitment.jobs.list.queryOptions({
@@ -130,6 +134,7 @@ function PipelinePage() {
 				: "Candidate";
 			return {
 				id: a.id,
+				candidateId: a.candidateId,
 				stage: a.stage as AnyStage,
 				candidateName: fullName,
 				candidateEmail: c?.email ?? "",
@@ -317,7 +322,14 @@ function PipelinePage() {
 					renderCard={(card) => (
 						<div className="kanban-card">
 							<div className="kanban-card-row">
-								<span className="kanban-card-name">{card.candidateName}</span>
+								<button
+									className="kanban-card-name kanban-card-open"
+									onClick={() => setQuickViewCandidateId(card.candidateId)}
+									onPointerDown={(e) => e.stopPropagation()}
+									type="button"
+								>
+									{card.candidateName}
+								</button>
 							</div>
 							<div className="kanban-card-meta">{card.candidateEmail}</div>
 							<div className="kanban-card-meta">
@@ -376,6 +388,99 @@ function PipelinePage() {
 					reason={rejectReason}
 				/>
 			)}
+
+			{quickViewCandidateId && (
+				<CandidateQuickView
+					candidateId={quickViewCandidateId}
+					onClose={() => setQuickViewCandidateId(null)}
+				/>
+			)}
+		</div>
+	);
+}
+
+function CandidateQuickView({
+	candidateId,
+	onClose,
+}: {
+	candidateId: string;
+	onClose: () => void;
+}) {
+	const candidate = useQuery(
+		orpc.recruitment.candidates.get.queryOptions({ input: { id: candidateId } })
+	);
+	const c = candidate.data;
+	const fullName = c
+		? [c.firstName, c.lastName].filter(Boolean).join(" ")
+		: "Candidate";
+	const statusLabel: Record<string, string> = {
+		active: "Active",
+		inactive_pool: "Talent pool",
+		blocked: "Blocked",
+	};
+
+	return (
+		<>
+			<button
+				aria-label="Close quick view"
+				className="qv-backdrop"
+				onClick={onClose}
+				type="button"
+			/>
+			<aside aria-label="Candidate quick view" className="qv-drawer">
+				<div className="qv-head">
+					<div>
+						<div className="qv-name">{fullName}</div>
+						{c?.status && (
+							<span className="badge" style={{ marginTop: 6 }}>
+								{statusLabel[c.status] ?? c.status}
+							</span>
+						)}
+					</div>
+					<button
+						aria-label="Close"
+						className="btn btn-sm"
+						onClick={onClose}
+						type="button"
+					>
+						<X size={14} />
+					</button>
+				</div>
+				<div className="qv-body">
+					{candidate.isLoading && (
+						<p style={{ color: "var(--fg-3)", fontSize: 13 }}>Loading…</p>
+					)}
+					{c && (
+						<dl className="qv-rows">
+							<QuickRow label="Email" value={c.email} />
+							<QuickRow label="Phone" value={c.phone ?? "—"} />
+							<QuickRow
+								label="Added"
+								value={new Date(c.createdAt).toLocaleDateString()}
+							/>
+						</dl>
+					)}
+				</div>
+				<div className="qv-foot">
+					<Link
+						className="btn btn-primary btn-sm"
+						onClick={onClose}
+						params={{ id: candidateId }}
+						to="/app/recruitment/candidates/$id"
+					>
+						Open full profile →
+					</Link>
+				</div>
+			</aside>
+		</>
+	);
+}
+
+function QuickRow({ label, value }: { label: string; value: string }) {
+	return (
+		<div className="qv-row">
+			<dt>{label}</dt>
+			<dd>{value}</dd>
 		</div>
 	);
 }
