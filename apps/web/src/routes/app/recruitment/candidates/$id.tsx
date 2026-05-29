@@ -14,6 +14,7 @@ import "@/styles/recruitment.css";
 import { EmptyState } from "@/components/empty-state";
 import { RecruitmentTabs } from "@/features/recruitment/recruitment-tabs";
 import { canManageRecruitment } from "@/lib/rbac";
+import { safeHttpUrl } from "@/lib/safe-url";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
 
@@ -444,9 +445,9 @@ function ProfileSection({
 							Links
 						</div>
 						<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-							{c.linkedinUrl && (
+							{safeHttpUrl(c.linkedinUrl) && (
 								<a
-									href={c.linkedinUrl}
+									href={safeHttpUrl(c.linkedinUrl)}
 									rel="noopener noreferrer"
 									style={{ fontSize: 13, color: "var(--fg-2)" }}
 									target="_blank"
@@ -454,9 +455,9 @@ function ProfileSection({
 									LinkedIn
 								</a>
 							)}
-							{c.resumeUrl && (
+							{safeHttpUrl(c.resumeUrl) && (
 								<a
-									href={c.resumeUrl}
+									href={safeHttpUrl(c.resumeUrl)}
 									rel="noopener noreferrer"
 									style={{ fontSize: 13, color: "var(--fg-2)" }}
 									target="_blank"
@@ -464,9 +465,9 @@ function ProfileSection({
 									Resume
 								</a>
 							)}
-							{c.portfolioUrl && (
+							{safeHttpUrl(c.portfolioUrl) && (
 								<a
-									href={c.portfolioUrl}
+									href={safeHttpUrl(c.portfolioUrl)}
 									rel="noopener noreferrer"
 									style={{ fontSize: 13, color: "var(--fg-2)" }}
 									target="_blank"
@@ -811,14 +812,20 @@ function DocumentsSection({ query }: { query: ReturnType<typeof useQuery> }) {
 					{docs.map((doc) => (
 						<tr key={doc.id}>
 							<td>
-								<a
-									href={doc.fileUrl}
-									rel="noopener noreferrer"
-									style={{ color: "var(--fg)", fontWeight: 600 }}
-									target="_blank"
-								>
-									{doc.fileName}
-								</a>
+								{safeHttpUrl(doc.fileUrl) ? (
+									<a
+										href={safeHttpUrl(doc.fileUrl)}
+										rel="noopener noreferrer"
+										style={{ color: "var(--fg)", fontWeight: 600 }}
+										target="_blank"
+									>
+										{doc.fileName}
+									</a>
+								) : (
+									<span style={{ color: "var(--fg)", fontWeight: 600 }}>
+										{doc.fileName}
+									</span>
+								)}
 							</td>
 							<td style={{ color: "var(--fg-2)" }}>{doc.documentType}</td>
 							<td style={{ color: "var(--fg-3)" }}>

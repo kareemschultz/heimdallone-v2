@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 
 import "@/styles/recruitment.css";
 import { RecruitmentTabs } from "@/features/recruitment/recruitment-tabs";
+import { safeHttpUrl } from "@/lib/safe-url";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/recruitment/offers/$id")({
@@ -83,6 +84,29 @@ function DetailRow({
 				{children}
 			</span>
 		</div>
+	);
+}
+
+function OfferLetterRow({ url }: { url: string | null | undefined }) {
+	if (!url) {
+		return null;
+	}
+	const safe = safeHttpUrl(url);
+	return (
+		<DetailRow label="Offer letter">
+			{safe ? (
+				<a
+					href={safe}
+					rel="noopener noreferrer"
+					style={{ color: "var(--accent, var(--fg))" }}
+					target="_blank"
+				>
+					View letter
+				</a>
+			) : (
+				<span style={{ color: "var(--fg-3)" }}>Unavailable</span>
+			)}
+		</DetailRow>
 	);
 }
 
@@ -269,18 +293,7 @@ function OfferDetailPage() {
 								{o.approvalRequired ? "Yes" : "No"}
 							</DetailRow>
 							<DetailRow label="Approved">{formatDate(o.approvedAt)}</DetailRow>
-							{o.letterUrl ? (
-								<DetailRow label="Offer letter">
-									<a
-										href={o.letterUrl}
-										rel="noopener noreferrer"
-										style={{ color: "var(--accent, var(--fg))" }}
-										target="_blank"
-									>
-										View letter
-									</a>
-								</DetailRow>
-							) : null}
+							<OfferLetterRow url={o.letterUrl} />
 						</SectionCard>
 
 						<SectionCard title="Status timeline">

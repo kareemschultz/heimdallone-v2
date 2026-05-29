@@ -317,6 +317,22 @@ function redactOfferCompensation<T extends Record<string, unknown>>(
 	};
 }
 
+// Stored-XSS hardening: offer letters, résumés, portfolios and document URLs
+// are rendered as anchor hrefs in the UI. Reject anything that isn't an
+// http(s) URL so a javascript:/data: scheme can never be persisted (the UI
+// also re-checks at render time — see apps/web/src/lib/safe-url.ts).
+function isHttpUrl(value: string): boolean {
+	try {
+		const parsed = new URL(value);
+		return parsed.protocol === "http:" || parsed.protocol === "https:";
+	} catch {
+		return false;
+	}
+}
+const httpUrlString = z
+	.string()
+	.refine(isHttpUrl, { message: "Must be an http(s) URL." });
+
 // Candidates carry sensitive PII (DOB, gender, address). Recruiters + HR see
 // everything; everyone else (e.g. manager / auditor) only sees the
 // non-sensitive subset.
@@ -1045,12 +1061,12 @@ const candidatesCreate = authorizedProcedure("applicant", "create")
 				])
 				.default("direct"),
 			referrerEmployeeId: z.string().nullable().optional(),
-			resumeUrl: z.string().optional(),
-			portfolioUrl: z.string().optional(),
+			resumeUrl: httpUrlString.optional(),
+			portfolioUrl: httpUrlString.optional(),
 			dateOfBirth: z.string().optional(),
 			gender: z.string().optional(),
 			address: z.string().optional(),
-			linkedinUrl: z.string().optional(),
+			linkedinUrl: httpUrlString.optional(),
 		})
 	)
 	.handler(async ({ context, input }) => {
@@ -1112,12 +1128,12 @@ const candidatesUpdate = authorizedProcedure("applicant", "update")
 			email: z.string().email().optional(),
 			phone: z.string().nullable().optional(),
 			country: z.string().nullable().optional(),
-			resumeUrl: z.string().nullable().optional(),
-			portfolioUrl: z.string().nullable().optional(),
+			resumeUrl: httpUrlString.nullable().optional(),
+			portfolioUrl: httpUrlString.nullable().optional(),
 			dateOfBirth: z.string().nullable().optional(),
 			gender: z.string().nullable().optional(),
 			address: z.string().nullable().optional(),
-			linkedinUrl: z.string().nullable().optional(),
+			linkedinUrl: httpUrlString.nullable().optional(),
 		})
 	)
 	.handler(async ({ context, input }) => {
@@ -2016,7 +2032,7 @@ const offersCreate = authorizedProcedure("offer", "create")
 			variableAmount: z.string().nullable().optional(),
 			startDate: z.string().nullable().optional(),
 			expiresAt: z.string().nullable().optional(),
-			letterUrl: z.string().nullable().optional(),
+			letterUrl: httpUrlString.nullable().optional(),
 			approvalRequired: z.boolean().default(true),
 		})
 	)
@@ -2062,7 +2078,7 @@ const offersUpdate = authorizedProcedure("offer", "extend")
 			baseAmountFrequency: z.string().optional(),
 			startDate: z.string().nullable().optional(),
 			expiresAt: z.string().nullable().optional(),
-			letterUrl: z.string().nullable().optional(),
+			letterUrl: httpUrlString.nullable().optional(),
 		})
 	)
 	.handler(async ({ context, input }) => {
@@ -2344,7 +2360,7 @@ const documentsUpload = authorizedProcedure("document", "create")
 			candidateId: z.string(),
 			applicationId: z.string().nullable().optional(),
 			documentType: z.string().min(1),
-			fileUrl: z.string().min(1),
+			fileUrl: httpUrlString,
 			fileName: z.string().min(1),
 			fileSizeBytes: z.number().int().min(0).optional(),
 			mimeType: z.string().optional(),
