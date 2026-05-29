@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { CalendarClock } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 
 import "@/styles/recruitment.css";
 import { EmptyState } from "@/components/empty-state";
+import { InterviewActions } from "@/features/recruitment/interview-actions";
 import { RecruitmentTabs } from "@/features/recruitment/recruitment-tabs";
+import { canManageRecruitment, canViewRecruitment } from "@/lib/rbac";
+import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/recruitment/interviews")({
@@ -49,6 +52,9 @@ function formatWhen(value: Date): string {
 }
 
 function InterviewsPage() {
+	const org = useContext(OrgCtx);
+	const canManage = canManageRecruitment(org.memberRole);
+	const canView = canViewRecruitment(org.memberRole);
 	const [filter, setFilter] = useState<InterviewStatus | "all">("all");
 
 	const interviews = useQuery(
@@ -78,6 +84,20 @@ function InterviewsPage() {
 			input: { page: 1, pageSize: JOIN_PAGE_SIZE },
 		})
 	);
+	// Resolve interviewer employee IDs → names for the feedback dialogs.
+	const employees = useQuery(
+		orpc.hrCore.employees.list.queryOptions({
+			input: { isActive: true, page: 1, pageSize: JOIN_PAGE_SIZE },
+		})
+	);
+
+	const employeesById = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const e of employees.data?.data ?? []) {
+			map.set(e.id, [e.firstName, e.lastName].filter(Boolean).join(" "));
+		}
+		return map;
+	}, [employees.data]);
 
 	const applicationsById = useMemo(() => {
 		const map = new Map<
@@ -119,16 +139,17 @@ function InterviewsPage() {
 				const openingTitle = app
 					? (jobTitleById.get(app.jobOpeningId) ?? "—")
 					: "—";
-				const interviewerCount = Array.isArray(iv.interviewerEmployeeIds)
-					? iv.interviewerEmployeeIds.length
-					: 0;
+				const interviewerEmployeeIds = Array.isArray(iv.interviewerEmployeeIds)
+					? (iv.interviewerEmployeeIds as string[])
+					: [];
 				return {
 					id: iv.id,
 					when: new Date(iv.scheduledStart),
 					candidateName,
 					openingTitle,
 					interviewType: iv.interviewType,
-					interviewerCount,
+					interviewerEmployeeIds,
+					interviewerCount: interviewerEmployeeIds.length,
 					status: iv.status as InterviewStatus,
 				};
 			}),
@@ -210,6 +231,7 @@ function InterviewsPage() {
 								<th>Type</th>
 								<th>Interviewers</th>
 								<th>Status</th>
+								{canView && <th style={{ textAlign: "right" }}>Actions</th>}
 							</tr>
 						</thead>
 						<tbody>
@@ -233,6 +255,21 @@ function InterviewsPage() {
 											{STATUS_LABEL[iv.status] ?? iv.status}
 										</span>
 									</td>
+									{canView && (
+										<td style={{ textAlign: "right" }}>
+											<InterviewActions
+												canManage={canManage}
+												canView={canView}
+												employeesById={employeesById}
+												interview={{
+													id: iv.id,
+													status: iv.status,
+													interviewerEmployeeIds: iv.interviewerEmployeeIds,
+													scheduledStart: iv.when,
+												}}
+											/>
+										</td>
+									)}
 								</tr>
 							))}
 						</tbody>
