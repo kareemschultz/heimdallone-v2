@@ -1895,10 +1895,18 @@ const feedbackSubmit = authorizedProcedure("interview", "create")
 				notes: input.notes ?? null,
 			});
 		} catch (err) {
-			if (
-				err instanceof Error &&
-				err.message.includes("feedback_interview_interviewer_uq")
-			) {
+			// Drizzle wraps the pg error: the unique-constraint name and the
+			// Postgres "23505" code live on the cause, not always on err.message.
+			const directMessage = err instanceof Error ? err.message : "";
+			const cause = (err as { cause?: unknown })?.cause;
+			const causeMessage =
+				cause instanceof Error ? cause.message : String(cause ?? "");
+			const causeCode = (cause as { code?: string } | undefined)?.code;
+			const isUniqueViolation =
+				causeCode === "23505" ||
+				directMessage.includes("feedback_interview_interviewer_uq") ||
+				causeMessage.includes("feedback_interview_interviewer_uq");
+			if (isUniqueViolation) {
 				throw new ORPCError("CONFLICT", {
 					message: "Feedback from this interviewer already exists.",
 				});
