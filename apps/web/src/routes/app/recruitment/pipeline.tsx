@@ -71,8 +71,7 @@ function canMoveStage(
 	}
 	return {
 		allowed: false,
-		reason:
-			"Cannot move more than one stage backward. Ask an admin to override.",
+		reason: "Move back one stage at a time.",
 	};
 }
 

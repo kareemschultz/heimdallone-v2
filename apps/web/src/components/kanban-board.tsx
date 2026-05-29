@@ -34,6 +34,16 @@ export interface KanbanBoardProps<TCard> {
 		fromColumn: string,
 		toColumn: string
 	) => void | Promise<void>;
+	/**
+	 * Called when an async `onMove` rejects. When omitted, the rejection is
+	 * caught (so it never becomes an unhandled rejection) but otherwise left
+	 * to the caller's own mutation error handling. Provide this when a
+	 * consumer does NOT surface move failures through another channel.
+	 */
+	onMoveError?: (
+		error: unknown,
+		context: { cardKey: string; fromColumn: string; toColumn: string }
+	) => void;
 	renderCard: (card: TCard, isDragging: boolean) => ReactNode;
 }
 
@@ -44,6 +54,7 @@ export function KanbanBoard<TCard>({
 	getCardColumn,
 	renderCard,
 	onMove,
+	onMoveError,
 	canMove,
 	emptyColumnHint = "Empty",
 }: KanbanBoardProps<TCard>) {
@@ -96,8 +107,14 @@ export function KanbanBoard<TCard>({
 		}
 		const result = onMove(cardKey, fromColumn, toColumn);
 		if (result && typeof result.catch === "function") {
-			result.catch(() => {
-				// Errors are surfaced via the mutation's onError handler.
+			result.catch((error: unknown) => {
+				if (onMoveError) {
+					onMoveError(error, { cardKey, fromColumn, toColumn });
+				}
+				// Without onMoveError we still swallow here so a rejection never
+				// becomes an unhandled promise rejection — callers that don't
+				// pass onMoveError are expected to surface failures via their
+				// own mutation onError handler (as the Pipeline page does).
 			});
 		}
 	};
