@@ -1,10 +1,11 @@
-import { useQuery } from "@tanstack/react-query";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Briefcase } from "lucide-react";
 import { useContext, useState } from "react";
 
 import "@/styles/recruitment.css";
 import { EmptyState } from "@/components/empty-state";
+import { JobFormDialog } from "@/features/recruitment/job-form-dialog";
 import { RecruitmentTabs } from "@/features/recruitment/recruitment-tabs";
 import { canManageRecruitment } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
@@ -44,7 +45,10 @@ const STATUS_TONE: Record<JobStatus, string> = {
 function JobsListPage() {
 	const org = useContext(OrgCtx);
 	const canManage = canManageRecruitment(org.memberRole);
+	const navigate = useNavigate();
+	const queryClient = useQueryClient();
 	const [filter, setFilter] = useState<JobStatus | "all">("all");
+	const [showCreate, setShowCreate] = useState(false);
 
 	const jobs = useQuery(
 		orpc.recruitment.jobs.list.queryOptions({
@@ -76,7 +80,11 @@ function JobsListPage() {
 				</div>
 				{canManage && (
 					<div className="page-actions">
-						<button className="btn btn-primary btn-sm" disabled type="button">
+						<button
+							className="btn btn-primary btn-sm"
+							onClick={() => setShowCreate(true)}
+							type="button"
+						>
 							New job
 						</button>
 					</div>
@@ -179,6 +187,26 @@ function JobsListPage() {
 						</tbody>
 					</table>
 				</div>
+			)}
+
+			{showCreate && (
+				<JobFormDialog
+					mode="create"
+					onClose={() => setShowCreate(false)}
+					onSaved={(newId) => {
+						setShowCreate(false);
+						queryClient.invalidateQueries({
+							predicate: (q) => {
+								const path = Array.isArray(q.queryKey) ? q.queryKey[0] : null;
+								return Array.isArray(path) && path[0] === "recruitment";
+							},
+						});
+						navigate({
+							params: { id: newId },
+							to: "/app/recruitment/jobs/$id",
+						});
+					}}
+				/>
 			)}
 		</div>
 	);
