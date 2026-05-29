@@ -11,6 +11,18 @@ export const statement = {
 
 	organization: ["update", "delete"],
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
+	onboarding: [
+		"read",
+		"create",
+		"update",
+		"archive",
+		"start",
+		"assign",
+		"complete",
+		"skip",
+		"approve_document",
+		"sign_acknowledgement",
+	],
 
 	employee: ["create", "read", "update", "terminate"],
 	resignation: ["create", "read", "approve", "complete", "withdraw"],
@@ -62,6 +74,18 @@ export const ac = createAccessControl(statement);
 export const tenant_owner = ac.newRole({
 	...ownerAc.statements,
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
+	onboarding: [
+		"read",
+		"create",
+		"update",
+		"archive",
+		"start",
+		"assign",
+		"complete",
+		"skip",
+		"approve_document",
+		"sign_acknowledgement",
+	],
 	employee: ["create", "read", "update", "terminate"],
 	resignation: ["create", "read", "approve", "complete", "withdraw"],
 	transfer: ["create", "read", "submit", "approve", "execute", "cancel"],
@@ -100,6 +124,18 @@ export const tenant_owner = ac.newRole({
 export const tenant_admin = ac.newRole({
 	...adminAc.statements,
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
+	onboarding: [
+		"read",
+		"create",
+		"update",
+		"archive",
+		"start",
+		"assign",
+		"complete",
+		"skip",
+		"approve_document",
+		"sign_acknowledgement",
+	],
 	employee: ["create", "read", "update", "terminate"],
 	resignation: ["create", "read", "approve", "complete", "withdraw"],
 	transfer: ["create", "read", "submit", "approve", "execute", "cancel"],
@@ -138,6 +174,18 @@ export const tenant_admin = ac.newRole({
 export const hr_admin = ac.newRole({
 	...adminAc.statements,
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
+	onboarding: [
+		"read",
+		"create",
+		"update",
+		"archive",
+		"start",
+		"assign",
+		"complete",
+		"skip",
+		"approve_document",
+		"sign_acknowledgement",
+	],
 	employee: ["create", "read", "update", "terminate"],
 	resignation: ["create", "read", "approve", "complete", "withdraw"],
 	transfer: ["create", "read", "submit", "approve", "execute", "cancel"],
@@ -212,6 +260,7 @@ export const manager = ac.newRole({
 	posting: ["read"],
 	applicant: ["read"],
 	interview: ["read", "update", "complete"],
+	onboarding: ["read", "complete", "skip", "assign"],
 	ticket: ["create", "read"],
 });
 
@@ -219,6 +268,7 @@ export const employee = ac.newRole({
 	...memberAc.statements,
 	employee: ["read"],
 	resignation: ["create", "read", "withdraw"],
+	onboarding: ["read", "complete", "sign_acknowledgement"],
 	payslip: ["read"],
 	payroll_period: ["read"],
 	advance: ["create", "read"],
@@ -240,6 +290,7 @@ export const auditor = ac.newRole({
 	employee: ["read"],
 	resignation: ["read"],
 	transfer: ["read"],
+	onboarding: ["read"],
 	payroll: ["read"],
 	payslip: ["read"],
 	payroll_period: ["read"],
@@ -272,6 +323,7 @@ export const recruiter = ac.newRole({
 	applicant: ["create", "read", "update", "convert"],
 	interview: ["create", "read", "update", "complete"],
 	offer: ["create", "read", "extend", "withdraw"],
+	onboarding: ["read", "start"],
 	document: ["read"],
 });
 

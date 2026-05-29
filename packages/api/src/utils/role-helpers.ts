@@ -38,3 +38,17 @@ export function canManageRecruitment(role: MemberRole): boolean {
 export function canViewRecruitment(role: MemberRole): boolean {
 	return canManageRecruitment(role) || role === "auditor" || role === "manager";
 }
+
+// Onboarding (Phase 9F)
+export function canManageOnboarding(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewOnboarding(role: MemberRole): boolean {
+	return (
+		canManageOnboarding(role) ||
+		role === "manager" ||
+		role === "auditor" ||
+		role === "recruiter"
+	);
+}

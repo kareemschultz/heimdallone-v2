@@ -78,11 +78,44 @@ data (FK-safe order) then inserts:
 - Partial unique `onboarding_template_org_name_uq` enforced (duplicate name → rejected).
 - Gates: `check-types` ✓ · `build` ✓ · `check` 225 baseline ✓ · `audit:permissions` ✓.
 
-## Next: Phase 9F — Onboarding oRPC API
-templates CRUD + task ordering; `employeeOnboarding.start/list/get`;
-task complete/skip/reassign/comment; document request lifecycle;
-acknowledgement sign; activity feed. Tenant-verify every FK; RBAC helpers
-(`canManageOnboarding` / `canViewOnboarding`); audit every status/document
-action; employee self-scope for assigned tasks; manager scope. Add the new
-`onboarding` resource + actions to `packages/auth/src/permissions.ts` and run
-`bun run audit:permissions`.
+## Phase 9F — Onboarding oRPC API (DONE)
+
+`packages/api/src/routers/onboarding.ts` — 7 groups, 31 procedures:
+- **templates**: list / getById / create / update / archive
+- **templateTasks**: listByTemplate / create / update / delete / reorder
+- **employeeOnboarding**: list / getById / getByEmployeeId / start / cancel / complete
+- **tasks**: list / getById / update / complete / skip / reassign
+- **documentRequests**: list / create / markUploaded / approve / reject
+- **acknowledgements**: list / create / sign
+- **activity**: list
+
+Permissions (`packages/auth/src/permissions.ts`): new `onboarding` resource +
+10 actions (`read, create, update, archive, start, assign, complete, skip,
+approve_document, sign_acknowledgement`). Grants: owner/admin/hr_admin = all;
+recruiter = read+start; manager = read/complete/skip/assign; employee =
+read/complete/sign_acknowledgement; auditor = read. Helpers
+`canManageOnboarding` (= canManageHR) / `canViewOnboarding` (+ manager/auditor/
+recruiter) in both backend `role-helpers.ts` and frontend `rbac.ts`.
+
+Guarantees:
+- **Transactional start**: the onboarding row + all snapshot tasks + the start
+  activity commit in one `db.transaction` — never a half-started onboarding.
+- Snapshot category/title/description from the template; `assigneeEmployeeId`
+  defaults to the new hire when the template task's `defaultAssigneeRole` is
+  `new_hire`, else null (assign later).
+- Tenant-verify every FK input (template/templateTask/onboarding/task/
+  docRequest/acknowledgement/employee/application).
+- Employee self-scope: an employee may read their own onboarding, complete
+  their own/assigned tasks, and sign their own acknowledgements; cross-employee
+  list/management is FORBIDDEN. Template archive/edit never mutates in-flight
+  onboarding tasks (verified).
+- Audit events on every create/update/archive/status/document/sign action;
+  plain-language errors (no FK/enum/orgId leakage).
+
+Verification (`scripts/verify-onboarding-api.ts`, run from apps/web): templates
+list = 3; start → 11 snapshot tasks (all todo); task complete → completed +
+activity; archive template → onboarding tasks survive + template hidden;
+employee + auditor blocked on management calls. Gates: check-types ✓ · build ✓
+· check 225 baseline ✓ · audit:permissions ✓ (45 pairs / 8 routers).
+
+## Next: Phase 9G — Onboarding UI
