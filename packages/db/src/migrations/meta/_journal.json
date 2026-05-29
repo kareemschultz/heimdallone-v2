@@ -64,6 +64,13 @@
       "when": 1779960035835,
       "tag": "0008_large_mindworm",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1780077996792,
+      "tag": "0009_complete_red_hulk",
+      "breakpoints": true
     }
   ]
 }

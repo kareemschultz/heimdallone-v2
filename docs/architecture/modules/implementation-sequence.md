@@ -7,7 +7,7 @@ Phase 5B:  HR Core (employees, org settings, documents, audit) ✅
 Phase 6:   Contracts ✅ (6A-6E complete, verified end-to-end)
 Phase 7:   Attendance + Leave ✅
 Phase 8:   Payroll ✅ (8A–8K + 8J.1 module-tabs / UX clarity polish + 8J.2 role normalization)
-Phase 9:   Recruitment + Onboarding ← IN PROGRESS (9A spec, 9B DB, 9C API done; 9D UI next)
+Phase 9:   Recruitment + Onboarding ← IN PROGRESS (9A spec ✅, 9B DB ✅, 9C API ✅, 9D UI ✅ + QA pass ✅, 9E onboarding DB schema + seed ✅; 9F onboarding API next → 9G UI → 9H candidate→employee conversion → 9I QA/hardening)
 Phase 9:   Recruitment + Onboarding (can parallelize)
 Phase 10:  Offboarding
 Phase 11:  Biometric + Geofencing
