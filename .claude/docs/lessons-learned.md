@@ -602,3 +602,24 @@ Then patched every affected handler:
 ### Edge Cases to Watch
 
 14. **The interviewer-self-submit path for `feedbackSubmit` still allows manager/employee role.** That's the spec — interviewers (any role) can submit feedback for interviews they're on. Confirmed safe because we still verify (a) the actor's `resolveCurrentEmployee.id` matches `interviewerEmployeeId` AND (b) that ID is in the interview's `interviewerEmployeeIds` JSONB array. A manager-as-interviewer is a strictly weaker capability than manager-as-hiring-manager.
+
+## Session: 2026-05-29 — Phase 9D Recruitment UI (checkpoints 2–7) + XSS + permission bug
+
+### Bugs Found by Verification (not by types/lint)
+
+70. **`authorizedProcedure("posting", "update")` referenced an action that didn't exist in the access-control statement.** `packages/auth/src/permissions.ts` defined `posting: ["create","read","publish","archive"]` — no `"update"` — yet `jobsUpdate` required `posting:update`. Every role got `403 "Missing permission: posting:update"`; nobody could edit a job opening. Create + publish/pause/close/cancel worked, masking it. **Only browser-clicking the edit form surfaced it** — types and lint can't catch an action-string that isn't granted. Fix: add `"update"` to the statement AND the managing-role grants. **Rule: whenever you add/rename an `authorizedProcedure(resource, action)`, grep the statement + every role block to confirm that exact action is granted; an ungranted action is a silent 403, not a type error.** Quick audit: `grep -oE 'authorizedProcedure\("[a-z_]+", "[a-z_]+"\)' router.ts | sort -u` and cross-check against `statement`.
+
+71. **Stored XSS via DB-supplied URLs in `href`.** Offer `letterUrl` and candidate `linkedinUrl/resumeUrl/portfolioUrl` + document `fileUrl` were rendered straight into `<a href>`. A persisted `javascript:`/`data:` URL executes on click — `rel="noopener"` does NOT prevent this. Fix (defense in depth): client `safeHttpUrl()` (`apps/web/src/lib/safe-url.ts`, returns the URL only if it parses as absolute http(s); SSR-safe) gating every such anchor, plus a server-side `httpUrlString` Zod refinement on all URL inputs. **Rule: any `href={dbValue}` must go through `safeHttpUrl`; any URL input must use `httpUrlString` (or equivalent http(s) refine).**
+
+### Patterns That Worked
+
+72. **Client-side join is now repeated in 4 recruitment pages** (pipeline, interviews, offers, candidate detail): fetch the entity list + applications + candidates + jobs and join by id in `useMemo`. Works, but flagged for 9I: denormalize `candidate name` + `opening title` into `interviews.list` / `offers.list` / `applications.list` server-side to delete the boilerplate and avoid inconsistent joins.
+
+73. **dnd-kit + Playwright:** the high-level `dragTo()` does NOT reliably trigger `PointerSensor` (it dropped on the origin column). Use a stepped real-pointer sequence — `mouse.move(src) → mouse.down() → ~12 interpolated mouse.move() steps → mouse.up()` — to activate the 6px sensor and drive collision detection. For asserting policy logic deterministically, prefer the non-drag affordance (the Move menu) which shares the same `canMoveStage` guard.
+
+74. **Mutation-heavy UI gets its own sequential checkpoint + browser verification.** Read-only pages (Reports, Candidate detail) parallelized cleanly via subagents; create/edit/transition forms did not — they needed careful RBAC + a live click-through that caught both the permission bug (#70) and the menu-policy gap. Verify every transition end-to-end (create → edit-persists-on-reload → each status change → terminal state shows no actions).
+
+### Edge Cases to Watch
+
+15. **`jobsUpdate` rejects edits once status is `closed`/`cancelled`** — mirror this in the UI (disable Edit with a tooltip) but keep relying on the API to enforce it. Terminal job states have no transitions (no reopen).
+16. **Job FK fields `departmentId`/`jobPositionId`/`recruiterUserId` are stored but NOT server-verified**, and `jobsUpdate` doesn't even accept them. Do not expose them as form inputs until the API gains `verify*` checks (9I), or a client could persist arbitrary/cross-tenant IDs.
