@@ -12,6 +12,7 @@ import { useContext } from "react";
 
 import "@/styles/onboarding.css";
 import { EmptyState } from "@/components/empty-state";
+import { MyOnboarding } from "@/features/onboarding/my-onboarding";
 import { OnboardingTabs } from "@/features/onboarding/onboarding-tabs";
 import { canViewOnboarding } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
@@ -24,30 +25,10 @@ export const Route = createFileRoute("/app/onboarding/")({
 function OnboardingOverview() {
 	const org = useContext(OrgCtx);
 
-	// Employees use the self-service view (Phase 9G checkpoint 6). The admin
-	// overview is for onboarding viewers/managers only.
+	// Employees get their own self-service onboarding view (Phase 9G checkpoint
+	// 6); staff (HR/admin/manager/auditor/recruiter) get the admin overview.
 	if (!canViewOnboarding(org.memberRole)) {
-		return (
-			<div className="page">
-				<div className="page-header">
-					<div>
-						<div className="crumbs">
-							<span>Heimdallone</span>
-							<span className="sep">/</span>
-							<span>Onboarding</span>
-						</div>
-						<h1 className="page-title">Onboarding</h1>
-					</div>
-				</div>
-				<div className="card card-pad">
-					<EmptyState
-						description="Your personal onboarding checklist will appear here soon."
-						icon={<ClipboardList size={20} />}
-						title="Onboarding"
-					/>
-				</div>
-			</div>
-		);
+		return <MyOnboarding />;
 	}
 
 	return <OnboardingDashboard />;

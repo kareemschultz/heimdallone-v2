@@ -665,6 +665,30 @@ const employeeOnboardingGetByEmployeeId = authorizedProcedure(
 			.orderBy(desc(employeeOnboarding.startedAt));
 	});
 
+// Self-service: the signed-in employee's own onboardings, resolved from the
+// session — no employeeId input, so an employee never needs (or can guess)
+// another person's id. Returns an empty list when the user has no employee
+// profile or no onboarding, which the UI renders as a friendly empty state.
+const employeeOnboardingMine = authorizedProcedure("onboarding", "read")
+	.input(z.object({}))
+	.handler(async ({ context }) => {
+		const me = await resolveCurrentEmployee(orgId(context), actorId(context));
+		if (!me) {
+			return [];
+		}
+		return await db
+			.select()
+			.from(employeeOnboarding)
+			.where(
+				and(
+					eq(employeeOnboarding.employeeId, me.id),
+					eq(employeeOnboarding.organizationId, orgId(context)),
+					isNull(employeeOnboarding.deletedAt)
+				)
+			)
+			.orderBy(desc(employeeOnboarding.startedAt));
+	});
+
 const employeeOnboardingStart = authorizedProcedure("onboarding", "start")
 	.input(
 		z.object({
@@ -1401,6 +1425,7 @@ export const onboardingRouter = {
 		list: employeeOnboardingList,
 		getById: employeeOnboardingGetById,
 		getByEmployeeId: employeeOnboardingGetByEmployeeId,
+		mine: employeeOnboardingMine,
 		start: employeeOnboardingStart,
 		cancel: employeeOnboardingCancel,
 		complete: employeeOnboardingComplete,
