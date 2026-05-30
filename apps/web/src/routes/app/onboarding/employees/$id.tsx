@@ -6,17 +6,14 @@ import { toast } from "sonner";
 
 import "@/styles/onboarding.css";
 import {
-	assigneeRoleLabel,
-	categoryLabel,
 	DOC_STATUS_LABEL,
 	DOC_STATUS_TONE,
 	isTaskResolved,
 	ONBOARDING_STATUS_LABEL,
 	ONBOARDING_STATUS_TONE,
-	TASK_STATUS_LABEL,
-	TASK_STATUS_TONE,
 } from "@/features/onboarding/labels";
 import { OnboardingTabs } from "@/features/onboarding/onboarding-tabs";
+import { TaskChecklist } from "@/features/onboarding/task-checklist";
 import { canManageOnboarding } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -243,11 +240,17 @@ function EmployeeOnboardingDetailPage() {
 						template={templateLabel}
 					/>
 
-					<TasksSection
-						employeeName={employeeName}
-						isLoading={tasks.isLoading}
-						tasks={taskRows}
-					/>
+					<SectionCard title="Tasks">
+						<TaskChecklist
+							canComplete={canManage}
+							canManage={canManage}
+							employeeName={employeeName}
+							emptyDescription="No tasks were copied into this onboarding."
+							emptyTitle="No tasks"
+							isLoading={tasks.isLoading}
+							tasks={taskRows}
+						/>
+					</SectionCard>
 
 					<DocsSection docs={docs.data ?? []} isLoading={docs.isLoading} />
 
@@ -343,93 +346,6 @@ function SummaryCard({
 			<Field label="Completed" value={fmtDate(completedAt)} />
 			<Field label="Progress" value={`${pct}%`} />
 		</div>
-	);
-}
-
-interface TaskRow {
-	assigneeEmployeeId: string | null;
-	category: string;
-	descriptionSnapshot: string | null;
-	dueAt: string | Date | null;
-	id: string;
-	status: string;
-	titleSnapshot: string;
-}
-
-function TasksSection({
-	tasks,
-	isLoading,
-	employeeName,
-}: {
-	tasks: TaskRow[];
-	isLoading: boolean;
-	employeeName: Map<string, string>;
-}) {
-	return (
-		<SectionCard title="Tasks">
-			{isLoading && <Muted>Loading tasks…</Muted>}
-			{!isLoading && tasks.length === 0 && <Muted>No tasks.</Muted>}
-			{!isLoading && tasks.length > 0 && (
-				<table className="tbl">
-					<thead>
-						<tr>
-							<th>Task</th>
-							<th>Category</th>
-							<th>Assignee</th>
-							<th>Due</th>
-							<th>Status</th>
-						</tr>
-					</thead>
-					<tbody>
-						{tasks.map((t) => {
-							const overdue =
-								!isTaskResolved(t.status) &&
-								t.dueAt &&
-								new Date(t.dueAt).getTime() < Date.now();
-							return (
-								<tr key={t.id}>
-									<td>
-										<div style={{ fontWeight: 600, color: "var(--fg)" }}>
-											{t.titleSnapshot}
-										</div>
-										{t.descriptionSnapshot && (
-											<div style={{ fontSize: 12, color: "var(--fg-3)" }}>
-												{t.descriptionSnapshot}
-											</div>
-										)}
-									</td>
-									<td>
-										<span className="badge">{categoryLabel(t.category)}</span>
-									</td>
-									<td style={{ color: "var(--fg-2)" }}>
-										{t.assigneeEmployeeId
-											? (employeeName.get(t.assigneeEmployeeId) ??
-												assigneeRoleLabel(null))
-											: "Unassigned"}
-									</td>
-									<td
-										style={{
-											color: overdue ? "var(--danger, #c0392b)" : "var(--fg-3)",
-										}}
-									>
-										{fmtDate(t.dueAt)}
-										{overdue ? " · overdue" : ""}
-									</td>
-									<td>
-										<span className={TASK_STATUS_TONE[t.status] ?? "badge"}>
-											{TASK_STATUS_LABEL[t.status] ?? t.status}
-										</span>
-									</td>
-								</tr>
-							);
-						})}
-					</tbody>
-				</table>
-			)}
-			<Muted style={{ marginTop: 8 }}>
-				Completing and reassigning tasks arrives in the next checkpoint.
-			</Muted>
-		</SectionCard>
 	);
 }
 

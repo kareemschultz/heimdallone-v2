@@ -188,3 +188,44 @@ Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **
 - Handoff CSS classes (`.tbl`, `.badge`, `.tabs`, `.filter-chip`, etc.) are first choice
 - shadcn used only for behavior/accessibility where handoff has no equivalent
 - No visual drift toward default shadcn styling
+
+---
+
+## Permanent execution model (phases 9G → 15)
+
+Source of truth for **how** work is executed. Applies to every remaining phase.
+
+- **Parallelism = read-only review only.** Use Workflows / parallel subagents only for
+  read-only review (UX, security/RBAC, a11y, docs consistency, screenshots, QA plans,
+  audits). Never run multiple agents that edit code at once — only one agent writes.
+- **Implementation is sequential.** One implementation agent writes code, checkpoint by
+  checkpoint. Never two writers on the same module or shared file
+  (`role-helpers.ts`, `rbac.ts`, `permissions.ts`, `*.css`, `routeTree.gen.ts`, API
+  routers, DB schema, `packages/ui/*`, `packages/payroll-engine/*`). No mega-commits.
+- **Commit / push / verify clean tree after every checkpoint.**
+- **Quality gates every checkpoint:** `bun run check-types --force --filter=web`,
+  `bun run build --force --filter=web`, `bun x ultracite check` (hold the documented
+  225/1 baseline — never *regress*; the baseline itself is pre-existing and accepted),
+  `bun run audit:permissions` (must PASS).
+- **Verification is type-specific and mandatory:** UI → Playwright (real DOM events;
+  authenticate via same-origin `/api/auth/sign-in/email`; 0 console errors on the happy
+  path) + screenshots under `docs/reviews/<phase>/`; backend → authenticated RPC (authz
+  denial *before* existence checks); schema → migration. `browser_run_code_unsafe` runs
+  in Node — DOM/`fetch`/timers only exist inside `page.evaluate(...)`. Never skip
+  verification just because the build passes.
+- **Security:** frontend checks are UX only, API is the source of truth; tenant-verify
+  every FK; employee self-scope enforced server-side; auditor read-only everywhere.
+- **Hard stops:** stop and report before touching shared credentials / secrets / central
+  DB passwords / Infisical; never commit `.env`; restart only your own project's local
+  dev processes (confirm a process's cwd before killing it).
+- **Dev env:** API :3000, web must bind :3002 (vite proxies `/api`+`/rpc` → :3000);
+  test org `atlas-shipping`; creds `*@atlas-shipping.com` / `HeimdallTest2026!`.
+
+### Phase roadmap
+9G Onboarding UI (CP1 overview/tabs ✓, CP2 templates ✓, CP3 list/detail ✓,
+**CP4 TaskChecklist + task actions ✓ code-complete/verified**, CP5 documents +
+acknowledgements, CP6 employee self-service, CP7 QA/RBAC pass) → 9H candidate→employee
+conversion (transactional; idempotency via `convertedEmployeeId`) → 9I recruitment +
+onboarding hardening → 10 Offboarding → 11 Biometric + Geofencing → 12 Compliance
+backend → 13 Bank/security production hardening → 14 Analytics/Reports/PDF → 15 SaaS
+polish / onboarding wizard / product tours.

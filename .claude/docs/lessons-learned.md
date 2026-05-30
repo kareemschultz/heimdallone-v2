@@ -647,3 +647,37 @@ Then patched every affected handler:
 82. **Two-layer onboarding RBAC + employee self-scope:** the better-auth action gate (`authorizedProcedure("onboarding", action)`) grants the *capability*; the handler then enforces *scope*. Cross-employee reads/management require `canViewOnboarding`/`canManageOnboarding`; employee-facing calls (own onboarding, complete own/assigned task, sign own acknowledgement) resolve `resolveCurrentEmployee` and match on `onboarding.employeeId` / `task.assigneeEmployeeId`. Granting employee the `read` action means employee passes the action gate for cross-employee list too — so those handlers MUST add a `canViewOnboarding` check (verified: employee cross-employee list → FORBIDDEN).
 
 83. **Verification script that needs an apps/web dependency (`@orpc/client`):** node/bun resolves bare specifiers from the file's directory upward, so a script in `scripts/` can't import `@orpc/client` (it lives in `apps/web/node_modules`). The router-type import is `import type` (erased at runtime), so only the client needs resolving — copy the script into `apps/web` to run it: `cp scripts/verify-onboarding-api.ts apps/web/_v.ts && (cd apps/web && bun run _v.ts); rm apps/web/_v.ts`. Documented in the script header.
+
+## Permanent execution model (phases 9G → 15)
+
+The full **agent execution model** lives in `AGENTS.md` at the repo root. Summary
+of the non-negotiables (see AGENTS.md for detail):
+
+- **Parallel agents = read-only review only** (UX, security/RBAC, a11y, docs,
+  screenshots, QA plans, audits). **One** implementation agent writes code,
+  **sequentially, checkpoint by checkpoint**. Never two writers on the same
+  module/shared file (rbac.ts, role-helpers.ts, permissions.ts, *.css,
+  routeTree.gen.ts, API routers, schema).
+- **Commit + push + verify clean tree after every checkpoint.** No mega-commits.
+- **Quality gates every checkpoint:** `bun run check-types --force --filter=web`,
+  `bun run build --force --filter=web`, `bun x ultracite check` (hold the
+  225/1 baseline), `bun run audit:permissions` (must PASS). Turbo "FULL TURBO"
+  can mask web errors — always force the web filter.
+- **Verification is type-specific and mandatory:** UI → browser (Playwright,
+  0 console errors on happy path) + screenshots under `docs/reviews/<phase>/`;
+  backend → authenticated RPC (authz before existence); schema → migration.
+  Never skip verification just because the build passes.
+- **Security:** frontend checks are UX only, API is source of truth; tenant-verify
+  every FK; employee self-scope enforced server-side; auditor read-only.
+- **Hard stops:** stop and report before touching shared creds/secrets/central DB
+  passwords/Infisical; never commit `.env`; never reset shared Postgres passwords;
+  only manage your own project's dev processes (confirm cwd before killing).
+
+### Gotcha: stale vite dev state returns HTTP 500 on the SSR entry
+
+If the TanStack Start app renders an empty `<body>` and the browser console shows
+500s on `/@id/__x00__virtual:tanstack-start-manifest:default-ssr-entry` while
+`bun run build --force --filter=web` passes cleanly, the **dev server is in a
+stale state**, not your code. Fix: kill only your own web vite (confirm its cwd
+is `…/Heimdallone/apps/web` and it owns `:3002` before killing), `rm -rf
+apps/web/node_modules/.vite`, and restart `bunx vite dev --port 3002 --strictPort`.

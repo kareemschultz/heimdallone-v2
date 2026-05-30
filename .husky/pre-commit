@@ -2,27 +2,38 @@
 # Exit on any error
 set -e
 
-# Check if there are any staged files
+# Format/lint ONLY the staged files (not the whole repo). The repo carries a
+# long-standing accepted lint baseline in unrelated files; running ultracite
+# across everything made the hook fail on changes it shouldn't block. Scoping
+# to staged files means the hook passes when YOUR changes are clean and still
+# auto-fixes + re-stages anything it can.
 STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACMR)
 if [ -z "$STAGED_FILES" ]; then
   echo "No staged files to format"
   exit 0
 fi
 
-# Run formatter
-bun x ultracite fix
+# Only pass files ultracite/Biome can handle; skip deletions already filtered above.
+LINTABLE=$(printf '%s\n' "$STAGED_FILES" | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|json|jsonc)$' || true)
+if [ -z "$LINTABLE" ]; then
+  echo "No lintable staged files"
+  exit 0
+fi
+
+# Run formatter against just the staged, lintable files.
+printf '%s\n' "$LINTABLE" | xargs bun x ultracite fix
 FORMAT_EXIT_CODE=$?
 
-# Re-stage files that were already staged
-echo "$STAGED_FILES" | while IFS= read -r file; do
+# Re-stage files that ultracite may have reformatted.
+printf '%s\n' "$LINTABLE" | while IFS= read -r file; do
   if [ -f "$file" ]; then
     git add -- "$file"
   fi
 done
 
-if [ $FORMAT_EXIT_CODE -ne 0 ]; then
-  echo "Ultracite found issues that could not be auto-fixed."
-  exit $FORMAT_EXIT_CODE
+if [ "$FORMAT_EXIT_CODE" -ne 0 ]; then
+  echo "Ultracite found issues in staged files that could not be auto-fixed."
+  exit "$FORMAT_EXIT_CODE"
 fi
 
-echo "✨ Files formatted by Ultracite"
+echo "✨ Staged files formatted by Ultracite"
