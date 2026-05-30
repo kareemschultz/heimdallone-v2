@@ -6,8 +6,12 @@ import { toast } from "sonner";
 
 import "@/styles/onboarding.css";
 import {
-	DOC_STATUS_LABEL,
-	DOC_STATUS_TONE,
+	AcknowledgementTable,
+	type AckRow,
+	type DocRequestRow,
+	DocumentRequestTable,
+} from "@/features/onboarding/document-center";
+import {
 	isTaskResolved,
 	ONBOARDING_STATUS_LABEL,
 	ONBOARDING_STATUS_TONE,
@@ -252,9 +256,27 @@ function EmployeeOnboardingDetailPage() {
 						/>
 					</SectionCard>
 
-					<DocsSection docs={docs.data ?? []} isLoading={docs.isLoading} />
+					<SectionCard title="Document requests">
+						<DocumentRequestTable
+							canManage={canManage}
+							emptyDescription="No document requests for this onboarding."
+							isLoading={docs.isLoading}
+							rows={(docs.data ?? []) as DocRequestRow[]}
+						/>
+						<Muted style={{ marginTop: 8 }}>
+							File upload storage is coming later. HR can mark a document as
+							received, then approve or reject it.
+						</Muted>
+					</SectionCard>
 
-					<AcksSection acks={acks.data ?? []} isLoading={acks.isLoading} />
+					<SectionCard title="Acknowledgements">
+						<AcknowledgementTable
+							canManage={canManage}
+							emptyDescription="No policy acknowledgements for this onboarding."
+							isLoading={acks.isLoading}
+							rows={(acks.data ?? []) as AckRow[]}
+						/>
+					</SectionCard>
 
 					<ActivitySection
 						activity={activity.data ?? []}
@@ -346,123 +368,6 @@ function SummaryCard({
 			<Field label="Completed" value={fmtDate(completedAt)} />
 			<Field label="Progress" value={`${pct}%`} />
 		</div>
-	);
-}
-
-interface DocRow {
-	createdAt: string | Date;
-	documentType: string;
-	id: string;
-	status: string;
-	uploadedAt: string | Date | null;
-}
-
-function DocsSection({
-	docs,
-	isLoading,
-}: {
-	docs: DocRow[];
-	isLoading: boolean;
-}) {
-	return (
-		<SectionCard title="Document requests">
-			{isLoading && <Muted>Loading…</Muted>}
-			{!isLoading && docs.length === 0 && <Muted>No document requests.</Muted>}
-			{!isLoading && docs.length > 0 && (
-				<table className="tbl">
-					<thead>
-						<tr>
-							<th>Document</th>
-							<th>Status</th>
-							<th>Requested</th>
-							<th>Uploaded</th>
-						</tr>
-					</thead>
-					<tbody>
-						{docs.map((d) => (
-							<tr key={d.id}>
-								<td style={{ fontWeight: 600, color: "var(--fg)" }}>
-									{d.documentType}
-								</td>
-								<td>
-									<span className={DOC_STATUS_TONE[d.status] ?? "badge"}>
-										{DOC_STATUS_LABEL[d.status] ?? d.status}
-									</span>
-								</td>
-								<td style={{ color: "var(--fg-3)" }}>{fmtDate(d.createdAt)}</td>
-								<td style={{ color: "var(--fg-3)" }}>
-									{fmtDate(d.uploadedAt)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			)}
-			<Muted style={{ marginTop: 8 }}>
-				File upload storage is coming later. Review actions (approve / reject)
-				arrive in the next checkpoint.
-			</Muted>
-		</SectionCard>
-	);
-}
-
-interface AckRow {
-	acknowledgedAt: string | Date | null;
-	id: string;
-	policyName: string;
-	policyVersion: string | null;
-}
-
-function AcksSection({
-	acks,
-	isLoading,
-}: {
-	acks: AckRow[];
-	isLoading: boolean;
-}) {
-	return (
-		<SectionCard title="Acknowledgements">
-			{isLoading && <Muted>Loading…</Muted>}
-			{!isLoading && acks.length === 0 && <Muted>No acknowledgements.</Muted>}
-			{!isLoading && acks.length > 0 && (
-				<table className="tbl">
-					<thead>
-						<tr>
-							<th>Policy</th>
-							<th>Status</th>
-							<th>Signed</th>
-						</tr>
-					</thead>
-					<tbody>
-						{acks.map((a) => (
-							<tr key={a.id}>
-								<td style={{ fontWeight: 600, color: "var(--fg)" }}>
-									{a.policyName}
-									{a.policyVersion && (
-										<span style={{ color: "var(--fg-3)", fontWeight: 400 }}>
-											{" "}
-											· v{a.policyVersion}
-										</span>
-									)}
-								</td>
-								<td>
-									<span
-										className={
-											a.acknowledgedAt ? "badge badge-success" : "badge"
-										}
-									>
-										{a.acknowledgedAt ? "Signed" : "Not signed"}
-									</span>
-								</td>
-								<td style={{ color: "var(--fg-3)" }}>
-									{fmtDate(a.acknowledgedAt)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			)}
-		</SectionCard>
 	);
 }
 
