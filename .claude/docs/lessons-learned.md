@@ -681,3 +681,11 @@ If the TanStack Start app renders an empty `<body>` and the browser console show
 stale state**, not your code. Fix: kill only your own web vite (confirm its cwd
 is `…/Heimdallone/apps/web` and it owns `:3002` before killing), `rm -rf
 apps/web/node_modules/.vite`, and restart `bunx vite dev --port 3002 --strictPort`.
+
+## 73. A web route can pass check-types + build yet crash at runtime (Phase 9G CP7)
+
+`apps/web/src/routes/app/onboarding/tasks/index.tsx` used `<ClipboardList />` without importing it. `bun run check-types` (which does NOT type-check the web app — turbo only runs it on web's deps) and `bun run build` (Vite/esbuild does not fail on an undefined identifier) both passed; the page only threw "Element type is invalid (got: undefined)" when actually opened. **Lesson:** for the web app, neither check-types nor build catches a missing import / undefined component. The only reliable guard is opening EVERY reachable route in a browser during a QA pass — including stub/placeholder pages reachable from the nav (here, the Tasks tab), not just the routes touched in the current checkpoint. Add unbuilt-but-linked pages to the browser-verification route list.
+
+## 74. UI copy must not name states the system can't produce (Phase 9G CP7)
+
+The onboarding documents helper text listed a "waived" document status that does not exist (`DOC_STATUS_LABEL` and the API only have requested/uploaded/approved/rejected). Copy that promises a non-existent state is a real (if small) correctness defect — it sets a user expectation the backend can't fulfill. When writing helper/empty-state copy, cross-check every enumerated state against the actual enum/label map. Same class as stale "coming in checkpoint N" copy that outlives the checkpoint.

@@ -139,7 +139,7 @@ function OnboardingDocumentsPage() {
 						}}
 					>
 						File upload storage is coming later. For now, HR can track whether
-						documents were received, approved, rejected, or waived.
+						documents were received, approved, or rejected.
 					</div>
 
 					<div className="onboarding-tabs" style={{ maxWidth: 360 }}>

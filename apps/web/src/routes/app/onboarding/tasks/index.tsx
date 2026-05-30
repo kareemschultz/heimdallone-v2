@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { ClipboardList } from "lucide-react";
 
 import "@/styles/onboarding.css";
 import { OnboardingTabs } from "@/features/onboarding/onboarding-tabs";
@@ -28,13 +29,16 @@ function OnboardingTasksPage() {
 				className="card card-pad"
 				style={{
 					display: "flex",
+					flexDirection: "column",
 					alignItems: "center",
 					justifyContent: "center",
-					minHeight: 240,
-					color: "var(--fg-3)",
+					gap: 8,
+					minHeight: 220,
 				}}
 			>
-				Task list will arrive in Phase 9G checkpoint 4.
+				<ClipboardList aria-hidden="true" size={28} />A combined task view
+				across all new hires is coming soon. For now, open an employee's
+				onboarding to manage their tasks.
 			</div>
 		</div>
 	);
