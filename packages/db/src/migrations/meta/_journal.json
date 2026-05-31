@@ -71,6 +71,13 @@
       "when": 1780077996792,
       "tag": "0009_complete_red_hulk",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1780256130713,
+      "tag": "0010_tricky_jimmy_woo",
+      "breakpoints": true
     }
   ]
 }
