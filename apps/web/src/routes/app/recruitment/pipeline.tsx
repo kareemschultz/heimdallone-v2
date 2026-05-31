@@ -537,6 +537,7 @@ function RejectDialog({
 }: RejectDialogProps) {
 	return (
 		<div
+			aria-labelledby="reject-dialog-title"
 			aria-modal="true"
 			role="dialog"
 			style={{
@@ -567,7 +568,12 @@ function RejectDialog({
 						alignItems: "center",
 					}}
 				>
-					<h2 style={{ fontSize: 15, fontWeight: 600 }}>Reject candidate</h2>
+					<h2
+						id="reject-dialog-title"
+						style={{ fontSize: 15, fontWeight: 600 }}
+					>
+						Reject candidate
+					</h2>
 					<button
 						aria-label="Close"
 						className="btn btn-sm"

@@ -550,6 +550,8 @@ function ConfirmDialog({
 }) {
 	return (
 		<div
+			aria-describedby="job-confirm-desc"
+			aria-labelledby="job-confirm-title"
 			aria-modal="true"
 			role="dialog"
 			style={{
@@ -573,8 +575,13 @@ function ConfirmDialog({
 					gap: 14,
 				}}
 			>
-				<h2 style={{ fontSize: 15, fontWeight: 600 }}>{title}</h2>
-				<p style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}>
+				<h2 id="job-confirm-title" style={{ fontSize: 15, fontWeight: 600 }}>
+					{title}
+				</h2>
+				<p
+					id="job-confirm-desc"
+					style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
+				>
 					{helper}
 				</p>
 				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>

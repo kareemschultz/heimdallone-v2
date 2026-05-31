@@ -109,6 +109,7 @@ export function JobFormDialog({
 
 	return (
 		<div
+			aria-labelledby="job-form-title"
 			aria-modal="true"
 			role="dialog"
 			style={{
@@ -140,7 +141,7 @@ export function JobFormDialog({
 						alignItems: "center",
 					}}
 				>
-					<h2 style={{ fontSize: 15, fontWeight: 600 }}>
+					<h2 id="job-form-title" style={{ fontSize: 15, fontWeight: 600 }}>
 						{mode === "create" ? "New job opening" : "Edit job opening"}
 					</h2>
 					<button

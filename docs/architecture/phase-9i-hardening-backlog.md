@@ -34,12 +34,15 @@ IDs client-side. Job-detail candidate table already resolves names via a join
 (QA pass) — replace with the denormalized fields when they land. Users should
 never see raw IDs as primary text outside a debug/support view.
 
-## 4. Dialog accessibility (SaaS-grade)
-Dialogs use `role="dialog"` + `aria-modal` today. Add: `aria-labelledby` +
-`aria-describedby`, Escape-to-close, focus trap (focus lands inside on open),
-focus returns to the triggering control on close, and explicit label↔input
-associations. Applies to `JobFormDialog`, `interview-actions` dialogs, the
-pipeline Reject dialog, and the quick-view drawer.
+## 4. Dialog accessibility (SaaS-grade) — PARTIALLY DONE (Phase 9I)
+`aria-labelledby` and `aria-describedby` added to all 4 previously-missing
+recruitment dialogs (`jobs/$id.tsx`, `pipeline.tsx`, `job-form-dialog.tsx`,
+`interview-actions.tsx`) in Phase 9I. All 12 dialogs across recruitment+
+onboarding now have correct ARIA labelling.
+
+Remaining: Escape-to-close keyboard handler, focus trap (focus lands inside on
+open), focus returns to triggering control on close. These apply to all dialogs
+across both modules and should be addressed in a focused a11y pass.
 
 ## 5. Standardize detail-page tabs across modules
 The Job-detail Overview/Settings tab pattern should become the cross-module
@@ -67,3 +70,34 @@ Scheduling a *new* interview (vs. rescheduling an existing one) needs an
 application + interviewer pickers, so it belongs on the pipeline/candidate flow
 where an application is in context — not the interviews list. Add a "Schedule
 interview" action on pipeline cards / candidate detail.
+
+---
+
+## 9. Contract draft on conversion — NEW (Phase 9I)
+When a candidate is converted to an employee, the accepted offer data
+(compensation, start date, currency) is available but no draft contract is
+created because no contract schema table exists in the current codebase.
+
+**Integration gap:** accepted offer → draft contract.  
+**When to address:** Phase 10 or a dedicated Contracts integration phase.  
+Relevant data: `offer.baseAmount`, `offer.baseAmountFrequency`, `offer.currency`,
+`offer.startDate`. The `candidatesConvertToEmployee` procedure already has access
+to `acceptedOffer` — the insert can be wired once the contracts router supports
+a `createFromOffer` path.
+
+## 10. Aggregate task view (`/app/onboarding/tasks`) — NEW (Phase 9I)
+The `/app/onboarding/tasks` route is a confirmed deferred placeholder with
+honest copy ("coming soon"). A cross-hire aggregate task view would require an
+`onboardingTask.list` endpoint that paginates across all active onboardings,
+filtered by task status/category/assignee. Low priority — HR users can drill
+into each employee's onboarding detail today.
+
+## 11. Denormalization backlog summary — Phase 9I confirmed
+Client-side joins still occur in 5 pages:
+- `interviews.tsx` — joins candidate name and opening title from separate queries
+- `offers/index.tsx` — same join pattern
+- `applications.list` embedded in candidate/$id and jobs/$id
+- `pipeline.tsx` — candidate name resolved from separate candidates.list fetch
+
+Backend fix: add `candidateName`, `jobTitle` to the list response objects.
+Until then, the UX works but uses 2+ round trips per page load.

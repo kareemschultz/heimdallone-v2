@@ -689,3 +689,7 @@ During CP7 a verification agent reported that `apps/web/src/routes/app/onboardin
 ## 74. UI copy must not name states the system can't produce (Phase 9G CP7)
 
 The onboarding documents helper text listed a "waived" document status that does not exist (`DOC_STATUS_LABEL` and the API only have requested/uploaded/approved/rejected). Copy that promises a non-existent state is a real (if small) correctness defect — it sets a user expectation the backend can't fulfill. When writing helper/empty-state copy, cross-check every enumerated state against the actual enum/label map. Same class as stale "coming in checkpoint N" copy that outlives the checkpoint.
+
+## 75. `aria-labelledby`/`aria-describedby` drift during rapid module development (Phase 9I)
+
+When building dialogs quickly, `aria-modal="true"` and `role="dialog"` are usually added but `aria-labelledby`/`aria-describedby` are often forgotten. After 9H, a grep audit found 4 dialogs out of 12 missing these attributes in the recruitment module. Pattern: a hardening pass after feature phases is the right time to catch a11y drift. Use `grep -rn "role=\"dialog\""` to inventory all dialogs, then script-check for `aria-labelledby` count ≠ `role="dialog"` count. Do not wait for an a11y audit to find these — add them at dialog-creation time by copying the pattern from any nearby dialog that has them.
