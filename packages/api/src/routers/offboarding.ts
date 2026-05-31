@@ -284,6 +284,28 @@ async function getManagerDirectReportIds(
 }
 
 /**
+ * For manager-role callers, enforce that the case belongs to one of their
+ * direct reports. HR/admin/auditor/payroll_admin can see any case in the org.
+ * Call this after verifyOBCase on every per-case read or mutation.
+ */
+async function assertCaseVisibleToCaller(
+	callerRole: string,
+	orgIdValue: string,
+	userId: string,
+	caseEmployeeId: string
+): Promise<void> {
+	if (callerRole !== "manager") {
+		return;
+	}
+	const reportIds = await getManagerDirectReportIds(orgIdValue, userId);
+	if (!reportIds.includes(caseEmployeeId)) {
+		throw new ORPCError("FORBIDDEN", {
+			message: "You do not have access to this offboarding case.",
+		});
+	}
+}
+
+/**
  * Strip fields the caller is not allowed to see.
  * - internalNote: HR/auditor only
  * - exitReason for involuntary exits: hidden from the employee themselves
@@ -1008,6 +1030,13 @@ const casesApprove = authorizedProcedure("offboarding", "approve")
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
 		const c = await verifyOBCase(orgId(context), input.id);
+		// Managers may only approve resignations for their own direct reports
+		await assertCaseVisibleToCaller(
+			callerRole,
+			orgId(context),
+			actorId(context),
+			c.employeeId
+		);
 		if (c.status !== "pending_approval") {
 			throw new ORPCError("PRECONDITION_FAILED", {
 				message: `Only pending-approval cases can be approved. Current status: ${c.status}.`,
@@ -1674,7 +1703,13 @@ const assetsList = authorizedProcedure("offboarding", "read")
 		if (!canViewOffboarding(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		await verifyOBCase(orgId(context), input.caseId);
+		const c = await verifyOBCase(orgId(context), input.caseId);
+		await assertCaseVisibleToCaller(
+			role(context),
+			orgId(context),
+			actorId(context),
+			c.employeeId
+		);
 		return await db
 			.select()
 			.from(offboardingAssetReturn)
@@ -1810,7 +1845,13 @@ const accessList = authorizedProcedure("offboarding", "read")
 		if (!canViewOffboarding(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		await verifyOBCase(orgId(context), input.caseId);
+		const c = await verifyOBCase(orgId(context), input.caseId);
+		await assertCaseVisibleToCaller(
+			role(context),
+			orgId(context),
+			actorId(context),
+			c.employeeId
+		);
 		return await db
 			.select()
 			.from(offboardingAccessRevocation)
@@ -1939,7 +1980,13 @@ const documentsList = authorizedProcedure("offboarding", "read")
 		if (!canViewOffboarding(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		await verifyOBCase(orgId(context), input.caseId);
+		const c = await verifyOBCase(orgId(context), input.caseId);
+		await assertCaseVisibleToCaller(
+			role(context),
+			orgId(context),
+			actorId(context),
+			c.employeeId
+		);
 		return await db
 			.select()
 			.from(offboardingDocumentRequest)
@@ -2119,6 +2166,12 @@ const interviewGetByCaseId = authorizedProcedure("offboarding", "read")
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
 		const c = await verifyOBCase(orgId(context), input.caseId);
+		await assertCaseVisibleToCaller(
+			callerRole,
+			orgId(context),
+			actorId(context),
+			c.employeeId
+		);
 
 		const [interview] = await db
 			.select()
@@ -2289,7 +2342,13 @@ const activityList = authorizedProcedure("offboarding", "read")
 		if (!canViewOffboarding(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
-		await verifyOBCase(orgId(context), input.caseId);
+		const c = await verifyOBCase(orgId(context), input.caseId);
+		await assertCaseVisibleToCaller(
+			role(context),
+			orgId(context),
+			actorId(context),
+			c.employeeId
+		);
 		return await db
 			.select()
 			.from(offboardingActivity)
@@ -2317,6 +2376,12 @@ const settlementGetReadiness = authorizedProcedure(
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
 		const c = await verifyOBCase(orgId(context), input.caseId);
+		await assertCaseVisibleToCaller(
+			role(context),
+			orgId(context),
+			actorId(context),
+			c.employeeId
+		);
 
 		const oid = orgId(context);
 
