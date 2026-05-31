@@ -1,14 +1,17 @@
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ArrowLeft,
 	CalendarClock,
+	CheckCircle2,
 	FileText,
 	MessageSquare,
 	StickyNote,
 	User,
+	UserCheck,
 } from "lucide-react";
 import { useContext, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import "@/styles/recruitment.css";
 import { EmptyState } from "@/components/empty-state";
@@ -16,7 +19,7 @@ import { RecruitmentTabs } from "@/features/recruitment/recruitment-tabs";
 import { canManageRecruitment } from "@/lib/rbac";
 import { safeHttpUrl } from "@/lib/safe-url";
 import { OrgCtx } from "@/routes/app/route";
-import { orpc } from "@/utils/orpc";
+import { client, orpc } from "@/utils/orpc";
 
 export const Route = createFileRoute("/app/recruitment/candidates/$id")({
 	component: CandidateDetailPage,
@@ -90,6 +93,7 @@ const SECTION_TABS: { key: SectionTab; label: string }[] = [
 ];
 
 const JOIN_PAGE_SIZE = 100;
+const TERMINAL_NEGATIVE_STAGES = new Set(["rejected", "withdrawn"]);
 
 // ─── Helper ──────────────────────────────────────────────────────────────────
 
@@ -108,8 +112,16 @@ function CandidateDetailPage() {
 	const org = useContext(OrgCtx);
 	const canManage = canManageRecruitment(org.memberRole);
 	const { id } = Route.useParams();
+	const qc = useQueryClient();
 
 	const [activeSection, setActiveSection] = useState<SectionTab>("profile");
+	const [showConvertDialog, setShowConvertDialog] = useState(false);
+	const [convertApplicationId, setConvertApplicationId] = useState<
+		string | undefined
+	>();
+	const [convertTemplateId, setConvertTemplateId] = useState<
+		string | undefined
+	>();
 
 	// Primary candidate record
 	const candidateQuery = useQuery(
@@ -194,12 +206,57 @@ function CandidateDetailPage() {
 		[applicationsQuery.data, jobTitleById]
 	);
 
+	// ─ Onboarding templates (for optional template selection in convert dialog)
+	const templatesQuery = useQuery({
+		...orpc.onboarding.templates.list.queryOptions({
+			input: { page: 1, pageSize: 50 },
+		}),
+		enabled: canManage,
+	});
+
+	// ─ Conversion mutation
+	const convertMutation = useMutation({
+		mutationFn: (vars: {
+			applicationId: string;
+			onboardingTemplateId?: string;
+		}) =>
+			client.recruitment.candidates.convertToEmployee({
+				candidateId: id,
+				applicationId: vars.applicationId,
+				onboardingTemplateId: vars.onboardingTemplateId,
+			}),
+		onSuccess: (_data) => {
+			setShowConvertDialog(false);
+			toast.success("Candidate converted to employee successfully.");
+			qc.invalidateQueries({
+				queryKey: orpc.recruitment.candidates.get.key({ input: { id } }),
+			});
+			qc.invalidateQueries({
+				queryKey: orpc.recruitment.applications.list.key(),
+			});
+		},
+		onError: (err: unknown) => {
+			toast.error(
+				String(err instanceof Error ? err.message : "Conversion failed.")
+			);
+		},
+	});
+
 	// ─ Page-level data
 	const c = candidateQuery.data;
 	const candidateStatus = (c?.status ?? "active") as CandidateStatus;
 	const fullName = c
 		? [c.firstName, c.lastName].filter(Boolean).join(" ")
 		: "Loading…";
+	const convertedEmployeeId =
+		(c as unknown as { convertedEmployeeId?: string | null } | undefined)
+			?.convertedEmployeeId ?? null;
+
+	// ─ Applications eligible for conversion (not rejected/withdrawn)
+	const convertibleApps = useMemo(
+		() => appRows.filter((a) => !TERMINAL_NEGATIVE_STAGES.has(a.stage)),
+		[appRows]
+	);
 
 	return (
 		<div className="page">
@@ -247,14 +304,16 @@ function CandidateDetailPage() {
 				</div>
 				{canManage && (
 					<div className="page-actions">
-						<button
-							className="btn btn-outline btn-sm"
-							disabled
-							title="Edit candidate — coming later"
-							type="button"
-						>
-							Edit candidate
-						</button>
+						<CandidateActions
+							convertedEmployeeId={convertedEmployeeId}
+							convertibleApps={convertibleApps}
+							isPending={convertMutation.isPending}
+							onConvertClick={() => {
+								setConvertApplicationId(convertibleApps[0]?.id ?? undefined);
+								setConvertTemplateId(undefined);
+								setShowConvertDialog(true);
+							}}
+						/>
 					</div>
 				)}
 			</div>
@@ -308,6 +367,263 @@ function CandidateDetailPage() {
 			{activeSection === "documents" && (
 				<DocumentsSection query={documentsQuery} />
 			)}
+
+			{showConvertDialog && (
+				<ConvertDialog
+					apps={convertibleApps}
+					isPending={convertMutation.isPending}
+					onApplicationChange={setConvertApplicationId}
+					onClose={() => setShowConvertDialog(false)}
+					onConfirm={() => {
+						if (!convertApplicationId) {
+							return;
+						}
+						convertMutation.mutate({
+							applicationId: convertApplicationId,
+							onboardingTemplateId: convertTemplateId,
+						});
+					}}
+					onTemplateChange={setConvertTemplateId}
+					selectedApplicationId={convertApplicationId ?? ""}
+					selectedTemplateId={convertTemplateId}
+					templates={
+						(
+							templatesQuery.data as
+								| { data: { id: string; name: string }[] }
+								| undefined
+						)?.data ?? []
+					}
+				/>
+			)}
+		</div>
+	);
+}
+
+// ─── Candidate Header Actions ────────────────────────────────────────────────
+
+function CandidateActions({
+	convertedEmployeeId,
+	convertibleApps,
+	isPending,
+	onConvertClick,
+}: {
+	convertedEmployeeId: string | null;
+	convertibleApps: { id: string }[];
+	isPending: boolean;
+	onConvertClick: () => void;
+}) {
+	if (convertedEmployeeId) {
+		return (
+			<Link
+				className="btn btn-sm"
+				params={{ id: convertedEmployeeId }}
+				style={{
+					display: "inline-flex",
+					alignItems: "center",
+					gap: 6,
+					color: "var(--color-success)",
+					border: "1px solid var(--color-success)",
+				}}
+				to="/app/employees/$id"
+			>
+				<CheckCircle2 size={14} />
+				Converted to employee
+			</Link>
+		);
+	}
+	return (
+		<button
+			className="btn btn-primary btn-sm"
+			disabled={isPending || convertibleApps.length === 0}
+			onClick={onConvertClick}
+			title={
+				convertibleApps.length === 0
+					? "No eligible application found"
+					: "Convert this candidate to an employee"
+			}
+			type="button"
+		>
+			<UserCheck size={14} style={{ marginRight: 4 }} />
+			Convert to employee
+		</button>
+	);
+}
+
+// ─── Convert Dialog ──────────────────────────────────────────────────────────
+
+function ConvertDialog({
+	apps,
+	templates,
+	selectedApplicationId,
+	selectedTemplateId,
+	isPending,
+	onClose,
+	onConfirm,
+	onApplicationChange,
+	onTemplateChange,
+}: {
+	apps: { id: string; openingTitle: string; stage: string }[];
+	templates: { id: string; name: string }[];
+	selectedApplicationId: string;
+	selectedTemplateId: string | undefined;
+	isPending: boolean;
+	onClose: () => void;
+	onConfirm: () => void;
+	onApplicationChange: (id: string) => void;
+	onTemplateChange: (id: string | undefined) => void;
+}) {
+	const hasTemplate = Boolean(selectedTemplateId);
+	return (
+		<div
+			aria-describedby="convert-desc"
+			aria-labelledby="convert-title"
+			aria-modal="true"
+			role="dialog"
+			style={{
+				position: "fixed",
+				inset: 0,
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				padding: 24,
+				background: "rgba(0,0,0,0.55)",
+				zIndex: 60,
+			}}
+		>
+			<div
+				className="card card-pad"
+				style={{
+					width: "100%",
+					maxWidth: 480,
+					display: "flex",
+					flexDirection: "column",
+					gap: 16,
+				}}
+			>
+				<h2 id="convert-title" style={{ fontSize: 15, fontWeight: 600 }}>
+					Convert candidate to employee?
+				</h2>
+				<p
+					id="convert-desc"
+					style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
+				>
+					This will create an employee profile and optionally start onboarding.
+					All changes are committed together — if anything fails, nothing is
+					saved.
+				</p>
+
+				{/* Application selector */}
+				{apps.length > 1 && (
+					<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+						<label
+							htmlFor="convert-app-select"
+							style={{ fontSize: 12, color: "var(--fg-3)", fontWeight: 500 }}
+						>
+							Application
+						</label>
+						<select
+							className="input"
+							id="convert-app-select"
+							onChange={(e) => onApplicationChange(e.target.value)}
+							value={selectedApplicationId}
+						>
+							{apps.map((a) => (
+								<option key={a.id} value={a.id}>
+									{a.openingTitle} ({a.stage})
+								</option>
+							))}
+						</select>
+					</div>
+				)}
+
+				{/* Onboarding template selector */}
+				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+					<label
+						htmlFor="convert-template-select"
+						style={{ fontSize: 12, color: "var(--fg-3)", fontWeight: 500 }}
+					>
+						Onboarding template (optional)
+					</label>
+					<select
+						className="input"
+						id="convert-template-select"
+						onChange={(e) => onTemplateChange(e.target.value || undefined)}
+						value={selectedTemplateId ?? ""}
+					>
+						<option value="">No onboarding</option>
+						{templates.map((t) => (
+							<option key={t.id} value={t.id}>
+								{t.name}
+							</option>
+						))}
+					</select>
+				</div>
+
+				{/* Checklist */}
+				<div
+					style={{
+						background: "var(--bg-1)",
+						border: "1px solid var(--line)",
+						borderRadius: 8,
+						padding: "10px 14px",
+						display: "flex",
+						flexDirection: "column",
+						gap: 7,
+					}}
+				>
+					<p
+						style={{
+							fontSize: 11,
+							fontWeight: 600,
+							color: "var(--fg-3)",
+							textTransform: "uppercase",
+							letterSpacing: "0.04em",
+							margin: 0,
+						}}
+					>
+						Will be created
+					</p>
+					{[
+						"Employee profile",
+						"Work info",
+						hasTemplate ? "Onboarding (from selected template)" : null,
+					]
+						.filter(Boolean)
+						.map((item) => (
+							<div
+								key={item}
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: 8,
+									fontSize: 13,
+								}}
+							>
+								<CheckCircle2 color="var(--color-success)" size={13} />
+								{item}
+							</div>
+						))}
+				</div>
+
+				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+					<button
+						className="btn btn-sm"
+						disabled={isPending}
+						onClick={onClose}
+						type="button"
+					>
+						Cancel
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={isPending || !selectedApplicationId}
+						onClick={onConfirm}
+						type="button"
+					>
+						{isPending ? "Converting…" : "Convert to employee"}
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 }

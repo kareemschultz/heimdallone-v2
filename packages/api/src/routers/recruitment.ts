@@ -42,7 +42,17 @@
  */
 
 import { db } from "@Heimdallone/db";
-import { employeeProfile } from "@Heimdallone/db/schema/hr-core";
+import {
+	employeeProfile,
+	employeeWorkInfo,
+} from "@Heimdallone/db/schema/hr-core";
+import {
+	employeeOnboarding,
+	onboardingActivity,
+	onboardingTask,
+	onboardingTemplate,
+	onboardingTemplateTask,
+} from "@Heimdallone/db/schema/onboarding";
 import {
 	applicationStageHistory,
 	candidate,
@@ -58,7 +68,7 @@ import {
 } from "@Heimdallone/db/schema/recruitment";
 import { ORPCError } from "@orpc/server";
 import { createId } from "@paralleldrive/cuid2";
-import { and, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
+import { and, asc, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { authorizedProcedure } from "../index";
@@ -1209,6 +1219,240 @@ const candidatesArchive = authorizedProcedure("applicant", "update")
 			metadata: input.reason ? { reason: input.reason } : undefined,
 		});
 		return { id: input.id };
+	});
+
+// ════════════════════════════════════════════════════════════════════
+// CANDIDATE → EMPLOYEE CONVERSION (Phase 9H)
+// ════════════════════════════════════════════════════════════════════
+
+const DAY_MS_9H = 24 * 60 * 60 * 1000;
+const addDays9H = (base: Date, days: number) =>
+	new Date(base.getTime() + days * DAY_MS_9H);
+
+const candidatesConvertToEmployee = authorizedProcedure("applicant", "convert")
+	.input(
+		z.object({
+			candidateId: z.string(),
+			applicationId: z.string(),
+			onboardingTemplateId: z.string().optional(),
+		})
+	)
+	.handler(async ({ context, input }) => {
+		if (!canManageRecruitment(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+
+		const oid = orgId(context);
+
+		// Tenant-verify: candidate, application, cross-ownership
+		const candidateRow = await verifyCandidate(oid, input.candidateId);
+		const appRow = await verifyApplication(oid, input.applicationId);
+
+		if (appRow.candidateId !== input.candidateId) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "Application does not belong to this candidate.",
+			});
+		}
+
+		// Idempotency guard: candidate can only convert once
+		if (candidateRow.convertedEmployeeId) {
+			throw new ORPCError("CONFLICT", {
+				message: `This candidate has already been converted to an employee (employee ID: ${candidateRow.convertedEmployeeId}).`,
+			});
+		}
+
+		// Require an accepted offer on the application
+		const [acceptedOffer] = await db
+			.select()
+			.from(offer)
+			.where(
+				and(
+					eq(offer.applicationId, input.applicationId),
+					eq(offer.organizationId, oid),
+					eq(offer.status, "accepted"),
+					isNull(offer.deletedAt)
+				)
+			)
+			.limit(1);
+
+		if (!acceptedOffer) {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message:
+					"An accepted offer is required before converting a candidate to an employee.",
+			});
+		}
+
+		// Optionally verify and load onboarding template tasks
+		let templateName: string | null = null;
+		let templateTasks: (typeof onboardingTemplateTask.$inferSelect)[] = [];
+
+		if (input.onboardingTemplateId) {
+			const [tmpl] = await db
+				.select()
+				.from(onboardingTemplate)
+				.where(
+					and(
+						eq(onboardingTemplate.id, input.onboardingTemplateId),
+						eq(onboardingTemplate.organizationId, oid),
+						isNull(onboardingTemplate.deletedAt)
+					)
+				)
+				.limit(1);
+			if (!tmpl) {
+				throw new ORPCError("NOT_FOUND", {
+					message: "Onboarding template not found.",
+				});
+			}
+			templateName = tmpl.name;
+			templateTasks = await db
+				.select()
+				.from(onboardingTemplateTask)
+				.where(
+					and(
+						eq(onboardingTemplateTask.templateId, input.onboardingTemplateId),
+						eq(onboardingTemplateTask.organizationId, oid),
+						isNull(onboardingTemplateTask.deletedAt)
+					)
+				)
+				.orderBy(asc(onboardingTemplateTask.sortOrder));
+		}
+
+		const empId = createId();
+		const onboardingId = input.onboardingTemplateId ? createId() : null;
+		const now = new Date();
+
+		// Single transaction: employee + work info + optional onboarding snapshot
+		// + candidate link + application stage advance. All-or-nothing.
+		await db.transaction(async (tx) => {
+			await tx.insert(employeeProfile).values({
+				id: empId,
+				organizationId: oid,
+				firstName: candidateRow.firstName,
+				lastName: candidateRow.lastName ?? null,
+				email: candidateRow.email,
+				phone: candidateRow.phone ?? null,
+				address: candidateRow.address ?? null,
+				country: candidateRow.country ?? null,
+			});
+
+			await tx.insert(employeeWorkInfo).values({
+				id: createId(),
+				employeeId: empId,
+				joiningDate: acceptedOffer.startDate
+					? new Date(acceptedOffer.startDate)
+					: null,
+				basicSalary: acceptedOffer.baseAmount ?? null,
+				salaryCurrency: acceptedOffer.currency,
+			});
+
+			if (onboardingId && input.onboardingTemplateId && templateName !== null) {
+				const maxOffset = templateTasks.reduce(
+					(max, t) => Math.max(max, t.dueOffsetDays),
+					0
+				);
+				await tx.insert(employeeOnboarding).values({
+					id: onboardingId,
+					organizationId: oid,
+					employeeId: empId,
+					applicationId: input.applicationId,
+					templateId: input.onboardingTemplateId,
+					startedAt: now,
+					targetCompletionAt: addDays9H(now, maxOffset),
+					status: "in_progress",
+				});
+				for (const tt of templateTasks) {
+					await tx.insert(onboardingTask).values({
+						id: createId(),
+						organizationId: oid,
+						onboardingId,
+						templateTaskId: tt.id,
+						titleSnapshot: tt.title,
+						descriptionSnapshot: tt.description,
+						category: tt.category,
+						assigneeEmployeeId:
+							tt.defaultAssigneeRole === "new_hire" ? empId : null,
+						assigneeUserId: null,
+						dueAt: addDays9H(now, tt.dueOffsetDays),
+						status: "todo",
+					});
+				}
+				await tx.insert(onboardingActivity).values({
+					id: createId(),
+					organizationId: oid,
+					onboardingId,
+					kind: "onboarding_started",
+					actorUserId: actorId(context),
+					summary: `Onboarding started from template "${templateName}" via candidate conversion.`,
+					metadata: null,
+				});
+			}
+
+			await tx
+				.update(candidate)
+				.set({ convertedEmployeeId: empId, updatedAt: new Date() })
+				.where(
+					and(
+						eq(candidate.id, input.candidateId),
+						eq(candidate.organizationId, oid)
+					)
+				);
+
+			await tx
+				.update(candidateApplication)
+				.set({ stage: "hired", outcomeAt: now, updatedAt: new Date() })
+				.where(
+					and(
+						eq(candidateApplication.id, input.applicationId),
+						eq(candidateApplication.organizationId, oid)
+					)
+				);
+
+			await tx.insert(applicationStageHistory).values({
+				id: createId(),
+				organizationId: oid,
+				applicationId: input.applicationId,
+				fromStage: appRow.stage,
+				toStage: "hired",
+				changedByUserId: actorId(context),
+				changedAt: now,
+				note: "Converted to employee.",
+			});
+
+			await tx.insert(recruitmentNote).values({
+				id: createId(),
+				organizationId: oid,
+				candidateId: input.candidateId,
+				applicationId: input.applicationId,
+				stage: "hired",
+				authorUserId: actorId(context),
+				body: `Candidate converted to employee (employee ID: ${empId}).`,
+			});
+		});
+
+		await createAuditEvent(db as never, {
+			organizationId: oid,
+			entityType: "employee_profile",
+			entityId: empId,
+			action: "create",
+			actorId: actorId(context),
+			metadata: {
+				source: "candidate_conversion",
+				candidateId: input.candidateId,
+			},
+		});
+		await createAuditEvent(db as never, {
+			organizationId: oid,
+			entityType: "candidate",
+			entityId: input.candidateId,
+			action: "update",
+			actorId: actorId(context),
+			metadata: { convertedEmployeeId: empId },
+		});
+
+		return {
+			employeeId: empId,
+			onboardingId: onboardingId ?? undefined,
+		};
 	});
 
 // ════════════════════════════════════════════════════════════════════
@@ -2604,6 +2848,7 @@ export const recruitmentRouter = {
 		create: candidatesCreate,
 		update: candidatesUpdate,
 		archive: candidatesArchive,
+		convertToEmployee: candidatesConvertToEmployee,
 	},
 	applications: {
 		list: applicationsList,
