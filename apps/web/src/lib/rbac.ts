@@ -67,3 +67,24 @@ export function canViewOnboarding(role: MemberRole): boolean {
 		role === "recruiter"
 	);
 }
+
+// Offboarding (Phase 10C). Employee self-service uses the resignation resource
+// server-side; canViewOffboarding governs HR/manager/auditor access.
+export function canManageOffboarding(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewOffboarding(role: MemberRole): boolean {
+	return (
+		canManageOffboarding(role) ||
+		role === "manager" ||
+		role === "auditor" ||
+		role === "payroll_admin"
+	);
+}
+
+export function canReadOffboardingSettlement(role: MemberRole): boolean {
+	return (
+		canManageOffboarding(role) || role === "payroll_admin" || role === "auditor"
+	);
+}

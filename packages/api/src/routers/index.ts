@@ -5,6 +5,7 @@ import { attendanceRouter } from "./attendance";
 import { contractsRouter } from "./contracts";
 import { hrCoreRouter } from "./hr-core";
 import { leaveRouter } from "./leave";
+import { offboardingRouter } from "./offboarding";
 import { onboardingRouter } from "./onboarding";
 import { payrollRouter } from "./payroll";
 import { recruitmentRouter } from "./recruitment";
@@ -22,6 +23,7 @@ export const appRouter = {
 	payroll: payrollRouter,
 	recruitment: recruitmentRouter,
 	onboarding: onboardingRouter,
+	offboarding: offboardingRouter,
 };
 export type AppRouter = typeof appRouter;
 export type AppRouterClient = RouterClient<typeof appRouter>;

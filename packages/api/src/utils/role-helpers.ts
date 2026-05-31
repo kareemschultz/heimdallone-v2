@@ -52,3 +52,23 @@ export function canViewOnboarding(role: MemberRole): boolean {
 		role === "recruiter"
 	);
 }
+
+// Offboarding (Phase 10C)
+export function canManageOffboarding(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewOffboarding(role: MemberRole): boolean {
+	return (
+		canManageOffboarding(role) ||
+		role === "manager" ||
+		role === "auditor" ||
+		role === "payroll_admin"
+	);
+}
+
+export function canReadOffboardingSettlement(role: MemberRole): boolean {
+	return (
+		canManageOffboarding(role) || role === "payroll_admin" || role === "auditor"
+	);
+}

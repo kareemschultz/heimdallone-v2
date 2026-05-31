@@ -67,9 +67,43 @@ export const statement = {
 	asset: ["create", "read", "assign", "return", "write_off", "manage"],
 
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+
+	offboarding: [
+		"create",
+		"read",
+		"update",
+		"approve",
+		"reject",
+		"cancel",
+		"start",
+		"close",
+		"complete_task",
+		"manage_assets",
+		"manage_access",
+		"manage_documents",
+		"manage_interview",
+		"read_settlement",
+	],
 } as const;
 
 export const ac = createAccessControl(statement);
+
+const FULL_OFFBOARDING = [
+	"create",
+	"read",
+	"update",
+	"approve",
+	"reject",
+	"cancel",
+	"start",
+	"close",
+	"complete_task",
+	"manage_assets",
+	"manage_access",
+	"manage_documents",
+	"manage_interview",
+	"read_settlement",
+] as const;
 
 export const tenant_owner = ac.newRole({
 	...ownerAc.statements,
@@ -119,6 +153,7 @@ export const tenant_owner = ac.newRole({
 	goal: ["create", "read", "update", "complete"],
 	asset: ["create", "read", "assign", "return", "write_off", "manage"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+	offboarding: FULL_OFFBOARDING,
 });
 
 export const tenant_admin = ac.newRole({
@@ -169,6 +204,7 @@ export const tenant_admin = ac.newRole({
 	goal: ["create", "read", "update", "complete"],
 	asset: ["create", "read", "assign", "return", "write_off", "manage"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+	offboarding: FULL_OFFBOARDING,
 });
 
 export const hr_admin = ac.newRole({
@@ -212,6 +248,7 @@ export const hr_admin = ac.newRole({
 	goal: ["create", "read", "update"],
 	asset: ["create", "read", "assign", "return", "manage"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+	offboarding: FULL_OFFBOARDING,
 });
 
 export const payroll_admin = ac.newRole({
@@ -241,6 +278,7 @@ export const payroll_admin = ac.newRole({
 	goal: ["read"],
 	asset: ["read"],
 	ticket: ["read"],
+	offboarding: ["read", "read_settlement"],
 });
 
 export const manager = ac.newRole({
@@ -262,6 +300,7 @@ export const manager = ac.newRole({
 	interview: ["read", "update", "complete"],
 	onboarding: ["read", "complete", "skip", "assign"],
 	ticket: ["create", "read"],
+	offboarding: ["read", "approve", "complete_task"],
 });
 
 export const employee = ac.newRole({
@@ -314,6 +353,7 @@ export const auditor = ac.newRole({
 	goal: ["read"],
 	asset: ["read"],
 	ticket: ["read"],
+	offboarding: ["read", "read_settlement"],
 });
 
 export const recruiter = ac.newRole({
