@@ -143,13 +143,14 @@ Heimdallone v2 is a multi-tenant HRMS/payroll/workforce platform.
 ### Implementation Pattern
 Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **D** (UI) → **E** (QA/RBAC).
 
-### Current Status (2026-05-28)
+### Current Status (2026-06-01)
+- Offboarding (Phase 10): **In progress** — 10A spec ✅ → 10B DB schema + seed ✅ → 10C oRPC API ✅ (9 router groups; `assertCaseVisibleToCaller` manager-scope IDOR fix `907ebaa`; `cases.close` is the sole `isActive=false` writer; audit 62 pairs/9 routers) → **10D UI CP1 ✅** (offboarding tabs + overview dashboard + honest "Coming later" placeholders for cases/templates/tasks/assets/access + employee self-service shell). Removed flat `routes/app/offboarding.tsx` route-shadow. Browser-verified employee/owner/auditor, seeded data (0/1/1/1/1), 0 console errors. **Gotcha:** `bun run --hot` API server 404'd the new offboarding routes until restarted (lessons-learned #76). Next: 10D CP2 templates UI. Lint baseline 224/1.
 - HR Core (Phase 5): **Complete**
 - Contracts (Phase 6): **Complete** end-to-end
 - Phase 6E: **Complete** — payroll/attendance/leave spec enrichment, GRA verification
 - Attendance + Leave (Phase 7): **Complete** through 7H (QA/RBAC pass)
 - Payroll (Phase 8): **Complete** through 8K + 8J.1/8J.2/8J.3 polish + correctness fixes
-- Recruitment + Onboarding (Phase 9): **In progress**
+- Recruitment + Onboarding (Phase 9): **Complete** (through 9I QA/hardening)
   - 9A (spec) ✅ → 9B (DB schema + seed) ✅ → 9C (oRPC API, 50 procedures) ✅ → 9C.1 manager-scope IDOR fix ✅
   - 9D (Recruitment UI) **CHECKPOINT 2** ✅ + cleanup (`5004616`): Overview + Jobs list/detail + Candidates list + KanbanBoard primitive (@dnd-kit/core only) + Pipeline page (job-scoped, drag/Move-menu, Reject dialog, one-step-backward policy, plain-language errors, `onMoveError` prop).
   - 9D **CHECKPOINT 3** ✅: Interviews list (status filter, client-side join, badges, EmptyState) — live-verified.
