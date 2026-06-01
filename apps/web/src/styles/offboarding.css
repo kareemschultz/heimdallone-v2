@@ -41,6 +41,36 @@
 	box-shadow: var(--shadow-sm);
 }
 
+/* Cases status filter pills */
+.ob-filter-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.ob-filter-pill {
+	padding: 6px 12px;
+	font-family: inherit;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--fg-3);
+	cursor: pointer;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	transition:
+		background 120ms ease,
+		color 120ms ease;
+}
+.ob-filter-pill:hover {
+	color: var(--fg);
+	background: var(--bg-3);
+}
+.ob-filter-pill.active {
+	color: var(--fg);
+	background: var(--bg-3);
+	border-color: var(--fg-4);
+}
+
 /* Overview quick-links grid */
 .quick-links {
 	display: grid;
