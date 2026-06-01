@@ -59,3 +59,35 @@ export function exitTypeLabel(value: string): string {
 export function categoryLabel(value: string): string {
 	return CATEGORY_LABEL[value] ?? value;
 }
+
+// Default assignee role on a template task. Stored as a free-text label
+// ("hr" | "manager" | "employee" | "it" | "department_head"); render friendly.
+export const ASSIGNEE_ROLE_LABEL: Record<string, string> = {
+	hr: "HR team",
+	hr_admin: "HR team",
+	manager: "Manager",
+	employee: "Employee",
+	it: "IT/admin",
+	it_admin: "IT/admin",
+	department_head: "Department head",
+};
+
+export function assigneeRoleLabel(value: string | null | undefined): string {
+	if (!value) {
+		return "Unassigned";
+	}
+	return ASSIGNEE_ROLE_LABEL[value] ?? value;
+}
+
+// dueOffsetDays is relative to the case's last working day (LWD):
+// negative = before LWD, 0 = on LWD, positive = after LWD.
+export function dueOffsetLabel(days: number): string {
+	if (days < 0) {
+		const n = Math.abs(days);
+		return `${n} day${n === 1 ? "" : "s"} before last working day`;
+	}
+	if (days === 0) {
+		return "On last working day";
+	}
+	return `${days} day${days === 1 ? "" : "s"} after last working day`;
+}

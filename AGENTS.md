@@ -144,7 +144,7 @@ Heimdallone v2 is a multi-tenant HRMS/payroll/workforce platform.
 Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **D** (UI) → **E** (QA/RBAC).
 
 ### Current Status (2026-06-01)
-- Offboarding (Phase 10): **In progress** — 10A spec ✅ → 10B DB schema + seed ✅ → 10C oRPC API ✅ (9 router groups; `assertCaseVisibleToCaller` manager-scope IDOR fix `907ebaa`; `cases.close` is the sole `isActive=false` writer; audit 62 pairs/9 routers) → **10D UI CP1 ✅** (offboarding tabs + overview dashboard + honest "Coming later" placeholders for cases/templates/tasks/assets/access + employee self-service shell). Removed flat `routes/app/offboarding.tsx` route-shadow. Browser-verified employee/owner/auditor, seeded data (0/1/1/1/1), 0 console errors. **Gotcha:** `bun run --hot` API server 404'd the new offboarding routes until restarted (lessons-learned #76). Next: 10D CP2 templates UI. Lint baseline 224/1.
+- Offboarding (Phase 10): **In progress** — 10A spec ✅ → 10B DB schema + seed ✅ → 10C oRPC API ✅ (9 router groups; `assertCaseVisibleToCaller` manager-scope IDOR fix `907ebaa`; `cases.close` is the sole `isActive=false` writer; audit 62 pairs/9 routers) → 10D UI CP1 ✅ (tabs + overview dashboard + "Coming later" placeholders + employee self-service shell) → **10D CP2 ✅** (templates list + detail + create/edit/archive dialog; flat `templates.tsx` converted to folder route; `dueOffsetLabel`/`assigneeRoleLabel` helpers; browser-verified create→archive round-trip + auditor read-only + employee no-access, 0 console errors). Next: 10D CP3 cases list+detail. Lint baseline 224/1.
 - HR Core (Phase 5): **Complete**
 - Contracts (Phase 6): **Complete** end-to-end
 - Phase 6E: **Complete** — payroll/attendance/leave spec enrichment, GRA verification
