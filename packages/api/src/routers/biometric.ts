@@ -1319,6 +1319,42 @@ const checkInsListSelf = authorizedProcedure("geofence", "read")
 			.limit(input?.limit ?? 30);
 	});
 
+// Read-only verdict preview for the mobile check-in screen. Runs the SAME
+// server-side resolution + evaluation as createSelf, but writes nothing — so the
+// UI can show "Inside / Outside" honestly before the employee taps clock in/out.
+const checkInsPreviewSelf = authorizedProcedure("geofence", "check_in")
+	.input(
+		z.object({
+			latitude: z.number().min(-LAT_MAX).max(LAT_MAX),
+			longitude: z.number().min(-LON_MAX).max(LON_MAX),
+			accuracyMeters: z.number().int().min(0).optional(),
+		})
+	)
+	.handler(async ({ context, input }) => {
+		const me = await resolveCurrentEmployee(orgId(context), actorId(context));
+		if (!me) {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: "You don't have an employee profile in this organization.",
+			});
+		}
+		const site = await resolveWorkSiteForEmployee(orgId(context), me.id);
+		const verdict = evaluateCheckIn({
+			site,
+			lat: input.latitude,
+			lon: input.longitude,
+			accuracyMeters: input.accuracyMeters ?? null,
+		});
+		return {
+			status: verdict.status,
+			distanceMeters: verdict.distanceMeters,
+			withinGeofence: verdict.withinGeofence,
+			siteName: site?.name ?? null,
+			radiusMeters: site?.radiusMeters ?? null,
+			accuracyThresholdMeters: site?.accuracyThresholdMeters ?? null,
+			allowOutsideWithReason: site?.allowOutsideWithReason ?? true,
+		};
+	});
+
 // ════════════════════════════ EXCEPTIONS ════════════════════════════
 
 const exceptionsList = authorizedProcedure("attendance_exception", "read")
@@ -1517,6 +1553,7 @@ export const biometricRouter = {
 	},
 	checkIns: {
 		createSelf: checkInsCreateSelf,
+		previewSelf: checkInsPreviewSelf,
 		listSelf: checkInsListSelf,
 	},
 	exceptions: {

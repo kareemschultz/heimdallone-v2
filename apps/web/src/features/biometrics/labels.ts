@@ -101,6 +101,21 @@ export const VERIFY_MODE_LABEL: Record<string, string> = {
 	unknown: "Unknown",
 };
 
+// Geofence check verdict — plain, worker-friendly wording (not technical).
+export const GEOFENCE_STATUS_LABEL: Record<string, string> = {
+	inside: "You're at your work location",
+	outside: "You're away from your work location",
+	low_accuracy: "Your location signal is weak",
+	unverified: "Couldn't confirm your work location",
+};
+
+export const GEOFENCE_STATUS_SHORT: Record<string, string> = {
+	inside: "Inside work area",
+	outside: "Outside work area",
+	low_accuracy: "GPS accuracy too low",
+	unverified: "Location not confirmed",
+};
+
 export const EXCEPTION_TYPE_LABEL: Record<string, string> = {
 	unmapped_punch: "Unmapped device user",
 	duplicate_punch: "Duplicate punch",
