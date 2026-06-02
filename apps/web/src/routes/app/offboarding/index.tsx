@@ -8,7 +8,6 @@ import {
 	FileText,
 	KeyRound,
 	LogOut,
-	ShieldCheck,
 	Wallet,
 } from "lucide-react";
 import type { ReactNode } from "react";
@@ -16,6 +15,7 @@ import { useContext } from "react";
 
 import "@/styles/offboarding.css";
 import { EmptyState } from "@/components/empty-state";
+import { MyOffboarding } from "@/features/offboarding/my-offboarding";
 import { OffboardingTabs } from "@/features/offboarding/offboarding-tabs";
 import { canReadOffboardingSettlement, canViewOffboarding } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
@@ -28,10 +28,10 @@ export const Route = createFileRoute("/app/offboarding/")({
 function OffboardingOverview() {
 	const org = useContext(OrgCtx);
 
-	// Employees don't get the HR management overview. Self-service resignation /
-	// "my offboarding" ships in a later Phase 10D checkpoint.
+	// Employees don't get the HR management overview — they get the self-service
+	// "my offboarding" view (submit a resignation, track their own exit).
 	if (!canViewOffboarding(org.memberRole)) {
-		return <OffboardingSelfServicePlaceholder />;
+		return <MyOffboarding />;
 	}
 
 	return <OffboardingDashboard />;
@@ -347,68 +347,3 @@ const QUICK_LINKS: QuickLink[] = [
 		icon: <KeyRound size={16} />,
 	},
 ];
-
-function OffboardingSelfServicePlaceholder() {
-	return (
-		<div className="page">
-			<div className="page-header">
-				<div>
-					<div className="crumbs">
-						<span>Heimdallone</span>
-						<span className="sep">/</span>
-						<span>Offboarding</span>
-					</div>
-					<h1 className="page-title">Offboarding</h1>
-					<p className="page-sub">
-						Submit a resignation and track your own exit.
-					</p>
-				</div>
-			</div>
-
-			<div
-				className="card card-pad"
-				style={{
-					display: "flex",
-					flexDirection: "column",
-					alignItems: "center",
-					justifyContent: "center",
-					minHeight: 320,
-					textAlign: "center",
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						width: 48,
-						height: 48,
-						marginBottom: 12,
-						color: "var(--fg-4)",
-						background: "var(--bg-3)",
-						borderRadius: 14,
-					}}
-				>
-					<ShieldCheck size={20} />
-				</div>
-				<div className="eyebrow" style={{ marginBottom: 8 }}>
-					Coming later
-				</div>
-				<div style={{ fontSize: 16, fontWeight: 600, color: "var(--fg)" }}>
-					Employee self-service
-				</div>
-				<p
-					style={{
-						maxWidth: 420,
-						marginTop: 8,
-						fontSize: 13.5,
-						color: "var(--fg-3)",
-					}}
-				>
-					Submitting a resignation and tracking your own offboarding ships in a
-					later Phase 10D checkpoint.
-				</p>
-			</div>
-		</div>
-	);
-}
