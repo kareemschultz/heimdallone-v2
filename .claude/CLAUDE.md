@@ -178,3 +178,8 @@ Payroll engine (Phase 8C):
 - `packages/payroll-engine/` — pure TypeScript calculation engine, zero dependencies
 - Country rules registry: `src/countries/registry.ts` — lookup by countryCode + effectiveYear
 - Guyana 2026 implemented; Barbados 2026 and Trinidad 2026 researched but deferred
+
+Assets implementation (Phase 11):
+
+- [Assets Implementation Plan](docs/architecture/assets-implementation-plan.md) — Phase 11A spec: entities, Drizzle schema, oRPC API + RBAC, UI checkpoints, offboarding custody integration, business rules
+- [Assets Module Spec](docs/architecture/modules/assets-spec.md) — original extraction spec
