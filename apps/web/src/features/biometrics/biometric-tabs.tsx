@@ -9,7 +9,8 @@ interface Tab {
 		| "/app/biometrics"
 		| "/app/biometrics/devices"
 		| "/app/biometrics/sync-runs"
-		| "/app/biometrics/punches";
+		| "/app/biometrics/punches"
+		| "/app/biometrics/exceptions";
 	key: string;
 	label: string;
 }
@@ -18,7 +19,12 @@ const TABS: Tab[] = [
 	{ key: "overview", label: "Overview", href: "/app/biometrics" },
 	{ key: "devices", label: "Devices", href: "/app/biometrics/devices" },
 	{ key: "sync-runs", label: "Sync runs", href: "/app/biometrics/sync-runs" },
-	{ key: "punches", label: "Punches", href: "/app/biometrics/punches" },
+	{ key: "punches", label: "Punch review", href: "/app/biometrics/punches" },
+	{
+		key: "exceptions",
+		label: "Exceptions",
+		href: "/app/biometrics/exceptions",
+	},
 ];
 
 const TRAILING_SLASH = /\/$/;
@@ -36,6 +42,9 @@ function resolveActiveTab(path: string): string {
 	}
 	if (clean.startsWith("/app/biometrics/punches")) {
 		return "punches";
+	}
+	if (clean.startsWith("/app/biometrics/exceptions")) {
+		return "exceptions";
 	}
 	return "overview";
 }

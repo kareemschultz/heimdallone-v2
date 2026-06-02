@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { FileWarning, Play } from "lucide-react";
-import { useContext, useState } from "react";
+import { FileWarning, Play, X } from "lucide-react";
+import { useContext, useId, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/biometrics.css";
@@ -10,9 +10,11 @@ import { BiometricTabs } from "@/features/biometrics/biometric-tabs";
 import { BiometricNoAccess } from "@/features/biometrics/biometric-ui";
 import {
 	PUNCH_DIRECTION_LABEL,
+	PUNCH_SOURCE_LABEL,
 	PUNCH_STATUS_LABEL,
 	VERIFY_MODE_LABEL,
 } from "@/features/biometrics/labels";
+import { MapDeviceUserDialog } from "@/features/biometrics/map-device-user-dialog";
 import { canManageBiometrics, canViewBiometrics } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc, queryClient } from "@/utils/orpc";
@@ -20,6 +22,9 @@ import { client, orpc, queryClient } from "@/utils/orpc";
 export const Route = createFileRoute("/app/biometrics/punches")({
 	component: PunchesPage,
 });
+
+const PAYROLL_NOTE =
+	"Raw punches do not go directly to payroll. Payroll uses approved attendance records after review.";
 
 type StatusFilter =
 	| "all"
@@ -32,10 +37,10 @@ type StatusFilter =
 const FILTERS: { key: StatusFilter; label: string }[] = [
 	{ key: "all", label: "All" },
 	{ key: "pending", label: "Pending" },
+	{ key: "processed", label: "Processed" },
 	{ key: "unmapped", label: "Unmapped" },
 	{ key: "duplicate", label: "Duplicate" },
 	{ key: "error", label: "Error" },
-	{ key: "processed", label: "Processed" },
 ];
 
 function fmtDateTime(value: string | Date | null | undefined): string {
@@ -48,15 +53,32 @@ function fmtDateTime(value: string | Date | null | undefined): string {
 		: d.toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" });
 }
 
+function invalidateBiometric() {
+	queryClient.invalidateQueries({
+		predicate: (q) =>
+			Array.isArray(q.queryKey) &&
+			Array.isArray(q.queryKey[0]) &&
+			q.queryKey[0][0] === "biometric",
+	});
+}
+
 interface PunchRow {
+	deviceId: string | null;
 	deviceUserId: string | null;
 	direction: string;
 	employeeFirstName: string | null;
 	employeeLastName: string | null;
+	errorReason: string | null;
 	id: string;
 	processingStatus: string;
 	punchTime: string | Date;
+	source: string;
 	verifyMode: string;
+}
+
+interface DeviceRow {
+	id: string;
+	name: string;
 }
 
 function PunchesPage() {
@@ -65,23 +87,40 @@ function PunchesPage() {
 		return (
 			<BiometricNoAccess
 				description="Punch review is available to HR and administrators."
-				section="Punches"
+				section="Punch review"
 			/>
 		);
 	}
-	return <PunchesList canManage={canManageBiometrics(org.memberRole)} />;
+	return <PunchReview canManage={canManageBiometrics(org.memberRole)} />;
 }
 
-function PunchesList({ canManage }: { canManage: boolean }) {
+interface MapTarget {
+	deviceId: string;
+	deviceName: string;
+	deviceUserId: string;
+}
+
+function PunchReview({ canManage }: { canManage: boolean }) {
 	const [filter, setFilter] = useState<StatusFilter>("all");
+	const [confirmProcess, setConfirmProcess] = useState(false);
 	const [processing, setProcessing] = useState(false);
+	const [mapTarget, setMapTarget] = useState<MapTarget | null>(null);
 
 	const punches = useQuery(
 		orpc.biometric.punches.list.queryOptions({
 			input: { status: filter === "all" ? undefined : filter, limit: 200 },
 		})
 	);
+	const devices = useQuery(
+		orpc.biometric.devices.list.queryOptions({
+			input: { includeInactive: true },
+		})
+	);
 	const rows = (punches.data ?? []) as PunchRow[];
+	const nameById = new Map<string, string>();
+	for (const d of (devices.data ?? []) as DeviceRow[]) {
+		nameById.set(d.id, d.name);
+	}
 
 	const runProcessor = async () => {
 		setProcessing(true);
@@ -89,20 +128,17 @@ function PunchesList({ canManage }: { canManage: boolean }) {
 			const summary = (await client.biometric.processor.run()) as {
 				processed: number;
 				unmapped: number;
+				exceptionsCreated: number;
 			};
 			toast.success(
-				`Processed ${summary.processed} punch${summary.processed === 1 ? "" : "es"}; ${summary.unmapped} unmapped.`
+				`Processed ${summary.processed}; ${summary.unmapped} unmapped; ${summary.exceptionsCreated} exception(s) raised.`
 			);
-			queryClient.invalidateQueries({
-				predicate: (q) =>
-					Array.isArray(q.queryKey) &&
-					Array.isArray(q.queryKey[0]) &&
-					q.queryKey[0][0] === "biometric",
-			});
+			invalidateBiometric();
 		} catch (err) {
 			toast.error(`Processing failed: ${(err as Error).message}`);
 		} finally {
 			setProcessing(false);
+			setConfirmProcess(false);
 		}
 	};
 
@@ -115,27 +151,29 @@ function PunchesList({ canManage }: { canManage: boolean }) {
 						<span className="sep">/</span>
 						<span>Biometrics</span>
 						<span className="sep">/</span>
-						<span>Punches</span>
+						<span>Punch review</span>
 					</div>
-					<h1 className="page-title">Synced punches</h1>
+					<h1 className="page-title">Punch review</h1>
 					<p className="page-sub">
-						Raw punches staged from devices, imports, and mobile check-ins. They
-						become attendance only after processing.
+						Review imported device punches before they become approved
+						attendance.
 					</p>
 				</div>
 				{canManage && (
 					<button
 						className="btn btn-primary btn-sm"
 						disabled={processing}
-						onClick={runProcessor}
+						onClick={() => setConfirmProcess(true)}
 						type="button"
 					>
-						<Play size={14} /> {processing ? "Processing…" : "Process pending"}
+						<Play size={14} /> Process pending
 					</button>
 				)}
 			</div>
 
 			<BiometricTabs />
+
+			<PayrollNote />
 
 			<div className="ob-filter-row" style={{ marginBottom: 16 }}>
 				{FILTERS.map((f) => (
@@ -171,32 +209,211 @@ function PunchesList({ canManage }: { canManage: boolean }) {
 							<tr>
 								<th>When</th>
 								<th>Device user / employee</th>
+								<th>Device</th>
 								<th>Direction</th>
 								<th>Method</th>
+								<th>Source</th>
 								<th>Status</th>
+								<th />
 							</tr>
 						</thead>
 						<tbody>
 							{rows.map((p) => (
-								<tr key={p.id}>
-									<td>{fmtDateTime(p.punchTime)}</td>
-									<td>
-										{p.employeeFirstName
-											? `${p.employeeFirstName}${p.employeeLastName ? ` ${p.employeeLastName}` : ""}`
-											: (p.deviceUserId ?? "—")}
-									</td>
-									<td>{PUNCH_DIRECTION_LABEL[p.direction] ?? p.direction}</td>
-									<td>{VERIFY_MODE_LABEL[p.verifyMode] ?? p.verifyMode}</td>
-									<td>
-										{PUNCH_STATUS_LABEL[p.processingStatus] ??
-											p.processingStatus}
-									</td>
-								</tr>
+								<PunchRowView
+									canManage={canManage}
+									deviceName={
+										p.deviceId ? (nameById.get(p.deviceId) ?? "—") : "—"
+									}
+									key={p.id}
+									onMap={() =>
+										p.deviceId && p.deviceUserId
+											? setMapTarget({
+													deviceId: p.deviceId,
+													deviceName: p.deviceId
+														? (nameById.get(p.deviceId) ?? "Device")
+														: "Device",
+													deviceUserId: p.deviceUserId,
+												})
+											: undefined
+									}
+									punch={p}
+								/>
 							))}
 						</tbody>
 					</table>
 				</div>
 			)}
+
+			{confirmProcess && (
+				<ConfirmProcessDialog
+					onClose={() => setConfirmProcess(false)}
+					onConfirm={runProcessor}
+					pending={processing}
+				/>
+			)}
+			{mapTarget && (
+				<MapDeviceUserDialog
+					deviceId={mapTarget.deviceId}
+					deviceName={mapTarget.deviceName}
+					deviceUserId={mapTarget.deviceUserId}
+					onClose={() => setMapTarget(null)}
+					onMapped={() => {
+						setMapTarget(null);
+						invalidateBiometric();
+					}}
+				/>
+			)}
+		</div>
+	);
+}
+
+function PayrollNote() {
+	return (
+		<div
+			style={{
+				marginBottom: 14,
+				padding: "10px 14px",
+				fontSize: 12.5,
+				color: "var(--fg-2)",
+				background: "var(--bg-2)",
+				border: "1px solid var(--line)",
+				borderRadius: 12,
+			}}
+		>
+			{PAYROLL_NOTE}
+		</div>
+	);
+}
+
+function PunchRowView({
+	punch,
+	deviceName,
+	canManage,
+	onMap,
+}: {
+	canManage: boolean;
+	deviceName: string;
+	onMap: () => void;
+	punch: PunchRow;
+}) {
+	const employee = punch.employeeFirstName
+		? `${punch.employeeFirstName}${punch.employeeLastName ? ` ${punch.employeeLastName}` : ""}`
+		: (punch.deviceUserId ?? "—");
+	const canMap =
+		canManage &&
+		punch.processingStatus === "unmapped" &&
+		Boolean(punch.deviceId);
+	return (
+		<tr>
+			<td>{fmtDateTime(punch.punchTime)}</td>
+			<td>{employee}</td>
+			<td>{deviceName}</td>
+			<td>{PUNCH_DIRECTION_LABEL[punch.direction] ?? punch.direction}</td>
+			<td>{VERIFY_MODE_LABEL[punch.verifyMode] ?? punch.verifyMode}</td>
+			<td>{PUNCH_SOURCE_LABEL[punch.source] ?? punch.source}</td>
+			<td>
+				{PUNCH_STATUS_LABEL[punch.processingStatus] ?? punch.processingStatus}
+				{punch.errorReason ? (
+					<div style={{ fontSize: 11.5, color: "var(--fg-3)" }}>
+						{punch.errorReason}
+					</div>
+				) : null}
+			</td>
+			<td style={{ textAlign: "right" }}>
+				{canMap ? (
+					<button className="btn btn-sm" onClick={onMap} type="button">
+						Map
+					</button>
+				) : null}
+			</td>
+		</tr>
+	);
+}
+
+function ConfirmProcessDialog({
+	onConfirm,
+	onClose,
+	pending,
+}: {
+	onClose: () => void;
+	onConfirm: () => void;
+	pending: boolean;
+}) {
+	const titleId = useId();
+	const descId = useId();
+	return (
+		<div
+			aria-describedby={descId}
+			aria-labelledby={titleId}
+			aria-modal="true"
+			role="dialog"
+			style={{
+				position: "fixed",
+				inset: 0,
+				display: "flex",
+				alignItems: "center",
+				justifyContent: "center",
+				padding: 24,
+				background: "rgba(0,0,0,0.55)",
+				zIndex: 60,
+			}}
+		>
+			<div
+				className="card card-pad"
+				style={{
+					width: "100%",
+					maxWidth: 440,
+					display: "flex",
+					flexDirection: "column",
+					gap: 14,
+				}}
+			>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "center",
+					}}
+				>
+					<h2 id={titleId} style={{ fontSize: 15, fontWeight: 600 }}>
+						Process pending punches
+					</h2>
+					<button
+						aria-label="Close"
+						className="btn btn-sm"
+						onClick={onClose}
+						type="button"
+					>
+						<X size={14} />
+					</button>
+				</div>
+				<p
+					id={descId}
+					style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
+				>
+					This turns staged punches into attendance events and may create
+					exceptions for missing, duplicate, or unmapped punches. It does not
+					finalize or update payroll.
+				</p>
+				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+					<button
+						className="btn btn-sm"
+						disabled={pending}
+						onClick={onClose}
+						type="button"
+					>
+						Cancel
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={pending}
+						onClick={onConfirm}
+						type="button"
+					>
+						{pending ? "Processing…" : "Process pending"}
+					</button>
+				</div>
+			</div>
 		</div>
 	);
 }

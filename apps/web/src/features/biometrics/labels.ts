@@ -77,6 +77,14 @@ export const PUNCH_STATUS_LABEL: Record<string, string> = {
 	error: "Error",
 };
 
+export const PUNCH_SOURCE_LABEL: Record<string, string> = {
+	biometric: "Biometric device",
+	mobile: "Mobile GPS",
+	import: "File import",
+	manual: "Manual",
+	admin: "Admin entry",
+};
+
 export const PUNCH_DIRECTION_LABEL: Record<string, string> = {
 	in: "Clock in",
 	out: "Clock out",
@@ -92,6 +100,53 @@ export const VERIFY_MODE_LABEL: Record<string, string> = {
 	manual: "Manual",
 	unknown: "Unknown",
 };
+
+export const EXCEPTION_TYPE_LABEL: Record<string, string> = {
+	unmapped_punch: "Unmapped device user",
+	duplicate_punch: "Duplicate punch",
+	missing_clock_out: "Missing clock-out",
+	outside_geofence: "Outside geofence",
+	low_gps_accuracy: "Low GPS accuracy",
+	clock_drift: "Device clock drift",
+	spoofing_suspected: "Suspected spoofing",
+	device_error: "Device error",
+	out_of_window: "Out of shift window",
+};
+
+export const EXCEPTION_SEVERITY_LABEL: Record<string, string> = {
+	info: "Info",
+	warning: "Warning",
+	blocker: "Blocker — payroll cannot continue",
+};
+
+export const EXCEPTION_STATUS_LABEL: Record<string, string> = {
+	open: "Open",
+	in_review: "In review",
+	resolved: "Resolved",
+	dismissed: "Dismissed",
+};
+
+const PUNCH_EXCEPTIONS = new Set([
+	"unmapped_punch",
+	"duplicate_punch",
+	"missing_clock_out",
+	"out_of_window",
+]);
+const GEOFENCE_EXCEPTIONS = new Set([
+	"outside_geofence",
+	"low_gps_accuracy",
+	"spoofing_suspected",
+]);
+
+export function exceptionSource(type: string): string {
+	if (PUNCH_EXCEPTIONS.has(type)) {
+		return "Punch";
+	}
+	if (GEOFENCE_EXCEPTIONS.has(type)) {
+		return "Geofence";
+	}
+	return "Device";
+}
 
 // Mirror of the server's providerKeyForDevice(vendor, mode).
 export function providerKeyForDevice(vendor: string, mode: string): string {

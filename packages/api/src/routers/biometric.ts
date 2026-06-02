@@ -1363,6 +1363,9 @@ const exceptionsList = authorizedProcedure("attendance_exception", "read")
 				employeeFirstName: employeeProfile.firstName,
 				employeeLastName: employeeProfile.lastName,
 				deviceId: attendanceException.deviceId,
+				attendancePunchId: attendanceException.attendancePunchId,
+				geofenceCheckInId: attendanceException.geofenceCheckInId,
+				resolutionNote: attendanceException.resolutionNote,
 				createdAt: attendanceException.createdAt,
 				resolvedAt: attendanceException.resolvedAt,
 			})
