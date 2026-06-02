@@ -178,6 +178,23 @@ export const attendanceSetting = pgTable("attendance_setting", {
 		.notNull(),
 	enableAutoCheckout: boolean("enable_auto_checkout").default(false).notNull(),
 	autoCheckoutAfterMinutes: integer("auto_checkout_after_minutes"),
+	// Biometric + Geofencing policy (Phase 11). All additive with safe defaults.
+	enableGeofencedCheckIn: boolean("enable_geofenced_check_in")
+		.default(false)
+		.notNull(),
+	defaultGeofenceRadiusMeters: integer("default_geofence_radius_meters")
+		.default(150)
+		.notNull(),
+	defaultGeofenceAccuracyMeters: integer("default_geofence_accuracy_meters")
+		.default(100)
+		.notNull(),
+	clockDriftThresholdSeconds: integer("clock_drift_threshold_seconds")
+		.default(300)
+		.notNull(),
+	gpsRetentionDays: integer("gps_retention_days").default(90).notNull(),
+	blockPayrollOnOpenExceptions: boolean("block_payroll_on_open_exceptions")
+		.default(true)
+		.notNull(),
 	...timestamps,
 });
 
