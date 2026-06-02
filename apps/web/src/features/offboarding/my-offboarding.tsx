@@ -4,6 +4,7 @@ import { useId, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/offboarding.css";
+import { EmptyState } from "@/components/empty-state";
 import { client, orpc } from "@/utils/orpc";
 import { caseStatusLabel, caseStatusTone, exitTypeLabel } from "./labels";
 import { useInvalidateOffboarding } from "./use-invalidate-offboarding";
@@ -27,7 +28,9 @@ function fmtDate(value: string | Date | null | undefined): string {
 
 export function MyOffboarding() {
 	const myCaseQ = useQuery(
-		orpc.offboarding.cases.getMyCase.queryOptions({ input: {} })
+		// Don't retry: roles without resignation access get a 403 that won't change,
+		// so the "not available" state should show immediately.
+		orpc.offboarding.cases.getMyCase.queryOptions({ input: {}, retry: false })
 	);
 	const c = myCaseQ.data as MyCaseView | null | undefined;
 	const hasOpenCase = c != null && !TERMINAL.has(c.status);
@@ -56,9 +59,20 @@ export function MyOffboarding() {
 				</div>
 			)}
 
-			{!myCaseQ.isLoading && c && <MyCaseCard caseRow={c} />}
+			{!myCaseQ.isLoading && myCaseQ.isError && (
+				<div className="card card-pad">
+					<EmptyState
+						description="Resignation self-service isn't available for your role. Speak to HR about your offboarding."
+						title="Not available"
+					/>
+				</div>
+			)}
 
-			{!(myCaseQ.isLoading || hasOpenCase) && (
+			{!(myCaseQ.isLoading || myCaseQ.isError) && c && (
+				<MyCaseCard caseRow={c} />
+			)}
+
+			{!(myCaseQ.isLoading || myCaseQ.isError || hasOpenCase) && (
 				<ResignationForm hadPriorCase={c != null} />
 			)}
 		</div>

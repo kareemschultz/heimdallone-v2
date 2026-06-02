@@ -95,32 +95,40 @@ function CaseDetailPage() {
 	);
 }
 
-function CaseDetail({
-	canManage,
-	canSeeSettlement,
-}: {
-	canManage: boolean;
-	canSeeSettlement: boolean;
-}) {
-	const { id } = Route.useParams();
-
+function useCaseDetailData(id: string) {
 	const caseQ = useQuery(
-		orpc.offboarding.cases.getById.queryOptions({ input: { id } })
+		// Don't retry: a 403 (manager scope) or 404 won't change on retry, so the
+		// no-access state should show immediately instead of after backoff.
+		orpc.offboarding.cases.getById.queryOptions({ input: { id }, retry: false })
 	);
+	const c = caseQ.data as CaseView | undefined;
+	// Gate the per-case lists on the case being visible. If getById is forbidden
+	// (manager scope) or 404s, these never fire — no cascade of 403s.
+	const caseVisible = Boolean(c);
 	const tasksQ = useQuery(
-		orpc.offboarding.tasks.list.queryOptions({ input: { caseId: id } })
+		orpc.offboarding.tasks.list.queryOptions({
+			input: { caseId: id },
+			enabled: caseVisible,
+		})
 	);
 	const assetsQ = useQuery(
-		orpc.offboarding.assets.list.queryOptions({ input: { caseId: id } })
+		orpc.offboarding.assets.list.queryOptions({
+			input: { caseId: id },
+			enabled: caseVisible,
+		})
 	);
 	const accessQ = useQuery(
-		orpc.offboarding.access.list.queryOptions({ input: { caseId: id } })
+		orpc.offboarding.access.list.queryOptions({
+			input: { caseId: id },
+			enabled: caseVisible,
+		})
 	);
 	const docsQ = useQuery(
-		orpc.offboarding.documents.list.queryOptions({ input: { caseId: id } })
+		orpc.offboarding.documents.list.queryOptions({
+			input: { caseId: id },
+			enabled: caseVisible,
+		})
 	);
-
-	const c = caseQ.data as CaseView | undefined;
 	const employeeQ = useQuery(
 		orpc.hrCore.employees.getById.queryOptions({
 			input: { id: c?.employeeId ?? "" },
@@ -134,25 +142,62 @@ function CaseDetail({
 		})
 	);
 
-	const employeeName = employeeQ.data
-		? `${employeeQ.data.firstName}${employeeQ.data.lastName ? ` ${employeeQ.data.lastName}` : ""}`
-		: "Employee";
-	const managerName = employeeQ.data?.workInfo?.reportingManagerName ?? null;
-	const templateName = templateQ.data?.name ?? null;
-
 	const tasks = tasksQ.data ?? [];
 	const assets = assetsQ.data ?? [];
 	const access = accessQ.data ?? [];
 	const docs = docsQ.data ?? [];
 
-	const attention = buildAttention({
-		pendingTasks: tasks.filter((t) => !isTaskResolved(t.status)).length,
-		pendingAssets: assets.filter((a) => a.status === "pending").length,
-		pendingAccess: access.filter((a) => a.status === "pending").length,
-		pendingDocs: docs.filter(
-			(d) => d.status !== "approved" && d.status !== "waived"
-		).length,
-	});
+	return {
+		c,
+		caseLoading: caseQ.isLoading,
+		tasks,
+		assets,
+		access,
+		docs,
+		tasksLoading: tasksQ.isLoading,
+		assetsLoading: assetsQ.isLoading,
+		accessLoading: accessQ.isLoading,
+		docsLoading: docsQ.isLoading,
+		employeeName: employeeQ.data
+			? `${employeeQ.data.firstName}${employeeQ.data.lastName ? ` ${employeeQ.data.lastName}` : ""}`
+			: "Employee",
+		managerName: employeeQ.data?.workInfo?.reportingManagerName ?? null,
+		templateName: templateQ.data?.name ?? null,
+		attention: buildAttention({
+			pendingTasks: tasks.filter((t) => !isTaskResolved(t.status)).length,
+			pendingAssets: assets.filter((a) => a.status === "pending").length,
+			pendingAccess: access.filter((a) => a.status === "pending").length,
+			pendingDocs: docs.filter(
+				(d) => d.status !== "approved" && d.status !== "waived"
+			).length,
+		}),
+	};
+}
+
+function CaseDetail({
+	canManage,
+	canSeeSettlement,
+}: {
+	canManage: boolean;
+	canSeeSettlement: boolean;
+}) {
+	const { id } = Route.useParams();
+	const {
+		c,
+		caseLoading,
+		tasks,
+		assets,
+		access,
+		docs,
+		tasksLoading,
+		assetsLoading,
+		accessLoading,
+		docsLoading,
+		employeeName,
+		managerName,
+		templateName,
+		attention,
+	} = useCaseDetailData(id);
 
 	return (
 		<div className="page">
@@ -194,9 +239,18 @@ function CaseDetail({
 
 			<OffboardingTabs />
 
-			{caseQ.isLoading && (
+			{caseLoading && (
 				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
 					Loading case…
+				</div>
+			)}
+
+			{!(caseLoading || c) && (
+				<div className="card card-pad">
+					<EmptyState
+						description="This offboarding case may not exist, or you may not have access to it."
+						title="Case not available"
+					/>
 				</div>
 			)}
 
@@ -205,10 +259,7 @@ function CaseDetail({
 					<AttentionPanel
 						items={attention}
 						loading={
-							tasksQ.isLoading ||
-							assetsQ.isLoading ||
-							accessQ.isLoading ||
-							docsQ.isLoading
+							tasksLoading || assetsLoading || accessLoading || docsLoading
 						}
 						status={c.status}
 					/>
@@ -220,26 +271,26 @@ function CaseDetail({
 					/>
 					<TasksSection
 						canManage={canManage}
-						loading={tasksQ.isLoading}
+						loading={tasksLoading}
 						tasks={tasks}
 					/>
 					<AssetsSection
 						assets={assets}
 						canManage={canManage}
 						caseId={id}
-						loading={assetsQ.isLoading}
+						loading={assetsLoading}
 					/>
 					<AccessSection
 						access={access}
 						canManage={canManage}
 						caseId={id}
-						loading={accessQ.isLoading}
+						loading={accessLoading}
 					/>
 					<DocumentsSection
 						canManage={canManage}
 						caseId={id}
 						docs={docs}
-						loading={docsQ.isLoading}
+						loading={docsLoading}
 					/>
 					<InterviewSection canManage={canManage} caseId={id} />
 					{canSeeSettlement ? (
