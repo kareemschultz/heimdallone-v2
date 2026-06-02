@@ -107,6 +107,44 @@ The decisions below are derived from them.
 > design. The reference sync-agent is a small documented script; the *contract* (auth,
 > payload, dedupe, watermark) is owned by us in 11C.
 
+### 2.1a Device adapter/provider model (multi-vendor — added 11C)
+
+The integration is **not** ZKTeco-only. Devices carry a `vendor`
+(`zkteco`/`ngteco`/`generic`/`other`), `modelFamily`, a `mode` (the connection
+mode — see the expanded enum below), and capability metadata
+(`supportedPunchMethods` = face/fingerprint/rfid/pin/mobile_app/gps_mobile,
+`networkCapabilities` = wifi_2_4ghz/wifi_5ghz/tcp_ip/usb/cloud_app, `capacity*`,
+`supportsOfflineLogs/ShiftRules/CloudSync/MobileApp/GpsPunch`,
+`requiresSubscriptionForAdvancedFeatures`). A `(vendor, mode)` resolves to an
+**`AttendanceDeviceAdapter`** (`packages/api/src/utils/attendance-adapters.ts`):
+
+```ts
+interface AttendanceDeviceAdapter {
+  providerKey: string; displayName: string;
+  vendor: "zkteco" | "ngteco" | "generic" | "custom";
+  status: "supported" | "planned";
+  supportedModes: string[]; capabilities: string[];
+  parseImportRows(text): { punches: NormalizedPunch[]; errors: string[] };
+  validateDeviceConfig(config): { ok: boolean; errors: string[] };
+  getConnectionStatus(): { live: boolean; mode; detail };
+}
+```
+
+Adapters normalize imported rows; the **processor is adapter-agnostic** (it never
+branches on vendor). Initial adapters: `generic_csv`, `generic_excel`,
+`generic_api` (supported); `zkteco_tcp`, `zkteco_adms`, `ngteco_cloud`
+(**planned** — `getConnectionStatus().live === false`, no faked sync);
+`ngteco_app`, `ngteco_kseries` (supported file import). NGTeco cloud/app clocks
+often expose no public API — supported paths are manual CSV/Excel export, USB
+export (K-series), and periodic file import; a live cloud adapter is gated behind
+official-API + production secret storage.
+
+**Expanded `attendance_device_mode` enum (11C):** `csv_import`, `excel_import`,
+`usb_export_import`, `api_ingest`, `zkteco_tcp_planned`,
+`zkteco_adms_push_planned`, `ngteco_cloud_export`, `ngteco_app_export`,
+`vendor_manual_upload`, `custom_adapter_planned`. The `*_planned` values name
+not-yet-built live integrations so the UI/API represent them honestly.
+
 ### 2.2 Concepts to plan for
 
 - **ZKTeco-style devices** (zkteco/eSSL share the `pyzk` protocol) — primary target.

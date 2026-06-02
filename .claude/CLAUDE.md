@@ -181,7 +181,9 @@ Payroll engine (Phase 8C):
 
 Biometric + Geofencing (Phase 11 — active):
 
-- [Biometric + Geofencing Implementation Plan](docs/architecture/biometric-geofencing-implementation-plan.md) — Phase 11A spec: device sync/import model, geofenced check-in, entities, RBAC, attendance/payroll integration, UI routes, security/privacy, 11A–11H sequence
+- [Biometric + Geofencing Implementation Plan](docs/architecture/biometric-geofencing-implementation-plan.md) — Phase 11A spec: device sync/import model, adapter/provider model (multi-vendor), geofenced check-in, entities, RBAC, attendance/payroll integration, UI routes, security/privacy, 11A–11H sequence
+- [Biometric + Geofencing DB Setup](docs/implementation/biometric-geofencing-db-setup.md) — 11B schema (8 tables, enums, migrations 0011/0012)
+- [Biometric + Geofencing API](docs/implementation/biometric-geofencing-api.md) — 11C router, adapter/provider model, punch processor, ingest endpoint, RBAC, privacy
 
 Assets (queued spec — Phase 12 candidate, drafted not active):
 

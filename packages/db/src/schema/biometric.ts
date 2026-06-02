@@ -56,15 +56,32 @@ export const attendanceDeviceTypeEnum = pgEnum("attendance_device_type", [
 	"virtual_kiosk",
 ]);
 
-// Connection / integration mode. MVP implements `csv_import` + `api_ingest`
-// (external sync-agent → our REST endpoint) + `manual`. The `*_planned` values
-// are reserved for later phases and intentionally name themselves as not-yet-built.
+// Device vendor / brand family. Drives which adapter is used. Adapters for
+// zkteco-live + ngteco-cloud are planned; generic file/API import is the MVP.
+export const attendanceVendorEnum = pgEnum("attendance_vendor", [
+	"zkteco",
+	"ngteco",
+	"generic",
+	"other",
+]);
+
+// Connection / integration mode (the device's "connectionMode"). MVP implements
+// the file/API import paths (csv_import, excel_import, usb_export_import,
+// api_ingest, ngteco_cloud_export, ngteco_app_export, vendor_manual_upload). The
+// `*_planned` values name not-yet-built live integrations (ZKTeco TCP pull,
+// ZKTeco ADMS push, custom vendor adapters) so the UI/API can represent them
+// honestly without faking live sync.
 export const attendanceDeviceModeEnum = pgEnum("attendance_device_mode", [
 	"csv_import",
+	"excel_import",
+	"usb_export_import",
 	"api_ingest",
 	"zkteco_tcp_planned",
-	"adms_push_planned",
-	"manual",
+	"zkteco_adms_push_planned",
+	"ngteco_cloud_export",
+	"ngteco_app_export",
+	"vendor_manual_upload",
+	"custom_adapter_planned",
 ]);
 
 export const attendanceDeviceStatusEnum = pgEnum("attendance_device_status", [
@@ -193,8 +210,9 @@ export const attendanceDevice = pgTable(
 		deviceType: attendanceDeviceTypeEnum("device_type")
 			.default("generic")
 			.notNull(),
-		vendor: text("vendor"),
+		vendor: attendanceVendorEnum("vendor").default("generic").notNull(),
 		model: text("model"),
+		modelFamily: text("model_family"),
 		serialNumber: text("serial_number"),
 		mode: attendanceDeviceModeEnum("mode").default("csv_import").notNull(),
 		host: text("host"),
@@ -218,6 +236,33 @@ export const attendanceDevice = pgTable(
 		lastSyncStatus: attendanceSyncStatusEnum("last_sync_status"),
 		clockOffsetSeconds: integer("clock_offset_seconds").default(0).notNull(),
 		status: attendanceDeviceStatusEnum("status").default("active").notNull(),
+		// ── Capability metadata (vendor/model-driven; drives the adapter UI) ──
+		// supportedPunchMethods values: face/fingerprint/rfid/pin/mobile_app/gps_mobile
+		supportedPunchMethods: jsonb("supported_punch_methods")
+			.$type<string[]>()
+			.default([])
+			.notNull(),
+		// networkCapabilities values: wifi_2_4ghz/wifi_5ghz/tcp_ip/usb/cloud_app
+		networkCapabilities: jsonb("network_capabilities")
+			.$type<string[]>()
+			.default([])
+			.notNull(),
+		capacityUsers: integer("capacity_users"),
+		capacityLogs: integer("capacity_logs"),
+		supportsOfflineLogs: boolean("supports_offline_logs")
+			.default(false)
+			.notNull(),
+		supportsShiftRules: boolean("supports_shift_rules")
+			.default(false)
+			.notNull(),
+		supportsCloudSync: boolean("supports_cloud_sync").default(false).notNull(),
+		supportsMobileApp: boolean("supports_mobile_app").default(false).notNull(),
+		supportsGpsPunch: boolean("supports_gps_punch").default(false).notNull(),
+		requiresSubscriptionForAdvancedFeatures: boolean(
+			"requires_subscription_for_advanced_features"
+		)
+			.default(false)
+			.notNull(),
 		notes: text("notes"),
 		...timestamps,
 		deletedAt: timestamp("deleted_at"),

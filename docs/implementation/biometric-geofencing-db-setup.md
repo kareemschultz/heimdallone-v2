@@ -141,9 +141,38 @@ attendance_exception:            5   (blocker×2, warning×2, info×1; open×3, 
 - GPS raw lat/lon on `geofence_check_in` are subject to `gps_retention_days` (default
   90) then scrubbed to the derived verdict (`coords_purged_at`) — enforced in 11C/11G.
 
+## Migration 0012 — device adapter/provider model (Phase 11C)
+
+A follow-up additive migration `0012_clever_wrecker.sql` (applied) expands the
+device model for **multi-vendor** support (ZKTeco TCP + ADMS, NGTeco cloud/app/
+K-series, generic CSV/Excel/USB/API):
+
+- New enum `attendance_vendor` (`zkteco`/`ngteco`/`generic`/`other`).
+- `attendance_device_mode` recreated with the full set: `csv_import`,
+  `excel_import`, `usb_export_import`, `api_ingest`, `zkteco_tcp_planned`,
+  `zkteco_adms_push_planned`, `ngteco_cloud_export`, `ngteco_app_export`,
+  `vendor_manual_upload`, `custom_adapter_planned`.
+- `attendance_device` gains `vendor` (enum), `model_family`,
+  `supported_punch_methods` (jsonb string[]), `network_capabilities`
+  (jsonb string[]), `capacity_users`, `capacity_logs`, `supports_offline_logs`,
+  `supports_shift_rules`, `supports_cloud_sync`, `supports_mobile_app`,
+  `supports_gps_punch`, `requires_subscription_for_advanced_features`.
+
+> The `vendor` text→enum cast required clearing the 11B seed rows first (they had
+> stored `vendor` as display text). New seed uses canonical enum values. See the
+> API doc for the adapter/provider model that consumes this metadata.
+
+The seed now provisions **4 representative devices**: Main Office ZKTeco TCP
+(`zkteco_tcp_planned`), Warehouse ZKTeco ADMS (`zkteco_adms_push_planned`),
+Reception NGTeco TC cloud clock (`ngteco_app_export`, cloud/app + subscription),
+Warehouse NGTeco K4 (`usb_export_import`). Live ZKTeco-TCP/ADMS/NGTeco-cloud are
+marked planned — no faked sync.
+
 ## Next
 
-**Phase 11C — Device sync / import API + punch processor.** Adds the `biometric` +
+**Phase 11C — Device sync / import API + punch processor.** See
+[biometric-geofencing-api.md](biometric-geofencing-api.md).
+**Phase 11D — Biometric devices UI.** Adds the `biometric` +
 `geofencing` oRPC routers, the punch-ingest endpoint + CSV import, the
 map→dedupe→geofence→event processor, the new AC resources
 (`attendance_device`/`attendance_punch`/`geofence`/`attendance_exception`) and RBAC

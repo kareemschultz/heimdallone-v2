@@ -31,13 +31,14 @@
  */
 
 import { createId } from "@paralleldrive/cuid2";
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 
 import { createDb } from "../packages/db/src/index";
 import {
 	attendanceDevice,
 	attendanceDeviceEmployeeMap,
 	attendanceDeviceSyncRun,
+	attendanceEvent,
 	attendanceException,
 	attendancePunch,
 	department,
@@ -126,6 +127,17 @@ async function clearExisting(orgId: string) {
 	await db
 		.delete(attendancePunch)
 		.where(eq(attendancePunch.organizationId, orgId));
+	// Remove attendance_events the processor created from biometric/mobile/import
+	// punches so re-seeding + re-processing does not accumulate duplicate events.
+	// (manual/admin events are left untouched; affected records recalc on reprocess.)
+	await db
+		.delete(attendanceEvent)
+		.where(
+			and(
+				eq(attendanceEvent.organizationId, orgId),
+				inArray(attendanceEvent.source, ["biometric", "mobile", "import"])
+			)
+		);
 	await db
 		.delete(attendanceDeviceSyncRun)
 		.where(eq(attendanceDeviceSyncRun.organizationId, orgId));
@@ -189,26 +201,38 @@ async function seed() {
 		},
 	]);
 
-	// ── Devices ─────────────────────────────────────────────────────────
-	const officeDeviceId = createId();
-	const warehouseDeviceId = createId();
+	// ── Devices (4 vendor families — the adapter/provider model) ─────────
+	// No plaintext secrets are seeded: credentialRef stays null; apiKeyHash holds
+	// a hash (not a usable key). Live ZKTeco-TCP / ADMS / NGTeco-cloud are marked
+	// as planned modes — we do not fake live sync.
+	const officeDeviceId = createId(); // ZKTeco TCP/IP terminal
+	const admsDeviceId = createId(); // ZKTeco ADMS/iClock (planned)
+	const ngTcDeviceId = createId(); // NGTeco TC-series cloud/app clock
+	const ngK4DeviceId = createId(); // NGTeco K4 WiFi/TCP/USB clock
 	await db.insert(attendanceDevice).values([
 		{
 			id: officeDeviceId,
 			organizationId: orgId,
-			name: "Main Office Terminal",
+			name: "Main Office ZKTeco Terminal",
+			vendor: "zkteco",
 			deviceType: "zkteco",
-			vendor: "ZKTeco",
 			model: "SpeedFace-V5L",
+			modelFamily: "SpeedFace",
 			serialNumber: "ZK-OFFICE-0001",
-			mode: "api_ingest",
+			mode: "zkteco_tcp_planned", // live TCP pull planned; agent→api_ingest is the working path
 			host: "192.168.10.20",
 			port: 4370,
 			workSiteId: officeSiteId,
 			direction: "alternate",
-			// A HASH of the ingest key (not the key itself); never returned to clients.
+			// HASH of the ingest key (agent fallback path), never the key itself.
 			apiKeyHash:
-				"sha256:7b1c0e4f9a2d8c3b6e5f0a1d4c7b9e2f3a6d8c1b0e4f9a2d8c3b6e5f0a1d4c7b",
+				"7b1c0e4f9a2d8c3b6e5f0a1d4c7b9e2f3a6d8c1b0e4f9a2d8c3b6e5f0a1d4c7b",
+			supportedPunchMethods: ["face", "fingerprint", "rfid", "pin"],
+			networkCapabilities: ["tcp_ip", "wifi_2_4ghz"],
+			capacityUsers: 3000,
+			capacityLogs: 100_000,
+			supportsOfflineLogs: true,
+			supportsShiftRules: true,
 			isScheduled: true,
 			scheduleIntervalMinutes: 15,
 			lastSyncStatus: "success",
@@ -216,25 +240,71 @@ async function seed() {
 			status: "active",
 		},
 		{
-			id: warehouseDeviceId,
+			id: admsDeviceId,
 			organizationId: orgId,
-			name: "Warehouse Gate Terminal",
+			name: "Warehouse Gate ZKTeco (ADMS push)",
+			vendor: "zkteco",
 			deviceType: "zkteco",
-			vendor: "ZKTeco",
 			model: "K40 Pro",
+			modelFamily: "K-series",
 			serialNumber: "ZK-WHSE-0007",
-			mode: "csv_import",
+			mode: "zkteco_adms_push_planned", // push receiver planned
 			workSiteId: warehouseSiteId,
 			direction: "alternate",
-			isScheduled: false,
-			lastSyncStatus: "partial",
-			clockOffsetSeconds: 340, // beyond the 300s drift threshold → drift exception below
+			supportedPunchMethods: ["fingerprint", "rfid", "pin"],
+			networkCapabilities: ["tcp_ip"],
+			capacityUsers: 1000,
+			capacityLogs: 50_000,
+			supportsOfflineLogs: true,
+			clockOffsetSeconds: 340, // beyond the 300s drift threshold → drift exception
+			status: "active",
+		},
+		{
+			id: ngTcDeviceId,
+			organizationId: orgId,
+			name: "Reception NGTeco TC Cloud Clock",
+			vendor: "ngteco",
+			deviceType: "generic",
+			model: "TC2",
+			modelFamily: "TC-series",
+			serialNumber: "NG-TC-1042",
+			// Current supported path = manual app export; live cloud API is planned.
+			mode: "ngteco_app_export",
+			workSiteId: officeSiteId,
+			direction: "alternate",
+			supportedPunchMethods: ["face", "fingerprint", "rfid", "pin"],
+			networkCapabilities: ["wifi_2_4ghz", "wifi_5ghz", "cloud_app"],
+			capacityUsers: 500,
+			capacityLogs: 100_000,
+			supportsOfflineLogs: true,
+			supportsCloudSync: true,
+			supportsMobileApp: true,
+			requiresSubscriptionForAdvancedFeatures: true,
+			status: "active",
+		},
+		{
+			id: ngK4DeviceId,
+			organizationId: orgId,
+			name: "Warehouse NGTeco K4 Clock",
+			vendor: "ngteco",
+			deviceType: "generic",
+			model: "K4",
+			modelFamily: "K-series",
+			serialNumber: "NG-K4-2207",
+			mode: "usb_export_import", // WiFi/TCP/USB export → file import
+			workSiteId: warehouseSiteId,
+			direction: "alternate",
+			supportedPunchMethods: ["face", "fingerprint", "rfid", "pin"],
+			networkCapabilities: ["wifi_2_4ghz", "tcp_ip", "usb"],
+			capacityUsers: 1000,
+			capacityLogs: 100_000,
+			supportsOfflineLogs: true,
 			status: "active",
 		},
 	]);
 
 	// ── Employee ↔ device-user mappings ─────────────────────────────────
-	// deviceUserId "9001" on the warehouse device is intentionally NOT mapped.
+	// deviceUserId "9001" on the NGTeco K4 device is intentionally NOT mapped.
 	await db.insert(attendanceDeviceEmployeeMap).values([
 		{
 			id: createId(),
@@ -263,7 +333,7 @@ async function seed() {
 		{
 			id: createId(),
 			organizationId: orgId,
-			deviceId: warehouseDeviceId,
+			deviceId: ngK4DeviceId,
 			deviceUserId: "2001",
 			deviceUserSerial: 1,
 			employeeId: devon,
@@ -271,7 +341,7 @@ async function seed() {
 		{
 			id: createId(),
 			organizationId: orgId,
-			deviceId: warehouseDeviceId,
+			deviceId: ngK4DeviceId,
 			deviceUserId: "2002",
 			deviceUserSerial: 2,
 			employeeId: kareena,
@@ -332,7 +402,7 @@ async function seed() {
 		{
 			id: partialRunId,
 			organizationId: orgId,
-			deviceId: warehouseDeviceId,
+			deviceId: ngK4DeviceId,
 			mode: "csv_import",
 			startedAt: ts("2026-05-28", "07:30"),
 			finishedAt: ts("2026-05-28", "07:30"),
@@ -442,9 +512,9 @@ async function seed() {
 			syncRunId: successRunId,
 			errorReason: "Unrecognised punch/verify code from device.",
 		},
-		// Unmapped device user — no employee resolved (warehouse CSV)
+		// Unmapped device user — no employee resolved (NGTeco K4 export)
 		{
-			deviceId: warehouseDeviceId,
+			deviceId: ngK4DeviceId,
 			deviceUserId: "9001",
 			employeeId: null,
 			punchTime: ts("2026-05-28", "07:05"),
@@ -578,12 +648,12 @@ async function seed() {
 			organizationId: orgId,
 			employeeId: null,
 			attendancePunchId: unmappedPunchId,
-			deviceId: warehouseDeviceId,
+			deviceId: ngK4DeviceId,
 			type: "unmapped_punch",
 			severity: "blocker",
 			status: "open",
 			detail:
-				"Warehouse device user-id 9001 has no employee mapping. Punch quarantined.",
+				"NGTeco K4 device user-id 9001 has no employee mapping. Punch quarantined.",
 		},
 		{
 			id: createId(),
@@ -613,11 +683,12 @@ async function seed() {
 		{
 			id: createId(),
 			organizationId: orgId,
-			deviceId: warehouseDeviceId,
+			deviceId: admsDeviceId,
 			type: "clock_drift",
 			severity: "info",
 			status: "dismissed",
-			detail: "Warehouse Gate Terminal clock drifted 340s from server time.",
+			detail:
+				"Warehouse Gate ZKTeco (ADMS push) clock drifted 340s from server time.",
 			resolutionAction: "device_clock_resynced",
 			resolutionNote:
 				"Reset device clock during the weekly maintenance window.",

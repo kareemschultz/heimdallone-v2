@@ -6,7 +6,6 @@ import {
 	attendanceSetting,
 	employeeProfile,
 	employeeWorkInfo,
-	shiftSchedule,
 } from "@Heimdallone/db/schema/index";
 import { ORPCError } from "@orpc/server";
 import { createId } from "@paralleldrive/cuid2";
@@ -14,6 +13,12 @@ import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { authorizedProcedure, tenantProcedure } from "../index";
+import {
+	classifyDayType,
+	getEmployeeShiftInfo,
+	getShiftScheduleForDay,
+	recalculateRecord,
+} from "../utils/attendance-recalc";
 import { createAuditEvent } from "../utils/audit";
 import {
 	canReadAllEmployees,
@@ -1209,149 +1214,6 @@ async function checkScopeForMutation(
 	throw new ORPCError("FORBIDDEN", {
 		message: "Insufficient permission to perform this action.",
 	});
-}
-
-async function getEmployeeShiftInfo(
-	employeeId: string
-): Promise<{ shiftId: string | null } | null> {
-	const [info] = await db
-		.select({ shiftId: employeeWorkInfo.shiftId })
-		.from(employeeWorkInfo)
-		.where(eq(employeeWorkInfo.employeeId, employeeId))
-		.limit(1);
-	return info ?? null;
-}
-
-async function getShiftScheduleForDay(
-	shiftId: string,
-	dayOfWeek: number
-): Promise<{
-	minimumWorkMinutes: number;
-	startTime: string;
-	endTime: string;
-} | null> {
-	const [schedule] = await db
-		.select({
-			minimumWorkMinutes: shiftSchedule.minimumWorkMinutes,
-			startTime: shiftSchedule.startTime,
-			endTime: shiftSchedule.endTime,
-		})
-		.from(shiftSchedule)
-		.where(
-			and(
-				eq(shiftSchedule.shiftId, shiftId),
-				eq(shiftSchedule.dayOfWeek, dayOfWeek)
-			)
-		)
-		.limit(1);
-	return schedule ?? null;
-}
-
-function classifyDayType(
-	_date: Date,
-	dow: number
-): "weekday" | "saturday" | "sunday" | "holiday" {
-	if (dow === 0) {
-		return "sunday";
-	}
-	if (dow === 6) {
-		return "saturday";
-	}
-	return "weekday";
-}
-
-async function recalculateRecord(
-	employeeId: string,
-	eventDate: Date,
-	organizationId: string
-): Promise<void> {
-	const events = await db
-		.select({
-			clockIn: attendanceEvent.clockIn,
-			clockOut: attendanceEvent.clockOut,
-			durationMinutes: attendanceEvent.durationMinutes,
-		})
-		.from(attendanceEvent)
-		.where(
-			and(
-				eq(attendanceEvent.employeeId, employeeId),
-				eq(attendanceEvent.eventDate, eventDate)
-			)
-		);
-
-	let totalWorked = 0;
-	let firstIn: Date | null = null;
-	let lastOut: Date | null = null;
-
-	for (const ev of events) {
-		if (ev.durationMinutes) {
-			totalWorked += ev.durationMinutes;
-		}
-		if (!firstIn || ev.clockIn < firstIn) {
-			firstIn = ev.clockIn;
-		}
-		if (ev.clockOut && (!lastOut || ev.clockOut > lastOut)) {
-			lastOut = ev.clockOut;
-		}
-	}
-
-	const [settings] = await db
-		.select()
-		.from(attendanceSetting)
-		.where(eq(attendanceSetting.organizationId, organizationId))
-		.limit(1);
-
-	const breakDed =
-		settings && totalWorked > settings.breakDeductionThresholdMinutes
-			? settings.breakDeductionMinutes
-			: 0;
-	const netWorked = Math.max(0, totalWorked - breakDed);
-
-	const empInfo = await getEmployeeShiftInfo(employeeId);
-	const dow = eventDate.getDay();
-	const schedule = empInfo?.shiftId
-		? await getShiftScheduleForDay(empInfo.shiftId, dow)
-		: null;
-	const minMinutes = schedule?.minimumWorkMinutes ?? 495;
-
-	const ot = Math.max(0, netWorked - minMinutes);
-	const firstInStr = firstIn
-		? `${String(firstIn.getHours()).padStart(2, "0")}:${String(firstIn.getMinutes()).padStart(2, "0")}`
-		: null;
-	const lastOutStr = lastOut
-		? `${String(lastOut.getHours()).padStart(2, "0")}:${String(lastOut.getMinutes()).padStart(2, "0")}`
-		: null;
-
-	let lateMin = 0;
-	if (schedule && firstIn) {
-		const [sh, sm] = schedule.startTime.split(":").map(Number);
-		const graceMin = settings?.graceTimeMinutes ?? 15;
-		const schedStart = (sh ?? 8) * 60 + (sm ?? 0) + graceMin;
-		const actualStart = firstIn.getHours() * 60 + firstIn.getMinutes();
-		if (actualStart > schedStart) {
-			lateMin = actualStart - schedStart;
-		}
-	}
-
-	await db
-		.update(attendanceRecord)
-		.set({
-			firstClockIn: firstInStr,
-			lastClockOut: lastOutStr,
-			workedMinutes: netWorked,
-			minimumMinutes: minMinutes,
-			payableMinutes: Math.min(netWorked, minMinutes),
-			overtimeMinutes: ot,
-			breakDeductedMinutes: breakDed,
-			lateMinutes: lateMin,
-		})
-		.where(
-			and(
-				eq(attendanceRecord.employeeId, employeeId),
-				eq(attendanceRecord.date, eventDate),
-				eq(attendanceRecord.organizationId, organizationId)
-			)
-		);
 }
 
 export const attendanceRouter = {

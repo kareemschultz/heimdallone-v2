@@ -42,6 +42,10 @@ export const statement = {
 	],
 
 	attendance: ["create", "read", "correct"],
+	attendance_device: ["read", "manage", "sync"],
+	attendance_punch: ["read", "process", "import"],
+	geofence: ["read", "manage", "check_in"],
+	attendance_exception: ["read", "resolve"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
@@ -87,6 +91,15 @@ export const statement = {
 } as const;
 
 export const ac = createAccessControl(statement);
+
+// Biometric + Geofencing (Phase 11C) — the full managing grant for
+// owner/admin/hr_admin. Spread into those role blocks.
+const MANAGE_BIOMETRIC = {
+	attendance_device: ["read", "manage", "sync"],
+	attendance_punch: ["read", "process", "import"],
+	geofence: ["read", "manage", "check_in"],
+	attendance_exception: ["read", "resolve"],
+} as const;
 
 const FULL_OFFBOARDING = [
 	"create",
@@ -154,6 +167,7 @@ export const tenant_owner = ac.newRole({
 	asset: ["create", "read", "assign", "return", "write_off", "manage"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
 	offboarding: FULL_OFFBOARDING,
+	...MANAGE_BIOMETRIC,
 });
 
 export const tenant_admin = ac.newRole({
@@ -205,6 +219,7 @@ export const tenant_admin = ac.newRole({
 	asset: ["create", "read", "assign", "return", "write_off", "manage"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
 	offboarding: FULL_OFFBOARDING,
+	...MANAGE_BIOMETRIC,
 });
 
 export const hr_admin = ac.newRole({
@@ -249,6 +264,7 @@ export const hr_admin = ac.newRole({
 	asset: ["create", "read", "assign", "return", "manage"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
 	offboarding: FULL_OFFBOARDING,
+	...MANAGE_BIOMETRIC,
 });
 
 export const payroll_admin = ac.newRole({
@@ -261,6 +277,10 @@ export const payroll_admin = ac.newRole({
 	advance: ["read", "approve_accounting", "disburse"],
 	loan: ["read", "approve_accounting", "disburse", "write_off"],
 	attendance: ["read"],
+	attendance_device: ["read"],
+	attendance_punch: ["read"],
+	geofence: ["read", "check_in"],
+	attendance_exception: ["read"],
 	leave_request: ["read"],
 	holiday: ["read"],
 	work_location: ["read"],
@@ -288,6 +308,10 @@ export const manager = ac.newRole({
 	payslip: ["read"],
 	payroll_period: ["read"],
 	attendance: ["read"],
+	attendance_device: ["read"],
+	attendance_punch: ["read"],
+	geofence: ["read", "check_in"],
+	attendance_exception: ["read", "resolve"],
 	leave_request: ["create", "read", "approve", "reject"],
 	holiday: ["read"],
 	work_location: ["read"],
@@ -313,6 +337,7 @@ export const employee = ac.newRole({
 	advance: ["create", "read"],
 	loan: ["create", "read"],
 	attendance: ["read"],
+	geofence: ["read", "check_in"],
 	leave_request: ["create", "read", "cancel"],
 	holiday: ["read"],
 	work_location: ["read"],
@@ -331,6 +356,10 @@ export const auditor = ac.newRole({
 	transfer: ["read"],
 	onboarding: ["read"],
 	payroll: ["read"],
+	attendance_device: ["read"],
+	attendance_punch: ["read"],
+	geofence: ["read"],
+	attendance_exception: ["read"],
 	payslip: ["read"],
 	payroll_period: ["read"],
 	advance: ["read"],

@@ -72,3 +72,40 @@ export function canReadOffboardingSettlement(role: MemberRole): boolean {
 		canManageOffboarding(role) || role === "payroll_admin" || role === "auditor"
 	);
 }
+
+// Biometric + Geofencing (Phase 11C). Device/site/sync management is HR-level;
+// viewing extends to manager (scoped)/auditor/payroll. Geofence check-in is a
+// self-service action for any attendance-taking staff (NOT manage-gated).
+export function canManageBiometrics(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewBiometrics(role: MemberRole): boolean {
+	return (
+		canManageBiometrics(role) ||
+		role === "manager" ||
+		role === "auditor" ||
+		role === "payroll_admin"
+	);
+}
+
+export function canManageGeofencing(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewGeofencing(role: MemberRole): boolean {
+	return (
+		canManageGeofencing(role) ||
+		role === "manager" ||
+		role === "auditor" ||
+		role === "payroll_admin"
+	);
+}
+
+export function canUseGeofenceCheckIn(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "manager" || role === "employee";
+}
+
+export function canReviewAttendanceExceptions(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
