@@ -1,7 +1,17 @@
-# Assets Implementation Plan — Phase 11
+# Assets Implementation Plan — DRAFTED / QUEUED (Phase 12 candidate)
+
+> **Status (roadmap correction 2026-06-02): DRAFTED & QUEUED — NOT the active phase.**
+> Phase 11 is **Biometric + Geofencing**
+> ([biometric-geofencing-implementation-plan.md](biometric-geofencing-implementation-plan.md)),
+> not Assets. This Assets spec was drafted early and is kept verbatim as a completed,
+> queued deliverable for a later phase (Phase 12 candidate). **Do not run any Assets DB
+> migration until Biometric + Geofencing ships.** When Assets becomes the active phase,
+> its B/C/D/E checkpoints resume from this plan. The phase letters below (11B, 11C…) are
+> historical labels from when this was drafted as Phase 11 — read them as the module's
+> own B/C/D/E checkpoints under whatever phase number Assets is finally scheduled as.
 
 Detailed implementation spec for the Assets (company property / custody) module.
-This is the Phase 11 **A** deliverable (spec docs only; no code). It synthesises
+This is the module's **A** (spec) deliverable (spec docs only; no code). It synthesises
 the extraction spec ([modules/assets-spec.md](modules/assets-spec.md)) and the
 Horilla extraction ([../horilla-extraction/assets.md](../horilla-extraction/assets.md))
 into concrete Drizzle tables, an oRPC API surface, RBAC, UI checkpoints, and the
@@ -10,7 +20,7 @@ integration with the Offboarding asset-return clearance built in Phase 10.
 > Pattern note: this mirrors the structure of
 > [offboarding-implementation-plan.md](offboarding-implementation-plan.md). Every
 > "A" phase is spec; "B" is DB; "C" is API; "D" is UI; "E" is QA. Do not jump
-> from this plan to code — Phase 11B starts the schema.
+> from this plan to code — the schema starts the B checkpoint when Assets is scheduled.
 
 ## 1. Scope
 

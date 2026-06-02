@@ -143,8 +143,9 @@ Heimdallone v2 is a multi-tenant HRMS/payroll/workforce platform.
 ### Implementation Pattern
 Each module follows: **A** (spec) → **B** (schema+seed) → **C** (API) → **D** (UI) → **E** (QA/RBAC).
 
-### Current Status (2026-06-01)
-- Offboarding (Phase 10): **In progress** — 10A spec ✅ → 10B DB schema + seed ✅ → 10C oRPC API ✅ (9 router groups; `assertCaseVisibleToCaller` manager-scope IDOR fix `907ebaa`; `cases.close` is the sole `isActive=false` writer; audit 62 pairs/9 routers) → 10D UI CP1 ✅ (tabs + overview dashboard + "Coming later" placeholders + employee self-service shell) → **10D CP2 ✅** (templates list + detail + create/edit/archive dialog) → **10D CP3 ✅** (cases list with status filters + per-case clearance progress + create-case dialog; read-only case detail with "what needs attention" panel + tasks/assets/access/documents/interview/settlement-readiness/activity sections; flat `cases.tsx` → folder route; task/asset/access/document status helpers; privacy API-enforced via redactCase + interview stripping; browser-verified create→detail round-trip with 10 snapshotted tasks then hard-deleted, auditor read-only, employee no-access, 0 console errors). Next: 10D CP4 checklist actions. Lint baseline 224/1.
+### Current Status (2026-06-02)
+- **Offboarding (Phase 10): ✅ COMPLETE** — 10A spec → 10B DB → 10C API (9 router groups; `assertCaseVisibleToCaller` manager-scope IDOR fix `907ebaa`; `cases.close` is the sole `isActive=false` writer; audit 62 pairs/9 routers) → 10D UI CP1–CP6 (overview/tabs, templates, cases list+detail, checklist actions, employee self-service, QA/RBAC pass `fa7210d`). Lint baseline 224/1.
+- **Roadmap correction (2026-06-02): Phase 11 is Biometric + Geofencing, not Assets.** The Assets implementation plan (`docs/architecture/assets-implementation-plan.md`) was drafted early and is a **completed, queued spec** for a later phase (Phase 12 candidate) — NOT the active phase. Do not run any Assets DB migration until Biometric + Geofencing ships. Phase 11A = the Biometric + Geofencing implementation plan (`docs/architecture/biometric-geofencing-implementation-plan.md`).
 - HR Core (Phase 5): **Complete**
 - Contracts (Phase 6): **Complete** end-to-end
 - Phase 6E: **Complete** — payroll/attendance/leave spec enrichment, GRA verification
@@ -223,10 +224,16 @@ Source of truth for **how** work is executed. Applies to every remaining phase.
   test org `atlas-shipping`; creds `*@atlas-shipping.com` / `HeimdallTest2026!`.
 
 ### Phase roadmap
-9G Onboarding UI (CP1 overview/tabs ✓, CP2 templates ✓, CP3 list/detail ✓,
-**CP4 TaskChecklist + task actions ✓ code-complete/verified**, CP5 documents +
-acknowledgements, CP6 employee self-service, CP7 QA/RBAC pass) → 9H candidate→employee
-conversion (transactional; idempotency via `convertedEmployeeId`) → 9I recruitment +
-onboarding hardening → 10 Offboarding → 11 Biometric + Geofencing → 12 Compliance
-backend → 13 Bank/security production hardening → 14 Analytics/Reports/PDF → 15 SaaS
-polish / onboarding wizard / product tours.
+Canonical build order lives in
+[docs/architecture/modules/implementation-sequence.md](docs/architecture/modules/implementation-sequence.md).
+
+✅ 5 HR Core · ✅ 6 Contracts · ✅ 7 Attendance + Leave · ✅ 8 Payroll ·
+✅ 9 Recruitment + Onboarding · ✅ 10 Offboarding →
+**11 Biometric + Geofencing ← NEXT** (11A spec) →
+12 Assets / Helpdesk / Projects (Assets spec already drafted + queued —
+`docs/architecture/assets-implementation-plan.md`) →
+13 Performance / PMS → 14 Automations + Notifications →
+15 Analytics + Dashboards + Reports.
+
+Each phase still runs the A→E checkpoint cadence (A spec → B schema+seed → C API →
+D UI → E QA/RBAC); Biometric + Geofencing fans 11A–11H per the spec.

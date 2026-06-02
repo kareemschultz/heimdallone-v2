@@ -179,7 +179,11 @@ Payroll engine (Phase 8C):
 - Country rules registry: `src/countries/registry.ts` — lookup by countryCode + effectiveYear
 - Guyana 2026 implemented; Barbados 2026 and Trinidad 2026 researched but deferred
 
-Assets implementation (Phase 11):
+Biometric + Geofencing (Phase 11 — active):
 
-- [Assets Implementation Plan](docs/architecture/assets-implementation-plan.md) — Phase 11A spec: entities, Drizzle schema, oRPC API + RBAC, UI checkpoints, offboarding custody integration, business rules
+- [Biometric + Geofencing Implementation Plan](docs/architecture/biometric-geofencing-implementation-plan.md) — Phase 11A spec: device sync/import model, geofenced check-in, entities, RBAC, attendance/payroll integration, UI routes, security/privacy, 11A–11H sequence
+
+Assets (queued spec — Phase 12 candidate, drafted not active):
+
+- [Assets Implementation Plan](docs/architecture/assets-implementation-plan.md) — drafted spec (entities, Drizzle schema, oRPC API + RBAC, UI checkpoints, offboarding custody integration). **Queued behind Biometric + Geofencing — no DB migration yet.**
 - [Assets Module Spec](docs/architecture/modules/assets-spec.md) — original extraction spec
