@@ -43,6 +43,7 @@ import {
 	attendancePunch,
 	department,
 	employeeProfile,
+	employeeWorkInfo,
 	geofenceAssignment,
 	geofenceCheckIn,
 	geofenceLocation,
@@ -174,6 +175,17 @@ async function seed() {
 	const shanice = emp("shanice.powell@atlas-shipping.com");
 	const devon = emp("devon.ali@atlas-shipping.com");
 	const kareena = emp("kareena.ramnath@atlas-shipping.com");
+
+	// Work arrangements (Phase 11G): demo remote + field workers so they aren't
+	// flagged outside-geofence. maya/rohan/shanice stay onsite (default).
+	await db
+		.update(employeeWorkInfo)
+		.set({ workArrangement: "remote" })
+		.where(eq(employeeWorkInfo.employeeId, kareena));
+	await db
+		.update(employeeWorkInfo)
+		.set({ workArrangement: "field" })
+		.where(eq(employeeWorkInfo.employeeId, devon));
 
 	// ── Geofence locations ──────────────────────────────────────────────
 	const officeSiteId = createId();

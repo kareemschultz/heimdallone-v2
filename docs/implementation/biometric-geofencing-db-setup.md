@@ -178,3 +178,11 @@ map→dedupe→geofence→event processor, the new AC resources
 (`attendance_device`/`attendance_punch`/`geofence`/`attendance_exception`) and RBAC
 helpers, and the external sync-agent contract. `audit:permissions` will grow when the
 new resources land.
+
+## Migration 0013 — work arrangement (Phase 11G CP1)
+
+Additive: new enum `work_arrangement` (onsite/hybrid/remote/field/exempt) + column
+`employee_work_info.work_arrangement` (NOT NULL DEFAULT 'onsite'). Existing
+employees default to onsite (geofence enforced as before). Drives whether mobile
+check-in enforces the geofence and raises outside/low-accuracy exceptions — see the
+API doc's work-arrangement section.

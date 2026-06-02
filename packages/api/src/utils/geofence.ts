@@ -196,3 +196,77 @@ export function evaluateCheckIn(params: {
 		withinGeofence,
 	};
 }
+
+// ── Work arrangement (Phase 11G) ─────────────────────────────────────────────
+
+export type WorkArrangement =
+	| "onsite"
+	| "hybrid"
+	| "remote"
+	| "field"
+	| "exempt";
+
+export interface ArrangementPolicy {
+	arrangement: WorkArrangement;
+	// Worker is expected inside an assigned worksite geofence.
+	geofenceEnforced: boolean;
+	// A GPS fix is mandatory to check in (else check-in is allowed without coords).
+	gpsRequired: boolean;
+	// Plain-language label for HR/manager surfaces.
+	label: string;
+	// An outside / low-accuracy / unverified result raises an attendance exception.
+	raisesGeofenceException: boolean;
+}
+
+const ARRANGEMENT_LABEL: Record<WorkArrangement, string> = {
+	onsite: "Onsite",
+	hybrid: "Hybrid",
+	remote: "Remote",
+	field: "Field work",
+	exempt: "Geofence exempt",
+};
+
+/** Resolve an employee's work arrangement (defaults to onsite). */
+export async function resolveEmployeeArrangement(
+	employeeId: string
+): Promise<WorkArrangement> {
+	const [info] = await db
+		.select({ a: employeeWorkInfo.workArrangement })
+		.from(employeeWorkInfo)
+		.where(eq(employeeWorkInfo.employeeId, employeeId))
+		.limit(1);
+	return (info?.a as WorkArrangement | undefined) ?? "onsite";
+}
+
+/** Behaviour rules for an arrangement. Only `onsite` enforces the geofence and
+ * raises exceptions for being away; everyone else may legitimately be elsewhere. */
+export function arrangementPolicy(a: WorkArrangement): ArrangementPolicy {
+	const label = ARRANGEMENT_LABEL[a] ?? "Onsite";
+	if (a === "onsite") {
+		return {
+			arrangement: "onsite",
+			label,
+			geofenceEnforced: true,
+			raisesGeofenceException: true,
+			gpsRequired: true,
+		};
+	}
+	if (a === "hybrid") {
+		// Onsite or remote depending on the day — be lenient (no auto-exception).
+		return {
+			arrangement: "hybrid",
+			label,
+			geofenceEnforced: true,
+			raisesGeofenceException: false,
+			gpsRequired: true,
+		};
+	}
+	// remote / field / exempt — not tied to a physical worksite.
+	return {
+		arrangement: a,
+		label,
+		geofenceEnforced: false,
+		raisesGeofenceException: false,
+		gpsRequired: false,
+	};
+}

@@ -139,3 +139,26 @@ round-trip, check-in self-scope, secret-stripping in live responses.
 **Phase 11D — Biometric devices UI** (`/app/biometrics` overview + devices
 list/detail with secrets masked + sync-runs + punches; CSV upload; convert the
 flat `biometrics.tsx` stub to a folder route).
+
+## Work arrangement (Phase 11G CP1)
+
+Per-employee `work_arrangement` (`employee_work_info.work_arrangement`, migration
+0013): `onsite` / `hybrid` / `remote` / `field` / `exempt`. `utils/geofence.ts`
+exposes `resolveEmployeeArrangement(employeeId)` and `arrangementPolicy(a)`:
+
+| arrangement | geofence enforced | raises exception when away | GPS required |
+|---|---|---|---|
+| onsite | yes | **yes** | yes |
+| hybrid | yes | no | yes |
+| remote | no | no | no |
+| field | no | no | no |
+| exempt | no | no | no |
+
+`checkIns.createSelf` / `previewSelf` consult the policy: GPS is optional for
+non-onsite arrangements (check-in allowed with no coordinates), and
+`outside_geofence` / `low_gps_accuracy` exceptions are raised **only for onsite**
+workers. This is the payroll-safety prerequisite — a remote/field/exempt worker is
+never flagged "outside" and therefore never blocks payroll for being away from a
+physical site. `mock_location` is still flagged for everyone (fraud signal). The
+mobile check-in screen renders a friendly "Remote work check-in" for non-onsite
+arrangements instead of an "outside" warning.

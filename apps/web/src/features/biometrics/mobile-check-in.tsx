@@ -28,7 +28,11 @@ interface Coords {
 interface Preview {
 	accuracyThresholdMeters: number | null;
 	allowOutsideWithReason: boolean;
+	arrangement: string;
+	arrangementLabel: string;
 	distanceMeters: number | null;
+	geofenceEnforced: boolean;
+	gpsRequired: boolean;
 	radiusMeters: number | null;
 	siteName: string | null;
 	status: string;
@@ -78,49 +82,68 @@ export function MobileCheckIn() {
 		setLocating(true);
 		setGeoError(null);
 		setPreview(null);
+		let c: Coords | null = null;
+		let geoErr: GeoErrorKind = null;
 		try {
 			const pos = await getPosition();
-			const c: Coords = {
+			c = {
 				lat: pos.coords.latitude,
 				lon: pos.coords.longitude,
 				accuracy: Math.round(pos.coords.accuracy),
 			};
-			setCoords(c);
-			const verdict = (await client.biometric.checkIns.previewSelf({
-				latitude: c.lat,
-				longitude: c.lon,
-				accuracyMeters: c.accuracy,
-			})) as Preview;
-			setPreview(verdict);
 		} catch (err) {
-			setCoords(null);
-			setGeoError(classifyGeoError(err));
+			geoErr = classifyGeoError(err);
+		}
+		setCoords(c);
+		try {
+			const verdict = (await client.biometric.checkIns.previewSelf(
+				c
+					? { latitude: c.lat, longitude: c.lon, accuracyMeters: c.accuracy }
+					: {}
+			)) as Preview;
+			// Only surface a GPS error if this worker's arrangement requires location.
+			if (!c && verdict.gpsRequired) {
+				setGeoError(geoErr ?? "unavailable");
+			} else {
+				setPreview(verdict);
+			}
+		} catch (err) {
+			setGeoError(geoErr ?? classifyGeoError(err));
 		} finally {
 			setLocating(false);
 		}
 	};
 
-	const outside = preview?.status === "outside";
-	const reasonRequired = outside && (preview?.allowOutsideWithReason ?? true);
+	// Reason is only mandatory for an ONSITE worker who is outside their fence.
+	const outsideOnsite =
+		Boolean(preview?.geofenceEnforced) && preview?.status === "outside";
+	const reasonRequired =
+		outsideOnsite && (preview?.allowOutsideWithReason ?? true);
 	const reasonMissing = reasonRequired && reason.trim() === "";
 
 	const submit = async (direction: "in" | "out") => {
-		if (!coords) {
+		if (!preview) {
 			return;
 		}
 		setSubmitting(true);
 		try {
+			const note = reason.trim() === "" ? undefined : reason.trim();
 			const res = (await client.biometric.checkIns.createSelf({
-				latitude: coords.lat,
-				longitude: coords.lon,
-				accuracyMeters: coords.accuracy,
+				...(coords
+					? {
+							latitude: coords.lat,
+							longitude: coords.lon,
+							accuracyMeters: coords.accuracy,
+						}
+					: {}),
 				direction,
-				outsideReason: reason.trim() === "" ? undefined : reason.trim(),
+				outsideReason: outsideOnsite ? note : undefined,
+				remoteNote: preview.geofenceEnforced ? undefined : note,
 			})) as { status: string };
-			if (res.status === "inside") {
-				toast.success("Check-in submitted.");
-			} else {
+			if (preview.geofenceEnforced && res.status === "outside") {
 				toast.success("Check-in submitted for review.");
+			} else {
+				toast.success("Check-in submitted.");
 			}
 			queryClient.invalidateQueries({
 				predicate: (q) =>
@@ -171,9 +194,9 @@ export function MobileCheckIn() {
 
 			{geoError && <GeoErrorCard kind={geoError} onRetry={locate} />}
 
-			{preview && coords && (
+			{preview && (
 				<VerdictCard
-					accuracy={coords.accuracy}
+					accuracy={coords?.accuracy ?? null}
 					onSubmit={submit}
 					preview={preview}
 					reason={reason}
@@ -251,6 +274,59 @@ const STATUS_TONE: Record<string, string> = {
 	unverified: "#9a6a14",
 };
 
+// Remote/field/exempt workers aren't tied to a worksite — never show them a
+// scary "outside" message; frame it as a normal remote check-in. Pure helper so
+// the card component stays under the complexity ceiling.
+function computeVerdictView(
+	preview: Preview,
+	accuracy: number | null,
+	reasonRequired: boolean
+): {
+	detail: string;
+	headerLabel: string;
+	noteLabel: string;
+	ok: boolean;
+	showNote: boolean;
+	tone: string;
+} {
+	const remote = !preview.geofenceEnforced;
+	const ok = remote || preview.status === "inside";
+	const tone = remote
+		? "#1a7f4b"
+		: (STATUS_TONE[preview.status] ?? "var(--fg-2)");
+	const headerLabel = remote
+		? "Remote work check-in"
+		: (GEOFENCE_STATUS_LABEL[preview.status] ?? preview.status);
+	let noteLabel = "Add a work-from-home note (optional)";
+	if (reasonRequired) {
+		noteLabel = "You're away from your work location — add a reason *";
+	} else if (preview.arrangement === "field") {
+		noteLabel = "Add a site / client note (optional)";
+	}
+	let detail: string;
+	if (remote) {
+		detail = `You're checking in away from an office location.${accuracy === null ? " No location captured." : ""}`;
+	} else {
+		const sitePart = preview.siteName
+			? `Work location: ${preview.siteName}. `
+			: "";
+		const radiusPart = preview.radiusMeters
+			? `Allowed radius: ${preview.radiusMeters} m. `
+			: "";
+		const accPart =
+			accuracy === null ? "" : `Location signal: about ${accuracy} m.`;
+		detail = `${sitePart}${radiusPart}${accPart}`;
+	}
+	return {
+		ok,
+		tone,
+		headerLabel,
+		showNote: reasonRequired || remote,
+		noteLabel,
+		detail,
+	};
+}
+
 function VerdictCard({
 	preview,
 	accuracy,
@@ -262,7 +338,7 @@ function VerdictCard({
 	submitting,
 	onSubmit,
 }: {
-	accuracy: number;
+	accuracy: number | null;
 	onSubmit: (direction: "in" | "out") => void;
 	preview: Preview;
 	reason: string;
@@ -272,8 +348,8 @@ function VerdictCard({
 	setReason: (v: string) => void;
 	submitting: boolean;
 }) {
-	const tone = STATUS_TONE[preview.status] ?? "var(--fg-2)";
-	const ok = preview.status === "inside";
+	const { ok, tone, headerLabel, showNote, noteLabel, detail } =
+		computeVerdictView(preview, accuracy, reasonRequired);
 	return (
 		<div className="card card-pad">
 			<div
@@ -290,18 +366,14 @@ function VerdictCard({
 					<TriangleAlert color={tone} size={20} />
 				)}
 				<span style={{ fontSize: 15, fontWeight: 600, color: tone }}>
-					{GEOFENCE_STATUS_LABEL[preview.status] ?? preview.status}
+					{headerLabel}
 				</span>
 			</div>
 			<div style={{ fontSize: 12.5, color: "var(--fg-3)", marginBottom: 12 }}>
-				{preview.siteName ? `Work location: ${preview.siteName}. ` : ""}
-				{preview.radiusMeters
-					? `Allowed radius: ${preview.radiusMeters} m. `
-					: ""}
-				Location signal: about {accuracy} m.
+				{detail}
 			</div>
 
-			{reasonRequired && (
+			{showNote && (
 				<div
 					style={{
 						display: "flex",
@@ -314,13 +386,13 @@ function VerdictCard({
 						htmlFor={reasonId}
 						style={{ fontSize: 12, color: "var(--fg-3)" }}
 					>
-						You're away from your work location — add a reason *
+						{noteLabel}
 					</label>
 					<textarea
 						className="input"
 						id={reasonId}
 						onChange={(e) => setReason(e.target.value)}
-						placeholder="e.g. visiting a client site before coming in"
+						placeholder="e.g. working from home today"
 						rows={2}
 						style={{ width: "100%", resize: "vertical" }}
 						value={reason}

@@ -29,7 +29,12 @@ import {
 	getDirectReportIds,
 	resolveCurrentEmployee,
 } from "../utils/employee-scope";
-import { evaluateCheckIn, resolveWorkSiteForEmployee } from "../utils/geofence";
+import {
+	arrangementPolicy,
+	evaluateCheckIn,
+	resolveEmployeeArrangement,
+	resolveWorkSiteForEmployee,
+} from "../utils/geofence";
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -1167,14 +1172,64 @@ const assignmentsDelete = authorizedProcedure("geofence", "manage")
 
 // ════════════════════════════ CHECK-INS (self-service) ════════════════════════
 
+// Raises review exceptions for a mobile check-in. Geofence exceptions only fire
+// for fence-enforced arrangements (onsite); mock-location is a fraud signal for
+// everyone. Extracted to keep the handler under the complexity ceiling.
+async function insertCheckInExceptions(p: {
+	accuracyMeters?: number;
+	checkInId: string;
+	distanceMeters: number | null;
+	employeeId: string;
+	mockLocationFlag?: boolean;
+	organizationId: string;
+	outsideReason?: string;
+	punchId: string;
+	raises: boolean;
+	verdictStatus: string;
+}): Promise<void> {
+	const base = {
+		organizationId: p.organizationId,
+		employeeId: p.employeeId,
+		attendancePunchId: p.punchId,
+		geofenceCheckInId: p.checkInId,
+		severity: "warning" as const,
+		status: "open" as const,
+	};
+	if (p.raises && p.verdictStatus === "outside") {
+		await db.insert(attendanceException).values({
+			id: createId(),
+			...base,
+			type: "outside_geofence",
+			detail: `Checked in ${p.distanceMeters ?? "?"}m from the assigned work site. Reason: ${p.outsideReason ?? "none"}.`,
+		});
+	} else if (p.raises && p.verdictStatus === "low_accuracy") {
+		await db.insert(attendanceException).values({
+			id: createId(),
+			...base,
+			type: "low_gps_accuracy",
+			detail: `GPS accuracy ${p.accuracyMeters ?? "?"}m exceeded the site threshold.`,
+		});
+	}
+	if (p.mockLocationFlag) {
+		await db.insert(attendanceException).values({
+			id: createId(),
+			...base,
+			type: "spoofing_suspected",
+			detail: "Device reported a mock location during check-in.",
+		});
+	}
+}
+
 const checkInsCreateSelf = authorizedProcedure("geofence", "check_in")
 	.input(
 		z.object({
-			latitude: z.number().min(-LAT_MAX).max(LAT_MAX),
-			longitude: z.number().min(-LON_MAX).max(LON_MAX),
+			// GPS is optional for remote/field/exempt arrangements (see policy below).
+			latitude: z.number().min(-LAT_MAX).max(LAT_MAX).optional(),
+			longitude: z.number().min(-LON_MAX).max(LON_MAX).optional(),
 			accuracyMeters: z.number().int().min(0).optional(),
 			direction: punchDirectionEnum.default("unknown"),
 			outsideReason: z.string().optional(),
+			remoteNote: z.string().optional(),
 			mockLocationFlag: z.boolean().optional(),
 			userAgent: z.string().optional(),
 			platform: z.string().optional(),
@@ -1188,18 +1243,41 @@ const checkInsCreateSelf = authorizedProcedure("geofence", "check_in")
 				message: "You don't have an employee profile in this organization.",
 			});
 		}
-		const site = await resolveWorkSiteForEmployee(orgId(context), me.id);
-		const verdict = evaluateCheckIn({
-			site,
-			lat: input.latitude,
-			lon: input.longitude,
-			accuracyMeters: input.accuracyMeters ?? null,
-		});
 
-		// Soft-block: outside the fence requires a reason (unless the site permits
-		// silent outside check-ins). NEVER trust a client "I'm inside" claim — the
-		// verdict above is computed server-side.
+		const policy = arrangementPolicy(await resolveEmployeeArrangement(me.id));
+		const hasCoords =
+			input.latitude !== undefined && input.longitude !== undefined;
+
+		// GPS-required arrangements (onsite/hybrid) must send a location.
+		if (policy.gpsRequired && !hasCoords) {
+			throw new ORPCError("BAD_REQUEST", {
+				message: "Location is required to check in for your work arrangement.",
+			});
+		}
+
+		// Only enforce a geofence when the arrangement is tied to a worksite.
+		const site = policy.geofenceEnforced
+			? await resolveWorkSiteForEmployee(orgId(context), me.id)
+			: null;
+		const verdict =
+			hasCoords && policy.geofenceEnforced
+				? evaluateCheckIn({
+						site,
+						lat: input.latitude ?? null,
+						lon: input.longitude ?? null,
+						accuracyMeters: input.accuracyMeters ?? null,
+					})
+				: {
+						status: "unverified" as const,
+						distanceMeters: null,
+						matchedWorkSiteId: site?.id ?? null,
+						withinGeofence: false,
+					};
+
+		// Soft-block: an ONSITE worker outside the fence must give a reason. NEVER
+		// trust a client "I'm inside" claim — the verdict above is server-computed.
 		if (
+			policy.raisesGeofenceException &&
 			verdict.status === "outside" &&
 			site?.allowOutsideWithReason &&
 			!input.outsideReason
@@ -1237,58 +1315,34 @@ const checkInsCreateSelf = authorizedProcedure("geofence", "check_in")
 			organizationId: orgId(context),
 			employeeId: me.id,
 			attendancePunchId: punchId,
-			latitude: String(input.latitude),
-			longitude: String(input.longitude),
+			latitude: hasCoords ? String(input.latitude) : null,
+			longitude: hasCoords ? String(input.longitude) : null,
 			accuracyMeters: input.accuracyMeters,
 			matchedWorkSiteId: verdict.matchedWorkSiteId,
 			distanceMeters: verdict.distanceMeters,
 			status: verdict.status,
 			mockLocationFlag: input.mockLocationFlag ?? false,
-			reason: input.outsideReason,
+			reason: input.outsideReason ?? input.remoteNote,
 			userAgent: input.userAgent,
 			platform: input.platform,
 			capturedAt: now,
 		});
 
-		// Exceptions for review.
-		if (verdict.status === "outside") {
-			await db.insert(attendanceException).values({
-				id: createId(),
-				organizationId: orgId(context),
-				employeeId: me.id,
-				attendancePunchId: punchId,
-				geofenceCheckInId: checkInId,
-				type: "outside_geofence",
-				severity: "warning",
-				status: "open",
-				detail: `Checked in ${verdict.distanceMeters ?? "?"}m from the assigned work site. Reason: ${input.outsideReason ?? "none"}.`,
-			});
-		} else if (verdict.status === "low_accuracy") {
-			await db.insert(attendanceException).values({
-				id: createId(),
-				organizationId: orgId(context),
-				employeeId: me.id,
-				attendancePunchId: punchId,
-				geofenceCheckInId: checkInId,
-				type: "low_gps_accuracy",
-				severity: "warning",
-				status: "open",
-				detail: `GPS accuracy ${input.accuracyMeters ?? "?"}m exceeded the site threshold.`,
-			});
-		}
-		if (input.mockLocationFlag) {
-			await db.insert(attendanceException).values({
-				id: createId(),
-				organizationId: orgId(context),
-				employeeId: me.id,
-				attendancePunchId: punchId,
-				geofenceCheckInId: checkInId,
-				type: "spoofing_suspected",
-				severity: "warning",
-				status: "open",
-				detail: "Device reported a mock location during check-in.",
-			});
-		}
+		// Geofence exceptions fire ONLY for fence-enforced arrangements (onsite);
+		// remote/hybrid/field/exempt are legitimately elsewhere, so they never block
+		// payroll for being "outside". Mock-location is flagged for everyone.
+		await insertCheckInExceptions({
+			organizationId: orgId(context),
+			employeeId: me.id,
+			punchId,
+			checkInId,
+			raises: policy.raisesGeofenceException,
+			verdictStatus: verdict.status,
+			distanceMeters: verdict.distanceMeters,
+			outsideReason: input.outsideReason,
+			accuracyMeters: input.accuracyMeters,
+			mockLocationFlag: input.mockLocationFlag,
+		});
 
 		return {
 			punchId,
@@ -1296,6 +1350,7 @@ const checkInsCreateSelf = authorizedProcedure("geofence", "check_in")
 			status: verdict.status,
 			distanceMeters: verdict.distanceMeters,
 			withinGeofence: verdict.withinGeofence,
+			arrangement: policy.arrangement,
 		};
 	});
 
@@ -1325,8 +1380,8 @@ const checkInsListSelf = authorizedProcedure("geofence", "read")
 const checkInsPreviewSelf = authorizedProcedure("geofence", "check_in")
 	.input(
 		z.object({
-			latitude: z.number().min(-LAT_MAX).max(LAT_MAX),
-			longitude: z.number().min(-LON_MAX).max(LON_MAX),
+			latitude: z.number().min(-LAT_MAX).max(LAT_MAX).optional(),
+			longitude: z.number().min(-LON_MAX).max(LON_MAX).optional(),
 			accuracyMeters: z.number().int().min(0).optional(),
 		})
 	)
@@ -1337,13 +1392,26 @@ const checkInsPreviewSelf = authorizedProcedure("geofence", "check_in")
 				message: "You don't have an employee profile in this organization.",
 			});
 		}
-		const site = await resolveWorkSiteForEmployee(orgId(context), me.id);
-		const verdict = evaluateCheckIn({
-			site,
-			lat: input.latitude,
-			lon: input.longitude,
-			accuracyMeters: input.accuracyMeters ?? null,
-		});
+		const policy = arrangementPolicy(await resolveEmployeeArrangement(me.id));
+		const hasCoords =
+			input.latitude !== undefined && input.longitude !== undefined;
+		const site = policy.geofenceEnforced
+			? await resolveWorkSiteForEmployee(orgId(context), me.id)
+			: null;
+		const verdict =
+			hasCoords && policy.geofenceEnforced
+				? evaluateCheckIn({
+						site,
+						lat: input.latitude ?? null,
+						lon: input.longitude ?? null,
+						accuracyMeters: input.accuracyMeters ?? null,
+					})
+				: {
+						status: "unverified" as const,
+						distanceMeters: null,
+						matchedWorkSiteId: site?.id ?? null,
+						withinGeofence: false,
+					};
 		return {
 			status: verdict.status,
 			distanceMeters: verdict.distanceMeters,
@@ -1352,6 +1420,10 @@ const checkInsPreviewSelf = authorizedProcedure("geofence", "check_in")
 			radiusMeters: site?.radiusMeters ?? null,
 			accuracyThresholdMeters: site?.accuracyThresholdMeters ?? null,
 			allowOutsideWithReason: site?.allowOutsideWithReason ?? true,
+			arrangement: policy.arrangement,
+			arrangementLabel: policy.label,
+			geofenceEnforced: policy.geofenceEnforced,
+			gpsRequired: policy.gpsRequired,
 		};
 	});
 

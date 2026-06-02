@@ -50,6 +50,19 @@ export const auditActionEnum = pgEnum("audit_action", [
 	"restore",
 ]);
 
+// Where/how an employee works — drives geofence enforcement for mobile check-in
+// (Phase 11G). onsite = must be inside an assigned worksite; hybrid = onsite or
+// remote; remote = works remotely (geofence not enforced); field = changing
+// client/field sites (outside expected, with a note); exempt = no GPS/geofence
+// enforcement (exec/contractor/role).
+export const workArrangementEnum = pgEnum("work_arrangement", [
+	"onsite",
+	"hybrid",
+	"remote",
+	"field",
+	"exempt",
+]);
+
 export const department = pgTable(
 	"department",
 	{
@@ -236,6 +249,9 @@ export const employeeWorkInfo = pgTable(
 			onDelete: "set null",
 		}),
 		workLocation: text("work_location"),
+		workArrangement: workArrangementEnum("work_arrangement")
+			.default("onsite")
+			.notNull(),
 		workEmail: text("work_email"),
 		workPhone: text("work_phone"),
 		joiningDate: date("joining_date", { mode: "date" }),

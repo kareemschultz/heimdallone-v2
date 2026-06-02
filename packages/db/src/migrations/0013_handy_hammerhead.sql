@@ -1,0 +1,2 @@
+CREATE TYPE "public"."work_arrangement" AS ENUM('onsite', 'hybrid', 'remote', 'field', 'exempt');--> statement-breakpoint
+ALTER TABLE "employee_work_info" ADD COLUMN "work_arrangement" "work_arrangement" DEFAULT 'onsite' NOT NULL;
