@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AlertTriangle, ArrowLeft } from "lucide-react";
+import { AlertTriangle, ArrowLeft, Plus } from "lucide-react";
 import type { ReactNode } from "react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 
 import "@/styles/offboarding.css";
 import { EmptyState } from "@/components/empty-state";
@@ -21,8 +21,30 @@ import {
 	taskStatusLabel,
 	taskStatusTone,
 } from "@/features/offboarding/labels";
+import {
+	AccessActions,
+	AddAccessDialog,
+} from "@/features/offboarding/offboarding-access-actions";
+import {
+	AddAssetDialog,
+	AssetActions,
+} from "@/features/offboarding/offboarding-asset-actions";
+import { CaseStatusActions } from "@/features/offboarding/offboarding-case-actions";
+import {
+	AddDocumentDialog,
+	DocumentActions,
+} from "@/features/offboarding/offboarding-document-actions";
+import {
+	type InterviewDefaults,
+	InterviewDialog,
+} from "@/features/offboarding/offboarding-interview-dialog";
 import { OffboardingTabs } from "@/features/offboarding/offboarding-tabs";
-import { canReadOffboardingSettlement, canViewOffboarding } from "@/lib/rbac";
+import { TaskActions } from "@/features/offboarding/offboarding-task-actions";
+import {
+	canManageOffboarding,
+	canReadOffboardingSettlement,
+	canViewOffboarding,
+} from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
 
@@ -67,12 +89,19 @@ function CaseDetailPage() {
 	}
 	return (
 		<CaseDetail
+			canManage={canManageOffboarding(org.memberRole)}
 			canSeeSettlement={canReadOffboardingSettlement(org.memberRole)}
 		/>
 	);
 }
 
-function CaseDetail({ canSeeSettlement }: { canSeeSettlement: boolean }) {
+function CaseDetail({
+	canManage,
+	canSeeSettlement,
+}: {
+	canManage: boolean;
+	canSeeSettlement: boolean;
+}) {
 	const { id } = Route.useParams();
 
 	const caseQ = useQuery(
@@ -151,10 +180,14 @@ function CaseDetail({ canSeeSettlement }: { canSeeSettlement: boolean }) {
 					</p>
 				</div>
 				{c && (
-					<div className="page-actions">
+					<div
+						className="page-actions"
+						style={{ display: "flex", alignItems: "center", gap: 10 }}
+					>
 						<span className={caseStatusTone(c.status)}>
 							{caseStatusLabel(c.status)}
 						</span>
+						{canManage && <CaseStatusActions caseId={id} status={c.status} />}
 					</div>
 				)}
 			</div>
@@ -185,11 +218,30 @@ function CaseDetail({ canSeeSettlement }: { canSeeSettlement: boolean }) {
 						managerName={managerName}
 						templateName={templateName}
 					/>
-					<TasksSection loading={tasksQ.isLoading} tasks={tasks} />
-					<AssetsSection assets={assets} loading={assetsQ.isLoading} />
-					<AccessSection access={access} loading={accessQ.isLoading} />
-					<DocumentsSection docs={docs} loading={docsQ.isLoading} />
-					<InterviewSection caseId={id} />
+					<TasksSection
+						canManage={canManage}
+						loading={tasksQ.isLoading}
+						tasks={tasks}
+					/>
+					<AssetsSection
+						assets={assets}
+						canManage={canManage}
+						caseId={id}
+						loading={assetsQ.isLoading}
+					/>
+					<AccessSection
+						access={access}
+						canManage={canManage}
+						caseId={id}
+						loading={accessQ.isLoading}
+					/>
+					<DocumentsSection
+						canManage={canManage}
+						caseId={id}
+						docs={docs}
+						loading={docsQ.isLoading}
+					/>
+					<InterviewSection canManage={canManage} caseId={id} />
 					{canSeeSettlement ? (
 						<SettlementSection caseId={id} />
 					) : (
@@ -210,16 +262,28 @@ function CaseDetail({ canSeeSettlement }: { canSeeSettlement: boolean }) {
 function SectionCard({
 	title,
 	subtitle,
+	action,
 	children,
 }: {
 	title: string;
 	subtitle?: string;
+	action?: ReactNode;
 	children: ReactNode;
 }) {
 	return (
 		<div className="card" style={{ overflow: "hidden", marginBottom: 14 }}>
 			<div className="card-pad" style={{ paddingBottom: subtitle ? 12 : 0 }}>
-				<div className="eyebrow">{title}</div>
+				<div
+					style={{
+						display: "flex",
+						justifyContent: "space-between",
+						alignItems: "flex-start",
+						gap: 12,
+					}}
+				>
+					<div className="eyebrow">{title}</div>
+					{action}
+				</div>
 				{subtitle && (
 					<p style={{ color: "var(--fg-3)", fontSize: 12, margin: "6px 0 0" }}>
 						{subtitle}
@@ -228,6 +292,15 @@ function SectionCard({
 			</div>
 			{children}
 		</div>
+	);
+}
+
+function AddButton({ label, onClick }: { label: string; onClick: () => void }) {
+	return (
+		<button className="btn btn-sm" onClick={onClick} type="button">
+			<Plus size={13} style={{ verticalAlign: "middle", marginRight: 4 }} />
+			{label}
+		</button>
 	);
 }
 
@@ -405,9 +478,11 @@ interface TaskRow {
 function TasksSection({
 	tasks,
 	loading,
+	canManage,
 }: {
 	tasks: TaskRow[];
 	loading: boolean;
+	canManage: boolean;
 }) {
 	const done = tasks.filter((t) => isTaskResolved(t.status)).length;
 	return (
@@ -429,6 +504,7 @@ function TasksSection({
 							<th>Category</th>
 							<th>Due</th>
 							<th>Status</th>
+							{canManage && <th>Actions</th>}
 						</tr>
 					</thead>
 					<tbody>
@@ -453,6 +529,15 @@ function TasksSection({
 										{taskStatusLabel(t.status)}
 									</span>
 								</td>
+								{canManage && (
+									<td>
+										<TaskActions
+											status={t.status}
+											taskId={t.id}
+											taskTitle={t.titleSnapshot}
+										/>
+									</td>
+								)}
 							</tr>
 						))}
 					</tbody>
@@ -474,12 +559,24 @@ interface AssetRow {
 function AssetsSection({
 	assets,
 	loading,
+	canManage,
+	caseId,
 }: {
 	assets: AssetRow[];
 	loading: boolean;
+	canManage: boolean;
+	caseId: string;
 }) {
+	const [addOpen, setAddOpen] = useState(false);
 	return (
-		<SectionCard title="Asset returns">
+		<SectionCard
+			action={
+				canManage ? (
+					<AddButton label="Add asset" onClick={() => setAddOpen(true)} />
+				) : undefined
+			}
+			title="Asset returns"
+		>
 			{loading && <EmptyRow text="Loading assets…" />}
 			{!loading && assets.length === 0 && (
 				<EmptyRow text="No assets to recover for this exit." />
@@ -492,6 +589,7 @@ function AssetsSection({
 							<th>Tag</th>
 							<th>Expected return</th>
 							<th>Status</th>
+							{canManage && <th>Actions</th>}
 						</tr>
 					</thead>
 					<tbody>
@@ -509,10 +607,22 @@ function AssetsSection({
 										{assetStatusLabel(a.status)}
 									</span>
 								</td>
+								{canManage && (
+									<td>
+										<AssetActions
+											assetDescription={a.assetDescription}
+											assetId={a.id}
+											status={a.status}
+										/>
+									</td>
+								)}
 							</tr>
 						))}
 					</tbody>
 				</table>
+			)}
+			{addOpen && (
+				<AddAssetDialog caseId={caseId} onClose={() => setAddOpen(false)} />
 			)}
 		</SectionCard>
 	);
@@ -529,12 +639,22 @@ interface AccessRow {
 function AccessSection({
 	access,
 	loading,
+	canManage,
+	caseId,
 }: {
 	access: AccessRow[];
 	loading: boolean;
+	canManage: boolean;
+	caseId: string;
 }) {
+	const [addOpen, setAddOpen] = useState(false);
 	return (
 		<SectionCard
+			action={
+				canManage ? (
+					<AddButton label="Add access item" onClick={() => setAddOpen(true)} />
+				) : undefined
+			}
 			subtitle="Access changes are tracked here after accounts are disabled outside Heimdallone."
 			title="Access removal"
 		>
@@ -549,6 +669,7 @@ function AccessSection({
 							<th>System / account</th>
 							<th>Notes</th>
 							<th>Status</th>
+							{canManage && <th>Actions</th>}
 						</tr>
 					</thead>
 					<tbody>
@@ -563,10 +684,22 @@ function AccessSection({
 										{accessStatusLabel(a.status)}
 									</span>
 								</td>
+								{canManage && (
+									<td>
+										<AccessActions
+											accessId={a.id}
+											status={a.status}
+											system={a.system}
+										/>
+									</td>
+								)}
 							</tr>
 						))}
 					</tbody>
 				</table>
+			)}
+			{addOpen && (
+				<AddAccessDialog caseId={caseId} onClose={() => setAddOpen(false)} />
 			)}
 		</SectionCard>
 	);
@@ -583,12 +716,27 @@ interface DocRow {
 function DocumentsSection({
 	docs,
 	loading,
+	canManage,
+	caseId,
 }: {
 	docs: DocRow[];
 	loading: boolean;
+	canManage: boolean;
+	caseId: string;
 }) {
+	const [addOpen, setAddOpen] = useState(false);
 	return (
-		<SectionCard title="Documents">
+		<SectionCard
+			action={
+				canManage ? (
+					<AddButton
+						label="Request document"
+						onClick={() => setAddOpen(true)}
+					/>
+				) : undefined
+			}
+			title="Documents"
+		>
 			{loading && <EmptyRow text="Loading documents…" />}
 			{!loading && docs.length === 0 && (
 				<EmptyRow text="No document requests on this case." />
@@ -600,6 +748,7 @@ function DocumentsSection({
 							<th>Document</th>
 							<th>Type</th>
 							<th>Status</th>
+							{canManage && <th>Actions</th>}
 						</tr>
 					</thead>
 					<tbody>
@@ -614,23 +763,84 @@ function DocumentsSection({
 										{docStatusLabel(d.status)}
 									</span>
 								</td>
+								{canManage && (
+									<td>
+										<DocumentActions
+											docId={d.id}
+											status={d.status}
+											title={d.title}
+										/>
+									</td>
+								)}
 							</tr>
 						))}
 					</tbody>
 				</table>
 			)}
+			{addOpen && (
+				<AddDocumentDialog caseId={caseId} onClose={() => setAddOpen(false)} />
+			)}
 		</SectionCard>
 	);
 }
 
+// Map the redacted interview read row into the dialog's prefill shape.
+function toInterviewDefaults(
+	interview: Record<string, unknown> | null | undefined
+): InterviewDefaults | null {
+	if (!interview) {
+		return null;
+	}
+	return {
+		conductedAt: (interview.conductedAt as string | Date | null) ?? null,
+		isPrivate: (interview.isPrivate as boolean | null) ?? null,
+		overallRating: (interview.overallRating as number | null) ?? null,
+		reasonForLeaving: (interview.reasonForLeaving as string | null) ?? null,
+		whatWentWell: (interview.whatWentWell as string | null) ?? null,
+		whatCouldImprove: (interview.whatCouldImprove as string | null) ?? null,
+		wouldRehire: (interview.wouldRehire as boolean | null) ?? null,
+		internalNotes: (interview.internalNotes as string | null) ?? null,
+	};
+}
+
 // ── Exit interview (owns its query; API redacts private/HR-only fields) ──
-function InterviewSection({ caseId }: { caseId: string }) {
+function InterviewSection({
+	caseId,
+	canManage,
+}: {
+	caseId: string;
+	canManage: boolean;
+}) {
+	const [dialogOpen, setDialogOpen] = useState(false);
 	const interviewQ = useQuery(
 		orpc.offboarding.interviews.getByCaseId.queryOptions({ input: { caseId } })
 	);
 	const interview = interviewQ.data;
+	const existing = toInterviewDefaults(
+		interview as Record<string, unknown> | null | undefined
+	);
 	return (
-		<SectionCard title="Exit interview">
+		<SectionCard
+			action={
+				canManage ? (
+					<button
+						className="btn btn-sm"
+						onClick={() => setDialogOpen(true)}
+						type="button"
+					>
+						{interview ? "Edit interview" : "Record interview"}
+					</button>
+				) : undefined
+			}
+			title="Exit interview"
+		>
+			{dialogOpen && (
+				<InterviewDialog
+					caseId={caseId}
+					existing={existing}
+					onClose={() => setDialogOpen(false)}
+				/>
+			)}
 			{interviewQ.isLoading && <EmptyRow text="Loading…" />}
 			{!(interviewQ.isLoading || interview) && (
 				<EmptyRow text="No exit interview recorded." />
