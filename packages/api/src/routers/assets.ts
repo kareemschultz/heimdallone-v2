@@ -876,6 +876,34 @@ const assignmentsListByAsset = authorizedProcedure("asset", "read")
 		});
 	});
 
+/** Open custody (un-returned assignments) for an employee, with display fields. */
+function fetchOpenCustody(orgIdValue: string, employeeId: string) {
+	return db
+		.select({
+			id: assetAssignment.id,
+			assetId: assetAssignment.assetId,
+			assignedAt: assetAssignment.assignedAt,
+			returnDueDate: assetAssignment.returnDueDate,
+			notes: assetAssignment.notes,
+			assetName: asset.name,
+			trackingId: asset.trackingId,
+			assetStatus: asset.status,
+			categoryName: assetCategory.name,
+		})
+		.from(assetAssignment)
+		.innerJoin(asset, eq(assetAssignment.assetId, asset.id))
+		.leftJoin(assetCategory, eq(asset.categoryId, assetCategory.id))
+		.where(
+			and(
+				eq(assetAssignment.assignedToId, employeeId),
+				eq(assetAssignment.organizationId, orgIdValue),
+				isNull(assetAssignment.returnedAt),
+				isNull(assetAssignment.deletedAt)
+			)
+		)
+		.orderBy(desc(assetAssignment.assignedAt));
+}
+
 /**
  * Open custody held by an employee. Powers the employee "My assets" self-service
  * view, the employee-profile assets tab, and the read-only offboarding custody
@@ -916,30 +944,23 @@ const assignmentsListByEmployee = authorizedProcedure("asset", "read")
 
 		await verifyEmployeeInOrg(oid, input.employeeId);
 
-		return await db
-			.select({
-				id: assetAssignment.id,
-				assetId: assetAssignment.assetId,
-				assignedAt: assetAssignment.assignedAt,
-				returnDueDate: assetAssignment.returnDueDate,
-				notes: assetAssignment.notes,
-				assetName: asset.name,
-				trackingId: asset.trackingId,
-				assetStatus: asset.status,
-				categoryName: assetCategory.name,
-			})
-			.from(assetAssignment)
-			.innerJoin(asset, eq(assetAssignment.assetId, asset.id))
-			.leftJoin(assetCategory, eq(asset.categoryId, assetCategory.id))
-			.where(
-				and(
-					eq(assetAssignment.assignedToId, input.employeeId),
-					eq(assetAssignment.organizationId, oid),
-					isNull(assetAssignment.returnedAt),
-					isNull(assetAssignment.deletedAt)
-				)
-			)
-			.orderBy(desc(assetAssignment.assignedAt));
+		return await fetchOpenCustody(oid, input.employeeId);
+	});
+
+/**
+ * Employee self-service: the caller's own open custody. Zero-arg, resolved
+ * server-side via resolveCurrentEmployee — the client never needs to know its own
+ * employeeId. Reuses asset:read (employees hold it), so no new AC pair.
+ */
+const assignmentsListMine = authorizedProcedure("asset", "read")
+	.input(z.object({}).optional())
+	.handler(async ({ context }) => {
+		const oid = orgId(context);
+		const me = await resolveCurrentEmployee(oid, actorId(context));
+		if (!me) {
+			return [];
+		}
+		return await fetchOpenCustody(oid, me.id);
 	});
 
 const assignmentsAssign = authorizedProcedure("asset", "assign")
@@ -1462,6 +1483,7 @@ export const assetsRouter = {
 	assignments: {
 		listByAsset: assignmentsListByAsset,
 		listByEmployee: assignmentsListByEmployee,
+		listMine: assignmentsListMine,
 		assign: assignmentsAssign,
 		return: assignmentsReturn,
 	},
