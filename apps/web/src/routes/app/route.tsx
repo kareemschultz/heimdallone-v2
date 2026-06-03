@@ -21,6 +21,7 @@ import {
 	LayoutDashboard,
 	LogOut,
 	Moon,
+	Package,
 	Play,
 	Plus,
 	Search,
@@ -32,7 +33,13 @@ import {
 	Users,
 	Wallet,
 } from "lucide-react";
-import { createContext, useContext, useEffect, useState } from "react";
+import {
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useState,
+} from "react";
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
 import { canViewPayroll } from "@/lib/rbac";
@@ -139,6 +146,12 @@ const NAV = [
 				icon: FileText,
 				href: "/app/contracts",
 			},
+			{
+				key: "assets",
+				label: "Assets",
+				icon: Package,
+				href: "/app/assets",
+			},
 		],
 	},
 	{
@@ -222,7 +235,9 @@ function ThemeToggle() {
 		document.documentElement.setAttribute("data-theme", t);
 		try {
 			localStorage.setItem("heimdall.theme", t);
-		} catch {}
+		} catch {
+			// localStorage may be unavailable (private mode); ignore persistence failure
+		}
 	};
 
 	return (
@@ -313,13 +328,20 @@ function AppSidebar() {
 				className="menu-root"
 				style={{ borderBottom: "1px solid var(--line)" }}
 			>
+				{/* biome-ignore lint/a11y/useSemanticElements: trigger wraps a nested avatar + multi-line labels (block content), so it stays a div with role + keyboard handlers rather than a <button>, which may not contain block content */}
 				<div
 					className="tenant-switcher"
 					onClick={() => {
 						setTenantMenuOpen(!tenantMenuOpen);
 						setUserMenuOpen(false);
 					}}
-					onKeyDown={() => {}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							setTenantMenuOpen(!tenantMenuOpen);
+							setUserMenuOpen(false);
+						}
+					}}
 					role="button"
 					tabIndex={0}
 				>
@@ -492,12 +514,19 @@ function AppSidebar() {
 				className="menu-root"
 				style={{ marginTop: "auto", borderTop: "1px solid var(--line)" }}
 			>
+				{/* biome-ignore lint/a11y/useSemanticElements: trigger wraps a nested avatar + multi-line labels (block content), so it stays a div with role + keyboard handlers rather than a <button>, which may not contain block content */}
 				<div
 					onClick={() => {
 						setUserMenuOpen(!userMenuOpen);
 						setTenantMenuOpen(false);
 					}}
-					onKeyDown={() => {}}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							setUserMenuOpen(!userMenuOpen);
+							setTenantMenuOpen(false);
+						}
+					}}
 					role="button"
 					style={{
 						padding: "14px 12px",
@@ -638,14 +667,16 @@ function AppTopbar() {
 		document.documentElement.setAttribute("data-theme", t);
 		try {
 			localStorage.setItem("heimdall.theme", t);
-		} catch {}
+		} catch {
+			// localStorage may be unavailable (private mode); ignore persistence failure
+		}
 	};
 
-	const closeAll = () => {
+	const closeAll = useCallback(() => {
 		setSyncMenuOpen(false);
 		setNotifMenuOpen(false);
 		setUserMenuOpen(false);
-	};
+	}, []);
 
 	useEffect(() => {
 		const handler = (e: KeyboardEvent) => {

@@ -6,6 +6,7 @@ import { useContext, useState } from "react";
 
 import "@/styles/offboarding.css";
 import { EmptyState } from "@/components/empty-state";
+import { AssetCustodyPanel } from "@/features/assets/custody-panel";
 import {
 	accessStatusLabel,
 	accessStatusTone,
@@ -280,6 +281,9 @@ function CaseDetail({
 						caseId={id}
 						loading={assetsLoading}
 					/>
+					{c.employeeId ? (
+						<AssetCustodyPanel employeeId={c.employeeId} />
+					) : null}
 					<AccessSection
 						access={access}
 						canManage={canManage}

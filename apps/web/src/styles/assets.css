@@ -340,3 +340,11 @@
 	background: var(--warning-soft);
 	border-radius: 8px;
 }
+
+/* Offboarding custody panel (Phase 12E) */
+.asset-custody-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	color: var(--fg-3);
+}
