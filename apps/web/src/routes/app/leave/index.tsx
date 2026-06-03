@@ -1,5 +1,5 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	Calendar,
 	Check,
@@ -14,7 +14,7 @@ import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/leave.css";
-import { canManageHR } from "@/lib/rbac";
+import { canManageHR, canViewLeavePolicy } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
 
@@ -185,14 +185,24 @@ function LeavePage() {
 						{lens === "All" ? "" : ` · ${lens.toLowerCase()}`}
 					</p>
 				</div>
-				<button
-					className="btn btn-primary"
-					onClick={() => setShowRequest(true)}
-					type="button"
-				>
-					<Plus size={13} />
-					Request time off
-				</button>
+				<div className="leave-head-actions">
+					<Link className="btn" to="/app/leave/balance">
+						Why this balance?
+					</Link>
+					{canViewLeavePolicy(org.memberRole) ? (
+						<Link className="btn" to="/app/leave/policies">
+							Leave policies
+						</Link>
+					) : null}
+					<button
+						className="btn btn-primary"
+						onClick={() => setShowRequest(true)}
+						type="button"
+					>
+						<Plus size={13} />
+						Request time off
+					</button>
+				</div>
 			</div>
 
 			<BalanceCards />
@@ -778,7 +788,6 @@ function formatBreakdown(start: string, end: string): string | null {
 }
 
 function RequestSheet({ onClose }: { onClose: () => void }) {
-	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
 
 	const { data: typesData } = useQuery(
@@ -938,11 +947,12 @@ function RequestSheet({ onClose }: { onClose: () => void }) {
 					</div>
 
 					<div style={{ marginBottom: 14 }}>
-						<label className="label">
+						<label className="label" htmlFor="lr-type">
 							Leave type <span style={{ color: "var(--danger)" }}>*</span>
 						</label>
 						<select
 							className="input"
+							id="lr-type"
 							onChange={(e) => setTypeId(e.target.value)}
 							style={{ height: 34 }}
 							value={typeId}
@@ -974,11 +984,12 @@ function RequestSheet({ onClose }: { onClose: () => void }) {
 						}}
 					>
 						<div>
-							<label className="label">
+							<label className="label" htmlFor="lr-start">
 								Starts <span style={{ color: "var(--danger)" }}>*</span>
 							</label>
 							<input
 								className="input"
+								id="lr-start"
 								onChange={(e) => setStartDate(e.target.value)}
 								style={{ height: 34 }}
 								type="date"
@@ -996,11 +1007,12 @@ function RequestSheet({ onClose }: { onClose: () => void }) {
 							</select>
 						</div>
 						<div>
-							<label className="label">
+							<label className="label" htmlFor="lr-end">
 								Ends <span style={{ color: "var(--danger)" }}>*</span>
 							</label>
 							<input
 								className="input"
+								id="lr-end"
 								onChange={(e) => setEndDate(e.target.value)}
 								style={{ height: 34 }}
 								type="date"
@@ -1057,9 +1069,12 @@ function RequestSheet({ onClose }: { onClose: () => void }) {
 					)}
 
 					<div style={{ marginBottom: 14 }}>
-						<label className="label">Reason</label>
+						<label className="label" htmlFor="lr-reason">
+							Reason
+						</label>
 						<textarea
 							className="input"
+							id="lr-reason"
 							onChange={(e) => setDescription(e.target.value)}
 							placeholder="Optional reason for your leave…"
 							rows={3}

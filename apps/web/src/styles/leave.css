@@ -163,3 +163,364 @@
 	color: var(--fg-2);
 	text-align: right;
 }
+
+/* ───────── Leave Policy Engine (Phase 7I-D) ───────── */
+.leave-head-actions {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+.leave-policy-tabs {
+	display: flex;
+	gap: 4px;
+	margin: 4px 0 16px;
+	border-bottom: 1px solid var(--line);
+}
+.leave-policy-tab {
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg-3);
+	text-decoration: none;
+	border-bottom: 2px solid transparent;
+}
+.leave-policy-tab:hover {
+	color: var(--fg);
+}
+.leave-policy-tab.active {
+	color: var(--fg);
+	border-bottom-color: var(--accent);
+}
+
+/* Verification / status badges */
+.lp-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	border-radius: 999px;
+}
+.lp-badge.tone-success {
+	color: var(--success);
+	background: var(--success-soft);
+}
+.lp-badge.tone-warning {
+	color: var(--warning);
+	background: var(--warning-soft);
+}
+.lp-badge.tone-danger {
+	color: var(--danger);
+	background: var(--danger-soft);
+}
+.lp-badge.tone-info {
+	color: var(--info);
+	background: var(--info-soft);
+}
+.lp-badge.tone-neutral {
+	color: var(--fg-3);
+	background: var(--bg-3);
+}
+
+/* "verify with legal advisor" notice */
+.lp-notice {
+	display: flex;
+	gap: 8px;
+	align-items: flex-start;
+	padding: 10px 14px;
+	margin-bottom: 16px;
+	font-size: 12.5px;
+	color: var(--fg-2);
+	background: var(--info-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.lp-notice.warn {
+	background: var(--warning-soft);
+}
+
+/* Card grid */
+.lp-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 12px;
+}
+.lp-card {
+	display: block;
+	padding: 16px;
+	text-decoration: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	transition: border-color 0.12s;
+}
+.lp-card:hover {
+	border-color: var(--accent);
+}
+.lp-card-skeleton {
+	height: 120px;
+	background: var(--bg-3);
+	animation: lp-pulse 1.2s ease-in-out infinite;
+}
+@keyframes lp-pulse {
+	50% {
+		opacity: 0.55;
+	}
+}
+.lp-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 8px;
+}
+.lp-country {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--fg-3);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.lp-card-title {
+	margin-bottom: 6px;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.lp-card-meta {
+	display: flex;
+	gap: 6px;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.lp-card-meta .sep {
+	color: var(--fg-4);
+}
+.lp-card-source {
+	margin-top: 8px;
+	font-size: 11.5px;
+	color: var(--fg-4);
+}
+
+.lp-back {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+	margin-bottom: 12px;
+	font-size: 13px;
+	color: var(--fg-3);
+	text-decoration: none;
+}
+.lp-back:hover {
+	color: var(--fg);
+}
+.lp-detail-badges {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-top: 8px;
+}
+.lp-tag {
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border-radius: 999px;
+}
+.lp-tag.sm {
+	margin-left: 6px;
+	font-size: 10px;
+}
+.lp-actions {
+	display: flex;
+	gap: 8px;
+}
+.lp-toolbar-row {
+	margin: 4px 0 12px;
+}
+
+/* Source metadata box */
+.lp-source-box {
+	padding: 12px 14px;
+	margin-bottom: 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.lp-source-row {
+	display: flex;
+	gap: 10px;
+	font-size: 12.5px;
+	color: var(--fg-2);
+}
+.lp-source-row + .lp-source-row {
+	margin-top: 4px;
+}
+.lp-source-k {
+	min-width: 56px;
+	font-weight: 600;
+	color: var(--fg-3);
+}
+
+/* Rules table */
+.lp-table {
+	width: 100%;
+	font-size: 13px;
+	border-collapse: collapse;
+}
+.lp-table th {
+	padding: 8px 10px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--fg-3);
+	text-align: left;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	border-bottom: 1px solid var(--line);
+}
+.lp-table td {
+	padding: 10px;
+	vertical-align: top;
+	color: var(--fg-2);
+	border-bottom: 1px solid var(--line);
+}
+.lp-rule-name {
+	font-weight: 600;
+	color: var(--fg);
+}
+.lp-rule-cat {
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.lp-rule-note {
+	max-width: 320px;
+	margin-top: 4px;
+	font-size: 11.5px;
+	color: var(--fg-4);
+}
+.lp-rule-sub {
+	font-size: 11.5px;
+	color: var(--fg-4);
+}
+.lp-hint {
+	font-size: 12.5px;
+	color: var(--fg-3);
+}
+.lp-snapshot-note {
+	padding: 10px 12px;
+	font-size: 12.5px;
+	color: var(--fg-2);
+	background: var(--info-soft);
+	border-radius: 8px;
+}
+.lp-check {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	font-size: 13px;
+	color: var(--fg-2);
+}
+
+/* Compare-to-baseline */
+.lp-compare {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+.lp-compare-row {
+	padding: 10px 12px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.lp-compare-name {
+	margin-bottom: 4px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.lp-compare-diff {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	font-size: 12.5px;
+	color: var(--fg-2);
+}
+.lp-compare-field {
+	min-width: 140px;
+	color: var(--fg-3);
+}
+.lp-compare-base {
+	color: var(--fg-4);
+	text-decoration: line-through;
+}
+.lp-compare-arrow {
+	color: var(--fg-4);
+}
+.lp-compare-cur {
+	font-weight: 600;
+	color: var(--fg);
+}
+
+/* Employee "why this balance" */
+.lp-policy-context {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding: 10px 14px;
+	margin-bottom: 12px;
+	font-size: 13px;
+	color: var(--fg-2);
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.lp-balance-list {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	gap: 12px;
+}
+.lp-balance-card {
+	padding: 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.lp-balance-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+.lp-balance-name {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.lp-balance-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 8px;
+	margin-bottom: 10px;
+}
+.lp-balance-grid > div {
+	display: flex;
+	flex-direction: column;
+}
+.lp-balance-k {
+	font-size: 11px;
+	color: var(--fg-3);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.lp-balance-v {
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.lp-balance-explain {
+	font-size: 12.5px;
+	line-height: 1.5;
+	color: var(--fg-3);
+}
