@@ -185,7 +185,9 @@ Biometric + Geofencing (Phase 11 — active):
 - [Biometric + Geofencing DB Setup](docs/implementation/biometric-geofencing-db-setup.md) — 11B schema (8 tables, enums, migrations 0011/0012)
 - [Biometric + Geofencing API](docs/implementation/biometric-geofencing-api.md) — 11C router, adapter/provider model, punch processor, ingest endpoint, RBAC, privacy
 
-Assets (queued spec — Phase 12 candidate, drafted not active):
+Assets (Phase 12 — ACTIVE; 12B DB ✅ → 12C API ✅ → 12D UI next):
 
-- [Assets Implementation Plan](docs/architecture/assets-implementation-plan.md) — drafted spec (entities, Drizzle schema, oRPC API + RBAC, UI checkpoints, offboarding custody integration). **Queued behind Biometric + Geofencing — no DB migration yet.**
+- [Assets Implementation Plan](docs/architecture/assets-implementation-plan.md) — spec (entities, Drizzle schema, oRPC API + RBAC, UI checkpoints, offboarding custody integration).
+- [Assets DB Setup](docs/implementation/assets-db-setup.md) — 12B: 4 tables + 3 enums, migration 0014, idempotent seed.
+- [Assets API](docs/implementation/assets-api.md) — 12C: `assets` router (inventory/categories/assignments/requests), `asset:request` AC action, 6 RBAC helpers, server-side purchaseCost redaction, transactional assign/return, two-layer authz, verify 46/46.
 - [Assets Module Spec](docs/architecture/modules/assets-spec.md) — original extraction spec

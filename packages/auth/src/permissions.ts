@@ -68,7 +68,20 @@ export const statement = {
 	appraisal: ["create", "read", "submit", "review", "finalize", "manage"],
 	goal: ["create", "read", "update", "complete"],
 
-	asset: ["create", "read", "assign", "return", "write_off", "manage"],
+	// "request" (Phase 12C) is the employee/manager self-service action for
+	// asking HR for an asset. It is deliberately separate from "create" (which
+	// mints an asset row) so self-service can be gated by an action staff
+	// actually hold — see the offboarding documents.markUploaded dead-branch
+	// lesson (a self-service handler must never sit behind a manage-only gate).
+	asset: [
+		"create",
+		"read",
+		"assign",
+		"return",
+		"write_off",
+		"manage",
+		"request",
+	],
 
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
 
@@ -164,7 +177,15 @@ export const tenant_owner = ac.newRole({
 	offer: ["create", "read", "extend", "withdraw"],
 	appraisal: ["create", "read", "submit", "review", "finalize", "manage"],
 	goal: ["create", "read", "update", "complete"],
-	asset: ["create", "read", "assign", "return", "write_off", "manage"],
+	asset: [
+		"create",
+		"read",
+		"assign",
+		"return",
+		"write_off",
+		"manage",
+		"request",
+	],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
 	offboarding: FULL_OFFBOARDING,
 	...MANAGE_BIOMETRIC,
@@ -216,7 +237,15 @@ export const tenant_admin = ac.newRole({
 	offer: ["create", "read", "extend", "withdraw"],
 	appraisal: ["create", "read", "submit", "review", "finalize", "manage"],
 	goal: ["create", "read", "update", "complete"],
-	asset: ["create", "read", "assign", "return", "write_off", "manage"],
+	asset: [
+		"create",
+		"read",
+		"assign",
+		"return",
+		"write_off",
+		"manage",
+		"request",
+	],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
 	offboarding: FULL_OFFBOARDING,
 	...MANAGE_BIOMETRIC,
@@ -261,7 +290,7 @@ export const hr_admin = ac.newRole({
 	offer: ["create", "read", "extend", "withdraw"],
 	appraisal: ["create", "read", "review", "finalize", "manage"],
 	goal: ["create", "read", "update"],
-	asset: ["create", "read", "assign", "return", "manage"],
+	asset: ["create", "read", "assign", "return", "manage", "request"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close"],
 	offboarding: FULL_OFFBOARDING,
 	...MANAGE_BIOMETRIC,
@@ -296,7 +325,7 @@ export const payroll_admin = ac.newRole({
 	offer: ["read"],
 	appraisal: ["read"],
 	goal: ["read"],
-	asset: ["read"],
+	asset: ["read", "request"],
 	ticket: ["read"],
 	offboarding: ["read", "read_settlement"],
 });
@@ -316,7 +345,7 @@ export const manager = ac.newRole({
 	holiday: ["read"],
 	work_location: ["read"],
 	document: ["read"],
-	asset: ["read"],
+	asset: ["read", "request"],
 	appraisal: ["read", "submit", "review"],
 	goal: ["create", "read", "update"],
 	posting: ["read"],
@@ -342,7 +371,7 @@ export const employee = ac.newRole({
 	holiday: ["read"],
 	work_location: ["read"],
 	document: ["create", "read"],
-	asset: ["read"],
+	asset: ["read", "request"],
 	appraisal: ["read", "submit"],
 	goal: ["create", "read", "update", "complete"],
 	posting: ["read"],
@@ -394,6 +423,9 @@ export const recruiter = ac.newRole({
 	offer: ["create", "read", "extend", "withdraw"],
 	onboarding: ["read", "start"],
 	document: ["read"],
+	// Recruiters are staff too: they may self-request company property and see
+	// their own custody (read), but not the asset inventory (canViewAssets=false).
+	asset: ["read", "request"],
 });
 
 export const helpdesk_agent = ac.newRole({

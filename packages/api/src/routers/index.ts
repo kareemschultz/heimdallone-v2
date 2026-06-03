@@ -1,6 +1,7 @@
 import type { RouterClient } from "@orpc/server";
 
 import { protectedProcedure, publicProcedure } from "../index";
+import { assetsRouter } from "./assets";
 import { attendanceRouter } from "./attendance";
 import { biometricRouter } from "./biometric";
 import { contractsRouter } from "./contracts";
@@ -19,6 +20,7 @@ export const appRouter = {
 	})),
 	hrCore: hrCoreRouter,
 	...contractsRouter,
+	assets: assetsRouter,
 	attendance: attendanceRouter,
 	biometric: biometricRouter,
 	leave: leaveRouter,
