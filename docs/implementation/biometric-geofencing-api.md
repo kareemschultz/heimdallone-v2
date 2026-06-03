@@ -162,3 +162,74 @@ never flagged "outside" and therefore never blocks payroll for being away from a
 physical site. `mock_location` is still flagged for everyone (fraud signal). The
 mobile check-in screen renders a friendly "Remote work check-in" for non-onsite
 arrangements instead of an "outside" warning.
+
+## Payroll readiness from attendance exceptions (Phase 11G CP2)
+
+Open biometric/geofence/attendance exceptions now flow into payroll
+readiness/preview as **blockers and warnings**, so unresolved attendance issues
+can never silently reduce or inflate pay — they surface before a run can be
+finalized. The payroll calculation/tax logic is unchanged; this is purely a
+readiness/gating layer.
+
+**Builder** (`packages/api/src/utils/payroll-input-builder.ts`):
+`buildAttendanceInput` augments the per-employee `AttendanceInput` with an
+exception review (`buildExceptionReview`). Exceptions have no own date column, so
+each is period-scoped via its linked punch (`punchTime`) → event (`eventDate`) →
+geofence check-in (`capturedAt`), falling back to `createdAt`, and kept only if it
+falls in `[periodStart, periodEnd]`. Open/`in_review` exceptions are tallied by
+severity into `openExceptionBlockers` / `openExceptionWarnings` (info ignored),
+with `exceptionSummary` (plain-language type labels) and `unprocessedPunches`
+(pending/error `attendance_punch` rows in the period, `deletedAt IS NULL`).
+`buildPayrollInput` also plumbs `flags.blockPayrollOnOpenExceptions` from
+`attendance_setting.block_payroll_on_open_exceptions` (default **true**).
+
+**Engine** (`packages/payroll-engine/src/blockers.ts`, pure — no DB):
+
+| code | severity | emitted when |
+|---|---|---|
+| `UNRESOLVED_ATTENDANCE_EXCEPTION` | blocker | `openExceptionBlockers > 0` **and** `blockPayrollOnOpenExceptions !== false` |
+| `ATTENDANCE_EXCEPTION_REVIEW` | warning | `openExceptionWarnings > 0`, **plus** downgraded blockers when the org disabled hard-blocking |
+| `UNPROCESSED_PUNCHES_FOR_PERIOD` | warning | `unprocessedPunches > 0` |
+
+When `block_payroll_on_open_exceptions` is **off**, blocker-severity exceptions
+downgrade to the `ATTENDANCE_EXCEPTION_REVIEW` warning (they never disappear).
+
+**Persistence + gate**: `runs.preview` already persists `payroll_issue` rows from
+the detected blockers/warnings and sets `blockerCount`. `runs.confirm` now gates on
+a **live count of open blocker `payroll_issue` rows** (not the cached
+`blockerCount`), so resolving/overriding an issue is reflected immediately and a
+run with an unresolved exception throws `PRECONDITION_FAILED` ("Cannot confirm: N
+unresolved blocker(s).").
+
+**UI** (`apps/web/src/routes/app/payroll/run.tsx`): the three codes have
+plain-language labels in `ISSUE_CODE_LABELS` ("Unresolved attendance exception",
+"Attendance exception needs review", "Unprocessed punches in this pay period"). The
+preview note reads: "Raw device punches do not go directly to payroll; payroll uses
+processed attendance after review."
+
+### Verification (`scripts/verify-biometric-payroll-readiness.ts`)
+
+All 11 DB-backed checks pass: rohan's open `missing_clock_out` → 1 blocker + flag
+true + engine emits `UNRESOLVED_ATTENDANCE_EXCEPTION`; policy-off → no blocker +
+`ATTENDANCE_EXCEPTION_REVIEW`; maya's `low_gps_accuracy` → 1 warning +
+`ATTENDANCE_EXCEPTION_REVIEW`; devon's pending mobile punch →
+`UNPROCESSED_PUNCHES_FOR_PERIOD`; resolved exception no longer blocks (then
+restored). Worked minutes are read from `attendance_record` throughout — exceptions
+never change them.
+
+**Browser pass** (owner, May 2026 Payroll preview): blocker "Unresolved attendance
+exception — Rohan Gopaul has 1 unresolved attendance exception(s) (missing
+clock-out)" rendered under "cannot continue"; warnings "1 attendance exception(s)
+need review for Maya Persaud (GPS accuracy)" and "N unprocessed punch(es) in this
+pay period"; persisted `payroll_issue` rows = `UNRESOLVED_ATTENDANCE_EXCEPTION`×1
+(blocker), `ATTENDANCE_EXCEPTION_REVIEW`×1, `UNPROCESSED_PUNCHES_FOR_PERIOD`×5
+(warnings); `runs.confirm` → 412 "Cannot confirm: 5 unresolved blocker(s)"; 0 app
+console errors. Screenshot: `docs/reviews/phase-11g-cp2/`.
+
+**RBAC** (live): employee (Rohan) → run page denied; auditor → run page denied +
+`runs.confirm` 403 "Missing permission: payroll:update"; payroll_admin + owner →
+readiness/preview allowed. No raw GPS coordinates, device payloads, or secrets
+appear in any payroll surface.
+
+Gates: check-types 3/3, payroll-engine 18/18, build ✓, web tsc 26 baseline,
+ultracite **223/1/2 baseline unchanged**, audit:permissions 73 pairs / 10 routers.

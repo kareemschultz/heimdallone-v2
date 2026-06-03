@@ -1618,9 +1618,23 @@ const runsConfirm = authorizedProcedure("payroll", "update")
 				message: "Payroll run must be in preview state to confirm.",
 			});
 		}
-		if (run.blockerCount > 0) {
+		// Count OPEN blocker issues live so resolving/overriding an issue (e.g. an
+		// attendance exception blocker) actually unblocks confirmation — the run's
+		// stored blockerCount is a snapshot from preview and goes stale on override.
+		const [openBlockers] = await db
+			.select({ n: count() })
+			.from(payrollIssue)
+			.where(
+				and(
+					eq(payrollIssue.payrollRunId, input.id),
+					eq(payrollIssue.issueType, "blocker"),
+					eq(payrollIssue.status, "open")
+				)
+			);
+		const unresolvedBlockers = openBlockers?.n ?? 0;
+		if (unresolvedBlockers > 0) {
 			throw new ORPCError("PRECONDITION_FAILED", {
-				message: `Cannot confirm: ${run.blockerCount} unresolved blocker(s).`,
+				message: `Cannot confirm: ${unresolvedBlockers} unresolved blocker(s).`,
 			});
 		}
 

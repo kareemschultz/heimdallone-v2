@@ -50,11 +50,17 @@ export interface AttendanceInput {
 	daysHalfDay: number;
 	daysHoliday: number;
 	daysPresent: number;
+	// Biometric/geofence/attendance review state for the period (Phase 11G CP2).
+	// Optional so existing callers/tests are unaffected; absent = none.
+	exceptionSummary?: string;
 	isComplete: boolean;
+	openExceptionBlockers?: number;
+	openExceptionWarnings?: number;
 	overtimeByDayType: OvertimeByDayType;
 	pendingItems: number;
 	totalApprovedOvertimeMinutes: number;
 	totalWorkedMinutes: number;
+	unprocessedPunches?: number;
 }
 
 export interface OvertimeByDayType {
@@ -156,6 +162,9 @@ export interface OvertimeMultipliers {
 }
 
 export interface PayrollFlags {
+	// When true, open blocker-severity attendance exceptions block the run;
+	// when false they downgrade to a prominent warning (Phase 11G CP2).
+	blockPayrollOnOpenExceptions?: boolean;
 	duplicatePayslipExists?: boolean;
 	includePendingLeave?: boolean;
 	includeUnvalidatedAttendance?: boolean;
@@ -246,7 +255,9 @@ export type WarningCode =
 	| "NEW_EMPLOYEE_MID_PERIOD"
 	| "CONTRACT_CHANGED"
 	| "LOW_CONFIDENCE"
-	| "LOAN_EXCEEDS_THRESHOLD";
+	| "LOAN_EXCEEDS_THRESHOLD"
+	| "ATTENDANCE_EXCEPTION_REVIEW"
+	| "UNPROCESSED_PUNCHES_FOR_PERIOD";
 
 export interface CalculationExplanation {
 	formula: string;

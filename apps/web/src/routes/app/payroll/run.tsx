@@ -34,6 +34,9 @@ const ISSUE_CODE_LABELS: Record<string, string> = {
 	UNVALIDATED_ATTENDANCE: "Unvalidated attendance",
 	LOW_CONFIDENCE: "Low confidence estimate",
 	LOAN_EXCEEDS_THRESHOLD: "Loan exceeds threshold",
+	UNRESOLVED_ATTENDANCE_EXCEPTION: "Unresolved attendance exception",
+	ATTENDANCE_EXCEPTION_REVIEW: "Attendance exception needs review",
+	UNPROCESSED_PUNCHES_FOR_PERIOD: "Unprocessed punches in this pay period",
 };
 
 function humanizeIssueCode(code: string): string {
@@ -544,7 +547,9 @@ function ReviewStep({
 				}}
 			>
 				<strong style={{ color: "var(--accent)" }}>Preview only</strong> — This
-				is not finalized. Review each employee's payslip before confirming.
+				is not finalized. Review each employee's payslip before confirming. Raw
+				device punches do not go directly to payroll; payroll uses processed
+				attendance after review.
 			</div>
 
 			{blockers.length > 0 && (

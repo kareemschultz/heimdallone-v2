@@ -78,6 +78,25 @@ export const detectBlockers = (input: PayrollInput): PayrollBlocker[] => {
 		}
 	}
 
+	// Open blocker-severity biometric/geofence/attendance exceptions in this
+	// period. They never silently change pay — they gate finalization (default
+	// policy) so HR resolves them first. When the org disables hard-blocking they
+	// downgrade to a prominent warning (see detectWarnings).
+	const openExceptionBlockers = input.attendance.openExceptionBlockers ?? 0;
+	const blockOnExceptions = input.flags?.blockPayrollOnOpenExceptions !== false;
+	if (openExceptionBlockers > 0 && blockOnExceptions) {
+		const summary = input.attendance.exceptionSummary
+			? ` (${input.attendance.exceptionSummary})`
+			: "";
+		blockers.push({
+			code: "UNRESOLVED_ATTENDANCE_EXCEPTION",
+			severity: "blocker",
+			message: `${name} has ${openExceptionBlockers} unresolved attendance exception(s)${summary}.`,
+			resolution: "Resolve or dismiss them in the attendance exception queue.",
+			resolutionLink: "/app/biometrics/exceptions",
+		});
+	}
+
 	return blockers;
 };
 
@@ -109,6 +128,36 @@ export const detectWarnings = (input: PayrollInput): PayrollWarning[] => {
 			severity: "warning",
 			message: "Estimate confidence is low — attendance is incomplete.",
 			suggestedAction: "Validate attendance and approve leave first.",
+		});
+	}
+
+	// Warning-severity exceptions, plus blocker-severity ones downgraded when the
+	// org has disabled hard-blocking on open exceptions.
+	const openExceptionBlockers = input.attendance.openExceptionBlockers ?? 0;
+	const openExceptionWarnings = input.attendance.openExceptionWarnings ?? 0;
+	const blockOnExceptions = input.flags?.blockPayrollOnOpenExceptions !== false;
+	const reviewCount =
+		openExceptionWarnings + (blockOnExceptions ? 0 : openExceptionBlockers);
+	if (reviewCount > 0) {
+		const summary = input.attendance.exceptionSummary
+			? ` (${input.attendance.exceptionSummary})`
+			: "";
+		warnings.push({
+			code: "ATTENDANCE_EXCEPTION_REVIEW",
+			severity: "warning",
+			message: `${reviewCount} attendance exception(s) need review for ${name}${summary}.`,
+			suggestedAction: "Review them in the attendance exception queue.",
+		});
+	}
+
+	const unprocessed = input.attendance.unprocessedPunches ?? 0;
+	if (unprocessed > 0) {
+		warnings.push({
+			code: "UNPROCESSED_PUNCHES_FOR_PERIOD",
+			severity: "warning",
+			message: `${unprocessed} unprocessed punch(es) in this pay period for ${name}.`,
+			suggestedAction:
+				"Process punches so attendance reflects them before finalizing.",
 		});
 	}
 

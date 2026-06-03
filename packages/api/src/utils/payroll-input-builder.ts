@@ -1,5 +1,14 @@
 import { db } from "@Heimdallone/db";
-import { attendanceRecord } from "@Heimdallone/db/schema/attendance";
+import {
+	attendanceEvent,
+	attendanceRecord,
+	attendanceSetting,
+} from "@Heimdallone/db/schema/attendance";
+import {
+	attendanceException,
+	attendancePunch,
+	geofenceCheckIn,
+} from "@Heimdallone/db/schema/biometric";
 import {
 	contract,
 	department,
@@ -28,7 +37,20 @@ import type {
 	PayrollInput,
 	PayrollSettingInput,
 } from "@Heimdallone/payroll-engine/types";
-import { and, eq, gte, lte } from "drizzle-orm";
+import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
+
+// Short, plain-language labels for the exception-summary message (Phase 11G CP2).
+const EXCEPTION_SHORT_LABEL: Record<string, string> = {
+	unmapped_punch: "unmapped punch",
+	duplicate_punch: "duplicate punch",
+	missing_clock_out: "missing clock-out",
+	outside_geofence: "outside geofence",
+	low_gps_accuracy: "GPS accuracy",
+	clock_drift: "device clock drift",
+	spoofing_suspected: "location check",
+	device_error: "device error",
+	out_of_window: "out of shift window",
+};
 
 export async function buildPayrollInput(
 	organizationId: string,
@@ -121,6 +143,13 @@ export async function buildPayrollInput(
 	const countryProfileInput = await buildCountryProfile(organizationId);
 	const settingsInput = buildSettings(settings);
 
+	// Org policy: do open attendance exceptions block payroll? (default true)
+	const [attSetting] = await db
+		.select({ block: attendanceSetting.blockPayrollOnOpenExceptions })
+		.from(attendanceSetting)
+		.where(eq(attendanceSetting.organizationId, organizationId))
+		.limit(1);
+
 	return {
 		employee,
 		contract: contractInput,
@@ -133,6 +162,7 @@ export async function buildPayrollInput(
 		reimbursements,
 		countryProfile: countryProfileInput,
 		settings: settingsInput,
+		flags: { blockPayrollOnOpenExceptions: attSetting?.block ?? true },
 	};
 }
 
@@ -375,7 +405,102 @@ async function buildAttendanceInput(
 			)
 		);
 
-	return aggregateAttendance(records);
+	const agg = aggregateAttendance(records);
+	const review = await buildExceptionReview(
+		organizationId,
+		employeeId,
+		periodStart,
+		periodEnd
+	);
+	return { ...agg, ...review };
+}
+
+interface ExceptionReview {
+	exceptionSummary: string;
+	openExceptionBlockers: number;
+	openExceptionWarnings: number;
+	unprocessedPunches: number;
+}
+
+// Open biometric/geofence/attendance exceptions + unprocessed punches attributed
+// to this employee within the pay period. These NEVER change worked minutes —
+// they surface as payroll blockers/warnings so HR resolves them before
+// finalization (Phase 11G CP2). Scope by linked punch time → event date →
+// the exception's createdAt fallback.
+async function buildExceptionReview(
+	organizationId: string,
+	employeeId: string,
+	periodStart: Date,
+	periodEnd: Date
+): Promise<ExceptionReview> {
+	const excRows = await db
+		.select({
+			severity: attendanceException.severity,
+			type: attendanceException.type,
+			punchTime: attendancePunch.punchTime,
+			eventDate: attendanceEvent.eventDate,
+			capturedAt: geofenceCheckIn.capturedAt,
+			createdAt: attendanceException.createdAt,
+		})
+		.from(attendanceException)
+		.leftJoin(
+			attendancePunch,
+			eq(attendanceException.attendancePunchId, attendancePunch.id)
+		)
+		.leftJoin(
+			attendanceEvent,
+			eq(attendanceException.attendanceEventId, attendanceEvent.id)
+		)
+		.leftJoin(
+			geofenceCheckIn,
+			eq(attendanceException.geofenceCheckInId, geofenceCheckIn.id)
+		)
+		.where(
+			and(
+				eq(attendanceException.organizationId, organizationId),
+				eq(attendanceException.employeeId, employeeId),
+				inArray(attendanceException.status, ["open", "in_review"])
+			)
+		);
+
+	let openExceptionBlockers = 0;
+	let openExceptionWarnings = 0;
+	const typeLabels = new Set<string>();
+	for (const e of excRows) {
+		const when = e.punchTime ?? e.eventDate ?? e.capturedAt ?? e.createdAt;
+		if (when < periodStart || when > periodEnd) {
+			continue;
+		}
+		if (e.severity === "blocker") {
+			openExceptionBlockers += 1;
+		} else if (e.severity === "warning") {
+			openExceptionWarnings += 1;
+		} else {
+			continue; // info severity does not affect payroll readiness
+		}
+		typeLabels.add(EXCEPTION_SHORT_LABEL[e.type] ?? e.type);
+	}
+
+	const unprocessed = await db
+		.select({ id: attendancePunch.id })
+		.from(attendancePunch)
+		.where(
+			and(
+				eq(attendancePunch.organizationId, organizationId),
+				eq(attendancePunch.employeeId, employeeId),
+				inArray(attendancePunch.processingStatus, ["pending", "error"]),
+				gte(attendancePunch.punchTime, periodStart),
+				lte(attendancePunch.punchTime, periodEnd),
+				isNull(attendancePunch.deletedAt)
+			)
+		);
+
+	return {
+		openExceptionBlockers,
+		openExceptionWarnings,
+		unprocessedPunches: unprocessed.length,
+		exceptionSummary: [...typeLabels].join(", "),
+	};
 }
 
 function aggregateAttendance(
