@@ -7,6 +7,7 @@ import { biometricRouter } from "./biometric";
 import { contractsRouter } from "./contracts";
 import { hrCoreRouter } from "./hr-core";
 import { leaveRouter } from "./leave";
+import { leavePolicyRouter } from "./leave-policy";
 import { offboardingRouter } from "./offboarding";
 import { onboardingRouter } from "./onboarding";
 import { payrollRouter } from "./payroll";
@@ -24,6 +25,7 @@ export const appRouter = {
 	attendance: attendanceRouter,
 	biometric: biometricRouter,
 	leave: leaveRouter,
+	leavePolicy: leavePolicyRouter,
 	payroll: payrollRouter,
 	recruitment: recruitmentRouter,
 	onboarding: onboardingRouter,

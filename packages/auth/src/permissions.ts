@@ -49,6 +49,10 @@ export const statement = {
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
+	// Phase 7I — statutory/company leave policy library. "adopt" snapshots a
+	// system template into an org-owned policy. Entitlement source is labour
+	// law / NIS, NOT GRA (GRA only governs payroll/PAYE treatment of leave pay).
+	leave_policy: ["read", "create", "update", "adopt", "activate", "archive"],
 
 	audit_log: ["read"],
 	export: ["generate"],
@@ -165,6 +169,7 @@ export const tenant_owner = ac.newRole({
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
+	leave_policy: ["read", "create", "update", "adopt", "activate", "archive"],
 	audit_log: ["read"],
 	export: ["generate"],
 	document: ["create", "read", "update", "archive", "scan_expiring"],
@@ -225,6 +230,7 @@ export const tenant_admin = ac.newRole({
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
+	leave_policy: ["read", "create", "update", "adopt", "activate", "archive"],
 	audit_log: ["read"],
 	export: ["generate"],
 	document: ["create", "read", "update", "archive", "scan_expiring"],
@@ -278,6 +284,7 @@ export const hr_admin = ac.newRole({
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
+	leave_policy: ["read", "create", "update", "adopt", "activate", "archive"],
 	audit_log: ["read"],
 	export: ["generate"],
 	document: ["create", "read", "update", "archive", "scan_expiring"],
@@ -313,6 +320,7 @@ export const payroll_admin = ac.newRole({
 	leave_request: ["read"],
 	holiday: ["read"],
 	work_location: ["read"],
+	leave_policy: ["read"],
 	audit_log: ["read"],
 	export: ["generate"],
 	document: ["read"],
@@ -344,6 +352,7 @@ export const manager = ac.newRole({
 	leave_request: ["create", "read", "approve", "reject"],
 	holiday: ["read"],
 	work_location: ["read"],
+	leave_policy: ["read"],
 	document: ["read"],
 	asset: ["read", "request"],
 	appraisal: ["read", "submit", "review"],
@@ -397,6 +406,7 @@ export const auditor = ac.newRole({
 	leave_request: ["read"],
 	holiday: ["read"],
 	work_location: ["read"],
+	leave_policy: ["read"],
 	audit_log: ["read"],
 	export: ["generate"],
 	document: ["read"],

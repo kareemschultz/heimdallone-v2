@@ -155,3 +155,26 @@ export function canViewAssetCosts(role: MemberRole): boolean {
 		canManageAssets(role) || role === "payroll_admin" || role === "auditor"
 	);
 }
+
+// Leave Policy Engine (Phase 7I). Mirror of apps/web/src/lib/rbac.ts — keep
+// byte-aligned. Managing statutory/company leave policies (adopt/create/edit/
+// activate) is HR-level; viewing extends to manager/payroll_admin/auditor.
+// Seeing the payroll-treatment column is payroll-capable + auditor only. The
+// employee "why this balance?" surface is gated by leave_request:read (self),
+// NOT these helpers. AC grants in permissions.ts are the source of truth.
+export function canManageLeavePolicy(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewLeavePolicy(role: MemberRole): boolean {
+	return (
+		canManageLeavePolicy(role) ||
+		role === "manager" ||
+		role === "payroll_admin" ||
+		role === "auditor"
+	);
+}
+
+export function canViewLeavePayrollTreatment(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
