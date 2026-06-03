@@ -195,3 +195,48 @@ export function canViewLeavePolicy(role: MemberRole): boolean {
 export function canViewLeavePayrollTreatment(role: MemberRole): boolean {
 	return canManagePayroll(role) || role === "auditor";
 }
+
+// Helpdesk / Requests (Phase 13C). Mirror of packages/api/src/utils/role-helpers.ts
+// — keep byte-aligned. The `ticket` AC grants in permissions.ts are the source of
+// truth; these gate UI affordances only (the API re-checks every call server-side).
+//
+// Managing the desk (triage/edit/assign/resolve/close/categories) is HR-level or
+// the dedicated helpdesk_agent. Viewing extends to manager (own + direct-report
+// scoped server-side)/payroll_admin/auditor. Creating a request is self-service for
+// any role holding ticket:create. Approving is HR/manager(scoped)/payroll_admin.
+// Internal notes are agents/HR + read-only auditor only — NEVER the requesting
+// employee or a plain manager (redaction is enforced server-side).
+export function canManageHelpdesk(role: MemberRole): boolean {
+	return canManageHR(role) || role === "helpdesk_agent";
+}
+
+export function canViewHelpdesk(role: MemberRole): boolean {
+	return (
+		canManageHelpdesk(role) ||
+		role === "manager" ||
+		role === "payroll_admin" ||
+		role === "auditor"
+	);
+}
+
+export function canAssignHelpdesk(role: MemberRole): boolean {
+	return canManageHelpdesk(role);
+}
+
+export function canResolveHelpdesk(role: MemberRole): boolean {
+	return canManageHelpdesk(role);
+}
+
+export function canApproveHelpdeskRequest(role: MemberRole): boolean {
+	return (
+		canManageHelpdesk(role) || role === "manager" || role === "payroll_admin"
+	);
+}
+
+export function canViewHelpdeskInternalNotes(role: MemberRole): boolean {
+	return canManageHelpdesk(role) || role === "auditor";
+}
+
+export function canCreateHelpdeskRequest(role: MemberRole): boolean {
+	return canManageHelpdesk(role) || role === "manager" || role === "employee";
+}
