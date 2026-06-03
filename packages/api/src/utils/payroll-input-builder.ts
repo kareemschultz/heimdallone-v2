@@ -466,9 +466,15 @@ async function buildExceptionReview(
 	let openExceptionBlockers = 0;
 	let openExceptionWarnings = 0;
 	const typeLabels = new Set<string>();
+	// Compare on DATE granularity. periodStart/End are date-mode (local midnight)
+	// while when is a timestamp; a same-day exception at e.g. 18:00 would otherwise
+	// test as `> periodEnd` (midnight) and be wrongly dropped from the last day.
+	const startKey = formatDate(periodStart);
+	const endKey = formatDate(periodEnd);
 	for (const e of excRows) {
 		const when = e.punchTime ?? e.eventDate ?? e.capturedAt ?? e.createdAt;
-		if (when < periodStart || when > periodEnd) {
+		const whenKey = formatDate(when);
+		if (whenKey < startKey || whenKey > endKey) {
 			continue;
 		}
 		if (e.severity === "blocker") {

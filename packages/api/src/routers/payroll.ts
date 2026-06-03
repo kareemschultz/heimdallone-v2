@@ -26,7 +26,15 @@ import { fromCents } from "@Heimdallone/payroll-engine/money";
 import { calculateProjectedPay } from "@Heimdallone/payroll-engine/projected-pay";
 import { ORPCError } from "@orpc/server";
 import { createId } from "@paralleldrive/cuid2";
-import { and, count, desc, eq, inArray, sql } from "drizzle-orm";
+import {
+	and,
+	count,
+	desc,
+	eq,
+	getTableColumns,
+	inArray,
+	sql,
+} from "drizzle-orm";
 import { z } from "zod";
 
 import { authorizedProcedure, tenantProcedure } from "../index";
@@ -1789,8 +1797,13 @@ const payslipsList = authorizedProcedure("payroll", "read")
 			.where(where);
 		const offset = (input.page - 1) * input.pageSize;
 		const data = await db
-			.select()
+			.select({
+				...getTableColumns(payslip),
+				employeeFirstName: employeeProfile.firstName,
+				employeeLastName: employeeProfile.lastName,
+			})
 			.from(payslip)
+			.leftJoin(employeeProfile, eq(payslip.employeeId, employeeProfile.id))
 			.where(where)
 			.orderBy(desc(payslip.generatedAt))
 			.limit(input.pageSize)

@@ -43,6 +43,23 @@ function humanizeIssueCode(code: string): string {
 	return ISSUE_CODE_LABELS[code] ?? code.replace(/_/g, " ").toLowerCase();
 }
 
+const WAGE_TYPE_LABELS: Record<string, string> = {
+	monthly: "Monthly salary",
+	daily: "Daily rate",
+	hourly: "Hourly rate",
+};
+
+function wageTypeLabel(wage: string | undefined): string {
+	return WAGE_TYPE_LABELS[wage ?? ""] ?? wage ?? "—";
+}
+
+function payslipEmployeeName(s: Record<string, unknown>): string {
+	const first = (s.employeeFirstName as string) ?? "";
+	const last = (s.employeeLastName as string) ?? "";
+	const full = `${first} ${last}`.trim();
+	return full || "Unknown employee";
+}
+
 export const Route = createFileRoute("/app/payroll/run")({
 	component: PayrollRunWizard,
 });
@@ -713,7 +730,7 @@ function ReviewStep({
 								>
 									<td>
 										<div style={{ fontWeight: 500 }}>
-											{s.employeeId as string}
+											{payslipEmployeeName(s)}
 										</div>
 										<div
 											style={{
@@ -722,7 +739,8 @@ function ReviewStep({
 												marginTop: 1,
 											}}
 										>
-											{s.wageType as string} · {s.currency as string}
+											{wageTypeLabel(s.wageType as string)} ·{" "}
+											{s.currency as string}
 										</div>
 									</td>
 									<td className="num-cell">
@@ -949,7 +967,9 @@ function PayslipDetailStep({
 								</div>
 								<div className="fact-row">
 									<span className="k">Wage type</span>
-									<span className="v">{slip.wageType as string}</span>
+									<span className="v">
+										{wageTypeLabel(slip.wageType as string)}
+									</span>
 								</div>
 								<div className="fact-row">
 									<span className="k">Currency</span>

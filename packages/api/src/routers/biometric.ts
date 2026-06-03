@@ -845,6 +845,12 @@ const ingestSubmit = publicProcedure
 				message: "Invalid device id or ingest key.",
 			});
 		}
+		// An admin-deactivated (or errored) device must not keep ingesting.
+		if (device.status !== "active") {
+			throw new ORPCError("FORBIDDEN", {
+				message: "This device is not active. Re-activate it to accept punches.",
+			});
+		}
 
 		// Privacy guard — reject any payload carrying biometric template material.
 		for (const p of input.punches) {

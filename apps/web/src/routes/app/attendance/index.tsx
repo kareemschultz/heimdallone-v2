@@ -205,6 +205,16 @@ function getEmptyTitle(search: string, lens: AttLens): string {
 	return "No attendance records";
 }
 
+function correctionStatusLabel(status: string): string {
+	if (status === "approved") {
+		return "Approved";
+	}
+	if (status === "rejected") {
+		return "Rejected";
+	}
+	return "Pending";
+}
+
 function correctionPillClass(status: string): string {
 	if (status === "approved") {
 		return "ps-approved";
@@ -1342,7 +1352,7 @@ function CorrectionsView({ memberRole }: { memberRole: string }) {
 								{c.employeeFirstName} {c.employeeLastName ?? ""}
 							</span>
 							<span className={`pill-status ${correctionPillClass(c.status)}`}>
-								{c.status}
+								{correctionStatusLabel(c.status)}
 							</span>
 						</div>
 						<div

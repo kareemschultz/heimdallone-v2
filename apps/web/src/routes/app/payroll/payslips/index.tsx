@@ -214,9 +214,7 @@ function PayslipsPage() {
 								<tr key={s.id as string}>
 									{canManage && (
 										<td>
-											<div style={{ fontWeight: 500 }}>
-												{s.employeeId as string}
-											</div>
+											<div style={{ fontWeight: 500 }}>{employeeName(s)}</div>
 											<div
 												style={{
 													fontSize: 11,
@@ -224,7 +222,7 @@ function PayslipsPage() {
 													marginTop: 1,
 												}}
 											>
-												{s.wageType as string}
+												{wageTypeLabel(s.wageType as string)}
 											</div>
 										</td>
 									)}
@@ -335,6 +333,23 @@ function payslipStatusLabel(status: string): string {
 		return "Paid";
 	}
 	return status;
+}
+
+const WAGE_TYPE_LABELS: Record<string, string> = {
+	monthly: "Monthly salary",
+	daily: "Daily rate",
+	hourly: "Hourly rate",
+};
+
+function wageTypeLabel(wage: string | undefined): string {
+	return WAGE_TYPE_LABELS[wage ?? ""] ?? wage ?? "—";
+}
+
+function employeeName(s: Record<string, unknown>): string {
+	const first = (s.employeeFirstName as string) ?? "";
+	const last = (s.employeeLastName as string) ?? "";
+	const full = `${first} ${last}`.trim();
+	return full || "Unknown employee";
 }
 
 function fmtDate(d: string | Date): string {

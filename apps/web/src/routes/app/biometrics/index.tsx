@@ -201,13 +201,13 @@ function OverviewDashboard() {
 						<span>Punches</span>
 						<ArrowRight color="var(--fg-3)" size={14} />
 					</Link>
-					<a className="quick-link" href="/app/geofencing">
+					<Link className="quick-link" to="/app/geofencing">
 						<span className="quick-link-icon">
 							<MapPin size={16} />
 						</span>
-						<span>Geofencing (coming soon)</span>
+						<span>Geofencing</span>
 						<ArrowRight color="var(--fg-3)" size={14} />
-					</a>
+					</Link>
 				</div>
 			</div>
 		</div>

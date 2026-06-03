@@ -385,3 +385,66 @@ touched-file errors), ultracite 223/1/2 unchanged, audit:permissions 73/10.
 **Phase 11G COMPLETE** (CP1 work-arrangement → CP2 payroll readiness → CP3 live
 projection → CP4 scrub + source labels + integration). Next: **Phase 11H** —
 module-wide QA/RBAC/security/browser pass to close Phase 11.
+
+## QA / RBAC / security pass (Phase 11H — closes Phase 11)
+
+Three parallel read-only audits (security/RBAC, UX/a11y, integration/correctness)
+then sequential fixes for confirmed defects only.
+
+**Behaviour-affecting fixes:**
+- `payslipsList` now leftJoins `employeeProfile` (returns `employeeFirstName`/
+  `employeeLastName` via `getTableColumns(payslip)`) so the payslips table and the
+  run-preview review table render employee NAMES instead of a raw cuid.
+- Public `ingest.submit` rejects punches from non-`active` devices (was id + key +
+  deletedAt only) → a deactivated device can no longer ingest.
+- `containsBiometricTemplate` now **recurses** into nested objects/arrays — a
+  template hidden under e.g. `meta.fingerprintData` (allowed by the ingest
+  `.passthrough()`) is now rejected, not just top-level keys.
+- `buildExceptionReview` period scoping compares on **date granularity**
+  (`formatDate(when)` vs the period's date keys). Previously date-mode period
+  bounds (local midnight) vs a timestamp `when` dropped a same-day exception after
+  00:00 on the last day (and edge of the first day) from payroll readiness. See
+  lessons-learned #80.
+
+**UI-label fixes:** raw `wageType` enum → `wageTypeLabel` (run + payslips); raw
+correction status enum → `correctionStatusLabel`; biometrics overview
+"Geofencing (coming soon)" `<a>` (full reload + wrong label) → `<Link>` "Geofencing".
+
+**Documented hardening backlog (NOT changed in a QA pass):** manager visibility of
+org-wide `mappings.list` / `assignments.list` (A1/A2 — `canViewBiometrics`
+intentionally grants managers device-view; low, employee names only); processor
+`applyInPunch`/`applyOutPunch` non-transactional partial-failure double-create
+window (C-D1 — wrap event-insert + punch-update in `db.transaction`); unmapped
+punches (`employeeId NULL`) surface in the org exception queue but not per-employee
+readiness (C-D2); `duplicate_punch` exception type is dead — duplicates are dropped
+at ingest by `idempotencyKey` (C-D3); `attendance_event` GPS scrub uses
+date-granularity cutoff (C-D5, privacy-safe ≤1-day over-scrub).
+
+**RBAC matrix (live RPC):**
+
+| role | devices/geofence create | punches/exceptions list | records.validate | projectedPay.own | runs.confirm |
+|---|---|---|---|---|---|
+| payroll_admin | 403 / 403 | 200 / 200 | 403 | 404 (no profile) | reached (manage) |
+| manager | 403 / 403 | 200 / 200 (scoped) | 403 | 200 | 403 |
+| auditor | 403 / 403 | 200 / 200 (read) | 403 | 200 | 403 |
+| employee | 403 / 403 | **403 / 403** | 403 | 200 (own, no resolutionLink) | 403 |
+
+Public ingest: bad key **401**; nested biometric-template payload **rejected**
+(proven); inactive device **403**. Auditor exception queue shows no action buttons
+("Resolved"/"Dismissed" are status-filter chips, not mutations). Employee hitting a
+global biometrics page gets a "You don't have access to device management" state.
+
+**Security/privacy:** no biometric-template columns or material stored/accepted
+(recursion-proven); `apiKeyHash`/`credentialRef` never returned; no raw GPS to
+employees; no raw enums/internal IDs as primary UI; ZKTeco TCP/ADMS + NGTeco-cloud
+remain clearly "Planned" with no fake Sync; device detail leaks no secrets.
+
+**Scripts:** verify-work-arrangement ✓, verify-biometric-payroll-readiness ✓,
+verify-live-pay-projection ✓, verify-biometric-geofence-attendance-payroll-
+integration 22/22 ✓, scrub dry-run 0-eligible ✓.
+
+Gates: check-types 3/3, payroll-engine 27/27, build ✓, web tsc 26 baseline (0 new),
+ultracite 223/1/2 unchanged, audit:permissions 73/10. 12 screenshots
+`docs/reviews/phase-11h/`, 0 app console errors.
+
+**PHASE 11 (Biometric + Geofencing) COMPLETE.** Next: Phase 12 Assets.

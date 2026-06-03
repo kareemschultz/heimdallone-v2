@@ -428,12 +428,23 @@ const BANNED_TEMPLATE_TOKENS = [
 
 const NON_ALNUM_RE = /[^a-z0-9]/g;
 
-/** Rejects any object carrying biometric-template material (privacy guard). */
-export function containsBiometricTemplate(
-	obj: Record<string, unknown>
-): boolean {
-	return Object.keys(obj).some((key) => {
+/**
+ * Rejects any object carrying biometric-template material (privacy guard).
+ * Recurses into nested objects/arrays so a template hidden under e.g.
+ * `meta.fingerprintData` is still caught (ingest payloads allow passthrough keys).
+ */
+export function containsBiometricTemplate(obj: unknown): boolean {
+	if (Array.isArray(obj)) {
+		return obj.some((item) => containsBiometricTemplate(item));
+	}
+	if (obj === null || typeof obj !== "object") {
+		return false;
+	}
+	return Object.entries(obj as Record<string, unknown>).some(([key, value]) => {
 		const normalized = key.toLowerCase().replace(NON_ALNUM_RE, "");
-		return BANNED_TEMPLATE_TOKENS.some((token) => normalized.includes(token));
+		if (BANNED_TEMPLATE_TOKENS.some((token) => normalized.includes(token))) {
+			return true;
+		}
+		return containsBiometricTemplate(value);
 	});
 }
