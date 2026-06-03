@@ -10,30 +10,53 @@ Phase 8:   Payroll ✅ (8A–8K + 8J.1 module-tabs / UX clarity polish + 8J.2 ro
 Phase 9:   Recruitment + Onboarding ✅ COMPLETE (9A–9I, verified end-to-end)
 Phase 10:  Offboarding ✅ COMPLETE (10A spec, 10B DB, 10C API, 10D UI CP1 overview + CP2 templates + CP3 cases + CP4 checklist actions + CP5 employee self-service + CP6 QA/RBAC pass)
 Phase 11:  Biometric + Geofencing ✅ COMPLETE (11A spec → 11B DB → 11C API/processor → 11D devices UI → 11E punch/exception UI → 11F geofence/check-in UI → 11G integration hardening CP1–CP4 → 11H module QA/RBAC/security/browser pass ✅). Next = Phase 12 Assets (queued spec; connects to Offboarding asset returns).
-Phase 12:  Assets / Helpdesk / Projects (can parallelize; Assets spec already drafted — assets-implementation-plan.md, queued)
-Phase 13:  Performance / PMS
-Phase 14:  Automations + Notifications
-Phase 15:  Analytics + Dashboards + Reports
+Phase 12:  Assets ← ACTIVE (Operations; spec drafted — assets-implementation-plan.md)
+Phase 13:  Helpdesk / Requests (Operations)
+Phase 14:  Projects + Tasks & Timelines (Operations)
+Phase 15:  Performance / PMS (People)
+Phase 16:  Finance expansion (Finance — payment batches, bank exports, expenses, costing)
+Phase 17:  CRM (research/spec at 17A — see crm-implementation-plan.md; FUTURE)
+Phase 18:  Analytics / Executive dashboards
+Phase 19:  Enterprise QA / accessibility / security hardening
+Phase 20:  Production readiness
 ```
 
-> **Roadmap correction (2026-06-02):** Phase 11 is **Biometric + Geofencing**, not
-> Assets. The Assets implementation plan
-> ([assets-implementation-plan.md](../assets-implementation-plan.md)) was drafted
-> early and remains a **completed, queued spec** for a later phase (Phase 12
-> candidate). It is NOT the active phase — no Assets DB migration is to be run until
-> Biometric + Geofencing ships. See the dated entries below.
-
-> **Post-11 roadmap order (user directive, 2026-06-02 — Phase 11 now COMPLETE):**
-> **Phase 12 = Assets** (already specced; connects directly to Offboarding asset
-> returns) → **Helpdesk / Requests** → **Projects / Tasks / Timelines** →
-> **Performance** → **Finance expansion** → **CRM**.
+> **Long-term suite direction (user directive 2026-06-02).** Heimdallone is one
+> platform organised into **five product groups**: **People & Payroll · Operations ·
+> Finance · CRM · Admin & Compliance**. Modules are documented and queued under their
+> group but kept **hidden/queued in the sidebar until their phase begins** — do not
+> overload the nav with future modules.
 >
-> **Future suite modules — DO NOT implement yet (no spec/DB until their phase):**
-> CRM, Finance, Projects, Tasks & Timelines are future modules. When the **CRM**
-> spec is eventually drafted it must research **Odoo, ERPNext, TwentyCRM, SuiteCRM,
-> EspoCRM, Vtiger, and HubSpot/Salesforce/Zoho/Pipedrive** patterns, plus
-> **Horilla/OpenHRMS only where HR operations intersect CRM** — following the
-> live-docs research rule (no v1 source of truth).
+> | Group | Modules |
+> |---|---|
+> | **People & Payroll** | Employees · Contracts · Attendance · Leave · Payroll · Biometrics & Geofencing · Recruitment · Onboarding · Offboarding · Performance · Training |
+> | **Operations** | Assets · Helpdesk / Requests · Projects · Tasks & Timelines · Timesheets · Field work |
+> | **Finance** | Payroll payment batches · Bank exports · Expenses · Reimbursements · Loans & advances · Department/job costing · Accounting integrations |
+> | **CRM** | Leads · Customers · Contacts · Deals / opportunities · Sales pipeline · Activities · Client handoff to projects |
+> | **Admin & Compliance** | Organization settings · Roles & permissions · Audit logs · Countries & tax · Policies · Document templates · Reports / dashboards |
+>
+> **Recommended order after Phase 11:** 12 Assets → 13 Helpdesk/Requests →
+> 14 Projects + Tasks & Timelines → 15 Performance/PMS → 16 Finance expansion →
+> 17 CRM → 18 Analytics/Executive dashboards → 19 Enterprise QA/accessibility/security
+> hardening → 20 Production readiness.
+>
+> **Future modules — DO NOT implement yet:** CRM, Finance, Projects, and Tasks are
+> future-only. Document the roadmap; keep them queued/hidden. **CRM is the furthest
+> out**: when Phase 17 begins, **17A is research/spec-only** (no code) — see
+> [crm-implementation-plan.md](../crm-implementation-plan.md). Do NOT build CRM from
+> scratch by guessing; the 17A plan synthesises Odoo, ERPNext, TwentyCRM, SuiteCRM,
+> EspoCRM, Vtiger, YetiForce/OroCRM, HubSpot, Salesforce, Zoho, Pipedrive, Attio,
+> Dynamics 365 (+ Horilla/OpenHRMS only where HR ops intersect CRM). The CRM thesis
+> for Heimdallone is the cross-suite flow **Lead → Customer → Deal → Project → Staff
+> assignment → Timesheets → Payroll cost → Invoice/report** — CRM exists to connect
+> sales to people/operations/payroll cost, not just to track sales. Do not implement
+> CRM until People/Payroll + Assets + Helpdesk/Requests + Projects foundations are
+> stable unless explicitly told to move it earlier.
+>
+> **Roadmap correction (2026-06-02):** Phase 11 was **Biometric + Geofencing** (now
+> COMPLETE), not Assets. The Assets plan
+> ([assets-implementation-plan.md](../assets-implementation-plan.md)) was drafted
+> early; it is now the **active Phase 12**.
 
 ### Phase Status (2026-05-28 — Phase 9A complete)
 - **Phase 5**: ✅ HR Core MVP complete (employees, org settings, holidays, RBAC)
@@ -56,6 +79,7 @@ Phase 15:  Analytics + Dashboards + Reports
   - First pass (commit `13f54d7`): PayrollTabs component across all 10 payroll pages, CSV injection fix (`csvCell()` helper), payment-batch state machine terminal-state guard.
   - Second pass (this phase): Overview regrouped into Payroll Work / Setup / Payments with "Recommended" highlight on the readiness-met next step; Run wizard jargon swept ("blocker" → "Needs fixing / Cannot continue", "warning" → "Needs review", raw issue codes demoted to small secondary text); Payslips list status legend (Preview / Finalized / Paid); Payslip detail negative net-pay "Needs review — blocked preview" banner and collapsible `<details>` calculation explanation; Reports "what these mean" helper text and updated export-placeholder copy; Settings reordered into General / Overtime / Work schedule / Country rules / Payslip numbering; Pay Items 6-pill filter (All / Earnings / Allowances / Deductions / Statutory / Employer Contributions); Loans pill set extended with Advances; Payments already in place per spec. Module-tabs are now a product standard — see [shared-ui-primitives-plan.md](../shared-ui-primitives-plan.md#moduletabs-pattern).
 
+- **Phase 12B** (Assets — ACTIVE): ✅ Assets DB schema + migration + seed (DB layer only; no router/UI yet). `packages/db/src/schema/assets.ts` — 4 tables (asset_category, asset, asset_assignment, asset_request) + 3 enums (asset_status, asset_return_condition, asset_request_status), org-scoped, soft-delete, registered in schema barrel. Migration **`0014_fat_shiver_man.sql`** (clean diff, no drift) applied. Three partial-unique invariants: `asset_org_tracking_uq` (tag/serial per org), `asset_category_org_name_uq`, and the core **`asset_assignment_open_uq`** (≤1 open assignment per asset). `asset.currentAssigneeId` is a denormalised cache of the open assignment (12C assign/return keep it in sync). `purchaseCost` numeric(12,2) — future 12C API must redact for non-finance roles. `scripts/seed-assets.ts` (idempotent, delete-then-insert): 5 categories, 10 assets (across available/in_use/retired incl. maintenance + write-off), 8 assignments (5 open + 3 returned: healthy/minor/major), 4 requests (one per status). **Verified:** tables/enums/indexes exist; seed idempotent (identical counts ×2); one-open-assignment + trackingId-unique invariants both enforced (insert→reject); org-scoped. Gates: check-types 3/3, build ✓, ultracite 223/1/2 unchanged, audit:permissions 73/10 (no router added). Docs: [assets-db-setup.md](../../implementation/assets-db-setup.md). **Offboarding:** no coupling added this phase (live-custody read-only link comes in 12C/12D). **Next: Phase 12C Assets oRPC API.**
 - **Phase 11H** (closes Phase 11): ✅ Module-wide QA/RBAC/security/browser pass. Three parallel READ-ONLY audits (security/RBAC, UX/a11y, integration/correctness) then sequential fixes for confirmed defects only. **Fixes (8):** payslips list/run-preview showed a raw cuid as the employee "name" → `payslipsList` now leftJoins `employeeProfile` (name + via `getTableColumns`); raw `wageType` enum → `wageTypeLabel` ("Monthly salary"/"Daily rate"/"Hourly rate") in run + payslips; raw correction status enum → `correctionStatusLabel`; biometrics overview "Geofencing (coming soon)" `<a>` (full reload, wrong label) → `<Link to="/app/geofencing">Geofencing`; `containsBiometricTemplate` now **recurses** into nested objects/arrays (a template under `meta.fingerprintData` was previously accepted by `.passthrough()`); public `ingest.submit` now rejects punches from non-`active` devices (was id+key+deletedAt only); `buildExceptionReview` period scoping now compares on **date granularity** (date-mode period bounds vs timestamp `when` dropped last-day exceptions after midnight — see lessons #80). **Documented (hardening backlog, not changed in a QA pass):** manager visibility of org-wide device mappings / geofence assignments (A1/A2 — `canViewBiometrics` intentionally grants managers device-view; low); processor `applyInPunch`/`applyOutPunch` non-transactional partial-failure double-create window (C-D1 — wrap in `db.transaction`); unmapped punches (employeeId null) surface in the org exception queue but not per-employee readiness (C-D2); `duplicate_punch` exception type is dead (duplicates dropped at ingest by idempotencyKey — C-D3); `attendance_event` GPS scrub uses date-granularity cutoff (C-D5, privacy-safe over-scrub ≤1 day). **RBAC matrix (live):** owner/admin/hr manage all; payroll_admin devices/geofence create **403**, payroll view ✓; manager device/geofence **403**, scoped punch/exception view, run.confirm **403**; auditor read-only (all mutations **403**, no action buttons — "Resolved/Dismissed" are filter chips); employee global punches/exceptions **403**, own projection 200 no resolutionLink, blocked-page no-access state; public ingest bad key **401**, nested template rejected, inactive device **403**. **Security/privacy:** no template columns/material stored or accepted (recursion-proven); apiKeyHash/credentialRef never returned; no raw GPS to employees; no raw enums/IDs as primary UI; planned adapters (ZKTeco TCP/ADMS, NGTeco cloud) clearly "Planned" with no fake Sync. **Scripts:** verify-work-arrangement ✓, verify-biometric-payroll-readiness ✓, verify-live-pay-projection ✓, verify-biometric-geofence-attendance-payroll-integration 22/22 ✓, scrub dry-run 0-eligible ✓. Gates: check-types 3/3, payroll-engine 27/27, build ✓, web tsc 26 baseline (0 new; touched-file matches are pre-existing baseline lines), ultracite 223/1/2 unchanged, audit:permissions 73/10. 12 screenshots `docs/reviews/phase-11h/`, 0 app console errors. **PHASE 11 COMPLETE. Next: Phase 12 Assets.**
 - **Phase 11G CP4** (closes 11G): ✅ GPS retention scrub + attendance source labels + full-chain integration verification. Privacy hardening, **no migration** (schema already had nullable `geofence_check_in.lat/lon` + `coordsPurgedAt` + `attendance_setting.gps_retention_days` default 90), no new sync protocol, no tax/rate change. **Scrub** (`scripts/scrub-geofence-gps.ts`): after the per-org retention window, NULL precise `geofence_check_in.latitude/longitude` + stamp `coordsPurgedAt` (KEEP verdict/distance/accuracy/matchedWorkSite/reason/capturedAt) and NULL `attendance_event.locationLat/Lon`; DRY-RUN by default (`--apply` to write, `--org=` filter); recent rows untouched; prints eligible/skipped-recent/already-scrubbed counts. **Source labels** (`attendance.recordsList` → `enrichRecordsSourceReview`): each daily record enriched with a `source` key (from linked `attendance_event` sources: single→that, multiple→`mixed`, none→`none`) + `needsReview` flag (open/in_review exception on employee+date); UI maps the key → plain "Manual entry/Biometric device/Mobile GPS check-in/File import/Admin adjustment/Mixed sources/Source unavailable" + "Needs review" badge (no raw enum/ID, no raw GPS in payload). **Verified**: `scripts/verify-biometric-geofence-attendance-payroll-integration.ts` 22/22 (raw-punch safety, exceptions, readiness, projection, privacy/scrub, processor link+idempotency — read-only assertions before the mutating processor run, see lessons-learned #79); scrub script proof (dry-run no-op → apply scrubs synthetic 200-day row, coords null + coordsPurgedAt set + audit fields preserved, recent row untouched); existing verifiers still pass. Browser: attendance Source column + labels (Devon=Mobile GPS, Maya/Rohan=Biometric, Kareena=Mobile after processing) + Needs-review badges, no lat/lon in payload, estimated-pay card still renders, geofence check-in renders without coords, 0 console errors. RBAC: employee → biometric exceptions/punches **403** + own projection no resolutionLink; auditor → attendance read 200 / validate **403**. Gates: check-types 3/3, payroll-engine 27/27, build ✓, web tsc 26 baseline, ultracite 223/1/2 unchanged, audit:permissions 73/10. Screenshots `docs/reviews/phase-11g-cp4/`. **Phase 11G COMPLETE. Next: Phase 11H — module-wide QA/RBAC/security/browser pass.**
 - **Phase 11G CP3** (ACTIVE): ✅ Live / projected pay hardening — projected pay is an **estimate** (never finalization) that now expresses a **confidence level** driven by the CP2 attendance/exception signals, so an estimate never looks more trustworthy than its data. No tax/rate formula change. Engine: new `confidence.ts` (single source of truth — the confidence logic was duplicated in `calculate.ts` + `projected-pay.ts` and had gone stale w.r.t. CP2 exception fields; unified). `deriveConfidence`: `cannot_estimate` (blockers) → `low` (openExceptionWarnings/unprocessedPunches/pendingItems/pendingLeave) → `medium` (incomplete) → `high`; `confidenceLabel` → **High confidence** / **Needs review** / **Cannot finalize yet**; `buildConfidenceReasons` plain-language. `calculateProjectedPay` returns richer `ProjectedPayResult` (confidenceLabel, confidenceReasons[], warnings[], blockers[], payType/payFrequency, hours{regular,overtime}, days{worked,absent,paidLeave,unpaidLeave}, attendanceComplete); `disclaimers[0]` always the not-final guardrail; **paid leave never reduces** monthly base, unpaid does (unchanged). `calculatedAt` stamped by API (engine stays Date-free). API: `projectedPay.forEmployee` (admin) + `.own` (self-scoped) — `payPeriodId` now **optional** (defaults to current/open period via `resolveProjectionPeriod`); `.own` **strips `resolutionLink`** (no admin links to employees); `runs.preview` returns `confidenceCounts{high,needsReview,cannotFinalize}`. UI: employee **"Estimated pay this period"** card (`features/payroll/estimated-pay-card.tsx`) on `/app/payroll/payslips`; admin **"Projected pay confidence"** indicator in run-preview review step. **Verified**: `scripts/verify-live-pay-projection.ts` 13/13 + `projected-pay.test.ts` 9 cases (engine 27/27); browser — employee card "Cannot finalize yet" (Rohan, open exception) + "Needs review" (Andre, unvalidated only), admin preview "0 High · 7 Needs review · 3 Cannot finalize yet", own payload has NO resolutionLink (leak-prevention), auditor `forEmployee` 403, 0 console errors. Hourly/daily projection covered by unit tests (no hourly/daily contract seeded — limitation logged; "shift" = daily, no enum); true "High confidence" not reachable in seed (every employee has unvalidated attendance) — documented not faked. Gates: check-types 3/3, payroll-engine 27/27, build ✓, web tsc 26 baseline, ultracite 223/1/2 unchanged, audit:permissions 73/10. Screenshots `docs/reviews/phase-11g-cp3/`. **Next: CP4 GPS retention scrub + final integration verification + attendance source labels.**
