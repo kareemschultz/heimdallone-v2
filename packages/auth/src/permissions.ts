@@ -87,7 +87,7 @@ export const statement = {
 		"request",
 	],
 
-	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 
 	offboarding: [
 		"create",
@@ -191,7 +191,7 @@ export const tenant_owner = ac.newRole({
 		"manage",
 		"request",
 	],
-	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	offboarding: FULL_OFFBOARDING,
 	...MANAGE_BIOMETRIC,
 });
@@ -252,7 +252,7 @@ export const tenant_admin = ac.newRole({
 		"manage",
 		"request",
 	],
-	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	offboarding: FULL_OFFBOARDING,
 	...MANAGE_BIOMETRIC,
 });
@@ -298,7 +298,7 @@ export const hr_admin = ac.newRole({
 	appraisal: ["create", "read", "review", "finalize", "manage"],
 	goal: ["create", "read", "update"],
 	asset: ["create", "read", "assign", "return", "manage", "request"],
-	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	offboarding: FULL_OFFBOARDING,
 	...MANAGE_BIOMETRIC,
 });
@@ -334,7 +334,7 @@ export const payroll_admin = ac.newRole({
 	appraisal: ["read"],
 	goal: ["read"],
 	asset: ["read", "request"],
-	ticket: ["read"],
+	ticket: ["read", "approve"],
 	offboarding: ["read", "read_settlement"],
 });
 
@@ -361,7 +361,7 @@ export const manager = ac.newRole({
 	applicant: ["read"],
 	interview: ["read", "update", "complete"],
 	onboarding: ["read", "complete", "skip", "assign"],
-	ticket: ["create", "read"],
+	ticket: ["create", "read", "approve"],
 	offboarding: ["read", "approve", "complete_task"],
 });
 
@@ -441,7 +441,7 @@ export const recruiter = ac.newRole({
 export const helpdesk_agent = ac.newRole({
 	...memberAc.statements,
 	employee: ["read"],
-	ticket: ["create", "read", "update", "assign", "resolve", "close"],
+	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	document: ["read"],
 });
 
