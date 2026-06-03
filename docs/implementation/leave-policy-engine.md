@@ -2,7 +2,12 @@
 
 Hardening of the Phase 7 Leave module. Spec/research: [../architecture/leave-policy-engine-plan.md](../architecture/leave-policy-engine-plan.md).
 Checkpoints: **7I‑A** research/spec ✅ · **7I‑B** schema+migration+seed ✅ · **7I‑C**
-API+RBAC ✅ · **7I‑D** UI (next) · **7I‑E** browser QA + payroll-warning surfacing (next).
+API+RBAC ✅ · **7I‑D** UI ✅ (commit 960ea98 — template gallery, template detail +
+adopt-snapshot dialog, company policies + create-custom, org policy detail
+[activate/archive/edit-rule/compare-to-baseline], employee "why this balance";
+browser-verified all roles, 0 console errors, 8 screenshots
+`docs/reviews/phase-7i-d/`) · **7I‑E** browser QA recap + payroll-warning surfacing
+for unverified/missing policy (next).
 
 ## Legal attribution
 Statutory leave **entitlement** = Labour Act / Ministry of Labour / NIS / company
