@@ -5,6 +5,7 @@ export * from "./auth";
 export * from "./biometric";
 export * from "./hr-core";
 export * from "./leave";
+export * from "./leave-policy";
 export * from "./offboarding";
 export * from "./onboarding";
 export * from "./payroll";
