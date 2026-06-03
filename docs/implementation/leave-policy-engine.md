@@ -6,8 +6,32 @@ API+RBAC ✅ · **7I‑D** UI ✅ (commit 960ea98 — template gallery, template
 adopt-snapshot dialog, company policies + create-custom, org policy detail
 [activate/archive/edit-rule/compare-to-baseline], employee "why this balance";
 browser-verified all roles, 0 console errors, 8 screenshots
-`docs/reviews/phase-7i-d/`) · **7I‑E** browser QA recap + payroll-warning surfacing
-for unverified/missing policy (next).
+`docs/reviews/phase-7i-d/`) · **7I‑E** QA + payroll/leave warning surfacing ✅
+(PHASE 7I COMPLETE — see §11).
+
+## 11. 7I‑E — final QA + soft warning surfacing
+
+Read-only signal added (no new AC pair — reuses `leave_policy:read` → audit stays
+86/12): `orgPolicies.health` returns the active policy's verification summary
+(`hasActivePolicy`, needs_review/draft/verified counts, `needsReview`, plain
+`message`). `balanceExplanation` now also returns `unverifiedNotice`.
+
+**Soft warnings — never block payroll, never change pay:**
+- Company policies list: banner when the active policy still has needs_review/draft rules.
+- Employee "Why this balance?": `unverifiedNotice` ("This policy needs official review before production use.").
+- Payroll **run-preview review note**: read-only, placed under projected-pay confidence (NOT under blockers); explicitly says it does not block the run or change pay. The payroll engine + confidence/blocker logic were **not** touched (deliberate — keeps formulas untouched; payroll-engine tests stay 27/27).
+- Leave request modal: a no-active-policy note (only when the org has no active policy; non-noisy).
+
+**QA / RBAC / security verified:**
+- Direct-RPC RBAC: employee adopt/activate/health/templates.list → **403**, balanceExplanation.forSelf → 200; auditor templates.list/health → 200, adopt/activate/updateRule → **403**.
+- Source links go through `safeHttpUrl`; no raw IDs/enums as primary text; payroll-treatment redacted for non-finance; per-rule verification + source metadata always shown; every non-verified rule shows the verify-before-production notice; snapshot invariant re-confirmed (verify 22/22).
+- Browser: all warning surfaces + admin adopt/activate + auditor read-only + employee balance/no-access + leave request form (post a11y fix) — **0 app console errors**, 6 screenshots `docs/reviews/phase-7i-e/`.
+
+Gates: check-types 3/3, build 2/2, ultracite 218/1/2, audit:permissions 86/12,
+web tsc 0 new touched-file errors, verify-leave-policy-engine 22/22,
+payroll-engine 27/27. **PHASE 7I COMPLETE.** Deferred: encashment payout
+(final-pay/offboarding); BB/TT/JM + Guyana annual-leave tenure bands stay
+draft/needs_review pending official-source confirmation.
 
 ## Legal attribution
 Statutory leave **entitlement** = Labour Act / Ministry of Labour / NIS / company

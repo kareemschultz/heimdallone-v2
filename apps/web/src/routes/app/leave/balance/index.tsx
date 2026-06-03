@@ -33,6 +33,7 @@ interface Explanation {
 		name: string;
 	} | null;
 	policyNotice: string | null;
+	unverifiedNotice: string | null;
 }
 
 function num(v: string | number): string {
@@ -118,6 +119,12 @@ function WhyThisBalancePage() {
 				<div className="lp-notice" role="note">
 					<Info size={14} />
 					<span>{data.policyNotice}</span>
+				</div>
+			) : null}
+			{data?.unverifiedNotice ? (
+				<div className="lp-notice warn" role="note">
+					<Info size={14} />
+					<span>{data.unverifiedNotice}</span>
 				</div>
 			) : null}
 

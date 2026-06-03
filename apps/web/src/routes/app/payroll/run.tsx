@@ -524,6 +524,14 @@ function ReviewStep({
 		})
 	);
 
+	// Read-only leave-policy health (Phase 7I-E). Informational only — surfaced as
+	// a review note, NEVER a blocker; it does not change any pay calculation.
+	const { data: leaveHealth } = useQuery(
+		orpc.leavePolicy.orgPolicies.health.queryOptions({ input: {} })
+	);
+	const leaveHealthMsg = (leaveHealth as { message: string | null } | undefined)
+		?.message;
+
 	const slips = (payslips?.data ?? []) as Record<string, unknown>[];
 	const blockers = ((issues ?? []) as Record<string, unknown>[]).filter(
 		(i) => i.issueType === "blocker"
@@ -585,6 +593,25 @@ function ReviewStep({
 					<span className="badge badge-danger" style={{ fontSize: 10 }}>
 						{previewResult.confidenceCounts.cannotFinalize} Cannot finalize yet
 					</span>
+				</div>
+			)}
+
+			{leaveHealthMsg && (
+				<div
+					role="note"
+					style={{
+						marginBottom: 14,
+						padding: "10px 16px",
+						background: "var(--warning-soft)",
+						border: "1px solid var(--line)",
+						borderRadius: 12,
+						fontSize: 12.5,
+						color: "var(--fg-2)",
+					}}
+				>
+					<strong>Leave policy review:</strong> {leaveHealthMsg} This is a
+					review note only — it does not block this payroll run or change any
+					pay.
 				</div>
 			)}
 

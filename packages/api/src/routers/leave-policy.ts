@@ -636,6 +636,95 @@ const orgPoliciesCompareToBaseline = authorizedProcedure("leave_policy", "read")
 	});
 
 // ════════════════════════════════════════════════════════════════════
+// POLICY HEALTH (soft warnings — never blocks payroll, never changes pay)
+// ════════════════════════════════════════════════════════════════════
+
+const NEEDS_REVIEW_MESSAGE =
+	"This policy needs official review before production use.";
+const NO_POLICY_MESSAGE =
+	"No active company leave policy is set. Balances reflect your configured leave types only.";
+
+/**
+ * Read-only health of the org's ACTIVE leave policy. Powers soft "needs official
+ * review" warnings across the leave + payroll surfaces. Purely informational — it
+ * never alters paid/unpaid calculations and never blocks payroll.
+ */
+async function getPolicyHealth(orgIdValue: string) {
+	const [active] = await db
+		.select()
+		.from(organizationLeavePolicy)
+		.where(
+			and(
+				eq(organizationLeavePolicy.organizationId, orgIdValue),
+				eq(organizationLeavePolicy.status, "active"),
+				isNull(organizationLeavePolicy.deletedAt)
+			)
+		)
+		.orderBy(desc(organizationLeavePolicy.activatedAt))
+		.limit(1);
+
+	if (!active) {
+		return {
+			hasActivePolicy: false,
+			activePolicy: null,
+			activePolicyId: null,
+			activePolicyName: null,
+			totalRules: 0,
+			needsReviewRules: 0,
+			draftRules: 0,
+			verifiedRules: 0,
+			needsReview: false,
+			message: NO_POLICY_MESSAGE,
+		};
+	}
+
+	const rules = await db
+		.select({ vs: organizationLeavePolicyRule.verificationStatus })
+		.from(organizationLeavePolicyRule)
+		.where(
+			eq(organizationLeavePolicyRule.organizationLeavePolicyId, active.id)
+		);
+	const needsReviewRules = rules.filter((r) => r.vs === "needs_review").length;
+	const draftRules = rules.filter((r) => r.vs === "draft").length;
+	const verifiedRules = rules.filter((r) => r.vs === "verified").length;
+	const needsReview = needsReviewRules + draftRules > 0;
+
+	return {
+		hasActivePolicy: true,
+		activePolicy: active,
+		activePolicyId: active.id,
+		activePolicyName: active.name,
+		totalRules: rules.length,
+		needsReviewRules,
+		draftRules,
+		verifiedRules,
+		needsReview,
+		message: needsReview ? NEEDS_REVIEW_MESSAGE : null,
+	};
+}
+
+const orgPoliciesHealth = authorizedProcedure("leave_policy", "read")
+	.input(z.object({}).optional())
+	.handler(async ({ context }) => {
+		if (!canViewLeavePolicy(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const h = await getPolicyHealth(orgId(context));
+		// Don't leak the full row — return the summary only.
+		return {
+			hasActivePolicy: h.hasActivePolicy,
+			activePolicyId: h.activePolicyId,
+			activePolicyName: h.activePolicyName,
+			totalRules: h.totalRules,
+			needsReviewRules: h.needsReviewRules,
+			draftRules: h.draftRules,
+			verifiedRules: h.verifiedRules,
+			needsReview: h.needsReview,
+			message: h.message,
+		};
+	});
+
+// ════════════════════════════════════════════════════════════════════
 // BALANCE EXPLANATION (employee "why this balance?")
 // ════════════════════════════════════════════════════════════════════
 
@@ -681,18 +770,8 @@ async function buildBalanceExplanation(orgIdValue: string, employeeId: string) {
 	);
 
 	// Active org policy (informational context) — at most one active per country.
-	const [activePolicy] = await db
-		.select()
-		.from(organizationLeavePolicy)
-		.where(
-			and(
-				eq(organizationLeavePolicy.organizationId, orgIdValue),
-				eq(organizationLeavePolicy.status, "active"),
-				isNull(organizationLeavePolicy.deletedAt)
-			)
-		)
-		.orderBy(desc(organizationLeavePolicy.activatedAt))
-		.limit(1);
+	const health = await getPolicyHealth(orgIdValue);
+	const activePolicy = health.activePolicy;
 
 	const balanceLines = balances.map((b) => {
 		const pending = pendingMap.get(b.leaveTypeId) ?? 0;
@@ -727,10 +806,10 @@ async function buildBalanceExplanation(orgIdValue: string, employeeId: string) {
 					countryCode: activePolicy.countryCode,
 				}
 			: null,
-		// Surfaced as a soft notice in the UI; never blocks anything.
-		policyNotice: activePolicy
-			? null
-			: "No active company leave policy is set. Balances reflect your configured leave types only.",
+		// Surfaced as soft notices in the UI; never block anything, never change pay.
+		policyNotice: activePolicy ? null : NO_POLICY_MESSAGE,
+		// Set when the active policy still has needs_review/draft rules.
+		unverifiedNotice: health.needsReview ? NEEDS_REVIEW_MESSAGE : null,
 		balances: balanceLines,
 	};
 }
@@ -741,7 +820,12 @@ const balanceExplanationForSelf = authorizedProcedure("leave_request", "read")
 		const oid = orgId(context);
 		const me = await resolveCurrentEmployee(oid, actorId(context));
 		if (!me) {
-			return { policy: null, policyNotice: null, balances: [] };
+			return {
+				policy: null,
+				policyNotice: null,
+				unverifiedNotice: null,
+				balances: [],
+			};
 		}
 		return await buildBalanceExplanation(oid, me.id);
 	});
@@ -812,6 +896,7 @@ export const leavePolicyRouter = {
 		activate: orgPoliciesActivate,
 		archive: orgPoliciesArchive,
 		compareToBaseline: orgPoliciesCompareToBaseline,
+		health: orgPoliciesHealth,
 	},
 	balanceExplanation: {
 		forSelf: balanceExplanationForSelf,

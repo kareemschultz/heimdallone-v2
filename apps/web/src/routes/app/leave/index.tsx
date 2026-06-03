@@ -800,6 +800,14 @@ function RequestSheet({ onClose }: { onClose: () => void }) {
 	);
 	const balances: BalanceRow[] = (balData as BalanceRow[]) ?? [];
 
+	// Soft, non-blocking note (Phase 7I-E): if the org has no active leave policy.
+	const { data: leaveHealth } = useQuery(
+		orpc.leavePolicy.balanceExplanation.forSelf.queryOptions({ input: {} })
+	);
+	const noPolicyNotice = (
+		leaveHealth as { policyNotice: string | null } | undefined
+	)?.policyNotice;
+
 	const [typeId, setTypeId] = useState("");
 	const [startDate, setStartDate] = useState("");
 	const [endDate, setEndDate] = useState("");
@@ -941,6 +949,11 @@ function RequestSheet({ onClose }: { onClose: () => void }) {
 					</button>
 				</div>
 				<div className="leave-sheet-body">
+					{noPolicyNotice ? (
+						<div className="lp-notice" role="note">
+							<span>{noPolicyNotice}</span>
+						</div>
+					) : null}
 					<div className="leave-helper">
 						Paid leave does not reduce your pay. Unpaid leave may affect future
 						payroll.

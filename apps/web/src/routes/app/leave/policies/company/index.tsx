@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Plus, ShieldQuestion, X } from "lucide-react";
+import { FileCheck, Plus, ShieldQuestion, X } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
@@ -131,6 +131,14 @@ function CompanyPoliciesPage() {
 			enabled: canView,
 		})
 	);
+	const health = useQuery(
+		orpc.leavePolicy.orgPolicies.health.queryOptions({
+			input: {},
+			enabled: canView,
+		})
+	);
+	const healthMsg = (health.data as { message: string | null } | undefined)
+		?.message;
 
 	if (!canView) {
 		return (
@@ -180,6 +188,16 @@ function CompanyPoliciesPage() {
 			</div>
 
 			<LeavePolicyTabs />
+
+			{healthMsg ? (
+				<div className="lp-notice warn" role="note">
+					<FileCheck size={14} />
+					<span>
+						Your active leave policy still has rules that need official review
+						before production use.
+					</span>
+				</div>
+			) : null}
 
 			{policies.isLoading ? (
 				<div className="lp-grid">
