@@ -316,3 +316,72 @@ documented, not faked.
 
 Gates: check-types 3/3, payroll-engine **27/27**, build ✓, web tsc 26 baseline,
 ultracite **223/1/2 baseline unchanged**, audit:permissions 73 pairs / 10 routers.
+
+## GPS retention scrub + source labels + integration verify (Phase 11G CP4 — closes 11G)
+
+Privacy hardening + the full-chain integration proof that closes Phase 11G. No
+migration (the schema already had nullable `geofence_check_in.latitude/longitude`
++ `coordsPurgedAt`, and `attendance_setting.gps_retention_days` default 90), no
+new sync protocol, no tax/rate change.
+
+**GPS retention scrub** (`scripts/scrub-geofence-gps.ts`): after the per-org
+retention window precise coordinates are removed while audit value is preserved.
+- `geofence_check_in`: NULL `latitude`/`longitude`, stamp `coordsPurgedAt`. KEEPS
+  `status` (verdict), `employeeId`, `organizationId`, `matchedWorkSiteId`,
+  `distanceMeters`, `accuracyMeters`, `reason`, `capturedAt`.
+- `attendance_event`: NULL `locationLat`/`locationLon` (exact coords too; no
+  `coordsPurgedAt` column — null is the scrubbed marker). KEEPS `source`,
+  `deviceId`, times, duration.
+- **DRY-RUN by default**; `--apply` performs writes; `--org=<id>` optional filter.
+  Recent rows (inside the window) are never touched. Prints eligible / skipped-
+  recent / already-scrubbed counts. Retention from `attendance_setting`
+  (default 90).
+
+**Attendance source labels + needs-review** (`routers/attendance.ts`
+`recordsList` → `enrichRecordsSourceReview`): each daily record is enriched with a
+`source` key (derived from its linked `attendance_event` rows: single source →
+that source; multiple → `mixed`; none → `none`) and a `needsReview` flag (any
+open/`in_review` exception on that employee+date, scoped via record link or
+linked punch/event/check-in date). The UI (`routes/app/attendance/index.tsx`) maps
+the key through `SOURCE_LABELS` to plain text — "Manual entry" / "Biometric
+device" / "Mobile GPS check-in" / "File import" / "Admin adjustment" / "Mixed
+sources" / "Source unavailable" — never a raw enum/ID, and shows a "Needs review"
+badge. No raw GPS coordinates are returned in the records payload.
+
+### Verification
+
+`scripts/verify-biometric-geofence-attendance-payroll-integration.ts` — 22/22 full
+chain: (A) raw-punch safety (unprocessed punch is a warning, worked minutes from
+records); (C) exceptions (blocker + non-blocker present, remote worker has no
+outside_geofence); (D) readiness (rohan blocker, policy-off downgrade, resolve
+clears); (E) projection (Cannot-finalize / estimate / Needs-review); (F) privacy
+(no template column; synthetic old check-in scrubbed → coords null + coordsPurgedAt
+stamped + verdict/distance/accuracy/time preserved; org-wide invariant: no purged
+row retains coords); (B, last) processor links punch→event + second run idempotent
+(processed=0, exceptionsCreated=0). Read-only assertions run on pristine seed
+**before** the mutating processor run (see lessons-learned #79).
+
+Scrub script proof (observed): dry-run on a synthetic 200-day-old check-in →
+`eligible=1, scrubbed=0`; `--apply` → scrubbed 1, `latitude/longitude=null`,
+`coordsPurgedAt` set, verdict/distance/accuracy/time preserved; a 3-day-old row
+left untouched; re-run dry-run → `eligible=0`. Existing verifiers still pass
+(work-arrangement, payroll-readiness, live-pay-projection).
+
+**Browser pass** (0 app console errors): attendance page shows the Source column +
+plain labels (after processing seeded punches: Devon=Mobile GPS check-in,
+Maya/Rohan=Biometric device, Kareena=Mobile GPS check-in) + "Needs review" badges;
+records payload carries **no lat/lon**; employee estimated-pay card still renders
+("Cannot finalize yet"); geofence check-in page renders with no raw coordinates.
+Screenshots: `docs/reviews/phase-11g-cp4/`.
+
+**RBAC** (live): employee → global `biometric.exceptions.list` **403**,
+`biometric.punches.list` **403**, own projection 200 with no `resolutionLink`;
+auditor → attendance read 200, `records.validate` **403** (read-only). No raw GPS,
+biometric templates, or device secrets exposed to employees.
+
+Gates: check-types 3/3, payroll-engine 27/27, build ✓, web tsc 26 baseline (0
+touched-file errors), ultracite 223/1/2 unchanged, audit:permissions 73/10.
+
+**Phase 11G COMPLETE** (CP1 work-arrangement → CP2 payroll readiness → CP3 live
+projection → CP4 scrub + source labels + integration). Next: **Phase 11H** —
+module-wide QA/RBAC/security/browser pass to close Phase 11.

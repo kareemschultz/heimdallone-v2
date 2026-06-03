@@ -186,3 +186,15 @@ Additive: new enum `work_arrangement` (onsite/hybrid/remote/field/exempt) + colu
 employees default to onsite (geofence enforced as before). Drives whether mobile
 check-in enforces the geofence and raises outside/low-accuracy exceptions — see the
 API doc's work-arrangement section.
+
+## GPS retention scrub — no migration (Phase 11G CP4)
+
+The retention scrub (`scripts/scrub-geofence-gps.ts`) needs **no schema change**:
+`geofence_check_in.latitude`/`longitude` are already nullable, `coordsPurgedAt`
+(timestamp) already exists as the scrubbed-marker column (migration 0011/0012), and
+`attendance_setting.gps_retention_days` already defaults to 90. The scrub nulls the
+precise coordinates and stamps `coordsPurgedAt` while preserving the verdict
+(`status`), `distanceMeters`, `accuracyMeters`, `matchedWorkSiteId`, `reason`, and
+`capturedAt`. `attendance_event.locationLat`/`locationLon` (text) are also nulled
+for old rows (no `coordsPurgedAt` there — null is the marker). See the API doc's
+CP4 section.

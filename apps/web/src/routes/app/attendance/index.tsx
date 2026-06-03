@@ -57,12 +57,30 @@ interface AttRecord {
 	lastClockOut: string | null;
 	lateMinutes: number;
 	minimumMinutes: number;
+	needsReview?: boolean;
 	notes: string | null;
 	overtimeMinutes: number;
 	payableMinutes: number;
 	payrollStatus: PayrollStatus;
+	// Phase 11G CP4: derived source key + needs-review flag from the API.
+	source?: string;
 	status: AttStatus;
 	workedMinutes: number;
+}
+
+// Plain-language labels for the attendance source key (never show the raw enum).
+const SOURCE_LABELS: Record<string, string> = {
+	manual: "Manual entry",
+	biometric: "Biometric device",
+	mobile: "Mobile GPS check-in",
+	import: "File import",
+	admin: "Admin adjustment",
+	mixed: "Mixed sources",
+	none: "Source unavailable",
+};
+
+function sourceLabel(key: string | undefined): string {
+	return SOURCE_LABELS[key ?? "none"] ?? "Source unavailable";
 }
 
 interface AttEvent {
@@ -276,6 +294,7 @@ const SKELETON_CELL_KEYS = [
 	"c7",
 	"c8",
 	"c9",
+	"c10",
 ];
 
 function AttendancePage() {
@@ -622,6 +641,7 @@ function RecordsTable({
 						<th>Worked</th>
 						<th>OT</th>
 						<th>Late</th>
+						<th>Source</th>
 						<th>Status</th>
 						<th>Payroll</th>
 						<th style={{ width: 48 }} />
@@ -675,10 +695,24 @@ function RecordsTable({
 								<LateEarlyCell record={r} />
 							</td>
 							<td>
+								<span style={{ fontSize: 12, color: "var(--fg-3)" }}>
+									{sourceLabel(r.source)}
+								</span>
+							</td>
+							<td>
 								<span className={statusPillClass(r.status)}>
 									<span className="badge-dot" />
 									{statusLabel(r.status)}
 								</span>
+								{r.needsReview && (
+									<span
+										className="badge badge-warning"
+										style={{ fontSize: 9, marginLeft: 6 }}
+										title="An open attendance exception is linked to this record"
+									>
+										Needs review
+									</span>
+								)}
 							</td>
 							<td>
 								<span className={payrollPillClass(r.payrollStatus)}>
@@ -1105,7 +1139,7 @@ function RecordDetailDrawer({
 												})
 											: "Open"}
 									</span>
-									<span className="ev-source">{ev.source}</span>
+									<span className="ev-source">{sourceLabel(ev.source)}</span>
 									<span className="ev-dur">
 										{ev.durationMinutes ? fmtDuration(ev.durationMinutes) : "—"}
 									</span>

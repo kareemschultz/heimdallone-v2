@@ -1,5 +1,10 @@
 import { db } from "@Heimdallone/db";
 import {
+	attendanceException,
+	attendancePunch,
+	geofenceCheckIn,
+} from "@Heimdallone/db/schema/biometric";
+import {
 	attendanceCorrection,
 	attendanceEvent,
 	attendanceRecord,
@@ -9,7 +14,7 @@ import {
 } from "@Heimdallone/db/schema/index";
 import { ORPCError } from "@orpc/server";
 import { createId } from "@paralleldrive/cuid2";
-import { and, count, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, count, desc, eq, gte, inArray, lte, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { authorizedProcedure, tenantProcedure } from "../index";
@@ -286,6 +291,135 @@ const clockCurrentStatus = tenantProcedure.handler(async ({ context }) => {
 	};
 });
 
+// Phase 11G CP4: derive a record's attendance source (from its events) + a
+// needs-review flag (from any open/in_review exception on that employee+date)
+// for the attendance UI. Source is returned as a key the UI maps to a plain
+// label (never a raw enum/ID shown as primary text). No raw GPS is exposed.
+function toDateKey(d: Date | string): string {
+	const date = typeof d === "string" ? new Date(d) : d;
+	return date.toISOString().slice(0, 10);
+}
+
+function deriveSourceKey(sources: Set<string>): string {
+	if (sources.size === 0) {
+		return "none";
+	}
+	if (sources.size === 1) {
+		return [...sources][0] ?? "none";
+	}
+	return "mixed";
+}
+
+interface RecordRow {
+	date: Date | string;
+	employeeId: string | null;
+	id: string;
+}
+
+async function enrichRecordsSourceReview<T extends RecordRow>(
+	organizationId: string,
+	records: T[]
+): Promise<Array<T & { source: string; needsReview: boolean }>> {
+	const empIds = [
+		...new Set(
+			records.map((r) => r.employeeId).filter((id): id is string => !!id)
+		),
+	];
+	if (empIds.length === 0) {
+		return records.map((r) => ({ ...r, source: "none", needsReview: false }));
+	}
+	const dateObjs = [
+		...new Map(
+			records.map((r) => [
+				toDateKey(r.date),
+				r.date instanceof Date ? r.date : new Date(r.date),
+			])
+		).values(),
+	];
+
+	const events = await db
+		.select({
+			employeeId: attendanceEvent.employeeId,
+			eventDate: attendanceEvent.eventDate,
+			source: attendanceEvent.source,
+		})
+		.from(attendanceEvent)
+		.where(
+			and(
+				eq(attendanceEvent.organizationId, organizationId),
+				inArray(attendanceEvent.employeeId, empIds),
+				inArray(attendanceEvent.eventDate, dateObjs)
+			)
+		);
+	const srcMap = new Map<string, Set<string>>();
+	for (const e of events) {
+		if (!e.employeeId) {
+			continue;
+		}
+		const key = `${e.employeeId}|${toDateKey(e.eventDate)}`;
+		let set = srcMap.get(key);
+		if (!set) {
+			set = new Set<string>();
+			srcMap.set(key, set);
+		}
+		set.add(e.source);
+	}
+
+	const excs = await db
+		.select({
+			employeeId: attendanceException.employeeId,
+			recordId: attendanceException.attendanceRecordId,
+			punchTime: attendancePunch.punchTime,
+			eventDate: attendanceEvent.eventDate,
+			capturedAt: geofenceCheckIn.capturedAt,
+			createdAt: attendanceException.createdAt,
+		})
+		.from(attendanceException)
+		.leftJoin(
+			attendancePunch,
+			eq(attendanceException.attendancePunchId, attendancePunch.id)
+		)
+		.leftJoin(
+			attendanceEvent,
+			eq(attendanceException.attendanceEventId, attendanceEvent.id)
+		)
+		.leftJoin(
+			geofenceCheckIn,
+			eq(attendanceException.geofenceCheckInId, geofenceCheckIn.id)
+		)
+		.where(
+			and(
+				eq(attendanceException.organizationId, organizationId),
+				inArray(attendanceException.employeeId, empIds),
+				inArray(attendanceException.status, ["open", "in_review"])
+			)
+		);
+	const reviewByRecordId = new Set<string>();
+	const reviewByEmpDate = new Set<string>();
+	for (const x of excs) {
+		if (x.recordId) {
+			reviewByRecordId.add(x.recordId);
+		}
+		if (!x.employeeId) {
+			continue;
+		}
+		const when = x.punchTime ?? x.eventDate ?? x.capturedAt ?? x.createdAt;
+		if (when) {
+			reviewByEmpDate.add(`${x.employeeId}|${toDateKey(when)}`);
+		}
+	}
+
+	return records.map((r) => {
+		const key = r.employeeId ? `${r.employeeId}|${toDateKey(r.date)}` : "";
+		return {
+			...r,
+			source: deriveSourceKey(srcMap.get(key) ?? new Set<string>()),
+			needsReview:
+				reviewByRecordId.has(r.id) || (key !== "" && reviewByEmpDate.has(key)),
+		};
+	});
+}
+
 const recordsList = authorizedProcedure("attendance", "read")
 	.input(
 		z.object({
@@ -397,7 +531,8 @@ const recordsList = authorizedProcedure("attendance", "read")
 			.limit(input.pageSize)
 			.offset(offset);
 
-		return { data, total: totalResult?.total ?? 0 };
+		const enriched = await enrichRecordsSourceReview(orgId(context), data);
+		return { data: enriched, total: totalResult?.total ?? 0 };
 	});
 
 const recordsGetById = authorizedProcedure("attendance", "read")
