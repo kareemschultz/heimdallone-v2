@@ -185,9 +185,14 @@ Biometric + Geofencing (Phase 11 — active):
 - [Biometric + Geofencing DB Setup](docs/implementation/biometric-geofencing-db-setup.md) — 11B schema (8 tables, enums, migrations 0011/0012)
 - [Biometric + Geofencing API](docs/implementation/biometric-geofencing-api.md) — 11C router, adapter/provider model, punch processor, ingest endpoint, RBAC, privacy
 
-Assets (Phase 12 — ACTIVE; 12B DB ✅ → 12C API ✅ → 12D UI next):
+Assets (Phase 12 — ✅ COMPLETE; 12B DB → 12C API → 12D UI → 12E QA/sidebar/offboarding-custody):
 
 - [Assets Implementation Plan](docs/architecture/assets-implementation-plan.md) — spec (entities, Drizzle schema, oRPC API + RBAC, UI checkpoints, offboarding custody integration).
 - [Assets DB Setup](docs/implementation/assets-db-setup.md) — 12B: 4 tables + 3 enums, migration 0014, idempotent seed.
-- [Assets API](docs/implementation/assets-api.md) — 12C: `assets` router (inventory/categories/assignments/requests), `asset:request` AC action, 6 RBAC helpers, server-side purchaseCost redaction, transactional assign/return, two-layer authz, verify 46/46.
+- [Assets API](docs/implementation/assets-api.md) — 12C: `assets` router (inventory/categories/assignments/requests), `asset:request` AC action, 6 RBAC helpers, server-side purchaseCost redaction, transactional assign/return, two-layer authz, verify 46/46; +12D `assignments.listMine`; +12E read-only offboarding `AssetCustodyPanel`.
 - [Assets Module Spec](docs/architecture/modules/assets-spec.md) — original extraction spec
+
+Helpdesk / Requests (Phase 13 — ACTIVE; 13A spec ✅ → 13B DB next):
+
+- [Helpdesk Requests Implementation Plan](docs/architecture/helpdesk-requests-implementation-plan.md) — 13A spec: request/ticket LAYER that LINKS to Assets/Payroll/Leave/Offboarding (read-only link cols) and NEVER duplicates them; reuses existing `ticket` AC (employee already holds ticket:create); MVP 3 tables; status/SLA/priority; 7 RBAC helpers; router `helpdesk`; HelpdeskTabs UI; 8 open questions; benchmarks Zendesk/Freshdesk/Jira-SM/Frappe/GLPI/Horilla.
+- [Helpdesk Module Spec](docs/architecture/modules/helpdesk-spec.md) + [Horilla Extraction](docs/horilla-extraction/helpdesk.md) — original extraction
