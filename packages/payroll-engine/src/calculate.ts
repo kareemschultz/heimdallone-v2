@@ -4,11 +4,11 @@ import {
 	detectPostCalcWarnings,
 	detectWarnings,
 } from "./blockers";
+import { deriveConfidence } from "./confidence";
 import { resolveCountryRules } from "./countries/registry";
 import { divideCents, toCents } from "./money";
 import type {
 	CalculationExplanation,
-	Confidence,
 	CountryRules,
 	PayItemInput,
 	PayrollInput,
@@ -652,7 +652,7 @@ export const calculatePayroll = (input: PayrollInput): PayrollPreviewResult => {
 		blockers: allBlockers,
 		warnings: allWarnings,
 		explanation: ctx.explanations,
-		confidence: computeConfidence(input, allBlockers),
+		confidence: deriveConfidence(input, allBlockers.length),
 		isEstimate: true,
 		currency: input.contract.salaryCurrency,
 		period: {
@@ -660,22 +660,6 @@ export const calculatePayroll = (input: PayrollInput): PayrollPreviewResult => {
 			endDate: input.period.endDate,
 		},
 	};
-};
-
-const computeConfidence = (
-	input: PayrollInput,
-	blockers: { code: string }[]
-): Confidence => {
-	if (blockers.length > 0) {
-		return "cannot_estimate";
-	}
-	if (input.attendance.pendingItems > 0 || input.leave.pendingLeaveDays > 0) {
-		return "low";
-	}
-	if (!input.attendance.isComplete) {
-		return "medium";
-	}
-	return "high";
 };
 
 const emptyResult = (

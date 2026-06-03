@@ -5,6 +5,7 @@ import { useContext, useState } from "react";
 
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
+import { EstimatedPayCard } from "@/features/payroll/estimated-pay-card";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
 import { canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
@@ -76,6 +77,8 @@ function PayslipsPage() {
 			</div>
 
 			<PayrollTabs />
+
+			{isEmployee && <EstimatedPayCard />}
 
 			<div
 				style={{

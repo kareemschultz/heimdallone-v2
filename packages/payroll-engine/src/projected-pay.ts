@@ -1,4 +1,9 @@
 import { calculatePayroll } from "./calculate";
+import {
+	buildConfidenceReasons,
+	confidenceLabel,
+	deriveConfidence,
+} from "./confidence";
 import type { Confidence, PayrollInput, ProjectedPayResult } from "./types";
 
 export const calculateProjectedPay = (
@@ -6,13 +11,16 @@ export const calculateProjectedPay = (
 ): ProjectedPayResult => {
 	const result = calculatePayroll(input);
 
-	const confidence = deriveConfidence(input, result.blockers.length > 0);
-	const confidenceReason = buildConfidenceReason(input, confidence);
+	const confidence = deriveConfidence(input, result.blockers.length);
+	const reasons = buildConfidenceReasons(input, result.blockers.length);
+	const confidenceReason = buildCombinedReason(confidence, reasons);
 
 	const loanDeductions = input.loans.dueInstallments.reduce(
 		(sum, inst) => sum + Math.round(inst.amount * 100),
 		0
 	);
+
+	const a = input.attendance;
 
 	return {
 		employeeId: input.employee.id,
@@ -20,7 +28,9 @@ export const calculateProjectedPay = (
 		periodEnd: input.period.endDate,
 		isEstimate: true,
 		confidence,
+		confidenceLabel: confidenceLabel(confidence),
 		confidenceReason,
+		confidenceReasons: reasons,
 
 		estimatedGross: result.grossPay,
 		estimatedDeductions: result.totalDeductions,
@@ -35,60 +45,61 @@ export const calculateProjectedPay = (
 			loanDeductions,
 		},
 
+		payType: input.contract.wageType,
+		payFrequency: input.contract.payFrequency,
+
+		hours: {
+			regularHours: round2(a.totalWorkedMinutes / 60),
+			overtimeHours: round2(a.totalApprovedOvertimeMinutes / 60),
+		},
+		days: {
+			workedDays: round2(a.daysPresent + a.daysHalfDay * 0.5),
+			absentDays: a.daysAbsent,
+			approvedLeaveDays: input.leave.paidLeaveDays,
+			unpaidLeaveDays: input.leave.unpaidLeaveDays,
+		},
+		attendanceComplete: a.isComplete,
+
+		warnings: result.warnings,
+		blockers: result.blockers,
+
 		disclaimers: buildDisclaimers(input, confidence),
 	};
 };
 
-const deriveConfidence = (
-	input: PayrollInput,
-	hasBlockers: boolean
-): Confidence => {
-	if (hasBlockers) {
-		return "cannot_estimate";
-	}
-	if (input.attendance.pendingItems > 0 || input.leave.pendingLeaveDays > 0) {
-		return "low";
-	}
-	if (!input.attendance.isComplete) {
-		return "medium";
-	}
-	return "high";
-};
+const round2 = (n: number): number => Math.round(n * 100) / 100;
 
-const buildConfidenceReason = (
-	input: PayrollInput,
-	confidence: Confidence
+const buildCombinedReason = (
+	confidence: Confidence,
+	reasons: string[]
 ): string => {
-	if (confidence === "cannot_estimate") {
-		return "Cannot estimate — critical data is missing.";
+	if (confidence === "high") {
+		return "Based on approved and validated records.";
 	}
-	if (confidence === "low") {
-		const reasons: string[] = [];
-		if (input.attendance.pendingItems > 0) {
-			reasons.push(
-				`${input.attendance.pendingItems} unvalidated attendance record(s)`
-			);
-		}
-		if (input.leave.pendingLeaveDays > 0) {
-			reasons.push(`${input.leave.pendingLeaveDays} pending leave day(s)`);
-		}
-		return `Low confidence — ${reasons.join(", ")}.`;
+	const prefix =
+		confidence === "cannot_estimate" ? "Cannot finalize yet" : "Needs review";
+	if (reasons.length === 0) {
+		return `${prefix}.`;
 	}
-	if (confidence === "medium") {
-		return "Based on approved hours only — attendance period incomplete.";
-	}
-	return "Based on approved and validated records.";
+	return `${prefix} — ${reasons.join(", ")}.`;
 };
 
 const buildDisclaimers = (
 	input: PayrollInput,
 	confidence: Confidence
 ): string[] => {
-	const disclaimers = ["This is not your final payslip."];
+	const disclaimers = [
+		"This is an estimate, not your final pay. Amounts may change after HR/payroll review and confirmation.",
+	];
 
 	if (confidence !== "high") {
 		disclaimers.push(
 			"Based on approved hours only — final amounts may differ."
+		);
+	}
+	if ((input.attendance.unprocessedPunches ?? 0) > 0) {
+		disclaimers.push(
+			"Some device punches are not yet processed and are excluded from this estimate."
 		);
 	}
 	if (input.attendance.pendingItems > 0) {

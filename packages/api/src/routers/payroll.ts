@@ -1440,6 +1440,19 @@ const runsPreview = authorizedProcedure("payroll", "update")
 		let blockerCount = 0;
 		let warningCount = 0;
 		let processedCount = 0;
+		// Projected-pay confidence rollup for the admin run-preview indicator
+		// (Phase 11G CP3). high = clean; needsReview = warnings/pending; cannot =
+		// blockers. Reuses the per-employee calc result — no extra computation.
+		const confidenceCounts = { high: 0, needsReview: 0, cannotFinalize: 0 };
+		const tallyConfidence = (c: string) => {
+			if (c === "high") {
+				confidenceCounts.high += 1;
+			} else if (c === "cannot_estimate") {
+				confidenceCounts.cannotFinalize += 1;
+			} else {
+				confidenceCounts.needsReview += 1;
+			}
+		};
 
 		for (const empId of employeeIds) {
 			const payrollInput = await buildPayrollInput(
@@ -1448,6 +1461,7 @@ const runsPreview = authorizedProcedure("payroll", "update")
 				period.id
 			);
 			const result = calculatePayroll(payrollInput);
+			tallyConfidence(result.confidence);
 
 			if (!payrollInput.contract.id) {
 				for (const blocker of result.blockers) {
@@ -1591,6 +1605,7 @@ const runsPreview = authorizedProcedure("payroll", "update")
 			totalNet: fromCents(totalNet),
 			blockerCount,
 			warningCount,
+			confidenceCounts,
 		};
 	});
 
@@ -2102,8 +2117,92 @@ const issuesOverride = authorizedProcedure("payroll", "update")
 // 9. PROJECTED PAY
 // ═══════════════════════════════════════════════════════════════
 
+// Resolve the period to project for. Explicit id → that period (404 if absent).
+// No id → the period covering today, else the latest open period, else the most
+// recent period. Returns null only when the org has no pay periods at all.
+async function resolveProjectionPeriod(
+	organizationId: string,
+	payPeriodId?: string
+): Promise<typeof payPeriod.$inferSelect | null> {
+	if (payPeriodId) {
+		const [explicit] = await db
+			.select()
+			.from(payPeriod)
+			.where(
+				and(
+					eq(payPeriod.id, payPeriodId),
+					eq(payPeriod.organizationId, organizationId)
+				)
+			)
+			.limit(1);
+		return explicit ?? null;
+	}
+
+	const periods = await db
+		.select()
+		.from(payPeriod)
+		.where(eq(payPeriod.organizationId, organizationId))
+		.orderBy(desc(payPeriod.startDate));
+	if (periods.length === 0) {
+		return null;
+	}
+
+	const today = new Date();
+	const covering = periods.find((p) => {
+		const start =
+			p.startDate instanceof Date ? p.startDate : new Date(p.startDate);
+		const end = p.endDate instanceof Date ? p.endDate : new Date(p.endDate);
+		return start <= today && today <= end;
+	});
+	return (
+		covering ?? periods.find((p) => p.status === "open") ?? periods[0] ?? null
+	);
+}
+
+// Convert the engine's cents result to a money/dollar projection payload.
+// includeAdminLinks=false strips blocker resolution links (admin-only exception
+// queue) so the employee self-service endpoint never references admin surfaces.
+function mapProjection(
+	result: ReturnType<typeof calculateProjectedPay>,
+	period: typeof payPeriod.$inferSelect,
+	includeAdminLinks: boolean
+) {
+	const blockers = includeAdminLinks
+		? result.blockers
+		: result.blockers.map((b) => ({
+				code: b.code,
+				message: b.message,
+				resolution: b.resolution,
+				severity: b.severity,
+			}));
+
+	return {
+		...result,
+		blockers,
+		estimatedGross: fromCents(result.estimatedGross),
+		estimatedDeductions: fromCents(result.estimatedDeductions),
+		estimatedNet: fromCents(result.estimatedNet),
+		breakdown: {
+			basePay: fromCents(result.breakdown.basePay),
+			overtimePay: fromCents(result.breakdown.overtimePay),
+			allowances: fromCents(result.breakdown.allowances),
+			deductions: fromCents(result.breakdown.deductions),
+			tax: fromCents(result.breakdown.tax),
+			loanDeductions: fromCents(result.breakdown.loanDeductions),
+		},
+		periodId: period.id,
+		periodName: period.name,
+		periodStatus: period.status,
+		// Stamped by the API (engine is pure / Date-free). ISO so the client can
+		// render "last updated" without trusting an engine clock.
+		calculatedAt: new Date().toISOString(),
+	};
+}
+
 const projectedPayForEmployee = authorizedProcedure("payroll", "read")
-	.input(z.object({ employeeId: z.string(), payPeriodId: z.string() }))
+	.input(
+		z.object({ employeeId: z.string(), payPeriodId: z.string().optional() })
+	)
 	.handler(async ({ context, input }) => {
 		if (!canManagePayroll(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
@@ -2122,16 +2221,10 @@ const projectedPayForEmployee = authorizedProcedure("payroll", "read")
 			throw new ORPCError("NOT_FOUND", { message: "Employee not found." });
 		}
 
-		const [period] = await db
-			.select()
-			.from(payPeriod)
-			.where(
-				and(
-					eq(payPeriod.id, input.payPeriodId),
-					eq(payPeriod.organizationId, orgId(context))
-				)
-			)
-			.limit(1);
+		const period = await resolveProjectionPeriod(
+			orgId(context),
+			input.payPeriodId
+		);
 		if (!period) {
 			throw new ORPCError("NOT_FOUND", { message: "Pay period not found." });
 		}
@@ -2139,28 +2232,14 @@ const projectedPayForEmployee = authorizedProcedure("payroll", "read")
 		const payrollInput = await buildPayrollInput(
 			orgId(context),
 			input.employeeId,
-			input.payPeriodId
+			period.id
 		);
 		const result = calculateProjectedPay(payrollInput);
-
-		return {
-			...result,
-			estimatedGross: fromCents(result.estimatedGross),
-			estimatedDeductions: fromCents(result.estimatedDeductions),
-			estimatedNet: fromCents(result.estimatedNet),
-			breakdown: {
-				basePay: fromCents(result.breakdown.basePay),
-				overtimePay: fromCents(result.breakdown.overtimePay),
-				allowances: fromCents(result.breakdown.allowances),
-				deductions: fromCents(result.breakdown.deductions),
-				tax: fromCents(result.breakdown.tax),
-				loanDeductions: fromCents(result.breakdown.loanDeductions),
-			},
-		};
+		return mapProjection(result, period, true);
 	});
 
 const projectedPayOwn = tenantProcedure
-	.input(z.object({ payPeriodId: z.string() }))
+	.input(z.object({ payPeriodId: z.string().optional() }))
 	.handler(async ({ context, input }) => {
 		const emp = await resolveCurrentEmployee(orgId(context), actorId(context));
 		if (!emp) {
@@ -2169,16 +2248,10 @@ const projectedPayOwn = tenantProcedure
 			});
 		}
 
-		const [period] = await db
-			.select()
-			.from(payPeriod)
-			.where(
-				and(
-					eq(payPeriod.id, input.payPeriodId),
-					eq(payPeriod.organizationId, orgId(context))
-				)
-			)
-			.limit(1);
+		const period = await resolveProjectionPeriod(
+			orgId(context),
+			input.payPeriodId
+		);
 		if (!period) {
 			throw new ORPCError("NOT_FOUND", { message: "Pay period not found." });
 		}
@@ -2186,24 +2259,10 @@ const projectedPayOwn = tenantProcedure
 		const payrollInput = await buildPayrollInput(
 			orgId(context),
 			emp.id,
-			input.payPeriodId
+			period.id
 		);
 		const result = calculateProjectedPay(payrollInput);
-
-		return {
-			...result,
-			estimatedGross: fromCents(result.estimatedGross),
-			estimatedDeductions: fromCents(result.estimatedDeductions),
-			estimatedNet: fromCents(result.estimatedNet),
-			breakdown: {
-				basePay: fromCents(result.breakdown.basePay),
-				overtimePay: fromCents(result.breakdown.overtimePay),
-				allowances: fromCents(result.breakdown.allowances),
-				deductions: fromCents(result.breakdown.deductions),
-				tax: fromCents(result.breakdown.tax),
-				loanDeductions: fromCents(result.breakdown.loanDeductions),
-			},
-		};
+		return mapProjection(result, period, false);
 	});
 
 // ═══════════════════════════════════════════════════════════════

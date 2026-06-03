@@ -268,9 +268,18 @@ export interface CalculationExplanation {
 
 export type Confidence = "high" | "medium" | "low" | "cannot_estimate";
 
+// Plain-language confidence labels surfaced to employees + payroll admins
+// (Phase 11G CP3). Maps from the 4-value internal Confidence enum.
+export type ConfidenceLabel =
+	| "High confidence"
+	| "Needs review"
+	| "Cannot finalize yet";
+
 // ── Projected pay ───────────────────────────────────────────
 
 export interface ProjectedPayResult {
+	attendanceComplete: boolean;
+	blockers: PayrollBlocker[];
 	breakdown: {
 		basePay: number;
 		overtimePay: number;
@@ -280,7 +289,17 @@ export interface ProjectedPayResult {
 		loanDeductions: number;
 	};
 	confidence: Confidence;
+	confidenceLabel: ConfidenceLabel;
+	// Single combined reason string (back-compat); confidenceReasons is the
+	// structured list the UI renders.
 	confidenceReason: string;
+	confidenceReasons: string[];
+	days: {
+		workedDays: number;
+		absentDays: number;
+		approvedLeaveDays: number;
+		unpaidLeaveDays: number;
+	};
 
 	disclaimers: string[];
 	employeeId: string;
@@ -288,9 +307,22 @@ export interface ProjectedPayResult {
 
 	estimatedGross: number;
 	estimatedNet: number;
+
+	// Hours/days summary the estimate was derived from. Hours are decimal hours.
+	hours: {
+		regularHours: number;
+		overtimeHours: number;
+	};
 	isEstimate: true;
+	payFrequency: string;
+
+	// Pay-type context (Phase 11G CP3).
+	payType: WageType;
 	periodEnd: string;
 	periodStart: string;
+
+	// Issue summary propagated from the calculation so callers don't recompute.
+	warnings: PayrollWarning[];
 }
 
 // ── Country rules interface ─────────────────────────────────

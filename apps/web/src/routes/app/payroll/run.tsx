@@ -207,8 +207,15 @@ function PayrollRunWizard() {
 	);
 }
 
+interface ConfidenceCounts {
+	cannotFinalize: number;
+	high: number;
+	needsReview: number;
+}
+
 interface PreviewSummary {
 	blockerCount: number;
+	confidenceCounts?: ConfidenceCounts;
 	employeeCount: number;
 	id: string;
 	totalDeductions: number;
@@ -535,6 +542,35 @@ function ReviewStep({
 				</div>
 			</div>
 
+			{previewResult.confidenceCounts && (
+				<div
+					style={{
+						display: "flex",
+						gap: 16,
+						flexWrap: "wrap",
+						marginBottom: 14,
+						padding: "10px 16px",
+						background: "var(--bg-1)",
+						border: "1px solid var(--line)",
+						borderRadius: 12,
+						fontSize: 12.5,
+					}}
+				>
+					<strong style={{ color: "var(--fg-2)" }}>
+						Projected pay confidence:
+					</strong>
+					<span className="badge badge-success" style={{ fontSize: 10 }}>
+						{previewResult.confidenceCounts.high} High confidence
+					</span>
+					<span className="badge badge-warning" style={{ fontSize: 10 }}>
+						{previewResult.confidenceCounts.needsReview} Needs review
+					</span>
+					<span className="badge badge-danger" style={{ fontSize: 10 }}>
+						{previewResult.confidenceCounts.cannotFinalize} Cannot finalize yet
+					</span>
+				</div>
+			)}
+
 			<div
 				style={{
 					marginBottom: 14,
@@ -549,7 +585,8 @@ function ReviewStep({
 				<strong style={{ color: "var(--accent)" }}>Preview only</strong> — This
 				is not finalized. Review each employee's payslip before confirming. Raw
 				device punches do not go directly to payroll; payroll uses processed
-				attendance after review.
+				attendance after review. Projected pay is an estimate until you confirm
+				the run.
 			</div>
 
 			{blockers.length > 0 && (

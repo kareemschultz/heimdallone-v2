@@ -233,3 +233,86 @@ appear in any payroll surface.
 
 Gates: check-types 3/3, payroll-engine 18/18, build ✓, web tsc 26 baseline,
 ultracite **223/1/2 baseline unchanged**, audit:permissions 73 pairs / 10 routers.
+
+## Live / projected pay hardening (Phase 11G CP3)
+
+Projected pay is an **estimate** of current/selected-period pay for employees +
+payroll admins — never finalization. It reuses the existing pure engine
+(`calculatePayroll`) and the CP2 attendance/exception signals to express a
+**confidence level** so an estimate never looks more trustworthy than its data.
+No tax/rate formula changed.
+
+**Engine** (pure, `packages/payroll-engine/`):
+
+- `confidence.ts` (new) — single source of truth for confidence, used by BOTH
+  `calculate.ts` and `projected-pay.ts` (the logic used to be duplicated and had
+  silently gone stale w.r.t. the CP2 exception fields). `deriveConfidence(input,
+  blockerCount)`: `cannot_estimate` when blockers > 0; else `low` when any review
+  signal (`openExceptionWarnings` + `unprocessedPunches` + `pendingItems` +
+  `pendingLeaveDays`) > 0; else `medium` when attendance incomplete; else `high`.
+  `confidenceLabel()` maps the 4-value enum → 3 plain labels: **High confidence**
+  / **Needs review** / **Cannot finalize yet**. `buildConfidenceReasons()`
+  emits plain-language reasons (e.g. "1 device punch(es) not yet processed into
+  attendance").
+- `calculateProjectedPay()` now returns the richer `ProjectedPayResult`:
+  `confidenceLabel`, `confidenceReasons[]`, `warnings[]`, `blockers[]`,
+  `payType`/`payFrequency`, `hours{regularHours, overtimeHours}`, `days{workedDays,
+  absentDays, approvedLeaveDays, unpaidLeaveDays}`, `attendanceComplete`, plus the
+  existing gross/net/deductions/breakdown. `disclaimers[0]` is always the not-final
+  guardrail. Per-wage-type base pay is unchanged: monthly = full salary (**paid
+  leave does not reduce it**; unpaid leave does), daily = rate × days, hourly =
+  rate × worked-hours; overtime from approved OT minutes only. `calculatedAt` is
+  **not** in the engine (it is `Date`-free) — the API stamps it.
+
+**API** (`routers/payroll.ts`):
+
+- `projectedPay.forEmployee` (admin, `payroll:read` + `canManagePayroll`) and
+  `projectedPay.own` (any member, self-scoped via `resolveCurrentEmployee` — cannot
+  pass an `employeeId`). `payPeriodId` is now **optional**; omitted →
+  `resolveProjectionPeriod` picks the period covering today, else the latest open
+  period, else the most recent. Both stamp `calculatedAt` (ISO) and return
+  `periodId/periodName/periodStatus`. `own` **strips `resolutionLink`** from
+  blockers (admin exception-queue links never reach an employee payload).
+- `runs.preview` now tallies a `confidenceCounts {high, needsReview,
+  cannotFinalize}` rollup from the per-employee calc result (no extra
+  computation) for the admin run-preview indicator.
+
+**UI** (minimal, additive):
+
+- Employee **"Estimated pay this period"** card
+  (`features/payroll/estimated-pay-card.tsx`) on `/app/payroll/payslips` for
+  employee/manager: confidence badge, estimated net/gross, regular/overtime hours,
+  days worked, paid/unpaid leave, "What might still change" reasons, the estimate
+  guardrail, and "Updated <time>". Self-fetches `projectedPay.own` (current period);
+  errors render nothing (additive, never blocks the payslip table).
+- Admin **"Projected pay confidence"** indicator in the run-preview review step
+  (`run.tsx`): `N High confidence · N Needs review · N Cannot finalize yet`.
+
+### Verification (`scripts/verify-live-pay-projection.ts`)
+
+13 DB-backed checks pass: rohan open `missing_clock_out` → "Cannot finalize yet" +
+blocker; maya `low_gps_accuracy` → "Needs review" + warning; devon pending punch →
+"Needs review" + reason "not yet processed"; remote worker (kareena) not blocked by
+location; resolving the exception improves confidence (then restored); policy-off
+downgrades the blocker to a review warning; projection always `isEstimate` + carries
+the not-final disclaimer; pay type/frequency exposed. Hourly/daily projection is
+covered by `projected-pay.test.ts` (no hourly/daily contract seeded — **limitation
+logged**; "shift" has no wage-type enum and is modelled as daily). Engine unit
+tests: `projected-pay.test.ts` (9 cases — high/needs-review/cannot-finalize,
+hourly, paid-leave-not-reduced, unpaid-leave-reduces, policy-off downgrade).
+
+**Browser pass** (0 app console errors): employee `employee@` (→ Rohan profile,
+open exception) card = "Cannot finalize yet" with reasons + guardrail; manager
+`manager@` (→ Andre) card = "Needs review" (unvalidated attendance only); admin run
+preview shows "0 High confidence · 7 Needs review · 3 Cannot finalize yet". Own
+payload confirmed to carry **no `resolutionLink`** (employee leak-prevention).
+Throwaway preview run cleaned up; biometric reseeded. Screenshots:
+`docs/reviews/phase-11g-cp3/`.
+
+**RBAC** (live): auditor → `projectedPay.forEmployee` 403 FORBIDDEN; `own` is
+self-scoped (200, returns only the caller's projection). A true "High confidence"
+state is not reachable in seed data (every employee has unvalidated attendance) —
+documented, not faked.
+
+Gates: check-types 3/3, payroll-engine **27/27**, build ✓, web tsc 26 baseline,
+ultracite **223/1/2 baseline unchanged**, audit:permissions 73 pairs / 10 routers.
