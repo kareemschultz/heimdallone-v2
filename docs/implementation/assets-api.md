@@ -116,18 +116,25 @@ cp scripts/verify-assets-api.ts apps/web/_v.ts && (cd apps/web && bun run _v.ts)
 ## 8. Offboarding integration (read-only)
 
 No write into offboarding. `assignments.listByEmployee({ employeeId })` is the
-read used by the future offboarding custody panel (12D/CP5) and the employee
-profile tab — it returns open custody, manager/self-scoped. The offboarding
-`asset_return` rows stay free-text snapshots (Phase 10 decision); there is no
-auto-write-back in v1.
+read used by the offboarding custody panel (wired in **12E** —
+`features/assets/custody-panel.tsx`, read-only, on the offboarding case detail) and
+the employee profile tab — it returns open custody, manager/self-scoped. The
+offboarding `asset_return` rows stay free-text snapshots (Phase 10 decision); there
+is no auto-write-back in v1.
 
 ## 9. Gates (12C)
 
 check-types (turbo 3/3) · build (2/2) · audit:permissions (80/11) · lint changed
 files clean · full lint baseline 223/1/2 unchanged · verify-assets-api 46/46.
 
-## 10. Next
+## 10. Later additions (12D/12E)
 
-Phase 12D — Assets inventory UI (AssetsTabs, inventory DataTable with redacted
-cost + plain-language status labels, assign/return dialogs, requests queue +
-employee self-service "My assets", categories settings; offboarding custody panel).
+- **12D** added `assignments.listMine` (zero-arg, self-resolved open custody for the
+  employee "My assets" view; reuses `asset:read` → no new AC pair, **audit stays
+  86/12**) + extracted a shared `fetchOpenCustody` helper.
+- **12E** wired the **read-only offboarding custody panel** (`AssetCustodyPanel`) via
+  the existing `assignments.listByEmployee` — no new API, no write-back, no
+  `purchaseCost` (the custody read omits it).
+
+**Phase 12 (Assets) COMPLETE:** 12B DB → 12C API → 12D UI → 12E QA/hardening + sidebar
+nav + offboarding custody. Next per roadmap: Phase 13 Helpdesk/Requests.
