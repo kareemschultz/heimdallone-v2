@@ -100,7 +100,11 @@ function RequestDetailPage() {
 	const { id } = Route.useParams();
 	// Viewers (HR/agent/manager/auditor/payroll) plus employees (own request only,
 	// server-enforced) may load the detail. Recruiter cannot → query disabled.
-	const canLoad = canViewHelpdesk(role) || canCreateHelpdeskRequest(role);
+	const isViewer = canViewHelpdesk(role);
+	const canLoad = isViewer || canCreateHelpdeskRequest(role);
+	// Employees came from their self-service list; viewers from the queue.
+	const backTo = isViewer ? "/app/helpdesk/requests" : "/app/helpdesk/my";
+	const backLabel = isViewer ? "Back to requests" : "Back to my requests";
 
 	const detail = useQuery(
 		orpc.helpdesk.requests.getById.queryOptions({
@@ -123,8 +127,8 @@ function RequestDetailPage() {
 	if (detail.isError) {
 		return (
 			<div className="page">
-				<Link className="hd-back" to="/app/helpdesk/requests">
-					<ArrowLeft size={14} /> Back to requests
+				<Link className="hd-back" to={backTo}>
+					<ArrowLeft size={14} /> {backLabel}
 				</Link>
 				<EmptyState
 					compact
@@ -143,8 +147,8 @@ function RequestDetailPage() {
 
 	return (
 		<div className="page">
-			<Link className="hd-back" to="/app/helpdesk/requests">
-				<ArrowLeft size={14} /> Back to requests
+			<Link className="hd-back" to={backTo}>
+				<ArrowLeft size={14} /> {backLabel}
 			</Link>
 
 			{detail.isLoading || !r ? (

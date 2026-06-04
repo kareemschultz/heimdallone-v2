@@ -35,7 +35,7 @@ resource** (no `helpdesk` resource). 20 procedures across 3 groups.
 
 | procedure | AC gate | scope / rule |
 |---|---|---|
-| `requests.list` | `ticket:read` | **scoped**: agents/HR/auditor/payroll see all (filter by status/category/assignee/priority/search); manager sees own + direct reports; employee sees only own. Rows carry requesterName/assigneeName/categoryName + derived `slaState`. |
+| `requests.list` | `ticket:read` | **scoped**: agents/HR/auditor/payroll see all (filter by status/category/assignee/priority/search); manager sees own + direct reports; employee sees only own. **`mine: true`** (13F) forces self-scope (requester = caller) for ANY role — the strictest filter, used by the employee "My requests" surface so a manager/HR/agent sees only their own there, never the team queue. Defaults off (backwards-compatible). Rows carry requesterName/assigneeName/categoryName + derived `slaState`. |
 | `requests.getById` | `ticket:read` | `assertRequestVisible` (same scope). Returns the request + display names + `slaState` + **redacted comments** + read-only `linkedEntities` + `canViewInternalNotes`. |
 | `requests.createSelf` | `ticket:create` | requester = caller's own employee (no id input). Reference + due dates computed; approvalRequired from category. |
 | `requests.createForEmployee` | `ticket:create` | HR/agent for anyone; **manager only for direct reports**; employee 403s in handler. |

@@ -79,7 +79,12 @@ function AttentionGroup({
 	);
 }
 
-function EmployeeTeaser({ orgName }: { orgName: string }) {
+// Shown to employees on the overview route. We deliberately render a landing that
+// LINKS to My requests rather than auto-redirecting: OrgCtx resolves the member
+// role asynchronously (it defaults to "employee" until the active membership
+// loads), so a render-time redirect would also bounce viewers/admins to /my on
+// first paint. The link is correct for everyone and never misroutes a viewer.
+function EmployeeLanding({ orgName }: { orgName: string }) {
 	return (
 		<div className="page">
 			<div className="page-header">
@@ -87,16 +92,19 @@ function EmployeeTeaser({ orgName }: { orgName: string }) {
 					<div className="crumbs">
 						<span>{orgName}</span>
 						<span className="sep">/</span>
-						<span>Requests</span>
+						<span>Helpdesk</span>
 					</div>
-					<h1 className="page-title">Requests</h1>
-					<p className="page-sub">Ask HR, IT, or Facilities for help.</p>
+					<h1 className="page-title">Helpdesk</h1>
+					<p className="page-sub">
+						Ask HR, payroll, IT, facilities, or admin for help.
+					</p>
 				</div>
 			</div>
 			<EmptyState
-				description="Your requests page is coming next. For now, reach out to your HR or helpdesk team and they can log a request for you."
+				action={{ label: "Go to my requests", href: "/app/helpdesk/my" }}
+				description="Log a request and track the response in one place. HR, IT, payroll, and facilities can all be reached from here."
 				icon={<LifeBuoy size={28} />}
-				title="Your requests page is on the way"
+				title="Your requests live here"
 			/>
 		</div>
 	);
@@ -119,11 +127,12 @@ function HelpdeskOverviewPage() {
 		})
 	);
 
-	// Non-viewers: employees get a friendly teaser (My requests = 13F); anyone
-	// else with no helpdesk access (recruiter) gets a clear no-access state.
+	// Non-viewers: employees get a landing that links to their self-service My
+	// requests page; anyone else with no helpdesk access (recruiter) gets a clear
+	// no-access state.
 	if (!canView) {
 		if (canCreate) {
-			return <EmployeeTeaser orgName={org.orgName} />;
+			return <EmployeeLanding orgName={org.orgName} />;
 		}
 		return (
 			<div className="page">

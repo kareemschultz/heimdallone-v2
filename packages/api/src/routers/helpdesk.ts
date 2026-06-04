@@ -774,6 +774,12 @@ const requestsList = authorizedProcedure("ticket", "read")
 			assignedToUserId: z.string().optional(),
 			priority: PRIORITY.optional(),
 			search: z.string().optional(),
+			// Opt-in self-scope for the employee "My requests" surface. When set,
+			// the list is forced to the caller's OWN requests regardless of role —
+			// so a manager/HR/agent who otherwise sees a wider scope still gets a
+			// truthful "mine only" list here. Defaults off; existing callers are
+			// unaffected (the role-based scope below still applies).
+			mine: z.boolean().optional(),
 			page: z.number().int().min(1).default(1),
 			pageSize: z.number().int().min(1).max(100).default(50),
 		})
@@ -810,9 +816,18 @@ const requestsList = authorizedProcedure("ticket", "read")
 			}
 		}
 
-		// Lateral scope: agents/HR/auditor/payroll see all; managers see own +
-		// direct reports; everyone else (employee) sees only their own.
-		if (!seesAllRequests(callerRole)) {
+		// Self-scope (My requests): strictest filter, applied for ANY role. This is
+		// the only path that narrows an HR/agent/manager down to their own rows, so
+		// the "My requests" surface never shows the team queue.
+		if (input.mine) {
+			const me = await resolveCurrentEmployee(oid, actorId(context));
+			if (!me) {
+				return { data: [], total: 0, page: input.page };
+			}
+			filters.push(eq(helpdeskRequest.requesterEmployeeId, me.id));
+		} else if (!seesAllRequests(callerRole)) {
+			// Lateral scope: agents/HR/auditor/payroll see all; managers see own +
+			// direct reports; everyone else (employee) sees only their own.
 			const me = await resolveCurrentEmployee(oid, actorId(context));
 			if (!me) {
 				return { data: [], total: 0, page: input.page };

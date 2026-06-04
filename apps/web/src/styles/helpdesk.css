@@ -497,16 +497,90 @@
 .hd-field > span {
 	font-weight: 500;
 }
-.hd-field textarea {
+.hd-field textarea,
+.hd-field input,
+.hd-field select {
 	width: 100%;
 	padding: 8px 10px;
 	font-size: 13px;
 	color: var(--fg);
-	resize: vertical;
 	outline: none;
 	background: var(--bg-2);
 	border: 1px solid var(--line);
 	border-radius: 8px;
+}
+.hd-field textarea {
+	resize: vertical;
+}
+
+/* My requests (Phase 13F) — employee self-service */
+.hd-filter-pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+.hd-pill {
+	padding: 6px 12px;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--fg-3);
+	cursor: pointer;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+}
+.hd-pill:hover {
+	color: var(--fg);
+}
+.hd-pill.active {
+	color: var(--fg);
+	background: var(--bg-3);
+	border-color: var(--accent);
+}
+.hd-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.hd-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	text-decoration: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.hd-card:hover {
+	border-color: var(--accent);
+}
+.hd-card-top {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: baseline;
+	justify-content: space-between;
+}
+.hd-card-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.hd-card-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.hd-card-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
 }
 
 /* Internal-note composer tint — placed last to keep ascending specificity. */
