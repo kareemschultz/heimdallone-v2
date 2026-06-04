@@ -16,6 +16,7 @@ import {
 	Command,
 	ExternalLink,
 	FileText,
+	FolderKanban,
 	Globe,
 	Info,
 	LayoutDashboard,
@@ -67,6 +68,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"leave",
 	"documents",
 	"helpdesk",
+	"projects",
 	"settings",
 ]);
 const MANAGER_VISIBLE_KEYS = new Set([
@@ -77,6 +79,7 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"leave",
 	"documents",
 	"helpdesk",
+	"projects",
 	"settings",
 ]);
 const RECRUITER_VISIBLE_KEYS = new Set([
@@ -105,6 +108,7 @@ const PROJECT_MANAGER_VISIBLE_KEYS = new Set([
 	"leave",
 	"assets",
 	"helpdesk",
+	"projects",
 	"documents",
 	"settings",
 ]);
@@ -175,6 +179,12 @@ const NAV = [
 				label: "Helpdesk",
 				icon: LifeBuoy,
 				href: "/app/helpdesk",
+			},
+			{
+				key: "projects",
+				label: "Projects",
+				icon: FolderKanban,
+				href: "/app/projects",
 			},
 		],
 	},

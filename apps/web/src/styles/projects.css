@@ -1,0 +1,668 @@
+/* Projects module (Phase 14D) */
+
+.pj-tabs {
+	display: flex;
+	gap: 4px;
+	margin: 4px 0 16px;
+	border-bottom: 1px solid var(--line);
+}
+.pj-tab {
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg-3);
+	text-decoration: none;
+	border-bottom: 2px solid transparent;
+}
+.pj-tab:hover {
+	color: var(--fg);
+}
+.pj-tab.active {
+	color: var(--fg);
+	border-bottom-color: var(--accent);
+}
+
+/* Badges */
+.pj-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	border-radius: 999px;
+}
+.pj-badge.tone-success {
+	color: var(--success);
+	background: var(--success-soft);
+}
+.pj-badge.tone-warning {
+	color: var(--warning);
+	background: var(--warning-soft);
+}
+.pj-badge.tone-danger {
+	color: var(--danger);
+	background: var(--danger-soft);
+}
+.pj-badge.tone-info {
+	color: var(--info);
+	background: var(--info-soft);
+}
+.pj-badge.tone-neutral {
+	color: var(--fg-3);
+	background: var(--bg-3);
+}
+
+/* Toolbar / filters */
+.pj-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 14px;
+}
+.pj-search {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	padding: 6px 10px;
+	color: var(--fg-3);
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.pj-search input {
+	min-width: 220px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: transparent;
+	border: none;
+}
+.pj-toolbar select {
+	height: 32px;
+	padding: 0 10px;
+	font-size: 13px;
+	color: var(--fg-2);
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+
+/* Table */
+.pj-table {
+	width: 100%;
+	font-size: 13px;
+	border-collapse: collapse;
+}
+.pj-table th {
+	padding: 8px 10px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--fg-3);
+	text-align: left;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	border-bottom: 1px solid var(--line);
+}
+.pj-table td {
+	padding: 10px;
+	vertical-align: top;
+	color: var(--fg-2);
+	border-bottom: 1px solid var(--line);
+}
+.pj-name {
+	font-weight: 600;
+	color: var(--fg);
+}
+.pj-name-link {
+	text-decoration: none;
+}
+.pj-name-link:hover {
+	color: var(--accent);
+}
+.pj-sub {
+	font-size: 11.5px;
+	color: var(--fg-4);
+}
+.pj-mono {
+	font-family: ui-monospace, monospace;
+	font-size: 12px;
+	color: var(--fg-2);
+}
+.pj-cell-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+.pj-linkchip {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+	padding: 1px 7px;
+	font-size: 11px;
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border-radius: 999px;
+}
+
+.pj-pager {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+	justify-content: flex-end;
+	margin-top: 12px;
+	font-size: 12.5px;
+	color: var(--fg-3);
+}
+
+.pj-skeleton {
+	height: 200px;
+	background: var(--bg-3);
+	border-radius: 10px;
+	animation: pj-pulse 1.2s ease-in-out infinite;
+}
+@keyframes pj-pulse {
+	50% {
+		opacity: 0.55;
+	}
+}
+
+/* Overview tiles + quick links */
+.pj-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+	gap: 12px;
+	margin-bottom: 18px;
+}
+.pj-tile {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-tile.alert {
+	border-color: var(--danger);
+}
+.pj-tile-val {
+	font-size: 26px;
+	font-weight: 700;
+	color: var(--fg);
+}
+.pj-tile-lbl {
+	font-size: 12px;
+	color: var(--fg-3);
+}
+
+/* "Needs attention" panel */
+.pj-attention {
+	padding: 16px;
+	margin-bottom: 18px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-attention-title {
+	margin-bottom: 12px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.pj-attention-group {
+	margin-bottom: 14px;
+}
+.pj-attention-group:last-child {
+	margin-bottom: 0;
+}
+.pj-attention-head {
+	margin-bottom: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--fg-2);
+}
+.pj-attention-item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	padding: 6px 0;
+	font-size: 13px;
+	color: var(--fg-2);
+	border-top: 1px solid var(--line);
+}
+.pj-attention-empty {
+	font-size: 12.5px;
+	color: var(--fg-3);
+}
+
+.pj-quicklinks {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 12px;
+}
+.pj-quicklink {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 16px;
+	text-decoration: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-quicklink:hover {
+	border-color: var(--accent);
+}
+.pj-ql-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.pj-ql-sub {
+	font-size: 12px;
+	color: var(--fg-3);
+}
+
+/* Detail page */
+.pj-back {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+	margin-bottom: 12px;
+	font-size: 13px;
+	color: var(--fg-3);
+	text-decoration: none;
+}
+.pj-back:hover {
+	color: var(--fg);
+}
+.pj-detail-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-top: 8px;
+}
+.pj-ref {
+	font-family: ui-monospace, monospace;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.pj-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+.pj-section-title {
+	margin: 22px 0 10px;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.pj-summary {
+	padding: 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-sum-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 14px;
+}
+.pj-sum-grid > div {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.pj-k {
+	font-size: 11px;
+	color: var(--fg-3);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.pj-desc {
+	margin-top: 12px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--fg-2);
+	white-space: pre-wrap;
+}
+.pj-resolution {
+	padding: 12px 14px;
+	margin-top: 12px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--fg-2);
+	background: var(--success-soft);
+	border-radius: 8px;
+}
+
+/* Linked-context panel */
+.pj-linked-panel {
+	padding: 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-linked-item {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	padding: 8px 0;
+	font-size: 13px;
+	color: var(--fg-2);
+	border-top: 1px solid var(--line);
+}
+.pj-linked-item:first-child {
+	border-top: none;
+}
+.pj-linked-kind {
+	min-width: 130px;
+	font-size: 11px;
+	color: var(--fg-3);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.pj-linked-note {
+	margin-top: 12px;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+
+/* Comments timeline */
+.pj-comments {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.pj-comment {
+	padding: 12px 14px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-comment.internal {
+	background: var(--warning-soft);
+	border-color: var(--warning);
+}
+.pj-comment-head {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 4px;
+}
+.pj-comment-author {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.pj-comment-meta {
+	font-size: 11.5px;
+	color: var(--fg-4);
+}
+.pj-comment-body {
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--fg-2);
+	white-space: pre-wrap;
+}
+
+/* Comment form */
+.pj-comment-form {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-top: 10px;
+}
+.pj-comment-form textarea {
+	width: 100%;
+	padding: 10px;
+	font-size: 13px;
+	color: var(--fg);
+	resize: vertical;
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.pj-comment-form-foot {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: flex-end;
+}
+.pj-form-hint {
+	margin-right: auto;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+
+/* Dialog */
+.pj-sheet-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background: rgba(0, 0, 0, 0.4);
+}
+.pj-sheet {
+	width: 100%;
+	max-width: 460px;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: var(--shadow-lg, 0 12px 40px rgba(0, 0, 0, 0.3));
+}
+.pj-sheet-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--line);
+}
+.pj-sheet-head h2 {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.pj-sheet-body {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 16px;
+}
+.pj-sheet-foot {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	padding: 14px 16px;
+	border-top: 1px solid var(--line);
+}
+.pj-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	font-size: 13px;
+	color: var(--fg-2);
+}
+.pj-field > span {
+	font-weight: 500;
+}
+.pj-field textarea,
+.pj-field input,
+.pj-field select {
+	width: 100%;
+	padding: 8px 10px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.pj-field textarea {
+	resize: vertical;
+}
+
+/* My requests (Phase 13F) — employee self-service */
+.pj-filter-pills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	margin-bottom: 16px;
+}
+.pj-pill {
+	padding: 6px 12px;
+	font-size: 12.5px;
+	font-weight: 500;
+	color: var(--fg-3);
+	cursor: pointer;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+}
+.pj-pill:hover {
+	color: var(--fg);
+}
+.pj-pill.active {
+	color: var(--fg);
+	background: var(--bg-3);
+	border-color: var(--accent);
+}
+.pj-cards {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+.pj-card {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	text-decoration: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-card:hover {
+	border-color: var(--accent);
+}
+.pj-card-top {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: baseline;
+	justify-content: space-between;
+}
+.pj-card-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.pj-card-status {
+	font-size: 12.5px;
+	color: var(--fg-2);
+}
+.pj-card-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.pj-card-badges {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	align-items: center;
+}
+
+/* Workflow panels (Phase 13G) — approval / assignment / SLA */
+.pj-approval,
+.pj-assign,
+.pj-sla {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 16px;
+	margin-top: 14px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-approval-head,
+.pj-sla-head {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+}
+.pj-approval-head .pj-section-title,
+.pj-sla-head .pj-section-title {
+	margin: 0;
+}
+.pj-approval-note,
+.pj-sla-msg {
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--fg-2);
+}
+.pj-assign-row {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.pj-assign-name {
+	font-size: 13px;
+	color: var(--fg);
+}
+.pj-sla-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 14px;
+}
+.pj-sla-grid > div {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.pj-sla-note {
+	font-size: 12px;
+	color: var(--fg-3);
+}
+
+/* Visible keyboard focus (WCAG 2.4.7). The search/filter/field inputs above clear
+   the default outline; restore a clear ring for :focus-visible only so keyboard
+   users always see where focus is. */
+.pj-search input:focus-visible,
+.pj-toolbar select:focus-visible,
+.pj-field textarea:focus-visible,
+.pj-field input:focus-visible,
+.pj-field select:focus-visible,
+.pj-comment-form textarea:focus-visible,
+.pj-pill:focus-visible,
+.pj-tab:focus-visible,
+.pj-card:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+
+/* Internal-note composer tint — placed last to keep ascending specificity. */
+.pj-comment-form.internal textarea {
+	background: var(--warning-soft);
+}
+
+/* Projects-specific additions (14D) */
+.pj-overdue {
+	font-size: 11.5px;
+	color: var(--danger);
+}
