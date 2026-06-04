@@ -18,8 +18,10 @@ import {
 import { ProjectMilestones } from "@/features/projects/project-milestones";
 import { ProjectPeople } from "@/features/projects/project-people";
 import { ProjectTasks } from "@/features/projects/project-tasks";
+import { ProjectTime } from "@/features/projects/project-time";
 import type { ProjectDetail } from "@/features/projects/types";
 import {
+	canApproveProjectTime,
 	canEditProject,
 	canManageProjectMembers,
 	canManageProjects,
@@ -34,7 +36,7 @@ export const Route = createFileRoute("/app/projects/$id")({
 	component: ProjectDetailPage,
 });
 
-type DetailTab = "summary" | "tasks" | "people" | "milestones";
+type DetailTab = "summary" | "tasks" | "time" | "people" | "milestones";
 
 function SummaryRow({ k, children }: { children: string; k: string }) {
 	return (
@@ -154,9 +156,11 @@ function ProjectDetailPage() {
 
 	const canCreateTask = canManageProjects(role);
 	const canDragTask = canTrackProjectTime(role);
+	const canApproveTime = canApproveProjectTime(role);
 	const tabs: { key: DetailTab; label: string }[] = [
 		{ key: "summary", label: "Summary" },
 		{ key: "tasks", label: "Tasks" },
+		{ key: "time", label: "Time" },
 		{ key: "people", label: "People" },
 		{ key: "milestones", label: "Milestones" },
 	];
@@ -211,6 +215,9 @@ function ProjectDetailPage() {
 							canDrag={canDragTask}
 							projectId={p.id}
 						/>
+					) : null}
+					{tab === "time" ? (
+						<ProjectTime canApprove={canApproveTime} projectId={p.id} />
 					) : null}
 					{tab === "people" ? (
 						<ProjectPeople canManageMembers={canMembers} projectId={p.id} />

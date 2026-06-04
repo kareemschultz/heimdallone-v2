@@ -820,3 +820,11 @@
 .pj-sheet-wide {
 	max-width: 620px;
 }
+
+.pj-field-row {
+	display: flex;
+	gap: 10px;
+}
+.pj-field-row .pj-field {
+	flex: 1;
+}
