@@ -15,10 +15,12 @@ import {
 	projectStatusLabel,
 	projectStatusTone,
 } from "@/features/projects/labels";
+import { ProjectActivity } from "@/features/projects/project-activity";
 import { ProjectMilestones } from "@/features/projects/project-milestones";
 import { ProjectPeople } from "@/features/projects/project-people";
 import { ProjectTasks } from "@/features/projects/project-tasks";
 import { ProjectTime } from "@/features/projects/project-time";
+import { ProjectTimeline } from "@/features/projects/project-timeline";
 import type { ProjectDetail } from "@/features/projects/types";
 import {
 	canApproveProjectTime,
@@ -36,7 +38,14 @@ export const Route = createFileRoute("/app/projects/$id")({
 	component: ProjectDetailPage,
 });
 
-type DetailTab = "summary" | "tasks" | "time" | "people" | "milestones";
+type DetailTab =
+	| "summary"
+	| "tasks"
+	| "milestones"
+	| "timeline"
+	| "time"
+	| "people"
+	| "activity";
 
 function SummaryRow({ k, children }: { children: string; k: string }) {
 	return (
@@ -160,9 +169,11 @@ function ProjectDetailPage() {
 	const tabs: { key: DetailTab; label: string }[] = [
 		{ key: "summary", label: "Summary" },
 		{ key: "tasks", label: "Tasks" },
+		{ key: "milestones", label: "Milestones" },
+		{ key: "timeline", label: "Timeline" },
 		{ key: "time", label: "Time" },
 		{ key: "people", label: "People" },
-		{ key: "milestones", label: "Milestones" },
+		{ key: "activity", label: "Activity" },
 	];
 
 	return (
@@ -225,6 +236,8 @@ function ProjectDetailPage() {
 					{tab === "milestones" ? (
 						<ProjectMilestones canEdit={canEdit} projectId={p.id} />
 					) : null}
+					{tab === "timeline" ? <ProjectTimeline projectId={p.id} /> : null}
+					{tab === "activity" ? <ProjectActivity projectId={p.id} /> : null}
 				</>
 			)}
 		</div>

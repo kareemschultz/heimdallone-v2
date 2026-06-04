@@ -100,6 +100,7 @@ projects.timeEntries.update  (time_entry:update)  own DRAFT only
 projects.timeEntries.submit  (time_entry:submit)  draft → submitted
 projects.timeEntries.approve (time_entry:approve) submitted → approved; approver scope (seesAll / report / project-visible)
 projects.timeEntries.reject  (time_entry:approve) submitted → rejected (reason required)
+projects.activity.list       (project:read)       reads shared audit_event for the project + its children (14H — no project_activity table)
 ```
 
 References (`PRJ-`/`TSK-`) are MAX+1 per org with a 23505 retry loop; the
@@ -125,7 +126,7 @@ non-idempotent `seed-dev.ts`.
 
 ## Verification
 
-`scripts/verify-projects-api.ts` — **68/68** against the seed + a running API:
+`scripts/verify-projects-api.ts` — **70/70** against the seed + a running API:
 list scope (admin/pm/auditor/payroll = 5; manager scoped = 4; employee = 3 member
 projects; recruiter blocked); budget redaction (PM/manager/employee → null;
 admin/auditor/payroll → visible); employee IDOR no-leak (FORBIDDEN on
@@ -148,5 +149,5 @@ cp scripts/verify-projects-api.ts apps/web/_v.ts && (cd apps/web && bun run _v.t
 
 ## Gates
 
-check-types 3/3 · build 2/2 · audit:permissions 109/14 · verify 68/68 · ultracite
+check-types 3/3 · build 2/2 · audit:permissions 109/14 · verify 70/70 · ultracite
 clean on all changed files.

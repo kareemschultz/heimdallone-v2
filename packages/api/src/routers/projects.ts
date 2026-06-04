@@ -40,7 +40,7 @@ import { db } from "@Heimdallone/db";
 import { asset } from "@Heimdallone/db/schema/assets";
 import { user } from "@Heimdallone/db/schema/auth";
 import { helpdeskRequest } from "@Heimdallone/db/schema/helpdesk";
-import { employeeProfile } from "@Heimdallone/db/schema/hr-core";
+import { auditEvent, employeeProfile } from "@Heimdallone/db/schema/hr-core";
 import {
 	type ProjectHealth,
 	project,
@@ -2163,6 +2163,87 @@ const timeEntriesReject = authorizedProcedure("time_entry", "approve")
 	});
 
 // ════════════════════════════════════════════════════════════════════
+// ACTIVITY (reads the shared audit_event log — NO project_activity table)
+// ════════════════════════════════════════════════════════════════════
+
+const PROJECT_AUDIT_TYPES = [
+	"project",
+	"project_task",
+	"project_milestone",
+	"project_member",
+	"project_task_comment",
+	"project_time_entry",
+] as const;
+
+/**
+ * Read-only project activity from the shared audit_event log (the 14A decision:
+ * reuse audit_event, no dedicated project_activity table). Gathers the project's
+ * own events plus those of its tasks / milestones / members / comments / time
+ * entries by id. Gated on project:read + assertProjectVisible — no new AC pair.
+ */
+const activityList = authorizedProcedure("project", "read")
+	.input(
+		z.object({
+			projectId: z.string(),
+			limit: z.number().int().min(1).max(200).optional(),
+		})
+	)
+	.handler(async ({ context, input }) => {
+		const callerRole = role(context);
+		const oid = orgId(context);
+		const p = await verifyProject(oid, input.projectId);
+		await assertProjectVisible(oid, actorId(context), callerRole, p);
+
+		const [tasks, milestones, members, times] = await Promise.all([
+			db
+				.select({ id: projectTask.id })
+				.from(projectTask)
+				.where(eq(projectTask.projectId, p.id)),
+			db
+				.select({ id: projectMilestone.id })
+				.from(projectMilestone)
+				.where(eq(projectMilestone.projectId, p.id)),
+			db
+				.select({ id: projectMember.id })
+				.from(projectMember)
+				.where(eq(projectMember.projectId, p.id)),
+			db
+				.select({ id: projectTimeEntry.id })
+				.from(projectTimeEntry)
+				.where(eq(projectTimeEntry.projectId, p.id)),
+		]);
+		const taskIds = tasks.map((r) => r.id);
+		const comments = taskIds.length
+			? await db
+					.select({ id: projectTaskComment.id })
+					.from(projectTaskComment)
+					.where(inArray(projectTaskComment.taskId, taskIds))
+			: [];
+		const allIds = [
+			p.id,
+			...taskIds,
+			...milestones.map((r) => r.id),
+			...members.map((r) => r.id),
+			...times.map((r) => r.id),
+			...comments.map((r) => r.id),
+		];
+		const rows = await db
+			.select({ ...getTableColumns(auditEvent), actorName: user.name })
+			.from(auditEvent)
+			.leftJoin(user, eq(auditEvent.actorId, user.id))
+			.where(
+				and(
+					eq(auditEvent.organizationId, oid),
+					inArray(auditEvent.entityType, [...PROJECT_AUDIT_TYPES]),
+					inArray(auditEvent.entityId, allIds)
+				)
+			)
+			.orderBy(desc(auditEvent.createdAt))
+			.limit(input.limit ?? 50);
+		return rows;
+	});
+
+// ════════════════════════════════════════════════════════════════════
 // Router
 // ════════════════════════════════════════════════════════════════════
 
@@ -2206,5 +2287,8 @@ export const projectsRouter = {
 		submit: timeEntriesSubmit,
 		approve: timeEntriesApprove,
 		reject: timeEntriesReject,
+	},
+	activity: {
+		list: activityList,
 	},
 };

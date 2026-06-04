@@ -495,6 +495,21 @@ async function main() {
 			Boolean(t2After.linkedAssetId)
 	);
 
+	console.log("\n── 12. Activity (shared audit_event, no project_activity) ──");
+	const activity = await admin.projects.activity.list({
+		projectId: network.id,
+	});
+	ok(
+		"activity.list returns audit events after mutations",
+		Array.isArray(activity) && activity.length > 0,
+		`n=${Array.isArray(activity) ? activity.length : "?"}`
+	);
+	ok(
+		"activity rows carry entityType + action + actorName shape",
+		Array.isArray(activity) &&
+			activity.every((a: any) => a.entityType && a.action && "actorName" in a)
+	);
+
 	console.log(`\n══ RESULT: ${pass} passed, ${fail} failed ══`);
 	process.exit(fail === 0 ? 0 : 1);
 }

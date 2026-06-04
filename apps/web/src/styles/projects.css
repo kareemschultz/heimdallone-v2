@@ -828,3 +828,81 @@
 .pj-field-row .pj-field {
 	flex: 1;
 }
+
+/* Timeline (simple date-ordered cards, NOT a Gantt) — 14H */
+.pj-timeline {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+.pj-timeline-item {
+	display: grid;
+	grid-template-columns: 96px 24px 1fr;
+	gap: 10px;
+	align-items: start;
+	padding: 6px 0;
+}
+.pj-timeline-date {
+	padding-top: 10px;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.pj-timeline-marker {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 24px;
+	height: 24px;
+	margin-top: 8px;
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border-radius: 999px;
+}
+.pj-timeline-card {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 10px 12px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pj-timeline-card-top {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	justify-content: space-between;
+}
+
+/* Activity feed (audit_event-backed) — 14H */
+.pj-activity {
+	display: flex;
+	flex-direction: column;
+}
+.pj-activity-item {
+	display: grid;
+	grid-template-columns: 16px 1fr;
+	gap: 10px;
+	padding: 8px 0;
+}
+.pj-activity-dot {
+	width: 8px;
+	height: 8px;
+	margin-top: 5px;
+	background: var(--accent);
+	border-radius: 999px;
+}
+.pj-activity-body {
+	display: flex;
+	flex-direction: column;
+	gap: 1px;
+}
+.pj-activity-text {
+	font-size: 13px;
+	color: var(--fg);
+}
+.pj-activity-meta {
+	font-size: 11.5px;
+	color: var(--fg-3);
+}

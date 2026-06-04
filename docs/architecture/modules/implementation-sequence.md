@@ -12,7 +12,7 @@ Phase 10:  Offboarding ✅ COMPLETE (10A spec, 10B DB, 10C API, 10D UI CP1 overv
 Phase 11:  Biometric + Geofencing ✅ COMPLETE (11A spec → 11B DB → 11C API/processor → 11D devices UI → 11E punch/exception UI → 11F geofence/check-in UI → 11G integration hardening CP1–CP4 → 11H module QA/RBAC/security/browser pass ✅). Next = Phase 12 Assets (queued spec; connects to Offboarding asset returns).
 Phase 12:  Assets ✅ COMPLETE (Operations; 12B DB → 12C API → 12D UI → 12E QA/hardening+sidebar+offboarding-custody)
 Phase 13:  Helpdesk / Requests ✅ COMPLETE (Operations; 13A spec → 13B DB → 13C API → 13D-13G UI → 13H QA/RBAC/security pass) — request/ticket LAYER that LINKS to Assets/Payroll/Leave/Offboarding, never duplicates them
-Phase 14:  Projects + Tasks & Timelines ← ACTIVE (Operations; 14A spec ✅ → 14B DB ✅ → 14C API ✅ → 14D overview/list UI ✅ → 14E detail/members/milestones ✅ → 14F tasks/Kanban ✅ → 14G My-Tasks/My-Time ✅ → 14H UI → 14I QA) — coordination layer (link, never own)
+Phase 14:  Projects + Tasks & Timelines ← ACTIVE (Operations; 14A spec ✅ → 14B DB ✅ → 14C API ✅ → 14D overview/list UI ✅ → 14E detail/members/milestones ✅ → 14F tasks/Kanban ✅ → 14G My-Tasks/My-Time ✅ → 14H timeline/activity ✅ → 14I QA) — coordination layer (link, never own)
 Phase 15:  Performance / PMS (People)
 Phase 16:  Finance expansion (Finance — payment batches, bank exports, expenses, costing)
 Phase 17:  CRM (research/spec at 17A — see crm-implementation-plan.md; FUTURE)
