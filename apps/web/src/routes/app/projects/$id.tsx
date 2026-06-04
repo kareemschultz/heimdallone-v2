@@ -17,10 +17,13 @@ import {
 } from "@/features/projects/labels";
 import { ProjectMilestones } from "@/features/projects/project-milestones";
 import { ProjectPeople } from "@/features/projects/project-people";
+import { ProjectTasks } from "@/features/projects/project-tasks";
 import type { ProjectDetail } from "@/features/projects/types";
 import {
 	canEditProject,
 	canManageProjectMembers,
+	canManageProjects,
+	canTrackProjectTime,
 	canViewProjectInternalNotes,
 	canViewProjects,
 } from "@/lib/rbac";
@@ -31,7 +34,7 @@ export const Route = createFileRoute("/app/projects/$id")({
 	component: ProjectDetailPage,
 });
 
-type DetailTab = "summary" | "people" | "milestones";
+type DetailTab = "summary" | "tasks" | "people" | "milestones";
 
 function SummaryRow({ k, children }: { children: string; k: string }) {
 	return (
@@ -149,8 +152,11 @@ function ProjectDetailPage() {
 	const canMembers = canManageProjectMembers(role);
 	const canViewInternal = canViewProjectInternalNotes(role);
 
+	const canCreateTask = canManageProjects(role);
+	const canDragTask = canTrackProjectTime(role);
 	const tabs: { key: DetailTab; label: string }[] = [
 		{ key: "summary", label: "Summary" },
+		{ key: "tasks", label: "Tasks" },
 		{ key: "people", label: "People" },
 		{ key: "milestones", label: "Milestones" },
 	];
@@ -198,6 +204,13 @@ function ProjectDetailPage() {
 
 					{tab === "summary" ? (
 						<ProjectSummary canViewInternal={canViewInternal} p={p} />
+					) : null}
+					{tab === "tasks" ? (
+						<ProjectTasks
+							canCreate={canCreateTask}
+							canDrag={canDragTask}
+							projectId={p.id}
+						/>
 					) : null}
 					{tab === "people" ? (
 						<ProjectPeople canManageMembers={canMembers} projectId={p.id} />

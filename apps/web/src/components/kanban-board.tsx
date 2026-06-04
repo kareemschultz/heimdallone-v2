@@ -4,6 +4,7 @@ import {
 	type DragEndEvent,
 	DragOverlay,
 	type DragStartEvent,
+	KeyboardSensor,
 	PointerSensor,
 	useDraggable,
 	useDroppable,
@@ -59,8 +60,12 @@ export function KanbanBoard<TCard>({
 	emptyColumnHint = "Empty",
 }: KanbanBoardProps<TCard>) {
 	const [activeCardKey, setActiveCardKey] = useState<string | null>(null);
+	// PointerSensor for mouse/touch + KeyboardSensor for accessibility: a keyboard
+	// user can Tab to a card, press Space/Enter to pick it up, move it across
+	// columns with the arrow keys, and drop with Space/Enter (WCAG 2.1.1).
 	const sensors = useSensors(
-		useSensor(PointerSensor, { activationConstraint: { distance: 6 } })
+		useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+		useSensor(KeyboardSensor)
 	);
 
 	const cardsByColumn = new Map<string, TCard[]>();

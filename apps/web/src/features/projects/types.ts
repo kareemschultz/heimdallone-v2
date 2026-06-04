@@ -88,3 +88,28 @@ export interface ProjectLinkedEntity {
 	kind: string;
 	label: string | null;
 }
+
+export interface ProjectTaskComment {
+	authorName: string | null;
+	authorUserId: string | null;
+	body: string;
+	createdAt: string | Date | null;
+	id: string;
+	isInternal: boolean;
+}
+
+export interface ProjectTaskDetail {
+	assigneeEmployeeId: string | null;
+	assigneeName: string | null;
+	description: string | null;
+	dueDate: string | Date | null;
+	id: string;
+	linked: ProjectLinkedEntity[];
+	linkedAssetId: string | null;
+	linkedHelpdeskRequestId: string | null;
+	priority: string;
+	projectId: string;
+	reference: string;
+	status: string;
+	title: string;
+}

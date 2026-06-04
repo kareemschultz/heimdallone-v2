@@ -676,3 +676,147 @@
 	justify-content: space-between;
 	margin-bottom: 10px;
 }
+
+/* Kanban board styles (shared shape with recruitment; copied so the projects
+   board is styled without importing another module's stylesheet) — 14F */
+.kanban-board {
+	display: grid;
+	grid-auto-columns: minmax(260px, 1fr);
+	grid-auto-flow: column;
+	gap: 12px;
+	padding-bottom: 8px;
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.kanban-col {
+	display: flex;
+	flex-direction: column;
+	min-height: 320px;
+	padding: 10px;
+	background: var(--bg-1);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	transition:
+		border-color 120ms ease,
+		background 120ms ease;
+}
+.kanban-col-over {
+	background: var(--bg-2);
+	border-color: var(--accent, var(--fg-2));
+}
+
+.kanban-col-head {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 2px 4px;
+	margin-bottom: 4px;
+}
+.kanban-col-title {
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--fg);
+	letter-spacing: 0.01em;
+}
+.kanban-col-count {
+	min-width: 22px;
+	padding: 1px 7px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--fg-3);
+	text-align: center;
+	background: var(--bg-3);
+	border-radius: 999px;
+}
+.kanban-col-hint {
+	padding: 0 4px;
+	margin-bottom: 6px;
+	font-size: 11px;
+	color: var(--fg-3);
+}
+.kanban-col-body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 8px;
+	min-height: 80px;
+}
+.kanban-col-empty {
+	padding: 18px 8px;
+	font-size: 11.5px;
+	color: var(--fg-3);
+	text-align: center;
+	border: 1px dashed var(--line);
+	border-radius: 10px;
+}
+
+.kanban-card-wrap {
+	touch-action: none;
+	cursor: grab;
+}
+.kanban-card-wrap:active {
+	cursor: grabbing;
+}
+.kanban-card-dragging {
+	opacity: 0;
+}
+.kanban-drag-overlay {
+	transform: rotate(1.5deg);
+}
+
+/* Projects task-board card + view toggle + wide sheet (14F) */
+.pj-kanban-card-btn {
+	display: block;
+	width: 100%;
+	padding: 0;
+	text-align: left;
+	cursor: pointer;
+	background: none;
+	border: none;
+}
+.pj-kanban-card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.pj-kanban-title {
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 1.35;
+}
+.pj-kanban-meta {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	color: var(--fg-3);
+}
+.pj-viewtoggle {
+	display: inline-flex;
+	gap: 2px;
+	padding: 2px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.pj-toggle {
+	padding: 4px 12px;
+	font-size: 12.5px;
+	color: var(--fg-3);
+	cursor: pointer;
+	background: none;
+	border: none;
+	border-radius: 6px;
+}
+.pj-toggle.active {
+	color: var(--fg-1);
+	background: var(--bg-1);
+}
+.pj-toggle:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+.pj-sheet-wide {
+	max-width: 620px;
+}
