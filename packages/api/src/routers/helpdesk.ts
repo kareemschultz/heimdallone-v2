@@ -433,7 +433,7 @@ async function assertRequestVisible(
 		return;
 	}
 	if (callerRole === "manager" && me) {
-		const reportIds = await getDirectReportIds(me.id);
+		const reportIds = await getDirectReportIds(me.id, oid);
 		if (reportIds.includes(req.requesterEmployeeId)) {
 			return;
 		}
@@ -856,7 +856,7 @@ const requestsList = authorizedProcedure("ticket", "read")
 				return { data: [], total: 0, page: input.page };
 			}
 			if (callerRole === "manager") {
-				const reportIds = await getDirectReportIds(me.id);
+				const reportIds = await getDirectReportIds(me.id, oid);
 				filters.push(
 					inArray(helpdeskRequest.requesterEmployeeId, [me.id, ...reportIds])
 				);
@@ -1087,7 +1087,7 @@ const requestsCreateForEmployee = authorizedProcedure("ticket", "create")
 		if (!canManageHelpdesk(callerRole)) {
 			if (callerRole === "manager") {
 				const me = await resolveCurrentEmployee(oid, actorId(context));
-				const reportIds = me ? await getDirectReportIds(me.id) : [];
+				const reportIds = me ? await getDirectReportIds(me.id, oid) : [];
 				if (!reportIds.includes(input.employeeId)) {
 					throw new ORPCError("FORBIDDEN", {
 						message: "You can only log requests for your direct reports.",
@@ -1565,12 +1565,19 @@ async function assertCanDecideApproval(
 	if (canManageHelpdesk(callerRole) || callerRole === "payroll_admin") {
 		return;
 	}
-	// manager
+	// Only a manager reaches here today (canApproveHelpdeskRequest = manage ∪
+	// manager ∪ payroll_admin). Gate the manager scope EXPLICITLY so a future role
+	// added to the approve gate can't silently inherit manager-style scoping.
+	if (callerRole !== "manager") {
+		throw new ORPCError("FORBIDDEN", {
+			message: "You do not have permission to decide this approval.",
+		});
+	}
 	const assignedToMe = req.assignedToUserId === userId;
 	let isReport = false;
 	const me = await resolveCurrentEmployee(oid, userId);
 	if (me) {
-		const reportIds = await getDirectReportIds(me.id);
+		const reportIds = await getDirectReportIds(me.id, oid);
 		isReport = reportIds.includes(req.requesterEmployeeId);
 	}
 	if (!(assignedToMe || isReport)) {
@@ -1734,6 +1741,9 @@ const commentsCreateInternal = authorizedProcedure("ticket", "update")
 		}
 		const oid = orgId(context);
 		const req = await verifyRequest(oid, input.requestId);
+		// Intentional asymmetry vs. public comments: an internal note IS allowed on
+		// a resolved/closed request (post-mortem / audit trail), but NOT on a
+		// cancelled one. Public comments are blocked on both terminal states.
 		if (req.status === "cancelled") {
 			throw new ORPCError("PRECONDITION_FAILED", {
 				message: "You cannot annotate a cancelled request.",

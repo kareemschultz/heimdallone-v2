@@ -29,8 +29,17 @@ export async function resolveCurrentEmployee(
 }
 
 export async function getDirectReportIds(
-	employeeId: string
+	employeeId: string,
+	organizationId?: string
 ): Promise<string[]> {
+	// Pass organizationId to bound the report set to the caller's tenant — a
+	// defense-in-depth check so a manager's scope can never widen via a
+	// cross-tenant reportingManagerId pointer. Optional for backwards
+	// compatibility with callers that already resolved the manager tenant-scoped.
+	const filters = [eq(employeeWorkInfo.reportingManagerId, employeeId)];
+	if (organizationId) {
+		filters.push(eq(employeeProfile.organizationId, organizationId));
+	}
 	const reports = await db
 		.select({ id: employeeProfile.id })
 		.from(employeeProfile)
@@ -38,7 +47,7 @@ export async function getDirectReportIds(
 			employeeWorkInfo,
 			eq(employeeProfile.id, employeeWorkInfo.employeeId)
 		)
-		.where(eq(employeeWorkInfo.reportingManagerId, employeeId));
+		.where(and(...filters));
 	return reports.map((r) => r.id);
 }
 

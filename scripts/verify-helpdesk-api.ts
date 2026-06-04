@@ -765,6 +765,170 @@ async function main() {
 		() => employee.helpdesk.requests.approve({ id: wfReq.id })
 	);
 
+	// ════════════════════════════════════════════════════════════════════
+	console.log("\n10. cancel lifecycle + terminal-state blocks + edits (13H)");
+
+	// requester cancels their own
+	const h8Cancel = await employee.helpdesk.requests.createSelf({
+		title: "Verify: cancel own",
+		priority: "normal",
+	});
+	await employee.helpdesk.requests.cancel({ id: h8Cancel.id });
+	const h8CancelDetail = (await employee.helpdesk.requests.getById({
+		id: h8Cancel.id,
+	})) as AnyRow;
+	ok(
+		"requester can cancel their own request",
+		h8CancelDetail.status === "cancelled",
+		String(h8CancelDetail.status)
+	);
+
+	// a cancelled request is terminal — every transition / comment is blocked
+	await expectError(
+		"resolve on cancelled → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() =>
+			admin.helpdesk.requests.resolve({ id: h8Cancel.id, resolutionNote: "x" })
+	);
+	await expectError(
+		"changeStatus on cancelled → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() =>
+			admin.helpdesk.requests.changeStatus({ id: h8Cancel.id, status: "open" })
+	);
+	await expectError(
+		"reopen on cancelled → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() => admin.helpdesk.requests.reopen({ id: h8Cancel.id })
+	);
+	await expectError(
+		"close on cancelled → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() => admin.helpdesk.requests.close({ id: h8Cancel.id })
+	);
+	await expectError(
+		"cancel on already-cancelled → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() => admin.helpdesk.requests.cancel({ id: h8Cancel.id })
+	);
+	await expectError(
+		"update on cancelled → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() => admin.helpdesk.requests.update({ id: h8Cancel.id, title: "nope" })
+	);
+	await expectError(
+		"public comment on cancelled → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() =>
+			employee.helpdesk.comments.create({ requestId: h8Cancel.id, body: "x" })
+	);
+	await expectError(
+		"internal note on cancelled → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() =>
+			admin.helpdesk.comments.createInternal({
+				requestId: h8Cancel.id,
+				body: "x",
+			})
+	);
+
+	// non-requester employee cannot cancel another employee's request; agent can
+	const h8ForReport = await admin.helpdesk.requests.createForEmployee({
+		employeeId: andreReportId as string,
+		title: "Verify: not the employee's own",
+		priority: "normal",
+	});
+	await expectError(
+		"non-requester employee cannot cancel another's request → FORBIDDEN",
+		"FORBIDDEN",
+		() => employee.helpdesk.requests.cancel({ id: h8ForReport.id })
+	);
+	await agent.helpdesk.requests.cancel({ id: h8ForReport.id });
+	const h8AgentCancel = (await admin.helpdesk.requests.getById({
+		id: h8ForReport.id,
+	})) as AnyRow;
+	ok(
+		"agent can cancel any active request",
+		h8AgentCancel.status === "cancelled"
+	);
+
+	// internal note IS allowed on a closed request (post-mortem); public is not
+	const h8Closed = await employee.helpdesk.requests.createSelf({
+		title: "Verify: closed-state comment asymmetry",
+		priority: "normal",
+	});
+	await admin.helpdesk.requests.close({ id: h8Closed.id });
+	const h8Note = await admin.helpdesk.comments.createInternal({
+		requestId: h8Closed.id,
+		body: "post-mortem note on a closed request",
+	});
+	ok("internal note allowed on a closed request", Boolean(h8Note?.id));
+	await expectError(
+		"public comment on closed → PRECONDITION_FAILED",
+		"PRECONDITION_FAILED",
+		() =>
+			employee.helpdesk.comments.create({ requestId: h8Closed.id, body: "x" })
+	);
+
+	// changeStatus reaches each working state; update edits title/priority
+	const h8Work = await employee.helpdesk.requests.createSelf({
+		title: "Verify: working-state transitions",
+		priority: "normal",
+	});
+	await admin.helpdesk.requests.changeStatus({
+		id: h8Work.id,
+		status: "waiting_on_employee",
+	});
+	let h8WorkDetail = (await admin.helpdesk.requests.getById({
+		id: h8Work.id,
+	})) as AnyRow;
+	ok(
+		"changeStatus → waiting_on_employee",
+		h8WorkDetail.status === "waiting_on_employee"
+	);
+	await admin.helpdesk.requests.changeStatus({
+		id: h8Work.id,
+		status: "waiting_on_approval",
+	});
+	h8WorkDetail = (await admin.helpdesk.requests.getById({
+		id: h8Work.id,
+	})) as AnyRow;
+	ok(
+		"changeStatus → waiting_on_approval",
+		h8WorkDetail.status === "waiting_on_approval"
+	);
+	await admin.helpdesk.requests.update({
+		id: h8Work.id,
+		title: "Verify: edited title",
+		priority: "high",
+	});
+	h8WorkDetail = (await admin.helpdesk.requests.getById({
+		id: h8Work.id,
+	})) as AnyRow;
+	ok(
+		"update edits title + priority",
+		h8WorkDetail.title === "Verify: edited title" &&
+			h8WorkDetail.priority === "high"
+	);
+
+	// mine:true self-scopes even a manage-level caller. The seed admin has no
+	// employee profile, so their own-requests list is empty (vs. the full org
+	// queue they'd otherwise see) — proving mine overrides the role scope.
+	const h8AdminMine = await admin.helpdesk.requests.list({
+		mine: true,
+		page: 1,
+		pageSize: 100,
+	});
+	const h8AdminAll = await admin.helpdesk.requests.list({
+		page: 1,
+		pageSize: 1,
+	});
+	ok(
+		"mine:true self-scopes a manage-level caller (admin own=0 vs org queue>0)",
+		h8AdminMine.total === 0 && h8AdminAll.total > 0,
+		`mine=${h8AdminMine.total} all=${h8AdminAll.total}`
+	);
+
 	console.log(`\n──────────────\nRESULT: ${pass} passed, ${fail} failed\n`);
 	process.exit(fail > 0 ? 1 : 0);
 }

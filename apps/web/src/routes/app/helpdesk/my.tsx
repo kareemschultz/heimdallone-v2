@@ -110,9 +110,14 @@ function RequestHelpDialog({
 
 	return (
 		<div className="hd-sheet-overlay">
-			<div aria-modal="true" className="hd-sheet" role="dialog">
+			<div
+				aria-labelledby="hd-request-help-title"
+				aria-modal="true"
+				className="hd-sheet"
+				role="dialog"
+			>
 				<div className="hd-sheet-head">
-					<h2>Request help</h2>
+					<h2 id="hd-request-help-title">Request help</h2>
 					<button
 						aria-label="Close"
 						className="btn-icon"

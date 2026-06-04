@@ -113,8 +113,8 @@ export function RequestComments({
 				<>
 					<h3 className="hd-section-title">Internal notes</h3>
 					<p className="hd-form-hint">
-						Only the helpdesk team can see these — never the requesting
-						employee.
+						Visible to the helpdesk team and authorized reviewers — never the
+						requesting employee.
 					</p>
 					<div className="hd-comments">
 						{internalComments.length === 0 ? (

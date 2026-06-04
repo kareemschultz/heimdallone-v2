@@ -640,6 +640,22 @@
 	color: var(--fg-3);
 }
 
+/* Visible keyboard focus (WCAG 2.4.7). The search/filter/field inputs above clear
+   the default outline; restore a clear ring for :focus-visible only so keyboard
+   users always see where focus is. */
+.hd-search input:focus-visible,
+.hd-toolbar select:focus-visible,
+.hd-field textarea:focus-visible,
+.hd-field input:focus-visible,
+.hd-field select:focus-visible,
+.hd-comment-form textarea:focus-visible,
+.hd-pill:focus-visible,
+.hd-tab:focus-visible,
+.hd-card:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+
 /* Internal-note composer tint — placed last to keep ascending specificity. */
 .hd-comment-form.internal textarea {
 	background: var(--warning-soft);

@@ -30,9 +30,14 @@ function ConfirmDialog({
 }) {
 	return (
 		<div className="hd-sheet-overlay">
-			<div aria-modal="true" className="hd-sheet" role="dialog">
+			<div
+				aria-labelledby="hd-confirm-title"
+				aria-modal="true"
+				className="hd-sheet"
+				role="dialog"
+			>
 				<div className="hd-sheet-head">
-					<h2>{title}</h2>
+					<h2 id="hd-confirm-title">{title}</h2>
 					<button
 						aria-label="Close"
 						className="btn-icon"

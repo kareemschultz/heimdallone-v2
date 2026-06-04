@@ -199,39 +199,50 @@ function HelpdeskOverviewPage() {
 				))}
 			</div>
 
-			<div className="hd-attention">
-				<div className="hd-attention-title">Needs attention</div>
-				<AttentionGroup
-					head="Overdue or breached SLA"
-					items={atRisk}
-					renderBadge={(r) => (
-						<Badge tone={slaTone(r.slaState)}>{slaLabel(r.slaState)}</Badge>
-					)}
+			{queue.isLoading ? <div className="hd-skeleton" /> : null}
+			{queue.isError ? (
+				<EmptyState
+					compact
+					description="Could not load the helpdesk overview. Please try again."
+					title="Something went wrong"
 				/>
-				<AttentionGroup
-					head="Urgent"
-					items={urgent}
-					renderBadge={(r) => (
-						<Badge tone={priorityTone(r.priority)}>
-							{priorityLabel(r.priority)}
-						</Badge>
-					)}
-				/>
-				<AttentionGroup
-					head="Waiting on approval"
-					items={awaitingApproval}
-					renderBadge={(r) => (
-						<Badge tone={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
-					)}
-				/>
-				<AttentionGroup
-					head="Unassigned"
-					items={unassigned}
-					renderBadge={(r) => (
-						<Badge tone={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
-					)}
-				/>
-			</div>
+			) : null}
+
+			{queue.isLoading || queue.isError ? null : (
+				<div className="hd-attention">
+					<div className="hd-attention-title">Needs attention</div>
+					<AttentionGroup
+						head="Overdue or breached SLA"
+						items={atRisk}
+						renderBadge={(r) => (
+							<Badge tone={slaTone(r.slaState)}>{slaLabel(r.slaState)}</Badge>
+						)}
+					/>
+					<AttentionGroup
+						head="Urgent"
+						items={urgent}
+						renderBadge={(r) => (
+							<Badge tone={priorityTone(r.priority)}>
+								{priorityLabel(r.priority)}
+							</Badge>
+						)}
+					/>
+					<AttentionGroup
+						head="Waiting on approval"
+						items={awaitingApproval}
+						renderBadge={(r) => (
+							<Badge tone={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
+						)}
+					/>
+					<AttentionGroup
+						head="Unassigned"
+						items={unassigned}
+						renderBadge={(r) => (
+							<Badge tone={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
+						)}
+					/>
+				</div>
+			)}
 
 			<div className="hd-quicklinks">
 				<Link className="hd-quicklink" to="/app/helpdesk/requests">
