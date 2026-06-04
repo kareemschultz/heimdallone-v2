@@ -298,3 +298,89 @@ export function canViewProjectCosts(role: MemberRole): boolean {
 export function canViewProjectInternalNotes(role: MemberRole): boolean {
 	return canManageProjects(role) || role === "auditor";
 }
+
+// Performance / PMS (Phase 15C). Mirror of apps/web/src/lib/rbac.ts — keep
+// byte-aligned. The goal / appraisal / recognition AC grants in permissions.ts
+// are the SOURCE OF TRUTH; these helpers gate the handler-level re-check (and, in
+// rbac.ts, UI affordances). They are aligned to the ACTUAL grants (lesson #88),
+// not the spec prose.
+//
+// Managing PMS (review cycles, templates, finalize) is HR-level. Employees are
+// first-class participants: own goals, own review responses, own recognition.
+// Managers see their direct reports (scoped server-side). Two HIGHEST-RISK
+// redactions live in the handler: one_on_one.privateManagerNotes is returned ONLY
+// to HR + the owning manager (never the employee, never auditor); peer review
+// responses are anonymised + threshold-gated for the subject.
+//
+// Grant realities worth noting (NOT bugs — aligned to the reviewed matrix):
+//   - goal:complete is held by owner/admin + employee only; hr_admin/manager
+//     complete a report's goal via objectives.update(status), not .complete.
+//   - appraisal:submit is held by owner/admin + manager + employee; an hr_admin
+//     acting as a reviewer uses their manage grant elsewhere (edge case).
+export function canManagePerformance(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewPerformance(role: MemberRole): boolean {
+	return (
+		canManagePerformance(role) ||
+		role === "manager" ||
+		role === "payroll_admin" ||
+		role === "auditor"
+	);
+}
+
+export function canCreateObjective(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager" || role === "employee";
+}
+
+export function canUpdateObjective(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager" || role === "employee";
+}
+
+// goal:complete grant = owner/admin + employee (NOT hr_admin/manager).
+export function canCompleteObjective(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "employee";
+}
+
+export function canViewReviews(role: MemberRole): boolean {
+	return canViewPerformance(role);
+}
+
+export function canManageReviewCycles(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+// appraisal:submit grant = owner/admin + manager + employee.
+export function canSubmitReview(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "manager" || role === "employee";
+}
+
+export function canReviewPerformance(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
+
+export function canFinalizeReview(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canAwardRecognition(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
+
+export function canViewRecognition(role: MemberRole): boolean {
+	return (
+		canManageHR(role) ||
+		role === "manager" ||
+		role === "payroll_admin" ||
+		role === "employee" ||
+		role === "auditor"
+	);
+}
+
+// Who may see one_on_one.privateManagerNotes at the ROLE level — HR + manager.
+// The handler ADDITIONALLY scopes a manager to the 1-on-1s they own; an auditor
+// is deliberately EXCLUDED (read-only does not extend to private manager notes).
+export function canViewPrivatePerformanceNotes(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}

@@ -298,3 +298,72 @@ export function canViewProjectCosts(role: MemberRole): boolean {
 export function canViewProjectInternalNotes(role: MemberRole): boolean {
 	return canManageProjects(role) || role === "auditor";
 }
+
+// Performance / PMS (Phase 15C). Mirror of packages/api/src/utils/role-helpers.ts
+// — keep byte-aligned. Aligned to the goal/appraisal/recognition AC grants.
+// Managing PMS is HR-level; employees are first-class participants (own goals,
+// own reviews, own recognition); managers are scoped to direct reports
+// server-side. privateManagerNotes (HR + owning manager only) and peer-review
+// anonymity are enforced SERVER-SIDE in 15C — these helpers only gate affordances.
+export function canManagePerformance(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewPerformance(role: MemberRole): boolean {
+	return (
+		canManagePerformance(role) ||
+		role === "manager" ||
+		role === "payroll_admin" ||
+		role === "auditor"
+	);
+}
+
+export function canCreateObjective(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager" || role === "employee";
+}
+
+export function canUpdateObjective(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager" || role === "employee";
+}
+
+export function canCompleteObjective(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "employee";
+}
+
+export function canViewReviews(role: MemberRole): boolean {
+	return canViewPerformance(role);
+}
+
+export function canManageReviewCycles(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canSubmitReview(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "manager" || role === "employee";
+}
+
+export function canReviewPerformance(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
+
+export function canFinalizeReview(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canAwardRecognition(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
+
+export function canViewRecognition(role: MemberRole): boolean {
+	return (
+		canManageHR(role) ||
+		role === "manager" ||
+		role === "payroll_admin" ||
+		role === "employee" ||
+		role === "auditor"
+	);
+}
+
+export function canViewPrivatePerformanceNotes(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}

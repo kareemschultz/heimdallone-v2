@@ -12,6 +12,7 @@ import { leavePolicyRouter } from "./leave-policy";
 import { offboardingRouter } from "./offboarding";
 import { onboardingRouter } from "./onboarding";
 import { payrollRouter } from "./payroll";
+import { performanceRouter } from "./performance";
 import { projectsRouter } from "./projects";
 import { recruitmentRouter } from "./recruitment";
 
@@ -30,6 +31,7 @@ export const appRouter = {
 	leave: leaveRouter,
 	leavePolicy: leavePolicyRouter,
 	payroll: payrollRouter,
+	performance: performanceRouter,
 	projects: projectsRouter,
 	recruitment: recruitmentRouter,
 	onboarding: onboardingRouter,
