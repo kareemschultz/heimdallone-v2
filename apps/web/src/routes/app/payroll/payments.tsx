@@ -365,7 +365,6 @@ function BatchActions({
 }
 
 function CreateBatchDialog({ onClose }: { onClose: () => void }) {
-	const _org = useContext(OrgCtx);
 	const [selectedRunId, setSelectedRunId] = useState("");
 	const [saving, setSaving] = useState(false);
 

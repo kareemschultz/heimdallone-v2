@@ -11,8 +11,8 @@ Phase 9:   Recruitment + Onboarding ✅ COMPLETE (9A–9I, verified end-to-end)
 Phase 10:  Offboarding ✅ COMPLETE (10A spec, 10B DB, 10C API, 10D UI CP1 overview + CP2 templates + CP3 cases + CP4 checklist actions + CP5 employee self-service + CP6 QA/RBAC pass)
 Phase 11:  Biometric + Geofencing ✅ COMPLETE (11A spec → 11B DB → 11C API/processor → 11D devices UI → 11E punch/exception UI → 11F geofence/check-in UI → 11G integration hardening CP1–CP4 → 11H module QA/RBAC/security/browser pass ✅). Next = Phase 12 Assets (queued spec; connects to Offboarding asset returns).
 Phase 12:  Assets ✅ COMPLETE (Operations; 12B DB → 12C API → 12D UI → 12E QA/hardening+sidebar+offboarding-custody)
-Phase 13:  Helpdesk / Requests ← ACTIVE (Operations; 13A spec ✅ → 13B DB next) — request/ticket LAYER that LINKS to Assets/Payroll/Leave/Offboarding, never duplicates them
-Phase 14:  Projects + Tasks & Timelines (Operations)
+Phase 13:  Helpdesk / Requests ✅ COMPLETE (Operations; 13A spec → 13B DB → 13C API → 13D-13G UI → 13H QA/RBAC/security pass) — request/ticket LAYER that LINKS to Assets/Payroll/Leave/Offboarding, never duplicates them
+Phase 14:  Projects + Tasks & Timelines ← ACTIVE (Operations; 14A spec ✅ → 14B DB ✅ → 14C API next) — coordination layer (link, never own)
 Phase 15:  Performance / PMS (People)
 Phase 16:  Finance expansion (Finance — payment batches, bank exports, expenses, costing)
 Phase 17:  CRM (research/spec at 17A — see crm-implementation-plan.md; FUTURE)
@@ -57,6 +57,63 @@ Phase 20:  Production readiness
 > COMPLETE), not Assets. The Assets plan
 > ([assets-implementation-plan.md](../assets-implementation-plan.md)) was drafted
 > early; it is now the **active Phase 12**.
+
+## QA Hardening Pass (2026-06-04) — nav, gates, roadmap, placeholders
+
+A repo-wide static-audit follow-up landed between **14B (Projects DB) and 14C
+(Projects API)**. It is QA/scaffolding only — **no schema, router, or business-logic
+change** (audit:permissions stays 93/13; check-types 3/3; build 2/2).
+
+**Fixed (safe):**
+
+- **Nav leak closed.** `isNavItemVisible()` had a blanket `return true` fallthrough
+  that exposed every nav key to the new `project_manager` role. Added an explicit
+  `PROJECT_MANAGER_VISIBLE_KEYS` allow-set (overview · employees · contracts ·
+  attendance · leave · assets · helpdesk · documents · settings) checked before the
+  fallthrough. (Other roles already had explicit key-sets or `canViewPayroll`.)
+- **Preview/Planned labelling.** Compliance, Clients, Countries & Tax, and Documents
+  are **design scaffolds wired to sample/demo data, not live backends**. They now show
+  a **"Preview" sidebar pill** and a top **`<PreviewBanner>`** ("Preview module —
+  design scaffold only … sample/demo data … not used for live compliance, payroll,
+  audit, or reporting"). Routes are **kept reachable** for design review — nothing
+  deleted. Compliance specifically: hardcoded stats relabelled "sample/demo ·
+  illustrative", Export / Evidence-pack buttons **disabled + "(preview)"**.
+- **Topbar sync chrome de-spoofed.** "Last HR sync · 14:42 / Horilla HRMS sync /
+  Operational" → "Demo sync status / Integration status (preview) / Demo" + a
+  "Sample data — not connected to a live HRMS sync" note. No real integration is
+  implied.
+- **Stale roadmap header** corrected (Helpdesk ✅ COMPLETE; Projects ACTIVE).
+- **Sign-in / sign-up redirect** `/dashboard` → `/app` (dead route).
+- **Clean web tsc reductions** in the payroll routes (Boolean() guards for
+  unknown→ReactNode, payslips Link `params`, ReadinessStep prop, settings val type) —
+  web tsc **25 → 7**.
+
+**CI added** (`.github/workflows/ci.yml`): install + `check-types` + `build` +
+`audit:permissions` are **blocking**; `check` (ultracite lint) and web `typecheck`
+run **`continue-on-error` (informational)** so they surface regressions in PR logs
+without blocking merges until the baselines below are burned down.
+
+**Documented baselines + follow-up hardening task (NOT regressions):**
+
+- **Web type-check is not in the root `check-types` gate.** `apps/web` has no
+  `check-types` script (its script is `typecheck`), so `turbo check-types` only
+  aggregates server/ui/payroll-engine (**3/3**). Wiring web in would red the root gate
+  on a pre-existing **7-error baseline** concentrated in legacy
+  `docs.tsx` · `app/settings.tsx` · `employees/$id.tsx` · `employees/index.tsx` ·
+  `login.tsx` (unused vars + one Date→string cast + one stale route literal).
+- **Lint baseline 212.** `bun run check` exits non-zero on accepted pre-existing
+  a11y / cognitive-complexity / nested-ternary debt in those same large shared files.
+- **Why not fixed here:** the pre-commit hook runs `ultracite fix` on the **whole
+  staged file**, so editing a debt-carrying file surfaces its full pre-existing error
+  set and hard-blocks the commit (lesson #83). Fixing these requires a dedicated
+  burn-down pass per file, not a drive-by edit. **Follow-up task: clear web tsc 7 →
+  0 and wire `apps/web` into the root `check-types` gate; then make CI lint blocking.**
+- **Bank data (finding 8):** no plaintext leak at the API boundary —
+  `employee_bank_details.account_number` is masked on read for all non-payroll roles
+  (`bankDetailsGet`), full access gated to HR/payroll admins, and payroll masks via
+  `maskAccountNumber`. The column is plaintext **at rest** (not field-level
+  encrypted) — a documented limitation, not a response-layer leak; at-rest encryption
+  is a separate future hardening item.
 
 ### Phase Status (2026-05-28 — Phase 9A complete)
 - **Phase 5**: ✅ HR Core MVP complete (employees, org settings, holidays, RBAC)

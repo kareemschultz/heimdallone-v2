@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { PreviewBanner } from "@/components/preview-banner";
 
 export const Route = createFileRoute("/app/countries")({
 	component: CountriesPage,
@@ -20,6 +21,7 @@ function CountriesPage() {
 					</p>
 				</div>
 			</div>
+			<PreviewBanner module="the Countries & Tax page" />
 			<div
 				className="card card-pad"
 				style={{

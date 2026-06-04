@@ -210,7 +210,7 @@ function ReimbursementsPage() {
 								<tr key={row.id as string}>
 									<td>
 										<div style={{ fontWeight: 500 }}>{row.title as string}</div>
-										{row.description && (
+										{Boolean(row.description) && (
 											<div
 												style={{
 													fontSize: 11,

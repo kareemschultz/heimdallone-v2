@@ -252,6 +252,7 @@ function PayslipsPage() {
 									</td>
 									<td style={{ textAlign: "right" }}>
 										<Link
+											params={{ id: s.id as string }}
 											style={{
 												display: "inline-flex",
 												alignItems: "center",
@@ -260,7 +261,7 @@ function PayslipsPage() {
 												color: "var(--accent)",
 												textDecoration: "none",
 											}}
-											to={`/app/payroll/payslips/${s.id as string}`}
+											to="/app/payroll/payslips/$id"
 										>
 											<Eye size={13} />
 											View

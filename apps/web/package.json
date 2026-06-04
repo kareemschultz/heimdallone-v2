@@ -6,6 +6,7 @@
     "build": "vite build",
     "serve": "vite preview",
     "dev": "vite dev",
+    "typecheck": "tsc --noEmit",
     "tauri": "tauri",
     "desktop:dev": "tauri dev",
     "desktop:build": "tauri build"

@@ -22,6 +22,7 @@ import {
 	Zap,
 } from "lucide-react";
 import { useState } from "react";
+import { PreviewBanner } from "@/components/preview-banner";
 
 export const Route = createFileRoute("/app/compliance")({
 	component: CompliancePage,
@@ -43,8 +44,8 @@ function CompliancePage() {
 					</div>
 					<h1 className="page-title">Compliance &amp; audit ledger</h1>
 					<p className="page-sub">
-						Period to date · 3 open findings · ledger sealed continuously ·
-						7-year retention
+						Sample/demo data · example findings · illustrative audit ledger —
+						not a live compliance record
 					</p>
 				</div>
 				<div
@@ -59,16 +60,27 @@ function CompliancePage() {
 						<Filter size={13} />
 						Filter
 					</button>
-					<button className="btn btn-outline" type="button">
+					<button
+						className="btn btn-outline"
+						disabled
+						title="Preview only — not wired to a backend"
+						type="button"
+					>
 						<Download size={13} />
-						Export
+						Export (preview)
 					</button>
-					<button className="btn btn-primary" type="button">
+					<button
+						className="btn btn-primary"
+						disabled
+						title="Preview only — not wired to a backend"
+						type="button"
+					>
 						<ShieldCheck size={13} />
-						Evidence pack
+						Evidence pack (preview)
 					</button>
 				</div>
 			</div>
+			<PreviewBanner module="this compliance dashboard" />
 
 			{/* KPI row */}
 			<div className="kpi-row">
@@ -144,11 +156,12 @@ function CompliancePage() {
 				{/* LEFT: event stream */}
 				<div className="event-card">
 					<div className="event-head">
-						<div className="tabs tabs-pill">
+						<div className="tabs tabs-pill" role="tablist">
 							<button
 								aria-selected={activeTab === "all"}
 								className="tab"
 								onClick={() => setActiveTab("all")}
+								role="tab"
 								type="button"
 							>
 								All <span className="count">14,820</span>
@@ -157,6 +170,7 @@ function CompliancePage() {
 								aria-selected={activeTab === "approvals"}
 								className="tab"
 								onClick={() => setActiveTab("approvals")}
+								role="tab"
 								type="button"
 							>
 								Approvals <span className="count">428</span>
@@ -165,6 +179,7 @@ function CompliancePage() {
 								aria-selected={activeTab === "payroll"}
 								className="tab"
 								onClick={() => setActiveTab("payroll")}
+								role="tab"
 								type="button"
 							>
 								Payroll <span className="count">5,612</span>
@@ -173,6 +188,7 @@ function CompliancePage() {
 								aria-selected={activeTab === "hr"}
 								className="tab"
 								onClick={() => setActiveTab("hr")}
+								role="tab"
 								type="button"
 							>
 								HR <span className="count">3,604</span>
@@ -181,6 +197,7 @@ function CompliancePage() {
 								aria-selected={activeTab === "security"}
 								className="tab"
 								onClick={() => setActiveTab("security")}
+								role="tab"
 								type="button"
 							>
 								Security <span className="count">182</span>
@@ -189,6 +206,7 @@ function CompliancePage() {
 								aria-selected={activeTab === "findings"}
 								className="tab"
 								onClick={() => setActiveTab("findings")}
+								role="tab"
 								type="button"
 							>
 								Findings <span className="count">3</span>
@@ -799,13 +817,19 @@ function CompliancePage() {
 					<div className="side-card">
 						<div className="head">
 							<span className="ttl">Categories · 30d</span>
-							{/* biome-ignore lint/a11y/useValidAnchor: design-spec link */}
-							<a
-								href="#"
-								style={{ fontSize: "11.5px", color: "var(--accent)" }}
+							<button
+								style={{
+									padding: 0,
+									fontSize: "11.5px",
+									color: "var(--accent)",
+									background: "none",
+									border: "none",
+									cursor: "pointer",
+								}}
+								type="button"
 							>
 								Reset
-							</a>
+							</button>
 						</div>
 						<div className="body facets">
 							<div className="facet-row">

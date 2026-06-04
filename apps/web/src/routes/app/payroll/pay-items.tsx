@@ -276,7 +276,7 @@ function PayItemsPage() {
 										<div style={{ fontWeight: 500 }}>
 											{item.title as string}
 										</div>
-										{item.isStatutory && (
+										{Boolean(item.isStatutory) && (
 											<span
 												className="badge badge-outline"
 												style={{ fontSize: 9, marginTop: 2 }}
@@ -619,7 +619,6 @@ function AssignPayItemDialog({
 	payItemId: string;
 	onClose: () => void;
 }) {
-	const _org = useContext(OrgCtx);
 	const [employeeId, setEmployeeId] = useState("");
 	const [overrideAmount, setOverrideAmount] = useState("");
 	const [saving, setSaving] = useState(false);

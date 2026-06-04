@@ -171,7 +171,6 @@ function PayrollRunWizard() {
 							setGenerating(false);
 						}
 					}}
-					periodId={selectedPeriodId}
 				/>
 			)}
 
@@ -715,7 +714,7 @@ function ReviewStep({
 							}}
 						>
 							<div>{w.message as string}</div>
-							{w.code && (
+							{Boolean(w.code) && (
 								<div
 									style={{ fontSize: 10, color: "var(--fg-4)", marginTop: 1 }}
 								>
@@ -929,7 +928,7 @@ function PayslipDetailStep({
 												<div style={{ fontWeight: 500 }}>
 													{li.title as string}
 												</div>
-												{li.explanation && (
+												{Boolean(li.explanation) && (
 													<div
 														style={{
 															fontSize: 11,

@@ -35,7 +35,7 @@ function PayrollSettingsPage() {
 		(p: { isActive: boolean }) => p.isActive
 	);
 
-	const val = (key: string, fallback: string | number = "") => {
+	const val = (key: string, fallback: string | number | boolean = "") => {
 		if (key in form) {
 			return form[key];
 		}

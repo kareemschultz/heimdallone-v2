@@ -285,7 +285,7 @@ function PayslipDetailPage() {
 									<span className="payslip-line-title">
 										{li.title as string}
 									</span>
-									{li.explanation && (
+									{Boolean(li.explanation) && (
 										<span className="payslip-line-sub">
 											{li.explanation as string}
 										</span>
@@ -310,7 +310,7 @@ function PayslipDetailPage() {
 									<span className="payslip-line-title">
 										{li.title as string}
 									</span>
-									{li.explanation && (
+									{Boolean(li.explanation) && (
 										<span className="payslip-line-sub">
 											{li.explanation as string}
 										</span>

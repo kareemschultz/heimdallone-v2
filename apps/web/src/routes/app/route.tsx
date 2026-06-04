@@ -94,6 +94,21 @@ const HELPDESK_VISIBLE_KEYS = new Set([
 	"settings",
 ]);
 
+// Project managers are an Operations role — they see the operational modules they
+// coordinate, NOT the finance/govern admin surfaces. (The Projects nav entry is
+// added in Phase 14D and joins this set then.)
+const PROJECT_MANAGER_VISIBLE_KEYS = new Set([
+	"overview",
+	"employees",
+	"contracts",
+	"attendance",
+	"leave",
+	"assets",
+	"helpdesk",
+	"documents",
+	"settings",
+]);
+
 export const Route = createFileRoute("/app")({
 	component: AppLayout,
 	beforeLoad: async () => {
@@ -171,25 +186,28 @@ const NAV = [
 				label: "Countries & Tax",
 				icon: Globe,
 				href: "/app/countries",
+				preview: true,
 			},
 			{
 				key: "compliance",
 				label: "Compliance",
 				icon: ShieldCheck,
 				href: "/app/compliance",
-				meta: "3",
+				preview: true,
 			},
 			{
 				key: "documents",
 				label: "Documents",
 				icon: FileText,
 				href: "/app/documents",
+				preview: true,
 			},
 			{
 				key: "clients",
 				label: "Clients",
 				icon: Briefcase,
 				href: "/app/clients",
+				preview: true,
 			},
 		],
 	},
@@ -205,29 +223,6 @@ const NAV = [
 		],
 	},
 ] as const;
-
-function _HeimdallLogo({ size = 22 }: { size?: number }) {
-	return (
-		<svg
-			aria-hidden="true"
-			fill="none"
-			height={size}
-			viewBox="0 0 32 32"
-			width={size}
-			xmlns="http://www.w3.org/2000/svg"
-		>
-			<rect fill="currentColor" height="26" rx="1" width="4.2" x="4" y="3" />
-			<rect fill="currentColor" height="26" rx="1" width="4.2" x="23.8" y="3" />
-			<path
-				d="M6 16 Q16 9 26 16 Q16 23 6 16 Z"
-				fill="currentColor"
-				opacity="0.95"
-			/>
-			<ellipse cx="16" cy="16" fill="var(--bg, #0a0d12)" rx="3.2" ry="3.2" />
-			<circle cx="16" cy="16" fill="currentColor" r="1.4" />
-		</svg>
-	);
-}
 
 function ThemeToggle() {
 	const [theme, setTheme] = useState("dark");
@@ -297,6 +292,9 @@ function isNavItemVisible(key: string, role: string): boolean {
 	}
 	if (role === "helpdesk_agent") {
 		return HELPDESK_VISIBLE_KEYS.has(key);
+	}
+	if (role === "project_manager") {
+		return PROJECT_MANAGER_VISIBLE_KEYS.has(key);
 	}
 	return true;
 }
@@ -500,7 +498,26 @@ function AppSidebar() {
 									<item.icon size={16} />
 								</span>
 								<span>{item.label}</span>
-								{item.meta && (
+								{"preview" in item && item.preview ? (
+									<span
+										style={{
+											marginLeft: "auto",
+											padding: "1px 6px",
+											fontSize: "9px",
+											fontWeight: 700,
+											textTransform: "uppercase",
+											letterSpacing: "0.05em",
+											color: "var(--fg-3)",
+											background: "var(--bg-3)",
+											border: "1px solid var(--line)",
+											borderRadius: "4px",
+										}}
+										title="Preview module — not backed by live data"
+									>
+										Preview
+									</span>
+								) : null}
+								{"meta" in item && item.meta ? (
 									<span
 										className="nav-meta"
 										style={
@@ -511,7 +528,7 @@ function AppSidebar() {
 									>
 										{item.meta}
 									</span>
-								)}
+								) : null}
 							</Link>
 						))}
 					</div>
@@ -671,16 +688,6 @@ function AppTopbar() {
 		}
 	}, []);
 
-	const _toggleTheme = (t: string) => {
-		setTheme(t);
-		document.documentElement.setAttribute("data-theme", t);
-		try {
-			localStorage.setItem("heimdall.theme", t);
-		} catch {
-			// localStorage may be unavailable (private mode); ignore persistence failure
-		}
-	};
-
 	const closeAll = useCallback(() => {
 		setSyncMenuOpen(false);
 		setNotifMenuOpen(false);
@@ -731,7 +738,7 @@ function AppTopbar() {
 					type="button"
 				>
 					<span className="badge-dot" />
-					Last HR sync · 14:42
+					Demo sync status
 				</button>
 				<div
 					className="menu"
@@ -739,8 +746,18 @@ function AppTopbar() {
 					data-side="bottom-start"
 					style={{ minWidth: "280px" }}
 				>
-					<div className="menu-section">Horilla HRMS sync</div>
+					<div className="menu-section">Integration status (preview)</div>
 					<div style={{ padding: "8px 10px" }}>
+						<div
+							style={{
+								marginBottom: "6px",
+								fontSize: "11.5px",
+								lineHeight: 1.4,
+								color: "var(--fg-3)",
+							}}
+						>
+							Sample data — this build is not connected to a live HRMS sync.
+						</div>
 						<div
 							style={{
 								display: "flex",
@@ -750,9 +767,12 @@ function AppTopbar() {
 							}}
 						>
 							<span style={{ color: "var(--fg-2)" }}>Status</span>
-							<span className="badge badge-success" style={{ height: "18px" }}>
+							<span
+								className="badge"
+								style={{ height: "18px", color: "var(--fg-3)" }}
+							>
 								<span className="badge-dot" />
-								Operational
+								Demo
 							</span>
 						</div>
 						<div className="kv" style={{ padding: "6px 0" }}>
