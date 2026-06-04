@@ -127,6 +127,13 @@
       "when": 1780584170885,
       "tag": "0017_happy_hammerhead",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1780598898284,
+      "tag": "0018_simple_tomorrow_man",
+      "breakpoints": true
     }
   ]
 }

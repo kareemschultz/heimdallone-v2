@@ -71,6 +71,11 @@ export const statement = {
 
 	appraisal: ["create", "read", "submit", "review", "finalize", "manage"],
 	goal: ["create", "read", "update", "complete"],
+	// Performance / PMS (Phase 15B). `appraisal` + `goal` already existed (above)
+	// but were UNCONSUMED — the Phase 15C `performance` router is the first to use
+	// them. `recognition` is the NEW resource for the PMS-owned recognition-points
+	// ledger (non-monetary; award is HR/manager, everyone reads their own).
+	recognition: ["read", "award"],
 
 	// "request" (Phase 12C) is the employee/manager self-service action for
 	// asking HR for an asset. It is deliberately separate from "create" (which
@@ -234,6 +239,7 @@ export const tenant_owner = ac.newRole({
 	offer: ["create", "read", "extend", "withdraw"],
 	appraisal: ["create", "read", "submit", "review", "finalize", "manage"],
 	goal: ["create", "read", "update", "complete"],
+	recognition: ["read", "award"],
 	asset: [
 		"create",
 		"read",
@@ -298,6 +304,7 @@ export const tenant_admin = ac.newRole({
 	offer: ["create", "read", "extend", "withdraw"],
 	appraisal: ["create", "read", "submit", "review", "finalize", "manage"],
 	goal: ["create", "read", "update", "complete"],
+	recognition: ["read", "award"],
 	asset: [
 		"create",
 		"read",
@@ -355,6 +362,7 @@ export const hr_admin = ac.newRole({
 	offer: ["create", "read", "extend", "withdraw"],
 	appraisal: ["create", "read", "review", "finalize", "manage"],
 	goal: ["create", "read", "update"],
+	recognition: ["read", "award"],
 	asset: ["create", "read", "assign", "return", "manage", "request"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	offboarding: FULL_OFFBOARDING,
@@ -394,6 +402,7 @@ export const payroll_admin = ac.newRole({
 	offer: ["read"],
 	appraisal: ["read"],
 	goal: ["read"],
+	recognition: ["read"],
 	asset: ["read", "request"],
 	ticket: ["read", "approve"],
 	offboarding: ["read", "read_settlement"],
@@ -423,6 +432,7 @@ export const manager = ac.newRole({
 	asset: ["read", "request"],
 	appraisal: ["read", "submit", "review"],
 	goal: ["create", "read", "update"],
+	recognition: ["read", "award"],
 	posting: ["read"],
 	applicant: ["read"],
 	interview: ["read", "update", "complete"],
@@ -454,6 +464,7 @@ export const employee = ac.newRole({
 	asset: ["read", "request"],
 	appraisal: ["read", "submit"],
 	goal: ["create", "read", "update", "complete"],
+	recognition: ["read"],
 	posting: ["read"],
 	ticket: ["create", "read"],
 	// Employee self-service: read member projects; update/complete OWN assigned
@@ -495,6 +506,7 @@ export const auditor = ac.newRole({
 	offer: ["read"],
 	appraisal: ["read"],
 	goal: ["read"],
+	recognition: ["read"],
 	asset: ["read"],
 	ticket: ["read"],
 	offboarding: ["read", "read_settlement"],

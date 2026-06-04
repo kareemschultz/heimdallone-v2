@@ -13,7 +13,7 @@ Phase 11:  Biometric + Geofencing ✅ COMPLETE (11A spec → 11B DB → 11C API/
 Phase 12:  Assets ✅ COMPLETE (Operations; 12B DB → 12C API → 12D UI → 12E QA/hardening+sidebar+offboarding-custody)
 Phase 13:  Helpdesk / Requests ✅ COMPLETE (Operations; 13A spec → 13B DB → 13C API → 13D-13G UI → 13H QA/RBAC/security pass) — request/ticket LAYER that LINKS to Assets/Payroll/Leave/Offboarding, never duplicates them
 Phase 14:  Projects + Tasks & Timelines ✅ COMPLETE (Operations; 14A spec → 14B DB → 14C API → 14D-14H UI → 14I QA ✅) — coordination layer (link, never own)
-Phase 15:  Performance / PMS ← ACTIVE (People&Payroll; 15A spec ✅ → 15B DB → 15C API → 15D-15H UI → 15I QA) — owns performance data, links read-only (points ≠ pay; reads project task-completion, never writes Projects/Payroll)
+Phase 15:  Performance / PMS ← ACTIVE (People&Payroll; 15A spec ✅ → 15B DB ✅ → 15C API → 15D-15H UI → 15I QA) — owns performance data, links read-only (points ≠ pay; reads project task-completion, never writes Projects/Payroll)
 Phase 16:  Finance expansion (Finance — payment batches, bank exports, expenses, costing)
 Phase 17:  CRM (research/spec at 17A — see crm-implementation-plan.md; FUTURE)
 Phase 18:  Analytics / Executive dashboards
