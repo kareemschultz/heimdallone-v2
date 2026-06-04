@@ -224,3 +224,77 @@ export function canViewHelpdeskInternalNotes(role: MemberRole): boolean {
 export function canCreateHelpdeskRequest(role: MemberRole): boolean {
 	return canManageHelpdesk(role) || role === "manager" || role === "employee";
 }
+
+// Projects + Tasks / Timelines (Phase 14C). Mirror of apps/web/src/lib/rbac.ts —
+// keep byte-aligned. The project / task / time_entry AC grants in permissions.ts
+// are the SOURCE OF TRUTH; these helpers gate the handler-level re-check (and, in
+// rbac.ts, UI affordances). CENTRAL GUARDRAIL: Projects is the coordination layer
+// — it links to Assets / Helpdesk / CRM / Payroll / Attendance for context and
+// NEVER mutates them.
+//
+// Managing projects (create / edit / archive / members / milestones / tasks) is
+// HR-level or the dedicated project_manager (server-scoped to the projects they
+// lead / belong to). Viewing the management surface extends to manager (own +
+// direct-report scoped server-side) / payroll_admin / auditor — NOT plain
+// employees, who reach Projects only through self-service (member projects, own
+// tasks, own time), mirroring the helpdesk canViewHelpdesk vs createSelf split.
+//
+// Budget / cost is finance-redacted: canViewProjectCosts matches the AC
+// `view_costs` grant (finance + audit only) and deliberately EXCLUDES
+// project_manager and manager — they run delivery, not the books. Task internal
+// notes are visible to the managing roles + auditor only, redacted server-side
+// for everyone else.
+export function canManageProjects(role: MemberRole): boolean {
+	return canManageHR(role) || role === "project_manager";
+}
+
+export function canViewProjects(role: MemberRole): boolean {
+	return (
+		canManageProjects(role) ||
+		role === "manager" ||
+		role === "payroll_admin" ||
+		role === "auditor"
+	);
+}
+
+export function canCreateProject(role: MemberRole): boolean {
+	return canManageProjects(role);
+}
+
+export function canEditProject(role: MemberRole): boolean {
+	return canManageProjects(role);
+}
+
+export function canArchiveProject(role: MemberRole): boolean {
+	return canManageProjects(role);
+}
+
+export function canManageProjectMembers(role: MemberRole): boolean {
+	return canManageProjects(role);
+}
+
+export function canAssignProjectTasks(role: MemberRole): boolean {
+	return canManageProjects(role) || role === "manager";
+}
+
+// Self-service time logging — any delivery staff logs their OWN time; the server
+// enforces self-scope on create/update/submit.
+export function canTrackProjectTime(role: MemberRole): boolean {
+	return canManageProjects(role) || role === "manager" || role === "employee";
+}
+
+export function canApproveProjectTime(role: MemberRole): boolean {
+	return (
+		canManageProjects(role) || role === "manager" || role === "payroll_admin"
+	);
+}
+
+// Finance redaction gate (matches the AC `view_costs` grant — owner/admin/hr +
+// payroll_admin + auditor; NOT project_manager/manager/employee).
+export function canViewProjectCosts(role: MemberRole): boolean {
+	return canManageHR(role) || role === "payroll_admin" || role === "auditor";
+}
+
+export function canViewProjectInternalNotes(role: MemberRole): boolean {
+	return canManageProjects(role) || role === "auditor";
+}

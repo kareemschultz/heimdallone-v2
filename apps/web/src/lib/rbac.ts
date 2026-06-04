@@ -240,3 +240,61 @@ export function canViewHelpdeskInternalNotes(role: MemberRole): boolean {
 export function canCreateHelpdeskRequest(role: MemberRole): boolean {
 	return canManageHelpdesk(role) || role === "manager" || role === "employee";
 }
+
+// Projects + Tasks / Timelines (Phase 14C). Mirror of
+// packages/api/src/utils/role-helpers.ts — keep byte-aligned. Projects is the
+// coordination layer (links, never mutates other modules). Managing is HR-level
+// or project_manager; viewing the management surface extends to manager /
+// payroll_admin / auditor (employees reach Projects via self-service only).
+// Budget is finance-redacted (canViewProjectCosts = finance + audit, NOT
+// project_manager/manager); task internal notes are managing-roles + auditor only.
+export function canManageProjects(role: MemberRole): boolean {
+	return canManageHR(role) || role === "project_manager";
+}
+
+export function canViewProjects(role: MemberRole): boolean {
+	return (
+		canManageProjects(role) ||
+		role === "manager" ||
+		role === "payroll_admin" ||
+		role === "auditor"
+	);
+}
+
+export function canCreateProject(role: MemberRole): boolean {
+	return canManageProjects(role);
+}
+
+export function canEditProject(role: MemberRole): boolean {
+	return canManageProjects(role);
+}
+
+export function canArchiveProject(role: MemberRole): boolean {
+	return canManageProjects(role);
+}
+
+export function canManageProjectMembers(role: MemberRole): boolean {
+	return canManageProjects(role);
+}
+
+export function canAssignProjectTasks(role: MemberRole): boolean {
+	return canManageProjects(role) || role === "manager";
+}
+
+export function canTrackProjectTime(role: MemberRole): boolean {
+	return canManageProjects(role) || role === "manager" || role === "employee";
+}
+
+export function canApproveProjectTime(role: MemberRole): boolean {
+	return (
+		canManageProjects(role) || role === "manager" || role === "payroll_admin"
+	);
+}
+
+export function canViewProjectCosts(role: MemberRole): boolean {
+	return canManageHR(role) || role === "payroll_admin" || role === "auditor";
+}
+
+export function canViewProjectInternalNotes(role: MemberRole): boolean {
+	return canManageProjects(role) || role === "auditor";
+}

@@ -1,5 +1,5 @@
 /**
- * Dev seed script — creates one demo organization with 9 users across all tenant roles.
+ * Dev seed script — creates one demo organization with 10 users across all tenant roles.
  * Uses Better Auth's handler to simulate full HTTP requests with proper cookie signing.
  *
  * Usage:
@@ -49,6 +49,11 @@ const USERS = [
 		email: "helpdesk@atlas-shipping.com",
 		name: "Marcus James",
 		role: "helpdesk_agent",
+	},
+	{
+		email: "pm@atlas-shipping.com",
+		name: "Nadia Khan",
+		role: "project_manager",
 	},
 ] as const;
 
