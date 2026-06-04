@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	ChevronLeft,
 	ChevronRight,
@@ -80,7 +80,13 @@ function QueueRow({ r }: { r: HelpdeskRequestRow }) {
 				<span className="hd-mono">{r.reference}</span>
 			</td>
 			<td>
-				<div className="hd-name">{r.title}</div>
+				<Link
+					className="hd-name hd-name-link"
+					params={{ id: r.id }}
+					to="/app/helpdesk/requests/$id"
+				>
+					{r.title}
+				</Link>
 				<div className="hd-sub">{r.categoryName ?? "Uncategorised"}</div>
 			</td>
 			<td>{r.requesterName ?? "—"}</td>

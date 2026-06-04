@@ -123,6 +123,24 @@ export function categoryKeyLabel(key: string): string {
 	return CATEGORY_KEY_LABEL[key] ?? key;
 }
 
+// ── Linked-entity kinds (read-only cross-module context) ────────────────────
+const LINKED_KIND_LABEL: Record<string, string> = {
+	asset: "Asset",
+	payslip: "Payslip",
+	payroll_run: "Payroll run",
+	leave_request: "Leave request",
+	attendance_record: "Attendance record",
+	offboarding_case: "Offboarding case",
+	document: "Document",
+	project_task: "Project task",
+	expense: "Expense",
+	crm_case: "CRM case",
+	other: "Linked record",
+};
+export function linkedKindLabel(kind: string): string {
+	return LINKED_KIND_LABEL[kind] ?? "Linked record";
+}
+
 /** Format a date-ish value for display; "—" when absent. */
 export function fmtDate(value: string | Date | null | undefined): string {
 	if (!value) {
@@ -135,5 +153,22 @@ export function fmtDate(value: string | Date | null | undefined): string {
 				year: "numeric",
 				month: "short",
 				day: "numeric",
+			});
+}
+
+/** Format a date-ish value with time, for comment/timeline metadata. */
+export function fmtDateTime(value: string | Date | null | undefined): string {
+	if (!value) {
+		return "—";
+	}
+	const d = typeof value === "string" ? new Date(value) : value;
+	return Number.isNaN(d.getTime())
+		? "—"
+		: d.toLocaleString(undefined, {
+				year: "numeric",
+				month: "short",
+				day: "numeric",
+				hour: "2-digit",
+				minute: "2-digit",
 			});
 }
