@@ -10,4 +10,5 @@ export * from "./leave-policy";
 export * from "./offboarding";
 export * from "./onboarding";
 export * from "./payroll";
+export * from "./projects";
 export * from "./recruitment";

@@ -89,6 +89,30 @@ export const statement = {
 
 	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 
+	// Projects + Tasks / Timelines (Phase 14B). Coordination layer — links to
+	// other modules, never owns their rules. `view_costs` / `view_internal_notes`
+	// gate finance + private data server-side (redaction, like assets purchaseCost
+	// + helpdesk internal notes). time_entry is reporting-only (no payroll write).
+	project: [
+		"create",
+		"read",
+		"update",
+		"archive",
+		"manage_members",
+		"view_costs",
+		"view_internal_notes",
+	],
+	task: [
+		"create",
+		"read",
+		"update",
+		"assign",
+		"change_status",
+		"comment",
+		"view_internal_notes",
+	],
+	time_entry: ["create", "read", "update", "submit", "approve", "view_costs"],
+
 	offboarding: [
 		"create",
 		"read",
@@ -117,6 +141,34 @@ const MANAGE_BIOMETRIC = {
 	geofence: ["read", "manage", "check_in"],
 	attendance_exception: ["read", "resolve"],
 } as const;
+
+// Projects full-grant arrays (Phase 14B) — spread into role blocks.
+const FULL_PROJECT = [
+	"create",
+	"read",
+	"update",
+	"archive",
+	"manage_members",
+	"view_costs",
+	"view_internal_notes",
+] as const;
+const FULL_TASK = [
+	"create",
+	"read",
+	"update",
+	"assign",
+	"change_status",
+	"comment",
+	"view_internal_notes",
+] as const;
+const FULL_TIME_ENTRY = [
+	"create",
+	"read",
+	"update",
+	"submit",
+	"approve",
+	"view_costs",
+] as const;
 
 const FULL_OFFBOARDING = [
 	"create",
@@ -193,6 +245,9 @@ export const tenant_owner = ac.newRole({
 	],
 	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	offboarding: FULL_OFFBOARDING,
+	project: FULL_PROJECT,
+	task: FULL_TASK,
+	time_entry: FULL_TIME_ENTRY,
 	...MANAGE_BIOMETRIC,
 });
 
@@ -254,6 +309,9 @@ export const tenant_admin = ac.newRole({
 	],
 	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	offboarding: FULL_OFFBOARDING,
+	project: FULL_PROJECT,
+	task: FULL_TASK,
+	time_entry: FULL_TIME_ENTRY,
 	...MANAGE_BIOMETRIC,
 });
 
@@ -300,6 +358,9 @@ export const hr_admin = ac.newRole({
 	asset: ["create", "read", "assign", "return", "manage", "request"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	offboarding: FULL_OFFBOARDING,
+	project: FULL_PROJECT,
+	task: FULL_TASK,
+	time_entry: ["read", "approve", "view_costs"],
 	...MANAGE_BIOMETRIC,
 });
 
@@ -336,6 +397,11 @@ export const payroll_admin = ac.newRole({
 	asset: ["read", "request"],
 	ticket: ["read", "approve"],
 	offboarding: ["read", "read_settlement"],
+	// Finance sees project/time cost summaries; approves time for costing. No
+	// task workflow.
+	project: ["read", "view_costs"],
+	task: ["read"],
+	time_entry: ["read", "approve", "view_costs"],
 });
 
 export const manager = ac.newRole({
@@ -363,6 +429,11 @@ export const manager = ac.newRole({
 	onboarding: ["read", "complete", "skip", "assign"],
 	ticket: ["create", "read", "approve"],
 	offboarding: ["read", "approve", "complete_task"],
+	// Manager: reads team projects; manages/assigns team tasks; approves team time
+	// (server scopes to own + direct reports).
+	project: ["read"],
+	task: ["read", "update", "assign", "change_status", "comment"],
+	time_entry: ["read", "approve"],
 });
 
 export const employee = ac.newRole({
@@ -385,6 +456,11 @@ export const employee = ac.newRole({
 	goal: ["create", "read", "update", "complete"],
 	posting: ["read"],
 	ticket: ["create", "read"],
+	// Employee self-service: read member projects; update/complete OWN assigned
+	// tasks; comment public; log + submit OWN time (server enforces self-scope).
+	project: ["read"],
+	task: ["read", "update", "change_status", "comment"],
+	time_entry: ["create", "read", "update", "submit"],
 });
 
 export const auditor = ac.newRole({
@@ -422,6 +498,10 @@ export const auditor = ac.newRole({
 	asset: ["read"],
 	ticket: ["read"],
 	offboarding: ["read", "read_settlement"],
+	// Read-only across projects incl. costs + internal notes (audit access).
+	project: ["read", "view_costs", "view_internal_notes"],
+	task: ["read", "view_internal_notes"],
+	time_entry: ["read", "view_costs"],
 });
 
 export const recruiter = ac.newRole({
@@ -445,6 +525,26 @@ export const helpdesk_agent = ac.newRole({
 	document: ["read"],
 });
 
+// Project lead role (Phase 14B). Manages the projects they lead/are a member of:
+// create/edit/archive, members, tasks, milestones, and approves project time. NOT
+// granted view_costs by default (finance/audit hold that) — the server still
+// scopes every action to the projects they actually lead or belong to.
+export const project_manager = ac.newRole({
+	...memberAc.statements,
+	employee: ["read"],
+	document: ["read"],
+	project: [
+		"create",
+		"read",
+		"update",
+		"archive",
+		"manage_members",
+		"view_internal_notes",
+	],
+	task: FULL_TASK,
+	time_entry: ["create", "read", "update", "submit", "approve"],
+});
+
 export const roles = {
 	tenant_owner,
 	tenant_admin,
@@ -455,6 +555,7 @@ export const roles = {
 	auditor,
 	recruiter,
 	helpdesk_agent,
+	project_manager,
 } as const;
 
 export type TenantRole = keyof typeof roles;
