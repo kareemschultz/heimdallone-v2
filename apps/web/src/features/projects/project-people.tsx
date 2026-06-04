@@ -171,7 +171,14 @@ export function ProjectPeople({
 			</div>
 
 			{members.isLoading ? <div className="pj-skeleton" /> : null}
-			{!members.isLoading && rows.length === 0 ? (
+			{members.isError ? (
+				<EmptyState
+					compact
+					description="Could not load the team. Try again."
+					title="Something went wrong"
+				/>
+			) : null}
+			{!(members.isLoading || members.isError) && rows.length === 0 ? (
 				<EmptyState
 					compact
 					description="No one has been added to this project yet."

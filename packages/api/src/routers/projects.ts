@@ -988,7 +988,9 @@ const membersAdd = authorizedProcedure("project", "manage_members")
 		const p = await verifyProject(oid, input.projectId);
 		await assertProjectVisible(oid, actorId(context), callerRole, p);
 		await verifyEmployeeInOrg(oid, input.employeeId);
-		// Reactivate a previously-removed membership rather than duplicate it.
+		// Block a duplicate ACTIVE membership (CONFLICT). A previously-removed
+		// membership is left as history; re-adding inserts a fresh active row, which
+		// the (project, employee) WHERE removed_at IS NULL partial-unique permits.
 		const [existing] = await db
 			.select()
 			.from(projectMember)
@@ -1661,6 +1663,11 @@ const tasksAssign = authorizedProcedure("task", "assign")
 		const oid = orgId(context);
 		const task = await verifyTask(oid, input.id);
 		await assertTaskVisible(oid, actorId(context), callerRole, task);
+		if (TASK_TERMINAL.has(task.status)) {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: "This task is closed. Reopen it before reassigning.",
+			});
+		}
 		await verifyEmployeeInOrg(oid, input.assigneeEmployeeId);
 		await db
 			.update(projectTask)

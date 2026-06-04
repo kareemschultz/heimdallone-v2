@@ -525,10 +525,17 @@ export const helpdesk_agent = ac.newRole({
 	document: ["read"],
 });
 
-// Project lead role (Phase 14B). Manages the projects they lead/are a member of:
-// create/edit/archive, members, tasks, milestones, and approves project time. NOT
-// granted view_costs by default (finance/audit hold that) — the server still
-// scopes every action to the projects they actually lead or belong to.
+// Projects-manager role (Phase 14B). This is the org-wide PROJECTS administrator
+// tier — it manages every project in the org (create/edit/archive, members,
+// tasks, milestones) and approves project time, the same way hr_admin is the
+// org-wide HR tier. Per-PROJECT leadership is a separate, scoped concept carried
+// by `project_member.role = 'lead'`, NOT by this role. NOT granted view_costs
+// (finance/audit hold that), so project budgets are redacted for this role even
+// though it sees internal notes. (14I review confirmed the handler's
+// `seesAllProjects` intentionally includes this role; scoping it to lead/member
+// projects would require every projects-manager to also be an employee + member,
+// which is deferred — the lead/member split above already covers project-level
+// scope.)
 export const project_manager = ac.newRole({
 	...memberAc.statements,
 	employee: ["read"],

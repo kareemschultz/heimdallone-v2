@@ -234,7 +234,14 @@ function MyTimePage() {
 			<ProjectsTabs />
 
 			{entries.isLoading ? <div className="pj-skeleton" /> : null}
-			{!entries.isLoading && rows.length === 0 ? (
+			{entries.isError ? (
+				<EmptyState
+					compact
+					description="Could not load your time entries. Try again."
+					title="Something went wrong"
+				/>
+			) : null}
+			{!(entries.isLoading || entries.isError) && rows.length === 0 ? (
 				<EmptyState
 					compact
 					description="You haven't logged any project time yet."

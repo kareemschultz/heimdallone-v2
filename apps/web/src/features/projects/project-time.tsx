@@ -126,7 +126,14 @@ export function ProjectTime({
 			</div>
 
 			{entries.isLoading ? <div className="pj-skeleton" /> : null}
-			{!entries.isLoading && rows.length === 0 ? (
+			{entries.isError ? (
+				<EmptyState
+					compact
+					description="Could not load time entries. Try again."
+					title="Something went wrong"
+				/>
+			) : null}
+			{!(entries.isLoading || entries.isError) && rows.length === 0 ? (
 				<EmptyState
 					compact
 					description="No time has been logged against this project yet."

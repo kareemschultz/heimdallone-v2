@@ -145,7 +145,14 @@ export function ProjectMilestones({
 			</div>
 
 			{milestones.isLoading ? <div className="pj-skeleton" /> : null}
-			{!milestones.isLoading && rows.length === 0 ? (
+			{milestones.isError ? (
+				<EmptyState
+					compact
+					description="Could not load milestones. Try again."
+					title="Something went wrong"
+				/>
+			) : null}
+			{!(milestones.isLoading || milestones.isError) && rows.length === 0 ? (
 				<EmptyState
 					compact
 					description="No milestones have been laid out for this project yet."

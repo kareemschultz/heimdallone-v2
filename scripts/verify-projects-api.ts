@@ -363,6 +363,17 @@ async function main() {
 			assigneeEmployeeId: mine[0].assigneeEmployeeId,
 		})
 	);
+	// 14I: assigning a closed (done) task is blocked.
+	const t1 = taskByRef.get("TSK-000001")!; // network "Survey…" = done
+	await expectError(
+		"assign a DONE task → PRECONDITION_FAILED (14I terminal guard)",
+		"PRECONDITION_FAILED",
+		() =>
+			admin.projects.tasks.assign({
+				id: t1.id,
+				assigneeEmployeeId: mine[0].assigneeEmployeeId,
+			})
+	);
 
 	console.log("\n── 9. Task comments + internal redaction (THE guardrail) ──");
 	const adminComments = await admin.projects.tasks.comments.list({
