@@ -132,6 +132,7 @@ function RequestQueuePage() {
 	const [priority, setPriority] = useState("");
 	const [categoryId, setCategoryId] = useState("");
 	const [sla, setSla] = useState("");
+	const [assignment, setAssignment] = useState("");
 	const [search, setSearch] = useState("");
 	const [page, setPage] = useState(1);
 
@@ -147,6 +148,8 @@ function RequestQueuePage() {
 				priority: priority ? (priority as Priority) : undefined,
 				categoryId: categoryId || undefined,
 				search: search.trim() || undefined,
+				assignedToMe: assignment === "me" || undefined,
+				unassigned: assignment === "unassigned" || undefined,
 			},
 			enabled: canView,
 		})
@@ -270,6 +273,18 @@ function RequestQueuePage() {
 							{o.label}
 						</option>
 					))}
+				</select>
+				<select
+					aria-label="Filter by assignment"
+					onChange={(e) => {
+						setAssignment(e.target.value);
+						resetPage();
+					}}
+					value={assignment}
+				>
+					<option value="">All assignments</option>
+					<option value="me">Assigned to me</option>
+					<option value="unassigned">Unassigned</option>
 				</select>
 			</div>
 

@@ -40,6 +40,23 @@ export function isActiveStatus(status: string): boolean {
 	return !TERMINAL_STATUSES.has(status);
 }
 
+// Plain, requester-facing wording for the employee self-service surface — no
+// internal workflow jargon. Distinct from STATUS_LABEL (which is the neutral
+// staff-facing label).
+const EMPLOYEE_STATUS_MESSAGE: Record<string, string> = {
+	new: "We've received your request.",
+	open: "We're reviewing this.",
+	in_progress: "A team member is working on this.",
+	waiting_on_employee: "Waiting for your reply.",
+	waiting_on_approval: "Waiting for approval.",
+	resolved: "Resolved — please review.",
+	closed: "Closed.",
+	cancelled: "Cancelled.",
+};
+export function employeeStatusMessage(status: string): string {
+	return EMPLOYEE_STATUS_MESSAGE[status] ?? statusLabel(status);
+}
+
 // ── Priority ────────────────────────────────────────────────────────────────
 const PRIORITY_LABEL: Record<string, string> = {
 	low: "Low",

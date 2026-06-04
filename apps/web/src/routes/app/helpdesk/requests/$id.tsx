@@ -5,6 +5,8 @@ import { useContext } from "react";
 
 import "@/styles/helpdesk.css";
 import { EmptyState } from "@/components/empty-state";
+import { ApprovalPanel } from "@/features/helpdesk/approval-panel";
+import { AssignmentControls } from "@/features/helpdesk/assignment-controls";
 import { Badge } from "@/features/helpdesk/badge";
 import {
 	approvalLabel,
@@ -20,9 +22,12 @@ import {
 } from "@/features/helpdesk/labels";
 import { RequestComments } from "@/features/helpdesk/request-comments";
 import { RequestLinkedContext } from "@/features/helpdesk/request-linked-context";
+import { RequestSla } from "@/features/helpdesk/request-sla";
 import { RequestStatusActions } from "@/features/helpdesk/request-status-actions";
 import type { HelpdeskRequestDetail } from "@/features/helpdesk/types";
 import {
+	canApproveHelpdeskRequest,
+	canAssignHelpdesk,
 	canCreateHelpdeskRequest,
 	canManageHelpdesk,
 	canViewHelpdesk,
@@ -144,6 +149,8 @@ function RequestDetailPage() {
 	const canManage = canManageHelpdesk(role);
 	const canComment = canCreateHelpdeskRequest(role);
 	const canCancel = canManage || role === "employee";
+	const canAssign = canAssignHelpdesk(role);
+	const canApprove = canApproveHelpdeskRequest(role);
 
 	return (
 		<div className="page">
@@ -178,6 +185,29 @@ function RequestDetailPage() {
 					</div>
 
 					<RequestSummary r={r} />
+
+					<ApprovalPanel
+						approvalNote={r.approvalNote}
+						approvalRequired={r.approvalRequired}
+						approvalStatus={r.approvalStatus}
+						approvedByName={r.approvedByName}
+						canApprove={canApprove}
+						requestId={r.id}
+					/>
+
+					<AssignmentControls
+						assigneeName={r.assigneeName}
+						canAssign={canAssign}
+						requestId={r.id}
+						status={r.status}
+					/>
+
+					<RequestSla
+						firstResponseDueAt={r.firstResponseDueAt}
+						resolutionDueAt={r.resolutionDueAt}
+						slaState={r.slaState}
+						status={r.status}
+					/>
 
 					<RequestLinkedContext entities={r.linkedEntities} role={role} />
 

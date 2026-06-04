@@ -125,6 +125,21 @@ function ResolveDialog({
 
 type Dialog = "resolve" | "close" | "cancel" | "reopen" | null;
 
+type WorkingStatus =
+	| "open"
+	| "in_progress"
+	| "waiting_on_employee"
+	| "waiting_on_approval";
+
+// Friendly forward transitions an agent can take on an active request. These are
+// low-stakes and reversible, so they fire directly (no dialog); the server
+// rejects any move out of a terminal/resolved state.
+const PROGRESS: { value: WorkingStatus; label: string }[] = [
+	{ value: "in_progress", label: "Start work" },
+	{ value: "waiting_on_employee", label: "Waiting on employee" },
+	{ value: "waiting_on_approval", label: "Send for approval" },
+];
+
 /**
  * Status controls. Only API-supported transitions are surfaced, and only the
  * ones valid for the current status + role. The server re-checks every call, so
@@ -176,6 +191,12 @@ export function RequestStatusActions({
 		onSuccess: () => done("Request reopened"),
 		onError: fail,
 	});
+	const changeStatus = useMutation({
+		mutationFn: (s: WorkingStatus) =>
+			client.helpdesk.requests.changeStatus({ id: requestId, status: s }),
+		onSuccess: () => done("Status updated"),
+		onError: fail,
+	});
 
 	const isTerminal = TERMINAL.has(status);
 	const isResolved = status === "resolved";
@@ -190,8 +211,22 @@ export function RequestStatusActions({
 		return null;
 	}
 
+	const progressTargets =
+		canManage && isActive ? PROGRESS.filter((p) => p.value !== status) : [];
+
 	return (
 		<div className="hd-actions">
+			{progressTargets.map((p) => (
+				<button
+					className="btn"
+					disabled={changeStatus.isPending}
+					key={p.value}
+					onClick={() => changeStatus.mutate(p.value)}
+					type="button"
+				>
+					{p.label}
+				</button>
+			))}
 			{showResolve ? (
 				<button
 					className="btn btn-primary"

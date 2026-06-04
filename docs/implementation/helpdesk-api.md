@@ -35,12 +35,15 @@ resource** (no `helpdesk` resource). 20 procedures across 3 groups.
 
 | procedure | AC gate | scope / rule |
 |---|---|---|
-| `requests.list` | `ticket:read` | **scoped**: agents/HR/auditor/payroll see all (filter by status/category/assignee/priority/search); manager sees own + direct reports; employee sees only own. **`mine: true`** (13F) forces self-scope (requester = caller) for ANY role — the strictest filter, used by the employee "My requests" surface so a manager/HR/agent sees only their own there, never the team queue. Defaults off (backwards-compatible). Rows carry requesterName/assigneeName/categoryName + derived `slaState`. |
+| `requests.list` | `ticket:read` | **scoped**: agents/HR/auditor/payroll see all (filter by status/category/assignee/priority/search); manager sees own + direct reports; employee sees only own. **`mine: true`** (13F) forces self-scope (requester = caller) for ANY role — the strictest filter, used by the employee "My requests" surface so a manager/HR/agent sees only their own there, never the team queue. **`assignedToMe: true`** / **`unassigned: true`** (13G) are queue filters: the former matches assignee = caller (resolved server-side), the latter matches a NULL assignee. All three default off (backwards-compatible). Rows carry requesterName/assigneeName/categoryName + derived `slaState`. |
 | `requests.getById` | `ticket:read` | `assertRequestVisible` (same scope). Returns the request + display names + `slaState` + **redacted comments** + read-only `linkedEntities` + `canViewInternalNotes`. |
 | `requests.createSelf` | `ticket:create` | requester = caller's own employee (no id input). Reference + due dates computed; approvalRequired from category. |
 | `requests.createForEmployee` | `ticket:create` | HR/agent for anyone; **manager only for direct reports**; employee 403s in handler. |
 | `requests.update` | `ticket:update` | + `canManageHelpdesk`. title/desc/category/priority. Blocked once closed/cancelled. |
 | `requests.assign` | `ticket:assign` | + `canAssignHelpdesk`. Verifies assignee is an org member; `new`→`open`; stamps firstRespondedAt. |
+| `requests.assignToMe` (13G) | `ticket:assign` | + `canAssignHelpdesk`. Self-assign (assignee = caller, resolved server-side); `new`→`open`; stamps firstRespondedAt. Blocked once terminal. |
+| `requests.unassign` (13G) | `ticket:assign` | + `canAssignHelpdesk`. Clears the assignee (back to the unassigned pool). Blocked once terminal. |
+| `requests.assignableAgents` (13G) | `ticket:assign` | + `canAssignHelpdesk`. Teammate picker: org members in helpdesk-capable roles → `{ userId, name, role }` only (no private fields). |
 | `requests.changeStatus` | `ticket:update` | + `canManageHelpdesk`. Moves between working states (open/in_progress/waiting_on_employee/waiting_on_approval); rejects from terminal/resolved (reopen first). |
 | `requests.resolve` | `ticket:resolve` | + `canResolveHelpdesk`. **resolutionNote required** (min 1); stamps resolvedAt. |
 | `requests.close` | `ticket:close` | + `canManageHelpdesk`. Any non-terminal → closed. |

@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/empty-state";
 import { Badge } from "@/features/helpdesk/badge";
 import { HelpdeskTabs } from "@/features/helpdesk/helpdesk-tabs";
 import {
+	employeeStatusMessage,
 	fmtDate,
 	priorityLabel,
 	priorityTone,
@@ -215,6 +216,7 @@ function MyRequestCard({ r }: { r: HelpdeskRequestRow }) {
 					</span>
 				) : null}
 			</div>
+			<div className="hd-card-status">{employeeStatusMessage(r.status)}</div>
 			<div className="hd-card-meta">
 				<span>{r.categoryName ?? "General"}</span>
 				<span>·</span>

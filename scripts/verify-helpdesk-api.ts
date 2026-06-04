@@ -643,6 +643,128 @@ async function main() {
 		String(resolvedRow?.slaState)
 	);
 
+	// ════════════════════════════════════════════════════════════════════
+	console.log(
+		"\n9. workflow: assignment / assigned-to-me / agent picker (13G)"
+	);
+
+	const agents = (await admin.helpdesk.requests.assignableAgents()) as AnyRow[];
+	ok(
+		"admin assignableAgents returns the helpdesk agent pool",
+		Array.isArray(agents) && agents.length > 0,
+		`${agents.length} agents`
+	);
+	const marcus = agents.find((a) => a.name === "Marcus James");
+	ok(
+		"assignableAgents includes Marcus James (helpdesk_agent)",
+		Boolean(marcus)
+	);
+	ok(
+		"assignableAgents rows expose only userId/name/role",
+		agents.every(
+			(a) => a.userId && a.name && a.role && Object.keys(a).length === 3
+		)
+	);
+	await expectMessage(
+		"employee assignableAgents blocked at AC (no ticket:assign)",
+		"ticket:assign",
+		() => employee.helpdesk.requests.assignableAgents()
+	);
+	await expectMessage(
+		"auditor assignableAgents blocked at AC",
+		"ticket:assign",
+		() => auditor.helpdesk.requests.assignableAgents()
+	);
+
+	const wfReq = await employee.helpdesk.requests.createSelf({
+		title: "Verify: workflow assignment lifecycle",
+		priority: "normal",
+	});
+	await agent.helpdesk.requests.assignToMe({ id: wfReq.id });
+	const wfAfterAssign = (await agent.helpdesk.requests.getById({
+		id: wfReq.id,
+	})) as AnyRow;
+	ok(
+		"agent assignToMe sets assignee + opens the request",
+		Boolean(wfAfterAssign.assignedToUserId) && wfAfterAssign.status === "open",
+		String(wfAfterAssign.status)
+	);
+	const myQueue = await agent.helpdesk.requests.list({
+		assignedToMe: true,
+		page: 1,
+		pageSize: 100,
+	});
+	ok(
+		"assignedToMe filter returns the agent's own assignment",
+		(myQueue.data as AnyRow[]).some((r) => r.id === wfReq.id)
+	);
+
+	if (marcus) {
+		await admin.helpdesk.requests.assign({
+			id: wfReq.id,
+			assignedToUserId: marcus.userId as string,
+		});
+		const reassigned = (await admin.helpdesk.requests.getById({
+			id: wfReq.id,
+		})) as AnyRow;
+		ok(
+			"admin assign to teammate sets assigneeName",
+			reassigned.assigneeName === "Marcus James",
+			String(reassigned.assigneeName)
+		);
+	}
+
+	await admin.helpdesk.requests.unassign({ id: wfReq.id });
+	const afterUnassign = (await admin.helpdesk.requests.getById({
+		id: wfReq.id,
+	})) as AnyRow;
+	ok(
+		"admin unassign clears the assignee",
+		afterUnassign.assignedToUserId === null
+	);
+	const unassignedQueue = await admin.helpdesk.requests.list({
+		unassigned: true,
+		page: 1,
+		pageSize: 100,
+	});
+	ok(
+		"unassigned filter returns only requests with no assignee",
+		(unassignedQueue.data as AnyRow[]).every(
+			(r) => r.assignedToUserId === null
+		) && (unassignedQueue.data as AnyRow[]).some((r) => r.id === wfReq.id)
+	);
+
+	await expectMessage(
+		"employee assignToMe blocked (no ticket:assign)",
+		"ticket:assign",
+		() => employee.helpdesk.requests.assignToMe({ id: wfReq.id })
+	);
+	await expectMessage(
+		"manager assignToMe blocked (no ticket:assign)",
+		"ticket:assign",
+		() => manager.helpdesk.requests.assignToMe({ id: wfReq.id })
+	);
+	await expectMessage(
+		"auditor assign blocked (no ticket:assign)",
+		"ticket:assign",
+		() =>
+			auditor.helpdesk.requests.assign({
+				id: wfReq.id,
+				assignedToUserId: (marcus?.userId as string) ?? "x",
+			})
+	);
+	await expectMessage(
+		"employee resolve blocked (no ticket:resolve)",
+		"ticket:resolve",
+		() =>
+			employee.helpdesk.requests.resolve({ id: wfReq.id, resolutionNote: "x" })
+	);
+	await expectMessage(
+		"employee approve blocked (no ticket:approve)",
+		"ticket:approve",
+		() => employee.helpdesk.requests.approve({ id: wfReq.id })
+	);
+
 	console.log(`\n──────────────\nRESULT: ${pass} passed, ${fail} failed\n`);
 	process.exit(fail > 0 ? 1 : 0);
 }

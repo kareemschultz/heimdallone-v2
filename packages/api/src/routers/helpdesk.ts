@@ -207,6 +207,18 @@ function seesAllRequests(callerRole: string): boolean {
 	);
 }
 
+// Member roles that actually work the desk — the assignable agent pool for the
+// teammate picker (mirrors canManageHelpdesk; Better Auth's owner/admin aliases
+// are included alongside our tenant_* names).
+const HELPDESK_AGENT_ROLES = [
+	"owner",
+	"tenant_owner",
+	"admin",
+	"tenant_admin",
+	"hr_admin",
+	"helpdesk_agent",
+] as const;
+
 // ────────────────────────────────────────────────────────────────────
 // Tenant-verification helpers — every FK input is checked here
 // ────────────────────────────────────────────────────────────────────
@@ -780,6 +792,11 @@ const requestsList = authorizedProcedure("ticket", "read")
 			// truthful "mine only" list here. Defaults off; existing callers are
 			// unaffected (the role-based scope below still applies).
 			mine: z.boolean().optional(),
+			// Workflow queue filters (13G). assignedToMe resolves the assignee to the
+			// caller server-side (no client userId needed); unassigned matches NULL
+			// assignee. Both layer on top of the role scope below.
+			assignedToMe: z.boolean().optional(),
+			unassigned: z.boolean().optional(),
 			page: z.number().int().min(1).default(1),
 			pageSize: z.number().int().min(1).max(100).default(50),
 		})
@@ -801,6 +818,12 @@ const requestsList = authorizedProcedure("ticket", "read")
 			filters.push(
 				eq(helpdeskRequest.assignedToUserId, input.assignedToUserId)
 			);
+		}
+		if (input.assignedToMe) {
+			filters.push(eq(helpdeskRequest.assignedToUserId, actorId(context)));
+		}
+		if (input.unassigned) {
+			filters.push(isNull(helpdeskRequest.assignedToUserId));
 		}
 		if (input.priority) {
 			filters.push(eq(helpdeskRequest.priority, input.priority));
@@ -1221,6 +1244,108 @@ const requestsAssign = authorizedProcedure("ticket", "assign")
 		});
 		return { id: input.id };
 	});
+
+/** Self-assign the current request to the caller. Reuses the `ticket:assign` AC. */
+const requestsAssignToMe = authorizedProcedure("ticket", "assign")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canAssignHelpdesk(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const oid = orgId(context);
+		const me = actorId(context);
+		const req = await verifyRequest(oid, input.id);
+		if (req.status === "closed" || req.status === "cancelled") {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: "A closed or cancelled request cannot be assigned.",
+			});
+		}
+		const now = new Date();
+		await db
+			.update(helpdeskRequest)
+			.set({
+				assignedToUserId: me,
+				status: req.status === "new" ? "open" : req.status,
+				firstRespondedAt: req.firstRespondedAt ?? now,
+				updatedAt: now,
+			})
+			.where(
+				and(
+					eq(helpdeskRequest.id, input.id),
+					eq(helpdeskRequest.organizationId, oid)
+				)
+			);
+		await createAuditEvent(db as never, {
+			organizationId: oid,
+			entityType: "helpdesk_request",
+			entityId: input.id,
+			action: "update",
+			actorId: me,
+			metadata: { transition: "assign", assignedToUserId: me, self: true },
+		});
+		return { id: input.id };
+	});
+
+/** Clear the assignee (return to the unassigned pool). Reuses `ticket:assign`. */
+const requestsUnassign = authorizedProcedure("ticket", "assign")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canAssignHelpdesk(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const oid = orgId(context);
+		const req = await verifyRequest(oid, input.id);
+		if (req.status === "closed" || req.status === "cancelled") {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message: "A closed or cancelled request cannot be reassigned.",
+			});
+		}
+		await db
+			.update(helpdeskRequest)
+			.set({ assignedToUserId: null, updatedAt: new Date() })
+			.where(
+				and(
+					eq(helpdeskRequest.id, input.id),
+					eq(helpdeskRequest.organizationId, oid)
+				)
+			);
+		await createAuditEvent(db as never, {
+			organizationId: oid,
+			entityType: "helpdesk_request",
+			entityId: input.id,
+			action: "update",
+			actorId: actorId(context),
+			metadata: { transition: "unassign" },
+		});
+		return { id: input.id };
+	});
+
+/**
+ * Assignable agents for the teammate picker — org members who actually work the
+ * desk (the canManageHelpdesk roles). Returns user id + display name + role label
+ * only; no private fields. Gated by `ticket:assign` (only assigners need it).
+ */
+const requestsAssignableAgents = authorizedProcedure(
+	"ticket",
+	"assign"
+).handler(async ({ context }) => {
+	if (!canAssignHelpdesk(role(context))) {
+		throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+	}
+	const oid = orgId(context);
+	const rows = await db
+		.select({ userId: member.userId, name: user.name, role: member.role })
+		.from(member)
+		.innerJoin(user, eq(member.userId, user.id))
+		.where(
+			and(
+				eq(member.organizationId, oid),
+				inArray(member.role, HELPDESK_AGENT_ROLES)
+			)
+		)
+		.orderBy(asc(user.name));
+	return rows;
+});
 
 const requestsChangeStatus = authorizedProcedure("ticket", "update")
 	.input(z.object({ id: z.string(), status: WORKING_STATUS }))
@@ -1665,6 +1790,9 @@ export const helpdeskRouter = {
 		createForEmployee: requestsCreateForEmployee,
 		update: requestsUpdate,
 		assign: requestsAssign,
+		assignToMe: requestsAssignToMe,
+		unassign: requestsUnassign,
+		assignableAgents: requestsAssignableAgents,
 		changeStatus: requestsChangeStatus,
 		resolve: requestsResolve,
 		close: requestsClose,
