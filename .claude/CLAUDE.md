@@ -143,6 +143,14 @@ Note: This project uses shadcn `base-lyra` style (@base-ui/react), NOT Radix. sh
 
 - [Lessons Learned & Gotchas](.claude/docs/lessons-learned.md) — edge cases, patterns, mistakes to avoid
 
+### Repo gates, CI & known baselines (QA hardening pass, 2026-06-04)
+
+- **Gates:** `bun run check-types` (`turbo check-types`) covers **server/ui/payroll-engine only = 3/3** — `apps/web` is **deliberately NOT in this gate** (its tsc script is named `typecheck`, not `check-types`, so turbo doesn't aggregate it; see lesson #87). `bun run build` = 2/2. `bun run audit:permissions` = **93/13**. `bun run check` (ultracite lint) carries an **accepted 212-error baseline** in legacy shared files.
+- **CI:** `.github/workflows/ci.yml` — install + `check-types` + `build` + `audit:permissions` are **blocking**; `check` (lint) and web `typecheck` run **`continue-on-error` (informational)** until their baselines are burned down.
+- **Documented baselines (NOT regressions):** web `typecheck` = **7 errors** in `docs.tsx` / `app/settings.tsx` / `employees/$id.tsx` / `employees/index.tsx` / `login.tsx`; lint = 212. The pre-commit hook lints the **whole staged file**, so clearing these is a per-file burn-down task (lesson #83), not a drive-by edit. **Follow-up:** clear web tsc 7→0, rename web `typecheck`→`check-types` to enter the root gate, then flip CI lint blocking.
+- **Preview modules:** Compliance, Clients, Countries & Tax, Documents are **design scaffolds on sample/demo data** — marked with a "Preview" sidebar pill + `apps/web/src/components/preview-banner.tsx` `<PreviewBanner>`. Routes are kept reachable for design review; do not present their stats/exports as live.
+- **Bank data:** `employee_bank_details.account_number` is **masked at the API** for non-payroll roles (full only for HR/payroll); plaintext **at rest** is a separate, documented future hardening item (field-level encryption), not a response-layer leak.
+
 HRMS domain extraction (Phase 4D):
 
 - [Horilla Extraction Index](docs/horilla-extraction/README.md) — 20 module extraction docs with Heimdallone-native recommendations
