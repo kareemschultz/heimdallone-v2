@@ -44,7 +44,13 @@ function AttentionGroup({
 				items.slice(0, ATTENTION_LIST_LIMIT).map((p) => (
 					<div className="pj-attention-item" key={p.id}>
 						<span className="pj-mono">{p.reference}</span>
-						<span className="pj-name">{p.name}</span>
+						<Link
+							className="pj-name pj-name-link"
+							params={{ id: p.id }}
+							to="/app/projects/$id"
+						>
+							{p.name}
+						</Link>
 						<span className="pj-sub">
 							{p.projectManagerName ?? "Unassigned"}
 						</span>

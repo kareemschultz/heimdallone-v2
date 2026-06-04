@@ -575,6 +575,28 @@ function redactBudget<T extends { budget: string | null }>(
 	return { ...row, budget: null };
 }
 
+/**
+ * Null out the project internal note for callers without
+ * canViewProjectInternalNotes — server-side, mirroring the task internal-note
+ * redaction (UI hiding alone is not sufficient).
+ */
+function redactInternalNote<T extends { internalNote: string | null }>(
+	row: T,
+	callerRole: string
+): T {
+	if (canViewProjectInternalNotes(callerRole)) {
+		return row;
+	}
+	return { ...row, internalNote: null };
+}
+
+/** Apply both server-side redactions (budget + internal note). */
+function redactProject<
+	T extends { budget: string | null; internalNote: string | null },
+>(row: T, callerRole: string): T {
+	return redactInternalNote(redactBudget(row, callerRole), callerRole);
+}
+
 // ════════════════════════════════════════════════════════════════════
 // PROJECTS
 // ════════════════════════════════════════════════════════════════════
@@ -652,7 +674,7 @@ const projectsList = authorizedProcedure("project", "read")
 			const s = stats.get(r.id) ?? EMPTY_STATS;
 			const health = computeProjectHealth(r, s, now);
 			return {
-				...redactBudget(r, callerRole),
+				...redactProject(r, callerRole),
 				health,
 				projectManagerName: r.projectManagerEmployeeId
 					? (mgrNames.get(r.projectManagerEmployeeId) ?? null)
@@ -689,7 +711,7 @@ const projectsGetById = authorizedProcedure("project", "read")
 		const mgrNames = await employeeNameMap([p.projectManagerEmployeeId]);
 		const canViewBudget = canViewProjectCosts(callerRole);
 		return {
-			...redactBudget(p, callerRole),
+			...redactProject(p, callerRole),
 			health,
 			canViewBudget,
 			projectManagerName: p.projectManagerEmployeeId

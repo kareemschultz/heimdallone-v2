@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { FolderKanban, Link2, Search } from "lucide-react";
 import { useContext, useState } from "react";
 
@@ -48,7 +48,13 @@ function ProjectRowView({ p }: { p: ProjectRow }) {
 				<span className="pj-mono">{p.reference}</span>
 			</td>
 			<td>
-				<span className="pj-name">{p.name}</span>
+				<Link
+					className="pj-name pj-name-link"
+					params={{ id: p.id }}
+					to="/app/projects/$id"
+				>
+					{p.name}
+				</Link>
 				<div className="pj-sub">{p.projectManagerName ?? "Unassigned"}</div>
 			</td>
 			<td>

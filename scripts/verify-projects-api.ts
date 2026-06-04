@@ -172,6 +172,26 @@ async function main() {
 		empNet.budget === null && empNet.canViewBudget === false
 	);
 
+	console.log("\n── 2b. Project internal-note redaction (server-side) ──");
+	ok(
+		"admin sees project internalNote",
+		Boolean((adminNet as any).internalNote)
+	);
+	ok("project_manager sees internalNote", Boolean((pmNet as any).internalNote));
+	ok("auditor sees internalNote", Boolean((audNet as any).internalNote));
+	ok(
+		"manager internalNote REDACTED (null)",
+		(mgrNet as any).internalNote === null
+	);
+	ok(
+		"employee internalNote REDACTED (null)",
+		(empNet as any).internalNote === null
+	);
+	ok(
+		"payroll internalNote REDACTED (null)",
+		(payNet as any).internalNote === null
+	);
+
 	console.log("\n── 3. IDOR no-leak (employee) ──");
 	await expectError("employee getById(wifi) FORBIDDEN", "FORBIDDEN", () =>
 		employee.projects.getById({ id: wifi.id })

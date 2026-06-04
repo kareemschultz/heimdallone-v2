@@ -666,3 +666,13 @@
 	font-size: 11.5px;
 	color: var(--danger);
 }
+
+.pj-panel {
+	margin-top: 8px;
+}
+.pj-panel-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}

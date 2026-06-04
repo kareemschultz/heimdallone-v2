@@ -11,6 +11,7 @@ export interface ProjectRow {
 	hasCrossModuleLinks: boolean;
 	health: string;
 	id: string;
+	internalNote: string | null;
 	isArchived: boolean;
 	linkedCustomerId: string | null;
 	linkedDealId: string | null;

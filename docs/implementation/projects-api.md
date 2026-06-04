@@ -23,6 +23,9 @@ and **never** mutates them. Enforced in code:
   given.
 - **Budget is finance-redacted server-side.** `budget` is nulled for callers
   without `canViewProjectCosts`; `getById` returns a `canViewBudget` flag.
+- **The project `internalNote` is redacted server-side** (`redactProject` →
+  `redactInternalNote`) for callers without `canViewProjectInternalNotes`, in
+  both `list` and `getById` — UI hiding alone is not sufficient (added in 14E).
 - **Task internal-note comments (`isInternal`) are redacted server-side** in
   every read unless `canViewProjectInternalNotes`. `createInternal` re-checks the
   same gate in the handler (AC alone is insufficient — employees hold
@@ -122,7 +125,7 @@ non-idempotent `seed-dev.ts`.
 
 ## Verification
 
-`scripts/verify-projects-api.ts` — **62/62** against the seed + a running API:
+`scripts/verify-projects-api.ts` — **68/68** against the seed + a running API:
 list scope (admin/pm/auditor/payroll = 5; manager scoped = 4; employee = 3 member
 projects; recruiter blocked); budget redaction (PM/manager/employee → null;
 admin/auditor/payroll → visible); employee IDOR no-leak (FORBIDDEN on
@@ -145,5 +148,5 @@ cp scripts/verify-projects-api.ts apps/web/_v.ts && (cd apps/web && bun run _v.t
 
 ## Gates
 
-check-types 3/3 · build 2/2 · audit:permissions 109/14 · verify 62/62 · ultracite
+check-types 3/3 · build 2/2 · audit:permissions 109/14 · verify 68/68 · ultracite
 clean on all changed files.
