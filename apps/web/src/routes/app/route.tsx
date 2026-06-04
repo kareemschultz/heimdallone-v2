@@ -19,6 +19,7 @@ import {
 	Globe,
 	Info,
 	LayoutDashboard,
+	LifeBuoy,
 	LogOut,
 	Moon,
 	Package,
@@ -65,6 +66,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"contracts",
 	"leave",
 	"documents",
+	"helpdesk",
 	"settings",
 ]);
 const MANAGER_VISIBLE_KEYS = new Set([
@@ -74,6 +76,7 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"attendance",
 	"leave",
 	"documents",
+	"helpdesk",
 	"settings",
 ]);
 const RECRUITER_VISIBLE_KEYS = new Set([
@@ -151,6 +154,12 @@ const NAV = [
 				label: "Assets",
 				icon: Package,
 				href: "/app/assets",
+			},
+			{
+				key: "helpdesk",
+				label: "Helpdesk",
+				icon: LifeBuoy,
+				href: "/app/helpdesk",
 			},
 		],
 	},
