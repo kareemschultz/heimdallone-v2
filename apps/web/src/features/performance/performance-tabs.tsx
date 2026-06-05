@@ -6,6 +6,7 @@ import {
 	canSubmitReview,
 	canViewOneOnOnes,
 	canViewPerformance,
+	canViewRecognition,
 	canViewReviews,
 } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
@@ -16,6 +17,7 @@ interface Tab {
 		| "/app/performance/goals"
 		| "/app/performance/reviews"
 		| "/app/performance/one-on-ones"
+		| "/app/performance/recognition"
 		| "/app/performance/my-goals"
 		| "/app/performance/my-reviews";
 	key: string;
@@ -45,6 +47,11 @@ const ONE_ON_ONES_TAB: Tab = {
 	label: "1-on-1s",
 	href: "/app/performance/one-on-ones",
 };
+const RECOGNITION_TAB: Tab = {
+	key: "recognition",
+	label: "Recognition",
+	href: "/app/performance/recognition",
+};
 const MY_GOALS_TAB: Tab = {
 	key: "my-goals",
 	label: "My goals",
@@ -69,6 +76,9 @@ function resolveActiveTab(path: string): string {
 	if (clean.startsWith("/app/performance/one-on-ones")) {
 		return "one-on-ones";
 	}
+	if (clean.startsWith("/app/performance/recognition")) {
+		return "recognition";
+	}
 	if (clean.startsWith("/app/performance/reviews")) {
 		return "reviews";
 	}
@@ -90,6 +100,7 @@ export function PerformanceTabs() {
 		...(canViewPerformance(role) ? [OVERVIEW_TAB, GOALS_TAB] : []),
 		...(canViewReviews(role) ? [REVIEWS_TAB] : []),
 		...(canViewOneOnOnes(role) ? [ONE_ON_ONES_TAB] : []),
+		...(canViewRecognition(role) ? [RECOGNITION_TAB] : []),
 		...(canCreateObjective(role) ? [MY_GOALS_TAB] : []),
 		...(canSubmitReview(role) ? [MY_REVIEWS_TAB] : []),
 	];

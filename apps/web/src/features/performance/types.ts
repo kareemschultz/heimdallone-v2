@@ -46,14 +46,24 @@ export interface ObjectiveDetail extends ObjectiveRow {
 }
 
 export interface RecognitionRow {
+	awardedByName: string | null;
 	createdAt: string | Date | null;
 	employeeId: string;
 	employeeName: string | null;
 	id: string;
 	isPay: false;
+	objectiveId: string | null;
 	points: number;
 	reason: string | null;
 	source: string;
+}
+
+const RECOGNITION_SOURCE_LABEL: Record<string, string> = {
+	manual: "Recognised by a colleague",
+	objective_completed: "Goal completed",
+};
+export function recognitionSourceLabel(source: string): string {
+	return RECOGNITION_SOURCE_LABEL[source] ?? "Recognition";
 }
 
 /** Clamp a key result's progress to 0..100 from its start/current/target. */
