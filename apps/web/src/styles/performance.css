@@ -651,6 +651,7 @@
 .pf-comment-form textarea:focus-visible,
 .pf-pill:focus-visible,
 .pf-tab:focus-visible,
+.pf-rating-pill:focus-visible,
 .pf-card:focus-visible {
 	outline: 2px solid var(--accent);
 	outline-offset: 1px;

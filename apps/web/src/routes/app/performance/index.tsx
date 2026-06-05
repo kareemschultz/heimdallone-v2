@@ -84,6 +84,25 @@ function RecognitionPreview() {
 		orpc.performance.recognition.list.queryOptions({ input: {} })
 	);
 	const rows = (recognition.data as RecognitionRow[] | undefined) ?? [];
+	// Surface a load failure rather than letting it read as "no recognition"
+	// (error ≠ healthy empty). Loading / genuinely-empty stay quiet — this is an
+	// optional preview widget.
+	if (recognition.isError) {
+		return (
+			<div className="pf-panel">
+				<div className="pf-panel-head">
+					<span className="pf-section-title">
+						<Award size={14} /> Recent recognition
+					</span>
+				</div>
+				<EmptyState
+					compact
+					description="Recognition could not be loaded right now. Please try again."
+					title="Something went wrong"
+				/>
+			</div>
+		);
+	}
 	if (recognition.isLoading || rows.length === 0) {
 		return null;
 	}
