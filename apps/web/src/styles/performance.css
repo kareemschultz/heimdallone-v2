@@ -1011,3 +1011,75 @@
 	border: 1px dashed var(--line);
 	border-radius: 8px;
 }
+
+/* ── Reviews (15E) ─────────────────────────────────────────────────────────── */
+.pf-checkbox {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	font-size: 13px;
+	color: var(--fg-2);
+}
+.pf-checkbox input {
+	width: auto;
+}
+.pf-rating-row {
+	display: flex;
+	gap: 8px;
+}
+.pf-rating-pill {
+	width: 36px;
+	height: 36px;
+	font-size: 13px;
+	color: var(--fg-2);
+	cursor: pointer;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.pf-rating-pill:hover {
+	border-color: var(--accent);
+}
+.pf-rating-pill.active {
+	color: var(--accent-fg, #fff);
+	background: var(--accent);
+	border-color: var(--accent);
+}
+.pf-results {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 4px 0 8px;
+}
+.pf-result-block {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 12px 14px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.pf-result-block.pf-peer-hidden {
+	border-style: dashed;
+}
+.pf-result-head {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+}
+.pf-result-sub {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 8px 0;
+	border-top: 1px solid var(--line);
+}
+.pf-answer {
+	font-size: 13px;
+	color: var(--fg);
+}
+.pf-answer-rating {
+	font-weight: 600;
+	color: var(--fg);
+}

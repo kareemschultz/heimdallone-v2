@@ -1,29 +1,52 @@
 import { Link, useMatches } from "@tanstack/react-router";
 import { useContext } from "react";
 
-import { canCreateObjective, canViewPerformance } from "@/lib/rbac";
+import {
+	canCreateObjective,
+	canSubmitReview,
+	canViewPerformance,
+	canViewReviews,
+} from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 
 interface Tab {
 	href:
 		| "/app/performance"
 		| "/app/performance/goals"
-		| "/app/performance/my-goals";
+		| "/app/performance/reviews"
+		| "/app/performance/my-goals"
+		| "/app/performance/my-reviews";
 	key: string;
 	label: string;
 }
 
-// 15D ships Overview + Goals (the management surface) + My Goals (self-service).
-// Reviews / 1-on-1s / Recognition management arrive in later checkpoints and add
-// their own tabs; they are NOT shown here.
-const STAFF_TABS: Tab[] = [
-	{ key: "overview", label: "Overview", href: "/app/performance" },
-	{ key: "goals", label: "Goals", href: "/app/performance/goals" },
-];
-const SELF_TAB: Tab = {
+// 15D shipped Overview + Goals + My goals; 15E adds Reviews (the management
+// surface) + My reviews (assigned review tasks, self-service). 1-on-1s and
+// recognition management arrive in later checkpoints with their own tabs.
+const OVERVIEW_TAB: Tab = {
+	key: "overview",
+	label: "Overview",
+	href: "/app/performance",
+};
+const GOALS_TAB: Tab = {
+	key: "goals",
+	label: "Goals",
+	href: "/app/performance/goals",
+};
+const REVIEWS_TAB: Tab = {
+	key: "reviews",
+	label: "Reviews",
+	href: "/app/performance/reviews",
+};
+const MY_GOALS_TAB: Tab = {
 	key: "my-goals",
 	label: "My goals",
 	href: "/app/performance/my-goals",
+};
+const MY_REVIEWS_TAB: Tab = {
+	key: "my-reviews",
+	label: "My reviews",
+	href: "/app/performance/my-reviews",
 };
 
 const TRAILING_SLASH = /\/$/;
@@ -32,6 +55,12 @@ function resolveActiveTab(path: string): string {
 	const clean = path.replace(TRAILING_SLASH, "");
 	if (clean.startsWith("/app/performance/my-goals")) {
 		return "my-goals";
+	}
+	if (clean.startsWith("/app/performance/my-reviews")) {
+		return "my-reviews";
+	}
+	if (clean.startsWith("/app/performance/reviews")) {
+		return "reviews";
 	}
 	if (clean.startsWith("/app/performance/goals")) {
 		return "goals";
@@ -45,12 +74,13 @@ export function PerformanceTabs() {
 	const matches = useMatches();
 	const currentPath = matches.at(-1)?.pathname ?? "/app/performance";
 
-	// Staff tabs for viewers (HR / manager / payroll / auditor); My goals for
-	// anyone who can own a goal (HR / manager / employee). A pure employee sees
-	// ONLY My goals.
+	// Staff tabs (Overview/Goals/Reviews) for viewers; self tabs for anyone who
+	// owns a goal or has review tasks. A pure employee sees only the self tabs.
 	const tabs: Tab[] = [
-		...(canViewPerformance(role) ? STAFF_TABS : []),
-		...(canCreateObjective(role) ? [SELF_TAB] : []),
+		...(canViewPerformance(role) ? [OVERVIEW_TAB, GOALS_TAB] : []),
+		...(canViewReviews(role) ? [REVIEWS_TAB] : []),
+		...(canCreateObjective(role) ? [MY_GOALS_TAB] : []),
+		...(canSubmitReview(role) ? [MY_REVIEWS_TAB] : []),
 	];
 	if (tabs.length === 0) {
 		return null;
