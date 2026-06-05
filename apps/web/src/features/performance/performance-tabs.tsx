@@ -4,6 +4,7 @@ import { useContext } from "react";
 import {
 	canCreateObjective,
 	canSubmitReview,
+	canViewOneOnOnes,
 	canViewPerformance,
 	canViewReviews,
 } from "@/lib/rbac";
@@ -14,6 +15,7 @@ interface Tab {
 		| "/app/performance"
 		| "/app/performance/goals"
 		| "/app/performance/reviews"
+		| "/app/performance/one-on-ones"
 		| "/app/performance/my-goals"
 		| "/app/performance/my-reviews";
 	key: string;
@@ -38,6 +40,11 @@ const REVIEWS_TAB: Tab = {
 	label: "Reviews",
 	href: "/app/performance/reviews",
 };
+const ONE_ON_ONES_TAB: Tab = {
+	key: "one-on-ones",
+	label: "1-on-1s",
+	href: "/app/performance/one-on-ones",
+};
 const MY_GOALS_TAB: Tab = {
 	key: "my-goals",
 	label: "My goals",
@@ -59,6 +66,9 @@ function resolveActiveTab(path: string): string {
 	if (clean.startsWith("/app/performance/my-reviews")) {
 		return "my-reviews";
 	}
+	if (clean.startsWith("/app/performance/one-on-ones")) {
+		return "one-on-ones";
+	}
 	if (clean.startsWith("/app/performance/reviews")) {
 		return "reviews";
 	}
@@ -79,6 +89,7 @@ export function PerformanceTabs() {
 	const tabs: Tab[] = [
 		...(canViewPerformance(role) ? [OVERVIEW_TAB, GOALS_TAB] : []),
 		...(canViewReviews(role) ? [REVIEWS_TAB] : []),
+		...(canViewOneOnOnes(role) ? [ONE_ON_ONES_TAB] : []),
 		...(canCreateObjective(role) ? [MY_GOALS_TAB] : []),
 		...(canSubmitReview(role) ? [MY_REVIEWS_TAB] : []),
 	];

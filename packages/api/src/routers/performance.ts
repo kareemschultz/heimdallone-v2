@@ -1437,8 +1437,16 @@ const oneOnOnesList = authorizedProcedure("appraisal", "read")
 			.from(oneOnOne)
 			.where(and(...filters))
 			.orderBy(desc(oneOnOne.scheduledAt));
+		// Resolve participant names for the list display (no AC change — the
+		// appraisal:read gate already applies).
+		const ids = rows.flatMap((r) => [r.managerEmployeeId, r.employeeId]);
+		const names = await employeeNameMap(ids);
 		// SERVER-SIDE private-note redaction on every row.
-		return rows.map((r) => redactOneOnOne(r, callerRole, me?.id ?? null));
+		return rows.map((r) => ({
+			...redactOneOnOne(r, callerRole, me?.id ?? null),
+			managerName: names.get(r.managerEmployeeId) ?? null,
+			employeeName: names.get(r.employeeId) ?? null,
+		}));
 	});
 
 const oneOnOnesGetById = authorizedProcedure("appraisal", "read")

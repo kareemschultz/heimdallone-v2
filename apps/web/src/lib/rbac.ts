@@ -367,3 +367,16 @@ export function canViewRecognition(role: MemberRole): boolean {
 export function canViewPrivatePerformanceNotes(role: MemberRole): boolean {
 	return canManageHR(role) || role === "manager";
 }
+
+// 1-on-1s (Phase 15F). The list/getById procs gate `appraisal:read` (held by
+// everyone except recruiter/helpdesk_agent/project_manager) and self-scope the
+// rows server-side; recording/editing a 1-on-1 gates `appraisal:review`
+// (HR + managers). privateManagerNotes are redacted SERVER-SIDE — the detail
+// proc returns a canViewPrivateNotes flag; these helpers only gate affordances.
+export function canViewOneOnOnes(role: MemberRole): boolean {
+	return canViewPerformance(role) || canCreateObjective(role);
+}
+
+export function canRecordOneOnOne(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}

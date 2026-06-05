@@ -384,3 +384,14 @@ export function canViewRecognition(role: MemberRole): boolean {
 export function canViewPrivatePerformanceNotes(role: MemberRole): boolean {
 	return canManageHR(role) || role === "manager";
 }
+
+// 1-on-1s (Phase 15F) — mirror of apps/web/src/lib/rbac.ts (keep byte-aligned).
+// appraisal:read holders may view their own 1-on-1s; appraisal:review holders
+// (HR + managers) may record/edit. privateManagerNotes are redacted server-side.
+export function canViewOneOnOnes(role: MemberRole): boolean {
+	return canViewPerformance(role) || canCreateObjective(role);
+}
+
+export function canRecordOneOnOne(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
