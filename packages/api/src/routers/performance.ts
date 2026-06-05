@@ -77,6 +77,8 @@ const role = (ctx: unknown) => (ctx as { memberRole: string }).memberRole;
 
 const MAX_REFERENCE_ATTEMPTS = 6;
 const LIST_LIMIT = 200;
+// 15H: points auto-awarded (non-monetary) when a goal is completed on time.
+const AUTO_AWARD_OBJECTIVE_POINTS = 10;
 
 // ─── Zod enums matching schema ───────────────────────────────────────────────
 
@@ -728,6 +730,33 @@ const objectivesComplete = authorizedProcedure("goal", "complete")
 			actorId: actorId(context),
 			metadata: { transition: "complete" },
 		});
+		// 15H: auto-award NON-MONETARY recognition for an on-time completion. This
+		// writes ONLY a recognition_point (a points ledger — never payroll). It
+		// fires once: only on the transition INTO completed (skips a re-complete)
+		// and only when there was no due date or the goal finished on/before it.
+		const wasAlreadyComplete = obj.status === "completed";
+		const onTime = !obj.dueDate || new Date() <= new Date(obj.dueDate);
+		if (!wasAlreadyComplete && onTime) {
+			const recognitionId = createId();
+			await db.insert(recognitionPoint).values({
+				id: recognitionId,
+				organizationId: oid,
+				employeeId: obj.employeeId,
+				points: AUTO_AWARD_OBJECTIVE_POINTS,
+				reason: `Completed goal "${obj.title}" on time.`,
+				source: "objective_completed",
+				awardedByUserId: actorId(context),
+				objectiveId: obj.id,
+			});
+			await createAuditEvent(db as never, {
+				organizationId: oid,
+				entityType: "recognition_point",
+				entityId: recognitionId,
+				action: "create",
+				actorId: actorId(context),
+				metadata: { source: "objective_completed", objectiveId: obj.id },
+			});
+		}
 		return { id: obj.id };
 	});
 

@@ -334,6 +334,17 @@ async function main() {
 	if (ownActive) {
 		await employee.performance.objectives.complete({ id: ownActive.id });
 		ok("employee completes own goal", true);
+		// 15H: an on-time completion auto-awards a NON-MONETARY recognition point.
+		const recAfter = (await employee.performance.recognition.list({})) as any[];
+		const autoAward = recAfter.find(
+			(r) =>
+				r.objectiveId === ownActive.id && r.source === "objective_completed"
+		);
+		ok(
+			"on-time goal completion auto-awards recognition (objective_completed, non-pay)",
+			Boolean(autoAward) && autoAward.isPay === false,
+			autoAward ? `pts=${autoAward.points}` : "none"
+		);
 	}
 	await expectError(
 		"employee complete a teammate's goal → FORBIDDEN",
