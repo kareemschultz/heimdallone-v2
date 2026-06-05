@@ -31,6 +31,7 @@ import {
 	Shield,
 	ShieldCheck,
 	Sun,
+	Target,
 	User,
 	Users,
 	Wallet,
@@ -69,6 +70,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"documents",
 	"helpdesk",
 	"projects",
+	"performance",
 	"settings",
 ]);
 const MANAGER_VISIBLE_KEYS = new Set([
@@ -80,6 +82,7 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"documents",
 	"helpdesk",
 	"projects",
+	"performance",
 	"settings",
 ]);
 const RECRUITER_VISIBLE_KEYS = new Set([
@@ -185,6 +188,12 @@ const NAV = [
 				label: "Projects",
 				icon: FolderKanban,
 				href: "/app/projects",
+			},
+			{
+				key: "performance",
+				label: "Performance",
+				icon: Target,
+				href: "/app/performance",
 			},
 		],
 	},
