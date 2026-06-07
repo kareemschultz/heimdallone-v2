@@ -19,6 +19,7 @@ import {
 	FolderKanban,
 	Globe,
 	Info,
+	Landmark,
 	LayoutDashboard,
 	LifeBuoy,
 	LogOut,
@@ -83,6 +84,9 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"helpdesk",
 	"projects",
 	"performance",
+	// Managers can VIEW Finance cost reports but are department-scoped server-side
+	// (own + direct reports' departments). canViewFinance includes "manager".
+	"finance",
 	"settings",
 ]);
 const RECRUITER_VISIBLE_KEYS = new Set([
@@ -194,6 +198,17 @@ const NAV = [
 				label: "Performance",
 				icon: Target,
 				href: "/app/performance",
+			},
+		],
+	},
+	{
+		group: "Finance",
+		items: [
+			{
+				key: "finance",
+				label: "Finance",
+				icon: Landmark,
+				href: "/app/finance",
 			},
 		],
 	},

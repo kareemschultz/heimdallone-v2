@@ -456,6 +456,13 @@ const budgetsList = authorizedProcedure("finance", "read")
 	)
 	.handler(async ({ context, input }) => {
 		const oid = orgId(context);
+		// Department-scope managers the same way budgetsVariance does: they only
+		// see department budgets within their own + direct reports' departments —
+		// never org-wide totals or other departments' budgets.
+		const scope = await financeDeptScope(context);
+		if (scope && scope.length === 0) {
+			return [];
+		}
 		const conds = [eq(financeBudget.organizationId, oid)];
 		if (input?.scope) {
 			conds.push(eq(financeBudget.scope, input.scope));
@@ -465,7 +472,15 @@ const budgetsList = authorizedProcedure("finance", "read")
 			.from(financeBudget)
 			.where(and(...conds))
 			.orderBy(desc(financeBudget.periodStart));
-		return rows.map(serializeBudget);
+		const visible = scope
+			? rows.filter(
+					(b) =>
+						b.scope === "department" &&
+						b.scopeId !== null &&
+						scope.includes(b.scopeId)
+				)
+			: rows;
+		return visible.map(serializeBudget);
 	});
 
 const budgetsGetById = authorizedProcedure("finance", "read")
@@ -482,6 +497,17 @@ const budgetsGetById = authorizedProcedure("finance", "read")
 			)
 			.limit(1);
 		if (!row) {
+			throw new ORPCError("NOT_FOUND", { message: "Budget not found." });
+		}
+		// Same dept-scope check as budgetsList/budgetsVariance — a scoped manager
+		// may only open a department budget within their scope.
+		const scope = await financeDeptScope(context);
+		if (
+			scope &&
+			(row.scope !== "department" ||
+				row.scopeId === null ||
+				!scope.includes(row.scopeId))
+		) {
 			throw new ORPCError("NOT_FOUND", { message: "Budget not found." });
 		}
 		return serializeBudget(row);

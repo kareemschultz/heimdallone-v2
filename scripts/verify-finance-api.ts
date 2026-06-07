@@ -293,6 +293,26 @@ async function main() {
 		mgrVar.map((v) => v.budget.scope).join(",") || "(none)"
 	);
 
+	console.log(
+		"\n── 11. Manager budget READ is department-scoped (no org leak) ──"
+	);
+	const mgrBudgets = (await manager.finance.budgets.list({})) as any[];
+	ok(
+		"manager budgets.list contains only department-scoped budgets",
+		mgrBudgets.every((b) => b.scope === "department"),
+		mgrBudgets.map((b) => b.scope).join(",") || "(none)"
+	);
+	const adminBudgets2 = (await admin.finance.budgets.list({})) as any[];
+	const orgWide = adminBudgets2.find((b) => b.scope === "organization");
+	if (orgWide) {
+		await expectAnyError(
+			"manager getById an org-wide budget → blocked (NOT_FOUND)",
+			() => manager.finance.budgets.getById({ id: orgWide.id })
+		);
+	} else {
+		ok("an org-wide budget exists to test against", false, "none found");
+	}
+
 	console.log(`\n${pass} passed, ${fail} failed\n`);
 	process.exit(fail === 0 ? 0 : 1);
 }

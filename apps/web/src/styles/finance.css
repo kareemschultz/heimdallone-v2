@@ -1,0 +1,337 @@
+/* Finance module (Phase 16D) — self-contained; mirrors projects.css with fn- prefix. */
+
+.fn-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 4px 0 16px;
+	border-bottom: 1px solid var(--line);
+}
+.fn-tab {
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg-3);
+	text-decoration: none;
+	border-bottom: 2px solid transparent;
+}
+.fn-tab:hover {
+	color: var(--fg);
+}
+.fn-tab.active {
+	color: var(--fg);
+	border-bottom-color: var(--accent);
+}
+
+/* Badges */
+.fn-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	border-radius: 999px;
+}
+.fn-badge.tone-success {
+	color: var(--success);
+	background: var(--success-soft);
+}
+.fn-badge.tone-warning {
+	color: var(--warning);
+	background: var(--warning-soft);
+}
+.fn-badge.tone-danger {
+	color: var(--danger);
+	background: var(--danger-soft);
+}
+.fn-badge.tone-info {
+	color: var(--info);
+	background: var(--info-soft);
+}
+.fn-badge.tone-neutral {
+	color: var(--fg-3);
+	background: var(--bg-3);
+}
+
+/* Stat tiles */
+.fn-tiles {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+	gap: 12px;
+	margin-bottom: 18px;
+}
+.fn-tile {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 14px 16px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+.fn-tile.alert {
+	border-color: var(--warning);
+}
+.fn-tile-val {
+	font-size: 22px;
+	font-weight: 700;
+	color: var(--fg);
+}
+.fn-tile-lbl {
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.fn-tile-sub {
+	font-size: 11px;
+	color: var(--fg-4);
+}
+
+/* Toolbar / date range */
+.fn-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 14px;
+}
+.fn-toolbar label {
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.fn-toolbar input,
+.fn-toolbar select {
+	height: 32px;
+	padding: 0 10px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+
+/* Table */
+.fn-table {
+	width: 100%;
+	font-size: 13px;
+	border-collapse: collapse;
+}
+.fn-table th {
+	padding: 8px 10px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--fg-3);
+	text-align: left;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	border-bottom: 1px solid var(--line);
+}
+.fn-table td {
+	padding: 10px;
+	vertical-align: middle;
+	color: var(--fg-2);
+	border-bottom: 1px solid var(--line);
+}
+.fn-table td.num,
+.fn-table th.num {
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+.fn-name {
+	font-weight: 600;
+	color: var(--fg);
+}
+.fn-name-link {
+	color: var(--fg);
+	text-decoration: none;
+}
+.fn-name-link:hover {
+	color: var(--accent);
+}
+.fn-sub {
+	font-size: 11.5px;
+	color: var(--fg-4);
+}
+
+/* Cross-link cards (to Payroll-owned surfaces) */
+.fn-quicklinks {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 12px;
+	margin-top: 18px;
+}
+.fn-quicklink {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	padding: 14px 16px;
+	text-decoration: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+.fn-quicklink:hover {
+	border-color: var(--accent);
+}
+.fn-ql-title {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.fn-ql-sub {
+	font-size: 11.5px;
+	color: var(--fg-3);
+}
+
+/* Section heads */
+.fn-section {
+	margin-top: 22px;
+}
+.fn-section-title {
+	margin-bottom: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg);
+}
+
+/* Disclaimer / note callout */
+.fn-note {
+	padding: 10px 12px;
+	margin: 6px 0 14px;
+	font-size: 12px;
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border-left: 3px solid var(--accent);
+	border-radius: 6px;
+}
+
+/* Variance bar */
+.fn-bar-track {
+	position: relative;
+	width: 100%;
+	max-width: 220px;
+	height: 8px;
+	overflow: hidden;
+	background: var(--bg-3);
+	border-radius: 999px;
+}
+.fn-bar-fill {
+	height: 100%;
+	background: var(--accent);
+}
+.fn-bar-fill.over {
+	background: var(--danger);
+}
+
+/* Skeleton + states */
+.fn-skeleton {
+	height: 160px;
+	margin-top: 8px;
+	background: linear-gradient(90deg, var(--bg-2), var(--bg-3), var(--bg-2));
+	border-radius: 12px;
+}
+
+/* Dialog (budget form) */
+.fn-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background: rgba(0, 0, 0, 0.5);
+}
+.fn-dialog {
+	width: 100%;
+	max-width: 460px;
+	max-height: calc(100vh - 40px);
+	padding: 20px;
+	overflow-y: auto;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.fn-dialog h2 {
+	margin: 0 0 4px;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.fn-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin-top: 12px;
+}
+.fn-field label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--fg-2);
+}
+.fn-field input,
+.fn-field select,
+.fn-field textarea {
+	padding: 8px 10px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.fn-dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 18px;
+}
+
+/* Buttons */
+.fn-btn {
+	display: inline-flex;
+	gap: 6px;
+	align-items: center;
+	padding: 7px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg);
+	cursor: pointer;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.fn-btn:hover {
+	border-color: var(--accent);
+}
+.fn-btn.primary {
+	color: #fff;
+	background: var(--accent);
+	border-color: var(--accent);
+}
+.fn-btn.danger {
+	color: var(--danger);
+}
+.fn-btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+.fn-row-actions {
+	display: flex;
+	gap: 6px;
+}
+
+/* Accessible focus rings everywhere (WCAG 2.4.7 — lesson #86). */
+.fn-tab:focus-visible,
+.fn-btn:focus-visible,
+.fn-quicklink:focus-visible,
+.fn-name-link:focus-visible,
+.fn-toolbar input:focus-visible,
+.fn-toolbar select:focus-visible,
+.fn-field input:focus-visible,
+.fn-field select:focus-visible,
+.fn-field textarea:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}
