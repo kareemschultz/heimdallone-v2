@@ -269,6 +269,30 @@ async function main() {
 		`${handoffs.length}`
 	);
 
+	console.log(
+		"\n── 11. sub-resource IDOR: scoped rep can't touch others' records ──"
+	);
+	// salesRep has no linked employee → owner-scope is empty; notes/activities on
+	// a deal they don't own must be blocked (the 17C-review parent-scope fix).
+	await expectAnyError(
+		"sales_rep notes.list on a non-owned deal → blocked",
+		() =>
+			(salesRep as any).crm.notes.list({
+				relatedType: "deal",
+				relatedId: propDeal.id,
+			})
+	);
+	await expectAnyError(
+		"sales_rep activities.create on a non-owned deal → blocked",
+		() =>
+			(salesRep as any).crm.activities.create({
+				relatedType: "deal",
+				relatedId: propDeal.id,
+				type: "call",
+				subject: "x",
+			})
+	);
+
 	console.log(`\n${pass} passed, ${fail} failed\n`);
 	process.exit(fail === 0 ? 0 : 1);
 }

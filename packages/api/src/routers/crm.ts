@@ -402,6 +402,10 @@ const contactInput = z.object({
 const contactsCreate = authorizedProcedure("crm_contact", "create")
 	.input(contactInput)
 	.handler(async ({ context, input }) => {
+		// Tenant-verify the parent customer (cross-tenant FK guard — 17C review).
+		if (input.customerId) {
+			await assertOwned(crmCustomer, input.customerId, orgId(context));
+		}
 		const id = createId();
 		await db.insert(crmContact).values({
 			id,
@@ -423,6 +427,9 @@ const contactsUpdate = authorizedProcedure("crm_contact", "update")
 	.input(contactInput.partial().extend({ id: z.string() }))
 	.handler(async ({ context, input }) => {
 		await assertOwned(crmContact, input.id, orgId(context));
+		if (input.customerId) {
+			await assertOwned(crmCustomer, input.customerId, orgId(context));
+		}
 		const { id, email, ...rest } = input;
 		await db
 			.update(crmContact)
@@ -513,6 +520,34 @@ async function assertOwnerScope(
 	if (!(ownerEmployeeId && scope.includes(ownerEmployeeId))) {
 		throw new ORPCError("FORBIDDEN", { message: "Not in your scope." });
 	}
+}
+
+// Gate access to a polymorphic sub-resource (note/activity) by its PARENT.
+// Leads/deals are owner-scoped (a rep/manager may only touch notes/activities on
+// records in their scope); customers/contacts are org-shared (tenant-verify only).
+// Without this, the AC gate alone would let a scoped caller read/write notes &
+// activities on any record by passing its id (IDOR — flagged by 17C review).
+async function assertRelatedScope(
+	context: unknown,
+	relatedType: "lead" | "customer" | "contact" | "deal",
+	relatedId: string
+) {
+	const oid = orgId(context as never);
+	if (relatedType === "lead") {
+		const row = await assertOwned(crmLead, relatedId, oid);
+		await assertOwnerScope(context, row.ownerEmployeeId as string | null);
+		return;
+	}
+	if (relatedType === "deal") {
+		const row = await assertOwned(crmDeal, relatedId, oid);
+		await assertOwnerScope(context, row.ownerEmployeeId as string | null);
+		return;
+	}
+	if (relatedType === "customer") {
+		await assertOwned(crmCustomer, relatedId, oid);
+		return;
+	}
+	await assertOwned(crmContact, relatedId, oid);
 }
 
 const leadInput = z.object({
@@ -998,8 +1033,20 @@ const activitiesList = authorizedProcedure("crm_activity", "read")
 			ACTIVE(crmActivity.deletedAt),
 		];
 		if (input?.relatedType && input?.relatedId) {
+			// Gate by the parent record's owner scope (IDOR — 17C review).
+			await assertRelatedScope(context, input.relatedType, input.relatedId);
 			conds.push(eq(crmActivity.relatedType, input.relatedType));
 			conds.push(eq(crmActivity.relatedId, input.relatedId));
+		} else {
+			// No parent given (e.g. the "my open follow-ups" feed): a scoped caller
+			// only sees activities assigned within their own/team scope.
+			const scope = await ownerScope(context);
+			if (scope) {
+				if (scope.length === 0) {
+					return [];
+				}
+				conds.push(inArray(crmActivity.assignedToEmployeeId, scope));
+			}
 		}
 		if (input?.openOnly) {
 			conds.push(isNull(crmActivity.completedAt));
@@ -1037,6 +1084,7 @@ const activitiesCreate = authorizedProcedure("crm_activity", "create")
 		})
 	)
 	.handler(async ({ context, input }) => {
+		await assertRelatedScope(context, input.relatedType, input.relatedId);
 		const id = createId();
 		await db.insert(crmActivity).values({
 			id,
@@ -1069,7 +1117,13 @@ const activitiesCreate = authorizedProcedure("crm_activity", "create")
 const activitiesComplete = authorizedProcedure("crm_activity", "update")
 	.input(z.object({ id: z.string() }))
 	.handler(async ({ context, input }) => {
-		await assertActivityOwned(input.id, orgId(context));
+		const act = await assertActivityOwned(input.id, orgId(context));
+		// Gate by the activity's parent record scope (IDOR — 17C review).
+		await assertRelatedScope(
+			context,
+			act.relatedType as "lead" | "customer" | "contact" | "deal",
+			act.relatedId as string
+		);
 		await db
 			.update(crmActivity)
 			.set({ completedAt: new Date() })
@@ -1085,15 +1139,23 @@ const activitiesComplete = authorizedProcedure("crm_activity", "update")
 		return { id: input.id };
 	});
 
-async function assertActivityOwned(id: string, oid: string) {
+async function assertActivityOwned(
+	id: string,
+	oid: string
+): Promise<{ relatedType: string; relatedId: string }> {
 	const [row] = await db
-		.select({ id: crmActivity.id })
+		.select({
+			id: crmActivity.id,
+			relatedType: crmActivity.relatedType,
+			relatedId: crmActivity.relatedId,
+		})
 		.from(crmActivity)
 		.where(and(eq(crmActivity.id, id), eq(crmActivity.organizationId, oid)))
 		.limit(1);
 	if (!row) {
 		throw new ORPCError("NOT_FOUND", { message: "Activity not found." });
 	}
+	return { relatedType: row.relatedType, relatedId: row.relatedId };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -1103,6 +1165,8 @@ async function assertActivityOwned(id: string, oid: string) {
 const notesList = authorizedProcedure("crm_note", "read")
 	.input(relatedSchema)
 	.handler(async ({ context, input }) => {
+		// Gate by the parent record's owner scope (IDOR — 17C review).
+		await assertRelatedScope(context, input.relatedType, input.relatedId);
 		const conds = [
 			eq(crmNote.organizationId, orgId(context)),
 			eq(crmNote.relatedType, input.relatedType),
@@ -1129,6 +1193,7 @@ const notesCreate = authorizedProcedure("crm_note", "create")
 		})
 	)
 	.handler(async ({ context, input }) => {
+		await assertRelatedScope(context, input.relatedType, input.relatedId);
 		const id = createId();
 		await db.insert(crmNote).values({
 			id,
