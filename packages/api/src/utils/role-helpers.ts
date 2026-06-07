@@ -52,6 +52,44 @@ export function seesAllFinance(role: MemberRole): boolean {
 	return canManagePayroll(role) || role === "auditor";
 }
 
+// CRM (Phase 17) — Lead→Customer→Deal coordination layer. Mirror of
+// apps/web/src/lib/rbac.ts; aligned BYTE-FOR-BYTE to the `crm_*` AC grants in
+// permissions.ts (NOT spec prose — hr_admin/recruiter/helpdesk/employee have NO
+// crm grant, so they are excluded; the "finance" role = payroll_admin).
+// `seesAllCrm` is the lateral-scope ceiling: these roles see all leads/deals;
+// sales_rep sees own, manager sees team (handler-enforced).
+export function seesAllCrm(role: MemberRole): boolean {
+	return (
+		isOwnerOrAdmin(role) ||
+		role === "sales_admin" ||
+		role === "payroll_admin" ||
+		role === "auditor" ||
+		role === "project_manager"
+	);
+}
+
+export function canViewCrm(role: MemberRole): boolean {
+	return seesAllCrm(role) || role === "sales_rep" || role === "manager";
+}
+
+export function canManageCrm(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "sales_admin" || role === "sales_rep";
+}
+
+export function canManageCrmSettings(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "sales_admin";
+}
+
+// All CRM viewers see deal value in MVP (employees can't view CRM at all). Kept
+// as its own helper so a future view-but-no-money role redacts cleanly.
+export function canSeeCrmMoney(role: MemberRole): boolean {
+	return canViewCrm(role);
+}
+
+export function canReadPrivateCrmNotes(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "sales_admin" || role === "sales_rep";
+}
+
 // Recruitment (Phase 9C)
 export function canManageRecruitment(role: MemberRole): boolean {
 	return canManageHR(role) || role === "recruiter";

@@ -55,6 +55,39 @@ export function seesAllFinance(role: MemberRole): boolean {
 	return canManagePayroll(role) || role === "auditor";
 }
 
+// CRM (Phase 17) — mirror of packages/api/src/utils/role-helpers.ts; aligned
+// byte-for-byte to the `crm_*` AC grants (hr_admin/recruiter/helpdesk/employee
+// have NO crm grant; "finance" role = payroll_admin).
+export function seesAllCrm(role: MemberRole): boolean {
+	return (
+		isOwnerOrAdmin(role) ||
+		role === "sales_admin" ||
+		role === "payroll_admin" ||
+		role === "auditor" ||
+		role === "project_manager"
+	);
+}
+
+export function canViewCrm(role: MemberRole): boolean {
+	return seesAllCrm(role) || role === "sales_rep" || role === "manager";
+}
+
+export function canManageCrm(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "sales_admin" || role === "sales_rep";
+}
+
+export function canManageCrmSettings(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "sales_admin";
+}
+
+export function canSeeCrmMoney(role: MemberRole): boolean {
+	return canViewCrm(role);
+}
+
+export function canReadPrivateCrmNotes(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "sales_admin" || role === "sales_rep";
+}
+
 export function isEmployee(role: MemberRole): boolean {
 	return role === "employee";
 }
