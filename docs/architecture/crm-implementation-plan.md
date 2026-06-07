@@ -1,17 +1,25 @@
-# CRM Implementation Plan — DRAFTED / QUEUED (Phase 17 candidate)
+# CRM Implementation Plan — ACTIVE (Phase 17A spec ✅)
 
-> **Status: DRAFTED & QUEUED — future-only. NOT an active phase, NOT scheduled, NO code.**
-> This is a **spec/research-only synthesis** (Phase 17A: the "A" deliverable). It contains
-> **no code, no Drizzle schema, no migrations, no routes**. Field lists below are conceptual
-> prose, not table definitions.
+> **Status: ACTIVE — Phase 17 kicked off 2026-06-07. 17A = this spec (reviewed).**
+> All gating foundations now EXIST: People/Payroll ✅, Assets (12) ✅, Helpdesk (13) ✅,
+> **Projects / Tasks / Timelines (14) ✅**, Performance (15) ✅, **Finance (16) ✅**. The
+> right-half thesis (deal → Project handoff → staffing → timesheets → payroll cost) can now wire
+> to REAL modules: `project` tables exist (14B) and the Finance labour-cost report (16C) already
+> reads project time × contract rate. The `crm_customer_project_link.projectId` soft-ref can
+> become a real link.
 >
-> **Do NOT implement until the foundations it leans on are stable.** CRM is gated behind
-> **Phases 12–16** — it must wait for **People/Payroll (✅), Assets (Phase 12), Helpdesk /
-> Requests (Phase 13-ish), and especially Projects / Tasks / Timelines** to exist, because the
-> CRM's whole value thesis is the handoff into Projects → staffing → timesheets → payroll cost.
-> Per the roadmap directive (implementation-sequence.md): **Phase 12 = Assets → Helpdesk /
-> Requests → Projects / Tasks / Timelines → Performance → Finance expansion → CRM.** CRM is
-> last in that chain by design.
+> **Kickoff re-validation (§9 resolved against the live codebase 2026-06-07):**
+> - **Foundations (Q1):** Projects (14) + Finance (16) now exist → 17F can wire the handoff to a
+>   real `project` row (still ship the scaffold first; do NOT over-couple).
+> - **New roles (Q7):** `project_manager` ALREADY exists (added Phase 14B) — do NOT re-add. Only
+>   `sales_admin` + `sales_rep` are net-new in 17B.
+> - **Lead vs Deal (Q2):** separate tables — confirmed.
+> - **Single pipeline (Q3), source enum (Q5), activity-folds-task (Q9), single currency (Q11):**
+>   all confirmed as specified.
+> - **File/document handling (Q10):** still deferred platform-wide → 17G import/export is honest
+>   "coming later" if no file storage; CSV string export only.
+>
+> 17B+ proceeds as scheduled below.
 >
 > This document is a **draft synthesis from live-doc research** (June 2026). When Phase 17
 > actually begins, every assumption flagged in §9 must be **re-validated against live docs** —
