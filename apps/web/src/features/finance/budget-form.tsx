@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { orpc } from "@/utils/orpc";
 import type { BudgetCategory, BudgetRow, BudgetScope } from "./types";
@@ -45,6 +45,17 @@ export function BudgetForm({ existing, onCancel, onSubmit }: BudgetFormProps) {
 	const [notes, setNotes] = useState(existing?.notes ?? "");
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+
+	// Escape-to-close (a11y). Focus-trap remains the app-wide deferred pattern.
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") {
+				onCancel();
+			}
+		};
+		document.addEventListener("keydown", onKey);
+		return () => document.removeEventListener("keydown", onKey);
+	}, [onCancel]);
 
 	const departments = useQuery(
 		orpc.hrCore.departments.list.queryOptions({

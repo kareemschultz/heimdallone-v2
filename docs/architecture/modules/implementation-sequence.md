@@ -14,7 +14,7 @@ Phase 12:  Assets ✅ COMPLETE (Operations; 12B DB → 12C API → 12D UI → 12
 Phase 13:  Helpdesk / Requests ✅ COMPLETE (Operations; 13A spec → 13B DB → 13C API → 13D-13G UI → 13H QA/RBAC/security pass) — request/ticket LAYER that LINKS to Assets/Payroll/Leave/Offboarding, never duplicates them
 Phase 14:  Projects + Tasks & Timelines ✅ COMPLETE (Operations; 14A spec → 14B DB → 14C API → 14D-14H UI → 14I QA ✅) — coordination layer (link, never own)
 Phase 15:  Performance / PMS ✅ COMPLETE (People&Payroll; 15A→15B→15C→15D→15E→15F→15G→15H→15I QA all ✅) — owns performance data, links read-only (points ≠ pay; reads project task-completion, never writes Projects/Payroll)
-Phase 16:  Finance expansion (Finance — costing + budgets coordination layer; 16A spec done, see finance-implementation-plan.md). NOTE: payment batches/bank exports/loans/reimbursements ALREADY exist under Payroll (Phase 8); Phase 16 adds cross-module labour-cost reporting + budget-vs-actual + Finance product surface, links read-only (never mutates payroll/attendance/projects)
+Phase 16:  Finance expansion ✅ COMPLETE (Finance — costing + budgets coordination layer; 16A spec → 16B DB → 16C API → 16D-16G UI → 16I QA). Cross-module labour-cost reporting + project/job costing + budget-vs-actual + Finance product surface; OWNS only finance_budget, links read-only (never mutates payroll/attendance/projects). Payment batches/bank exports/loans/reimbursements remain under Payroll (Phase 8), cross-linked
 Phase 17:  CRM (research/spec at 17A — see crm-implementation-plan.md; FUTURE)
 Phase 18:  Analytics / Executive dashboards
 Phase 19:  Enterprise QA / accessibility / security hardening

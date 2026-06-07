@@ -37,7 +37,8 @@ export function varianceTone(variance: number): BadgeTone {
 		return "danger";
 	}
 	if (variance === 0) {
-		return "warning";
+		// Exactly on budget is neutral, not a warning (matches the "On budget" label).
+		return "neutral";
 	}
 	return "success";
 }

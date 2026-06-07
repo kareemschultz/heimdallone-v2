@@ -669,7 +669,12 @@ const budgetsUpdate = authorizedProcedure("finance", "manage_budget")
 		await db
 			.update(financeBudget)
 			.set(patch)
-			.where(eq(financeBudget.id, input.id));
+			.where(
+				and(
+					eq(financeBudget.id, input.id),
+					eq(financeBudget.organizationId, oid)
+				)
+			);
 		await createAuditEvent(db as never, {
 			organizationId: oid,
 			entityType: "finance_budget",
@@ -701,7 +706,14 @@ const budgetsRemove = authorizedProcedure("finance", "manage_budget")
 		if (!existing) {
 			throw new ORPCError("NOT_FOUND", { message: "Budget not found." });
 		}
-		await db.delete(financeBudget).where(eq(financeBudget.id, input.id));
+		await db
+			.delete(financeBudget)
+			.where(
+				and(
+					eq(financeBudget.id, input.id),
+					eq(financeBudget.organizationId, oid)
+				)
+			);
 		await createAuditEvent(db as never, {
 			organizationId: oid,
 			entityType: "finance_budget",

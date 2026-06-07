@@ -82,6 +82,9 @@ function FinanceBudgetsPage() {
 	}
 
 	async function handleRemove(b: BudgetRow) {
+		// NOTE: no confirm step — consistent with sibling modules (no shared
+		// ConfirmDialog pattern yet; window.confirm is lint-banned). A confirm
+		// dialog is a documented app-wide follow-up.
 		await client.finance.budgets.remove({ id: b.id });
 		toast.success("Budget removed.");
 		invalidateFinance(qc);
