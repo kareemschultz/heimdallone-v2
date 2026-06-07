@@ -124,7 +124,7 @@ their reports' departments; auditor/payroll → all; employee → FORBIDDEN).
 
 ### `costReports` (finance:read)
 - `summary({ from, to })` → total labour cost over a payslip date range:
-  `{ grossPay, totalDeductions, netPay, totalEmployerContributions, totalCost (gross+employer), employeeCount, payslipCount, currency }`. Sourced from `payslip` where `periodStart/periodEnd` intersect the range (status confirmed/paid only — drafts excluded, documented).
+  `{ grossPay, totalDeductions, netPay, totalEmployerContributions, totalCost (gross+employer), employeeCount, payslipCount, currency }`. Sourced from `payslip` where `periodStart/periodEnd` intersect the range and the payslip is **non-reversed** (any draft/confirmed/paid generated payslip counts as labour cost for its period — a generated payslip IS a calculated cost; this matches the existing payroll cost-by-department report, which also counts payslips regardless of confirm status; reversed payslips net out and are excluded). Figures are labelled "generated payroll cost," not "cash paid."
 - `byDepartment({ from, to })` → array `{ departmentId, departmentName, grossPay, totalEmployerContributions, totalCost, employeeCount }` (improves the payroll single-run report: range + employer contributions). Manager-scoped.
 - `byCostType({ from, to })` → grouped by `payslip_line_item.type` (earning/deduction/tax/employer_contribution) → `{ type, amount }`.
 - `byEmploymentType({ from, to })` → grouped by contract `wageType`/`workType`.
@@ -206,8 +206,13 @@ nav-hidden.
 
 1. **New table for cost snapshots?** No — pure aggregation at read time. Snapshot
    table is a future perf optimization.
-2. **Include draft payslips in cost?** No — confirmed/paid only (drafts are
-   not committed cost). Documented in report copy.
+2. **Which payslips count as cost?** All **non-reversed** generated payslips
+   (draft/confirmed/paid) — a generated payslip is a calculated labour cost for
+   its period, and this matches the existing payroll cost-by-department report.
+   Reversed payslips are excluded. Figures are labelled "generated payroll cost"
+   (not "cash paid"). *(Revised from an initial confirmed/paid-only stance:
+   the demo org, like most pre-confirm states, holds only draft payslips, and
+   excluding them would make Finance blind to real labour cost.)*
 3. **Project cost rate source?** Contract-derived hourly rate, flagged as
    estimate. (Payslip-level project allocation would need a new payroll↔project
    link we deliberately don't build.)

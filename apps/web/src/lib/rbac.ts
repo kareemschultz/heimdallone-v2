@@ -33,6 +33,28 @@ export function canViewPayroll(role: MemberRole): boolean {
 	return canManagePayroll(role) || role === "auditor";
 }
 
+// Finance (Phase 16) — costing + budgeting coordination layer. Mirror of
+// packages/api/src/utils/role-helpers.ts; aligned to the `finance` AC grant.
+// Managers can VIEW cost reports but are department-scoped server-side (they
+// see only their own + direct reports' departments) — never all-org.
+export function canViewFinance(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor" || role === "manager";
+}
+
+export function canManageBudgets(role: MemberRole): boolean {
+	return canManagePayroll(role);
+}
+
+export function canExportFinance(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
+
+// Whether a finance viewer sees ALL departments (true) or is scoped to their own
+// + direct reports' departments (false — managers).
+export function seesAllFinance(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
+
 export function isEmployee(role: MemberRole): boolean {
 	return role === "employee";
 }

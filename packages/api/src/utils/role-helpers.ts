@@ -30,6 +30,28 @@ export function canViewPayroll(role: MemberRole): boolean {
 	return canManagePayroll(role) || role === "auditor";
 }
 
+// Finance (Phase 16) — costing + budgeting coordination layer. Mirror of
+// apps/web/src/lib/rbac.ts; aligned to the `finance` AC grant in permissions.ts.
+// Managers can VIEW cost reports but are department-scoped in the handler (they
+// see only their own + direct reports' departments) — never all-org.
+export function canViewFinance(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor" || role === "manager";
+}
+
+export function canManageBudgets(role: MemberRole): boolean {
+	return canManagePayroll(role);
+}
+
+export function canExportFinance(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
+
+// Whether a finance viewer sees ALL departments (true) or is scoped to their own
+// + direct reports' departments (false — managers).
+export function seesAllFinance(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
+
 // Recruitment (Phase 9C)
 export function canManageRecruitment(role: MemberRole): boolean {
 	return canManageHR(role) || role === "recruiter";
