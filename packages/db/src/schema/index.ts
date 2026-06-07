@@ -3,6 +3,7 @@ export * from "./assets";
 export * from "./attendance";
 export * from "./auth";
 export * from "./biometric";
+export * from "./crm";
 export * from "./finance";
 export * from "./helpdesk";
 export * from "./hr-core";

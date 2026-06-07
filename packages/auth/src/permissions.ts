@@ -141,9 +141,34 @@ export const statement = {
 		"manage_interview",
 		"read_settlement",
 	],
+
+	// CRM (Phase 17B) — Lead → Customer → Deal coordination layer. New resources
+	// consumed first by the 17C `crm` router (audit rises then; 16B/15B/14B
+	// precedent — unconsumed at the DB phase). `convert` (lead→customer+contact+
+	// deal), `advance_stage`/`handoff` (deal), `manage` (pipeline settings), and
+	// `read_private` (private sales notes — the redaction surface) are
+	// least-privilege actions split out from generic update.
+	crm_customer: ["create", "read", "update", "archive"],
+	crm_contact: ["create", "read", "update", "archive"],
+	crm_lead: ["create", "read", "update", "archive", "convert"],
+	crm_deal: ["create", "read", "update", "archive", "advance_stage", "handoff"],
+	crm_pipeline: ["read", "manage"],
+	crm_activity: ["create", "read", "update", "archive"],
+	crm_note: ["create", "read", "update", "archive", "read_private"],
 } as const;
 
 export const ac = createAccessControl(statement);
+
+// CRM full-grant arrays (Phase 17B) — spread into the sales-admin/owner blocks.
+const FULL_CRM = {
+	crm_customer: ["create", "read", "update", "archive"],
+	crm_contact: ["create", "read", "update", "archive"],
+	crm_lead: ["create", "read", "update", "archive", "convert"],
+	crm_deal: ["create", "read", "update", "archive", "advance_stage", "handoff"],
+	crm_pipeline: ["read", "manage"],
+	crm_activity: ["create", "read", "update", "archive"],
+	crm_note: ["create", "read", "update", "archive", "read_private"],
+} as const;
 
 // Biometric + Geofencing (Phase 11C) — the full managing grant for
 // owner/admin/hr_admin. Spread into those role blocks.
@@ -263,6 +288,7 @@ export const tenant_owner = ac.newRole({
 	task: FULL_TASK,
 	time_entry: FULL_TIME_ENTRY,
 	...MANAGE_BIOMETRIC,
+	...FULL_CRM,
 });
 
 export const tenant_admin = ac.newRole({
@@ -329,6 +355,7 @@ export const tenant_admin = ac.newRole({
 	task: FULL_TASK,
 	time_entry: FULL_TIME_ENTRY,
 	...MANAGE_BIOMETRIC,
+	...FULL_CRM,
 });
 
 export const hr_admin = ac.newRole({
@@ -422,6 +449,12 @@ export const payroll_admin = ac.newRole({
 	project: ["read", "view_costs"],
 	task: ["read"],
 	time_entry: ["read", "approve", "view_costs"],
+	crm_customer: ["read"],
+	crm_contact: ["read"],
+	crm_deal: ["read"],
+	crm_activity: ["read"],
+	crm_note: ["read"],
+	crm_pipeline: ["read"],
 });
 
 export const manager = ac.newRole({
@@ -456,6 +489,13 @@ export const manager = ac.newRole({
 	task: ["read", "update", "assign", "change_status", "comment"],
 	time_entry: ["read", "approve"],
 	finance: ["read"],
+	crm_customer: ["read"],
+	crm_contact: ["read"],
+	crm_lead: ["read"],
+	crm_deal: ["read"],
+	crm_activity: ["create", "read"],
+	crm_note: ["read"],
+	crm_pipeline: ["read"],
 });
 
 export const employee = ac.newRole({
@@ -527,6 +567,13 @@ export const auditor = ac.newRole({
 	project: ["read", "view_costs", "view_internal_notes"],
 	task: ["read", "view_internal_notes"],
 	time_entry: ["read", "view_costs"],
+	crm_customer: ["read"],
+	crm_contact: ["read"],
+	crm_lead: ["read"],
+	crm_deal: ["read"],
+	crm_activity: ["read"],
+	crm_note: ["read"],
+	crm_pipeline: ["read"],
 });
 
 export const recruiter = ac.newRole({
@@ -575,6 +622,37 @@ export const project_manager = ac.newRole({
 	],
 	task: FULL_TASK,
 	time_entry: ["create", "read", "update", "submit", "approve"],
+	crm_customer: ["read"],
+	crm_deal: ["read", "handoff"],
+	crm_activity: ["create", "read"],
+	crm_note: ["read"],
+	crm_pipeline: ["read"],
+});
+
+// CRM admin (Phase 17B) — the org-wide sales/CRM administrator: full pipeline +
+// all leads/customers/deals + settings + private notes. The CRM analogue of
+// hr_admin / payroll_admin / project_manager.
+export const sales_admin = ac.newRole({
+	...memberAc.statements,
+	employee: ["read"],
+	document: ["read"],
+	...FULL_CRM,
+});
+
+// CRM rep (Phase 17B) — owns/works their OWN leads & deals (handler enforces the
+// owner/team lateral scope; the grant is the ceiling). No pipeline settings, but
+// may read private notes they author/own (handler-scoped).
+export const sales_rep = ac.newRole({
+	...memberAc.statements,
+	employee: ["read"],
+	document: ["read"],
+	crm_customer: ["create", "read", "update"],
+	crm_contact: ["create", "read", "update"],
+	crm_lead: ["create", "read", "update", "convert"],
+	crm_deal: ["create", "read", "update", "advance_stage", "handoff"],
+	crm_activity: ["create", "read", "update"],
+	crm_note: ["create", "read", "read_private"],
+	crm_pipeline: ["read"],
 });
 
 export const roles = {
@@ -588,6 +666,8 @@ export const roles = {
 	recruiter,
 	helpdesk_agent,
 	project_manager,
+	sales_admin,
+	sales_rep,
 } as const;
 
 export type TenantRole = keyof typeof roles;
