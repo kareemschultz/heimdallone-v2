@@ -41,6 +41,13 @@ export const statement = {
 		"write_off",
 	],
 
+	// Finance (Phase 16B) — costing + budgeting COORDINATION layer. Reads
+	// payroll/projects/contracts read-only; OWNS only finance_budget. `read` =
+	// cost reports + budgets view; `manage_budget` = budget CRUD; `export` =
+	// cost CSV. First consumer = the 16C finance router → audit 121/15 → ~124/16.
+	// journal/account stay UNCONSUMED (accounting/GL integration deferred).
+	finance: ["read", "manage_budget", "export"],
+
 	attendance: ["create", "read", "correct"],
 	attendance_device: ["read", "manage", "sync"],
 	attendance_punch: ["read", "process", "import"],
@@ -222,6 +229,7 @@ export const tenant_owner = ac.newRole({
 		"disburse",
 		"write_off",
 	],
+	finance: ["read", "manage_budget", "export"],
 	attendance: ["create", "read", "correct"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
@@ -287,6 +295,7 @@ export const tenant_admin = ac.newRole({
 		"disburse",
 		"write_off",
 	],
+	finance: ["read", "manage_budget", "export"],
 	attendance: ["create", "read", "correct"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
@@ -345,6 +354,7 @@ export const hr_admin = ac.newRole({
 	payroll_period: ["create", "read"],
 	advance: ["create", "read", "approve_hr"],
 	loan: ["create", "read", "approve_hr"],
+	finance: ["read", "manage_budget", "export"],
 	attendance: ["create", "read", "correct"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
@@ -381,6 +391,7 @@ export const payroll_admin = ac.newRole({
 	payroll_period: ["create", "read", "finalize", "cancel", "delete"],
 	advance: ["read", "approve_accounting", "disburse"],
 	loan: ["read", "approve_accounting", "disburse", "write_off"],
+	finance: ["read", "manage_budget", "export"],
 	attendance: ["read"],
 	attendance_device: ["read"],
 	attendance_punch: ["read"],
@@ -444,6 +455,7 @@ export const manager = ac.newRole({
 	project: ["read"],
 	task: ["read", "update", "assign", "change_status", "comment"],
 	time_entry: ["read", "approve"],
+	finance: ["read"],
 });
 
 export const employee = ac.newRole({
@@ -489,6 +501,7 @@ export const auditor = ac.newRole({
 	payroll_period: ["read"],
 	advance: ["read"],
 	loan: ["read"],
+	finance: ["read", "export"],
 	attendance: ["read"],
 	leave_request: ["read"],
 	holiday: ["read"],
