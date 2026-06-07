@@ -100,14 +100,6 @@ async function employeeNameMap(
 	return map;
 }
 
-// ── redaction ──
-function redactDealMoney<T extends { value: unknown }>(row: T, r: string): T {
-	if (canSeeCrmMoney(r)) {
-		return row;
-	}
-	return { ...row, value: null };
-}
-
 const ACTIVE = (col: AnyColumn) => isNull(col);
 
 // ═══════════════════════════════════════════════════════════════
@@ -786,7 +778,7 @@ const dealsList = authorizedProcedure("crm_deal", "read")
 		const r = role(context);
 		const now = Date.now();
 		return rows.map((row) => ({
-			...redactDealMoney(row, r),
+			...row,
 			value: canSeeCrmMoney(r) ? num(row.value) : null,
 			ownerName: row.ownerEmployeeId
 				? (ownerNames.get(row.ownerEmployeeId) ?? null)

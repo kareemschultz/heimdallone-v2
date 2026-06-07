@@ -156,6 +156,11 @@ function LostReasonDialog({
 	onConfirm: (reason: string) => void;
 }) {
 	const [reason, setReason] = useState("");
+	useEffect(() => {
+		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
+		document.addEventListener("keydown", onKey);
+		return () => document.removeEventListener("keydown", onKey);
+	}, [onCancel]);
 	return (
 		<div className="crm-dialog-backdrop">
 			<div

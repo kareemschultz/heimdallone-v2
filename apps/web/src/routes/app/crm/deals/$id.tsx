@@ -177,21 +177,25 @@ function CrmDealDetailPage() {
 								</div>
 							</div>
 						) : null}
-						{noteRows.length === 0 ? (
+						{notes.isError ? (
+							<p className="crm-sub">Couldn't load notes — please try again.</p>
+						) : null}
+						{!notes.isError && noteRows.length === 0 ? (
 							<p className="crm-sub">No notes yet.</p>
-						) : (
-							noteRows.map((n) => (
-								<div
-									className={`crm-attention-row ${n.visibility === "private" ? "crm-note-private" : ""}`}
-									key={n.id}
-								>
-									{n.visibility === "private" ? (
-										<span className="crm-badge tone-warning">Private</span>
-									) : null}
-									<span>{n.body}</span>
-								</div>
-							))
-						)}
+						) : null}
+						{!notes.isError && noteRows.length > 0
+							? noteRows.map((n) => (
+									<div
+										className={`crm-attention-row ${n.visibility === "private" ? "crm-note-private" : ""}`}
+										key={n.id}
+									>
+										{n.visibility === "private" ? (
+											<span className="crm-badge tone-warning">Private</span>
+										) : null}
+										<span>{n.body}</span>
+									</div>
+								))
+							: null}
 					</div>
 				</>
 			)}

@@ -28,6 +28,7 @@ export const Route = createFileRoute("/app/crm/customers/$id")({
 	component: CrmCustomerDetailPage,
 });
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: many flat, independently error/empty-gated detail sections (summary + contacts + deals + delivery) — splitting would scatter the page's queries.
 function CrmCustomerDetailPage() {
 	const { id } = Route.useParams();
 	const org = useContext(OrgCtx);
@@ -135,9 +136,15 @@ function CrmCustomerDetailPage() {
 						<div className="crm-section-title">
 							Contacts ({contactRows.length})
 						</div>
-						{contactRows.length === 0 ? (
+						{contacts.isError ? (
+							<p className="crm-sub">
+								Couldn't load contacts — please try again.
+							</p>
+						) : null}
+						{!contacts.isError && contactRows.length === 0 ? (
 							<p className="crm-sub">No contacts yet.</p>
-						) : (
+						) : null}
+						{!contacts.isError && contactRows.length > 0 ? (
 							<table className="crm-table">
 								<tbody>
 									{contactRows.map((ct) => (
@@ -159,14 +166,18 @@ function CrmCustomerDetailPage() {
 									))}
 								</tbody>
 							</table>
-						)}
+						) : null}
 					</div>
 
 					<div className="crm-section">
 						<div className="crm-section-title">Deals ({dealRows.length})</div>
-						{dealRows.length === 0 ? (
+						{deals.isError ? (
+							<p className="crm-sub">Couldn't load deals — please try again.</p>
+						) : null}
+						{!deals.isError && dealRows.length === 0 ? (
 							<p className="crm-sub">No deals yet.</p>
-						) : (
+						) : null}
+						{!deals.isError && dealRows.length > 0 ? (
 							<table className="crm-table">
 								<tbody>
 									{dealRows.map((d) => (
@@ -192,7 +203,7 @@ function CrmCustomerDetailPage() {
 									))}
 								</tbody>
 							</table>
-						)}
+						) : null}
 					</div>
 
 					<div className="crm-section">
@@ -203,6 +214,11 @@ function CrmCustomerDetailPage() {
 							Won deals handed off for delivery. Linking to a real project
 							happens in Projects.
 						</p>
+						{handoffs.isError ? (
+							<p className="crm-sub">
+								Couldn't load handoffs — please try again.
+							</p>
+						) : null}
 						{handoffRows.map((h) => (
 							<div className="crm-attention-row" key={h.id}>
 								<Badge tone="info">{handoffStatusLabel(h.handoffStatus)}</Badge>
