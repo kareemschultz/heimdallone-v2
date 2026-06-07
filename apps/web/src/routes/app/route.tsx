@@ -18,6 +18,7 @@ import {
 	FileText,
 	FolderKanban,
 	Globe,
+	Handshake,
 	Info,
 	Landmark,
 	LayoutDashboard,
@@ -87,6 +88,18 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	// Managers can VIEW Finance cost reports but are department-scoped server-side
 	// (own + direct reports' departments). canViewFinance includes "manager".
 	"finance",
+	// Managers see CRM (team-scoped server-side). canViewCrm includes "manager".
+	"crm",
+	"settings",
+]);
+
+// Sales roles (Phase 17) — sales_admin / sales_rep see the CRM surface + the
+// basics. Without an explicit set, isNavItemVisible would default unknown roles
+// to see-all.
+const SALES_VISIBLE_KEYS = new Set([
+	"overview",
+	"crm",
+	"documents",
 	"settings",
 ]);
 const RECRUITER_VISIBLE_KEYS = new Set([
@@ -116,6 +129,7 @@ const PROJECT_MANAGER_VISIBLE_KEYS = new Set([
 	"assets",
 	"helpdesk",
 	"projects",
+	"crm",
 	"documents",
 	"settings",
 ]);
@@ -209,6 +223,17 @@ const NAV = [
 				label: "Finance",
 				icon: Landmark,
 				href: "/app/finance",
+			},
+		],
+	},
+	{
+		group: "CRM",
+		items: [
+			{
+				key: "crm",
+				label: "CRM",
+				icon: Handshake,
+				href: "/app/crm",
 			},
 		],
 	},
@@ -329,6 +354,9 @@ function isNavItemVisible(key: string, role: string): boolean {
 	}
 	if (role === "project_manager") {
 		return PROJECT_MANAGER_VISIBLE_KEYS.has(key);
+	}
+	if (role === "sales_admin" || role === "sales_rep") {
+		return SALES_VISIBLE_KEYS.has(key);
 	}
 	return true;
 }
