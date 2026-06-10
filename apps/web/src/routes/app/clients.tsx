@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { PreviewBanner } from "@/components/preview-banner";
 
 export const Route = createFileRoute("/app/clients")({
@@ -15,8 +15,10 @@ function ClientsPage() {
 						<span className="sep">/</span>
 						<span>Clients</span>
 					</div>
-					<h1 className="page-title">Clients</h1>
-					<p className="page-sub">Shared services client management</p>
+					<h1 className="page-title">Client Portal</h1>
+					<p className="page-sub">
+						Planned external client-facing portal — distinct from CRM
+					</p>
 				</div>
 			</div>
 			<PreviewBanner module="the Clients page" />
@@ -32,19 +34,26 @@ function ClientsPage() {
 				}}
 			>
 				<div className="eyebrow" style={{ marginBottom: "12px" }}>
-					Coming Soon
+					Planned
 				</div>
-				<h3>Clients</h3>
+				<h3>Client Portal</h3>
 				<p
 					style={{
-						maxWidth: "420px",
+						maxWidth: "460px",
 						marginTop: "8px",
 						fontSize: "13.5px",
 						color: "var(--fg-3)",
 					}}
 				>
-					Shared services client management. This module will be implemented in
-					a future phase.
+					A planned external-facing portal for shared-services clients. For
+					internal customer, lead, and deal management, the{" "}
+					<Link
+						style={{ color: "var(--accent)", textDecoration: "underline" }}
+						to="/app/crm/customers"
+					>
+						CRM module
+					</Link>{" "}
+					is already live.
 				</p>
 			</div>
 		</div>

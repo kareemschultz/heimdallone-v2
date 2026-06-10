@@ -44,6 +44,8 @@
     "check": "ultracite check",
     "fix": "ultracite fix",
     "audit:permissions": "bun scripts/audit-permissions.ts",
+    "verify:db": "bun scripts/verify-performance-db.ts && bun scripts/verify-crm-db.ts && bun scripts/verify-finance-db.ts",
+    "verify:core": "bun run audit:permissions && bun run verify:db",
     "prepare": "husky"
   },
   "dependencies": {

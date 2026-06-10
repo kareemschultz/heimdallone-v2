@@ -40,18 +40,14 @@ Phase 20:  Production readiness ✅ COMPLETE (docs/production-readiness.md — g
 > 17 CRM → 18 Analytics/Executive dashboards → 19 Enterprise QA/accessibility/security
 > hardening → 20 Production readiness.
 >
-> **Future modules — DO NOT implement yet:** CRM, Finance, Projects, and Tasks are
-> future-only. Document the roadmap; keep them queued/hidden. **CRM is the furthest
-> out**: when Phase 17 begins, **17A is research/spec-only** (no code) — see
-> [crm-implementation-plan.md](../crm-implementation-plan.md). Do NOT build CRM from
-> scratch by guessing; the 17A plan synthesises Odoo, ERPNext, TwentyCRM, SuiteCRM,
-> EspoCRM, Vtiger, YetiForce/OroCRM, HubSpot, Salesforce, Zoho, Pipedrive, Attio,
-> Dynamics 365 (+ Horilla/OpenHRMS only where HR ops intersect CRM). The CRM thesis
-> for Heimdallone is the cross-suite flow **Lead → Customer → Deal → Project → Staff
-> assignment → Timesheets → Payroll cost → Invoice/report** — CRM exists to connect
-> sales to people/operations/payroll cost, not just to track sales. Do not implement
-> CRM until People/Payroll + Assets + Helpdesk/Requests + Projects foundations are
-> stable unless explicitly told to move it earlier.
+> **(HISTORICAL — superseded 2026-06-10) Future modules note:** This block
+> originally said CRM/Finance/Projects/Tasks were "future-only, do not implement
+> yet." Those modules are now **LIVE**: Projects (Phase 14), Finance (Phase 16),
+> and CRM (Phase 17) are all complete. The CRM cross-suite thesis (**Lead →
+> Customer → Deal → Project → Staff assignment → Timesheets → Payroll cost →
+> Invoice/report**) was realised in Phases 16–17. Kept here as historical context;
+> the live module plans are crm/finance/projects-implementation-plan.md. **No
+> module is queued/hidden as of HEAD — Phases 5–20 are complete.**
 >
 > **Roadmap correction (2026-06-02):** Phase 11 was **Biometric + Geofencing** (now
 > COMPLETE), not Assets. The Assets plan

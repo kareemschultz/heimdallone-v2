@@ -374,7 +374,9 @@ function isNavItemVisible(key: string, role: string): boolean {
 	if (role === "sales_admin" || role === "sales_rep") {
 		return SALES_VISIBLE_KEYS.has(key);
 	}
-	return true;
+	// Deny-by-default for any unrecognised/future role (the canViewPayroll
+	// see-all branch above intentionally covers owner/admin/hr/payroll/auditor).
+	return false;
 }
 
 function AppSidebar() {
