@@ -860,6 +860,25 @@ const employeeList = authorizedProcedure("employee", "read")
 		return { data, total: totalResult[0]?.total ?? 0 };
 	});
 
+// Attach reportingManagerName and null out salary fields for non-payroll roles.
+function maskWorkRowSalary<
+	T extends { basicSalary: string | null; salaryCurrency: string | null },
+>(
+	row: T | undefined,
+	reportingManagerName: string | null,
+	canSeeSalary: boolean
+) {
+	if (!row) {
+		return null;
+	}
+	return {
+		...row,
+		reportingManagerName,
+		basicSalary: canSeeSalary ? row.basicSalary : null,
+		salaryCurrency: canSeeSalary ? row.salaryCurrency : null,
+	};
+}
+
 const employeeGetById = authorizedProcedure("employee", "read")
 	.input(z.object({ id: z.string() }))
 	.handler(async ({ context, input }) => {
@@ -963,9 +982,16 @@ const employeeGetById = authorizedProcedure("employee", "read")
 			}
 		}
 
+		// basicSalary is payroll-sensitive — mask for non-payroll roles (managers
+		// see their reports here, but salary follows the contracts.ts policy:
+		// only canManagePayroll sees it). See repo-wide-audit-2026-06-10.
 		return {
 			...emp,
-			workInfo: workRow ? { ...workRow, reportingManagerName } : null,
+			workInfo: maskWorkRowSalary(
+				workRow,
+				reportingManagerName,
+				canManagePayroll(role)
+			),
 		};
 	});
 
@@ -1230,14 +1256,36 @@ const employeeRestore = authorizedProcedure("employee", "update")
 
 const workInfoGet = authorizedProcedure("employee", "read")
 	.input(z.object({ employeeId: z.string() }))
-	.handler(async ({ input }) => {
+	.handler(async ({ context, input }) => {
+		// Tenant scope: the target employee MUST belong to the caller's org
+		// (closes a cross-tenant IDOR — this endpoint is reachable by any
+		// employee:read holder). See repo-wide-audit-2026-06-10.
+		const [owner] = await db
+			.select({ id: schema.employeeProfile.id })
+			.from(schema.employeeProfile)
+			.where(
+				and(
+					eq(schema.employeeProfile.id, input.employeeId),
+					eq(schema.employeeProfile.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!owner) {
+			throw new ORPCError("NOT_FOUND", { message: "Employee not found" });
+		}
 		const [info] = await db
 			.select()
 			.from(schema.employeeWorkInfo)
 			.where(eq(schema.employeeWorkInfo.employeeId, input.employeeId))
 			.limit(1);
 		if (!info) {
-			throw new Error("NOT_FOUND");
+			throw new ORPCError("NOT_FOUND", { message: "Work info not found" });
+		}
+		// basicSalary is payroll-sensitive — mask for non-payroll roles to match
+		// the contracts.ts applyMasking policy (only canManagePayroll sees salary).
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canManagePayroll(role)) {
+			return { ...info, basicSalary: null, salaryCurrency: null };
 		}
 		return info;
 	});
@@ -1323,6 +1371,22 @@ function maskAccountNumber(num: string): string {
 const bankDetailsGet = authorizedProcedure("employee", "read")
 	.input(z.object({ employeeId: z.string() }))
 	.handler(async ({ context, input }) => {
+		// Tenant scope: target must belong to the caller's org (closes a
+		// cross-tenant IDOR — a payroll_admin could otherwise read another
+		// tenant's full bank details). See repo-wide-audit-2026-06-10.
+		const [owner] = await db
+			.select({ id: schema.employeeProfile.id })
+			.from(schema.employeeProfile)
+			.where(
+				and(
+					eq(schema.employeeProfile.id, input.employeeId),
+					eq(schema.employeeProfile.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!owner) {
+			return null;
+		}
 		const [details] = await db
 			.select()
 			.from(schema.employeeBankDetails)
