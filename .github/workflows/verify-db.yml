@@ -1,0 +1,56 @@
+# DB-backed verification (Phase 20B-6). Runs the permission audit + DB verify
+# scripts against a fresh Postgres + seeded schema. Kept OFF the blocking PR
+# path (heavy + DB-dependent) — nightly + manual dispatch only.
+#
+# NOTE: the seed ordering below mirrors module dependencies (hr-core →
+# contracts → projects → performance/crm/finance). It may need tuning on the
+# first real CI run — this has not been executed in CI yet, only locally.
+name: verify-db
+
+on:
+  schedule:
+    - cron: "0 6 * * *" # daily 06:00 UTC
+  workflow_dispatch: {}
+
+jobs:
+  verify-db:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: heimdallone
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/heimdallone
+      BETTER_AUTH_SECRET: ci-only-secret-not-for-production-use-0123456789abcdef
+      BETTER_AUTH_URL: http://localhost:3000
+      CORS_ORIGIN: http://localhost:3002
+      TEST_PASSWORD: ci-test-password
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install
+        run: bun install --frozen-lockfile
+      - name: Apply schema
+        run: bun run db:push
+      - name: Seed (dependency order)
+        run: |
+          bun run scripts/seed-dev.ts
+          bun run scripts/seed-hr-core.ts
+          bun run scripts/seed-contracts.ts
+          bun run scripts/seed-projects.ts
+          bun run scripts/seed-performance.ts
+          bun run scripts/seed-crm.ts
+          bun run scripts/seed-finance.ts
+      - name: Verify (audit + DB verifies)
+        run: bun run verify:core
