@@ -1569,7 +1569,10 @@ button {
 .app[data-collapsed="true"] .nav-meta,
 .app[data-collapsed="true"] .nav-group-label,
 .app[data-collapsed="true"] .nav-preview-badge,
-.app[data-collapsed="true"] .sidebar [role="button"] > div:not(.tenant-avatar):not(.avatar),
+.app[data-collapsed="true"]
+	.sidebar
+	[role="button"]
+	> div:not(.tenant-avatar):not(.avatar),
 .app[data-collapsed="true"] .sidebar [role="button"] > svg {
 	display: none;
 }
