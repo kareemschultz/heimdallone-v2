@@ -262,3 +262,39 @@ CRM (Phase 17 — ✅ COMPLETE; Lead→Customer→Deal coordination layer + proj
 - 16C API: `finance` router (costReports summary/byDepartment/byCostType/trend/projectCosting; budgets list/getById/create/update/remove/variance; export.costCsv) — FIRST consumer of `finance` AC → **audit 121/15 → 124/16** (+3 pairs finance:read/manage_budget/export, +1 router). **GUARDRAIL: the ONLY db writes are finance_budget + audit_event — ZERO writes to payroll/payslip/attendance/project/contract/employee** (cost reports are read models). Two-layer authz: AC gate + handler scope (manager DEPARTMENT-SCOPED via financeDeptScope = own+direct-reports' depts; payroll-mgrs/auditor all; employee FORBIDDEN). Cost basis = **non-reversed generated payslips** (draft/confirmed/paid; matches existing payroll cost-by-dept report — REVISED from confirmed/paid-only since demo org holds only drafts; labelled "generated payroll cost" not "cash paid"). Project costing = approved time × contract-derived hourly rate, **isEstimate:true** + method note (NEVER writes Projects). Budget scopeId tenant-verified SELECT-only on write (soft ref). CSV export injection-safe (mirrors payroll encoder). 4 byte-aligned RBAC helpers (canViewFinance/canManageBudgets/canExportFinance/seesAllFinance) rbac.ts↔role-helpers.ts. verify-finance-api **33/33** (cost math incl. employer contributions, manager scoping mgr=1 vs admin=4 depts, project-costing estimate, budget CRUD lifecycle + foreign-scopeId reject, variance math, RBAC negatives employee/recruiter/manager-create/auditor-create, auditor read+export). Required server restart (--hot doesn't cross packages/api, lesson #76). Gates check-types 3/3, build 2/2, audit 124/16, lint clean. NOTE: payroll seed's totalEmployerContributions looks inflated vs gross — pre-existing seed data quirk, Finance faithfully reports payroll actuals (flag in 16I).
 - **16C security fix (automated commit-review HIGH):** `budgets.list`/`budgets.getById` now apply `financeDeptScope` (managers see ONLY their department budgets — was returning all-org incl. org-wide totals), matching `budgets.variance`. verify-finance-api 33→**35/35** (+manager budget-read dept-scope, +manager getById org-budget→NOT_FOUND).
 - 16D-16G UI (overview/costing/project-costing/budgets/variance — compressed into ONE verified pass): new **Finance** sidebar group (Landmark icon, canViewFinance = payroll-mgrs∪auditor∪manager-scoped; employee/recruiter/helpdesk/PM NOT) + `finance` added to MANAGER_VISIBLE_KEYS. Routes `app/finance/{index,costing,projects,budgets,variance}` + `features/finance/{labels,types,badge,finance-tabs,budget-form}` + `styles/finance.css` (fn- prefix, :focus-visible rings). Overview = cost tiles + trend + cross-link cards to Payroll payment-batches/loans/reimbursements (LINKS, doesn't move them); "generated payroll cost not cash" disclaimer. Costing = dept table (gross+employer+total) + by-cost-type, editable range, Export CSV (gated canExportFinance). Project costing = estimate disclaimer + deep-links to projects (seesAllFinance only). Budgets = list + create/edit/remove dialog (gated canManageBudgets). Variance = budgeted/actual/variance/%used/status bars. **Browser-verified 3 roles, 6 screenshots docs/reviews/phase-16d/**: admin full (real data — total labour cost GYD 24,574,289; budget CREATE+REMOVE write round-trip); manager SCOPED (costing 1 dept vs admin 4, budgets ONLY own-dept, no Export/New/Edit — security fix proven end-to-end); employee NO nav entry + no-access state. 0 app console errors (favicon only). Dialog overflow fixed (max-height+scroll). Gates check-types 3/3, build 2/2, audit 124/16, web tsc 7 (0 new), lint clean. NEXT 16I QA (parallel read-only review agents) to CLOSE Phase 16.
+
+---
+
+## shadcn/studio Pro
+
+This project has shadcn/studio Pro configured. Credentials are in `.env` (gitignored) — retrieve from Infisical `/credentials/shadcnstudio/` if lost.
+
+**Slash commands:** `/cui`, `/iui`, `/rui`, `/ftc` — defined in `.claude/commands/`.
+
+**CLI install (from monorepo root — requires `.env` in cwd):**
+```bash
+# Premium block
+npx shadcn@latest add @ss-blocks/block-name
+
+# Premium component
+npx shadcn@latest add component-name --registry @ss-components
+
+# Premium theme
+npx shadcn@latest add theme-name --registry @ss-themes
+```
+
+**MCP commands (preferred for this project — no `components.json` at root):**
+- `/cui <description>` — Create UI from a named block or description
+- `/iui <description>` — Generate inspired UI from scratch (Pro only)
+- `/rui <description>` — Refine/edit an already-installed block
+- `/ftc` — Convert a Figma frame to code
+
+**Workflow rules:**
+- Complete ALL block collection before ANY installation
+- One block per chat window (except full landing pages via `/cui`)
+- Use `/cui` for full pages, referencing specific block names
+- `/rui` for post-install edits only
+
+**Installed blocks location:** `apps/web/src/components/shadcn-studio/blocks/`
+
+**Style:** `base-lyra` (both `apps/web` and `packages/ui`)

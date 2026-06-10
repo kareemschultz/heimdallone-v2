@@ -164,11 +164,11 @@ const ACCENTS: Record<
 	{ c: string; c2: string; ink: string; soft: string; ring: string }
 > = {
 	gold: {
-		c: "#e8b14c",
-		c2: "#f0c069",
-		ink: "#1a1308",
-		soft: "rgba(232,177,76,0.10)",
-		ring: "rgba(232,177,76,0.30)",
+		c: "#7986cb",
+		c2: "#9aa4dd",
+		ink: "#0a0d18",
+		soft: "rgba(121,134,203,0.12)",
+		ring: "rgba(121,134,203,0.30)",
 	},
 	violet: {
 		c: "#7c5cff",
@@ -1455,10 +1455,10 @@ function MarketingLanding() {
 					<button
 						className={accentKey === "gold" ? "active" : ""}
 						onClick={() => handleAccent("gold")}
-						style={{ background: "#e8b14c", color: "#1a1308" }}
+						style={{ background: "#7986cb", color: "#0a0d18" }}
 						type="button"
 					>
-						Gold
+						Navy
 					</button>
 					<button
 						className={accentKey === "violet" ? "active" : ""}

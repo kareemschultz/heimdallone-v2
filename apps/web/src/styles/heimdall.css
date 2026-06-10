@@ -22,11 +22,11 @@
 	--fg-3: #6e7686;
 	--fg-4: #4a5160;
 
-	--accent: #e8b14c;
-	--accent-2: #f0c069;
-	--accent-ink: #1a1308;
-	--accent-soft: rgba(232, 177, 76, 0.1);
-	--accent-ring: rgba(232, 177, 76, 0.3);
+	--accent: var(--primary);
+	--accent-2: var(--primary);
+	--accent-ink: var(--primary-foreground);
+	--accent-soft: color-mix(in oklab, var(--primary) 12%, transparent);
+	--accent-ring: color-mix(in oklab, var(--primary) 30%, transparent);
 
 	--success: #4ade80;
 	--success-soft: rgba(74, 222, 128, 0.12);
@@ -63,11 +63,11 @@
 	--fg-3: #6e7686;
 	--fg-4: #9aa0ad;
 
-	--accent: #a87411;
-	--accent-2: #8c5f0d;
-	--accent-ink: #fbfaf6;
-	--accent-soft: rgba(168, 116, 17, 0.1);
-	--accent-ring: rgba(168, 116, 17, 0.25);
+	--accent: var(--primary);
+	--accent-2: var(--primary);
+	--accent-ink: var(--primary-foreground);
+	--accent-soft: color-mix(in oklab, var(--primary) 12%, transparent);
+	--accent-ring: color-mix(in oklab, var(--primary) 25%, transparent);
 
 	--success: #16a34a;
 	--success-soft: rgba(22, 163, 74, 0.1);
