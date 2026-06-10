@@ -27,6 +27,7 @@ import {
 	LogOut,
 	Moon,
 	Package,
+	PanelLeft,
 	Play,
 	Plus,
 	Search,
@@ -569,14 +570,16 @@ function AppSidebar() {
 							<Link
 								className={`nav-item ${item.key === currentKey ? "active" : ""}`}
 								key={item.key}
+								title={item.label}
 								to={item.href}
 							>
 								<span className="nav-icon">
 									<item.icon size={16} />
 								</span>
-								<span>{item.label}</span>
+								<span className="nav-label">{item.label}</span>
 								{"preview" in item && item.preview ? (
 									<span
+										className="nav-preview-badge"
 										style={{
 											marginLeft: "auto",
 											padding: "1px 6px",
@@ -752,7 +755,7 @@ function AppSidebar() {
 	);
 }
 
-function AppTopbar() {
+function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 	const [_theme, setTheme] = useState("dark");
 	const [syncMenuOpen, setSyncMenuOpen] = useState(false);
 	const [notifMenuOpen, setNotifMenuOpen] = useState(false);
@@ -783,6 +786,15 @@ function AppTopbar() {
 
 	return (
 		<div className="topbar">
+			<button
+				aria-label="Toggle sidebar"
+				className="sidebar-toggle"
+				onClick={onToggleSidebar}
+				title="Collapse / expand sidebar"
+				type="button"
+			>
+				<PanelLeft size={16} />
+			</button>
 			<button className="cmd-trigger" type="button">
 				<Search size={15} />
 				<span>Find anyone, anything…</span>
@@ -1064,9 +1076,22 @@ function AppTopbar() {
 	);
 }
 
+const SIDEBAR_COLLAPSE_KEY = "hd-sidebar-collapsed";
+
 function AppLayout() {
 	const { session } = Route.useRouteContext();
 	const activeOrg = authClient.useActiveOrganization();
+	const [collapsed, setCollapsed] = useState(
+		() =>
+			typeof window !== "undefined" &&
+			window.localStorage.getItem(SIDEBAR_COLLAPSE_KEY) === "1"
+	);
+	const toggleCollapsed = () =>
+		setCollapsed((prev) => {
+			const next = !prev;
+			window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, next ? "1" : "0");
+			return next;
+		});
 	const [orgCtx, setOrgCtx] = useState<OrgContext>({
 		orgName: "Atlas Shipping",
 		orgSlug: "atlas-shipping",
@@ -1092,10 +1117,10 @@ function AppLayout() {
 
 	return (
 		<OrgCtx.Provider value={orgCtx}>
-			<div className="app">
+			<div className="app" data-collapsed={collapsed ? "true" : "false"}>
 				<AppSidebar />
 				<main>
-					<AppTopbar />
+					<AppTopbar onToggleSidebar={toggleCollapsed} />
 					<Outlet />
 				</main>
 			</div>

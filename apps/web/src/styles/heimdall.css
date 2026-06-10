@@ -1537,3 +1537,54 @@ button {
 	outline: 2px solid var(--ring);
 	outline-offset: 2px;
 }
+
+/* ---------- Collapsible sidebar (Pro icon rail) ---------- */
+.sidebar-toggle {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	color: var(--fg-2);
+	background: transparent;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	transition:
+		background 120ms ease,
+		color 120ms ease;
+}
+.sidebar-toggle:hover {
+	color: var(--fg);
+	background: var(--bg-3);
+}
+.sidebar-toggle:focus-visible {
+	outline: 2px solid var(--ring);
+	outline-offset: 2px;
+}
+
+.app[data-collapsed="true"] {
+	grid-template-columns: 64px 1fr;
+}
+.app[data-collapsed="true"] .nav-label,
+.app[data-collapsed="true"] .nav-meta,
+.app[data-collapsed="true"] .nav-group-label,
+.app[data-collapsed="true"] .nav-preview-badge,
+.app[data-collapsed="true"] .sidebar [role="button"] > div:not(.tenant-avatar):not(.avatar),
+.app[data-collapsed="true"] .sidebar [role="button"] > svg {
+	display: none;
+}
+.app[data-collapsed="true"] .nav-item,
+.app[data-collapsed="true"] .sidebar [role="button"] {
+	justify-content: center;
+	padding-right: 0;
+	padding-left: 0;
+}
+.app[data-collapsed="true"] .sidebar-section {
+	padding: 14px 8px;
+}
+/* Let the tenant / user dropdowns pop out to a usable width when collapsed. */
+.app[data-collapsed="true"] .sidebar .menu {
+	right: auto;
+	left: 8px;
+	min-width: 220px;
+}
