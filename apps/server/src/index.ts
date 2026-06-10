@@ -15,6 +15,7 @@ import {
 import { type EvlogVariables, evlog } from "evlog/hono";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { rateLimit } from "./rate-limit";
 
 initLogger({
 	env: { service: "Heimdallone-server" },
@@ -42,6 +43,11 @@ app.use(
 		credentials: true,
 	})
 );
+
+// Rate limiting (first-line brute-force / abuse guard). Auth is the tightest
+// (login brute-force); rpc is looser. In-memory per-instance — see rate-limit.ts.
+app.use("/api/auth/*", rateLimit({ max: 30, bucket: "auth" }));
+app.use("/rpc/*", rateLimit({ max: 300, bucket: "rpc" }));
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 
