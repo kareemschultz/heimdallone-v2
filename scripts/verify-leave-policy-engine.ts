@@ -20,7 +20,7 @@ import { leavePolicyRule } from "../../packages/db/src/schema/leave-policy";
 import type { AppRouter } from "../packages/api/src/routers/index";
 
 const BASE = "http://localhost:3000";
-const PW = "HeimdallTest2026!";
+const PW = process.env.TEST_PASSWORD ?? "HeimdallTest2026!";
 const ORIGIN = "http://localhost:3002";
 const db = createDb();
 

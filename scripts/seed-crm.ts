@@ -24,7 +24,9 @@ import {
 	crmPipelineStage,
 } from "../packages/db/src/schema/crm";
 import { employeeProfile } from "../packages/db/src/schema/hr-core";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 const DAY = 24 * 60 * 60 * 1000;
 const ago = (days: number) => new Date(Date.now() - days * DAY);

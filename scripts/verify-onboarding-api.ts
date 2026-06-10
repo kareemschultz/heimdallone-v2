@@ -15,7 +15,7 @@ import type { RouterClient } from "@orpc/server";
 import type { AppRouter } from "../packages/api/src/routers/index";
 
 const BASE = "http://localhost:3000";
-const PW = "HeimdallTest2026!";
+const PW = process.env.TEST_PASSWORD ?? "HeimdallTest2026!";
 const ORIGIN = "http://localhost:3002";
 
 async function signIn(email: string): Promise<string> {

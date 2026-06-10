@@ -23,7 +23,9 @@ import {
 	shift,
 	user,
 } from "../packages/db/src/schema";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 
 function toDate(dateStr: string): Date {

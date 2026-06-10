@@ -21,7 +21,9 @@ import {
 } from "../packages/db/src/schema/assets";
 import { organization, user } from "../packages/db/src/schema/auth";
 import { employeeProfile } from "../packages/db/src/schema/hr-core";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 
 const DAY = 24 * 60 * 60 * 1000;

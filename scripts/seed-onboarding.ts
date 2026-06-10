@@ -22,7 +22,9 @@ import { eq } from "drizzle-orm";
 
 import { createDb } from "../packages/db/src/index";
 import * as schema from "../packages/db/src/schema";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 
 const DAY_MS = 24 * 60 * 60 * 1000;

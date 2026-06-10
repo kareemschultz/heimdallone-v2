@@ -27,7 +27,9 @@ import {
 	reviewResponse,
 } from "../packages/db/src/schema/performance";
 import { projectTask } from "../packages/db/src/schema/projects";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 const DAY = 24 * 60 * 60 * 1000;
 const dayOffset = (n: number) => new Date(Date.now() + n * DAY);

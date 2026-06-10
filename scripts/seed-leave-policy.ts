@@ -20,7 +20,9 @@ import {
 	leavePolicyRule,
 	leavePolicyTemplate,
 } from "../packages/db/src/schema/leave-policy";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 
 const RETRIEVED = new Date("2026-06-03");

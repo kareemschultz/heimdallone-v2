@@ -16,7 +16,9 @@ import { organization, user } from "../packages/db/src/schema/auth";
 import { financeBudget } from "../packages/db/src/schema/finance";
 import { department } from "../packages/db/src/schema/hr-core";
 import { project } from "../packages/db/src/schema/projects";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 const DEFAULT_CURRENCY = "GYD";
 

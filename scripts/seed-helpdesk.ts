@@ -22,7 +22,9 @@ import { employeeProfile } from "../packages/db/src/schema/hr-core";
 import { leaveRequest } from "../packages/db/src/schema/leave";
 import { offboardingCase } from "../packages/db/src/schema/offboarding";
 import { payslip } from "../packages/db/src/schema/payroll";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 const DAY = 24 * 60 * 60 * 1000;
 const HOUR = 60 * 60 * 1000;

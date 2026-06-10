@@ -8,8 +8,10 @@
  */
 
 import { auth } from "../packages/auth/src/index";
+import { assertSeedAllowed } from "./_guard";
 
-const PASSWORD = "HeimdallTest2026!";
+assertSeedAllowed();
+const PASSWORD = process.env.TEST_PASSWORD ?? "HeimdallTest2026!";
 const BASE = process.env.BETTER_AUTH_URL || "http://localhost:3000";
 
 const USERS = [

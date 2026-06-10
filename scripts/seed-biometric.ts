@@ -50,7 +50,9 @@ import {
 	organization,
 	user,
 } from "../packages/db/src/schema";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
 
 // Georgetown, Guyana — Main Office; Port area ~2km north for the Warehouse.

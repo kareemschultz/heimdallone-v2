@@ -9,9 +9,11 @@ import { and, eq } from "drizzle-orm";
 import { auth } from "../packages/auth/src/index";
 import { createDb } from "../packages/db/src/index";
 import { member, organization, user } from "../packages/db/src/schema/auth";
+import { assertSeedAllowed } from "./_guard";
 
+assertSeedAllowed();
 const db = createDb();
-const PASSWORD = "HeimdallTest2026!";
+const PASSWORD = process.env.TEST_PASSWORD ?? "HeimdallTest2026!";
 const BASE = process.env.BETTER_AUTH_URL || "http://localhost:3000";
 
 const USERS = [
