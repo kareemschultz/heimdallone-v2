@@ -1,3 +1,4 @@
+import { StatTile, StatTileGrid } from "@Heimdallone/ui/components/stat-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -99,36 +100,41 @@ function RecruitmentOverview() {
 
 			<RecruitmentTabs />
 
-			<div className="sum-row" style={{ marginBottom: 18 }}>
+			<StatTileGrid className="sum-row" min={200}>
 				<StatTile
-					delta="Currently accepting candidates"
+					hint="Currently accepting candidates"
+					icon={Briefcase}
+					isLoading={openJobs.isLoading}
 					label="Open jobs"
-					loading={openJobs.isLoading}
+					tone="primary"
 					value={openJobsCount}
 				/>
 				<StatTile
-					delta={
+					hint={
 						hiredCount > 0
 							? `${hiredCount} hired (excluded)`
 							: "Across all open jobs"
 					}
+					icon={Users}
+					isLoading={allApplications.isLoading || hiredApplications.isLoading}
 					label="Active candidates"
-					loading={allApplications.isLoading || hiredApplications.isLoading}
 					value={activeCandidates}
 				/>
 				<StatTile
-					delta="Waiting on interviewer or candidate"
+					hint="Waiting on interviewer or candidate"
+					icon={Calendar}
+					isLoading={scheduledInterviews.isLoading}
 					label="Interviews scheduled"
-					loading={scheduledInterviews.isLoading}
 					value={interviewsCount}
 				/>
 				<StatTile
-					delta="Sent or awaiting approval"
+					hint="Sent or awaiting approval"
+					icon={FileSignature}
+					isLoading={sentOffers.isLoading || pendingOffers.isLoading}
 					label="Offers in flight"
-					loading={sentOffers.isLoading || pendingOffers.isLoading}
 					value={offersWaiting}
 				/>
-			</div>
+			</StatTileGrid>
 
 			<div className="card card-pad" style={{ marginBottom: 16 }}>
 				<div className="eyebrow" style={{ marginBottom: 12 }}>
@@ -211,23 +217,6 @@ function RecruitmentOverview() {
 					</div>
 				)}
 			</div>
-		</div>
-	);
-}
-
-interface StatTileProps {
-	delta: string;
-	label: string;
-	loading: boolean;
-	value: number;
-}
-
-function StatTile({ delta, label, loading, value }: StatTileProps) {
-	return (
-		<div className="sum-card">
-			<span className="lbl">{label}</span>
-			<span className="val">{loading ? "…" : value}</span>
-			<span className="delta">{delta}</span>
 		</div>
 	);
 }
