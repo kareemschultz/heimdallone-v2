@@ -1253,7 +1253,6 @@ function RoleSection({
 // ─── Shift Section ────────────────────────────────────────
 
 function ShiftSection() {
-	const qc = useQueryClient();
 	const { data, isLoading } = useQuery(
 		orpc.hrCore.shifts.list.queryOptions({ input: { includeArchived: false } })
 	);
@@ -1467,8 +1466,10 @@ function HolidaySection() {
 	const { data, isLoading } = useQuery(
 		orpc.hrCore.holidays.list.queryOptions({ input: {} })
 	);
+	// The API returns Date objects; this section treats holiday dates as date
+	// strings (runtime-safe — new Date() accepts both). Cast via unknown per TS.
 	const holidays =
-		(data as {
+		(data as unknown as {
 			id: string;
 			name: string;
 			startDate: string;

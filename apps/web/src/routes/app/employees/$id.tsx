@@ -103,12 +103,6 @@ function EmployeeProfilePage() {
 		})
 	);
 
-	const { data: docs } = useQuery(
-		orpc.hrCore.employees.documents.list.queryOptions({
-			input: { employeeId: id },
-		})
-	);
-
 	const { data: depts } = useQuery(
 		orpc.hrCore.departments.list.queryOptions({
 			input: { includeArchived: false },
@@ -2156,7 +2150,6 @@ function ContractSection({
 	contracts,
 	canSeeSalary,
 	isHr,
-	employeeId,
 }: {
 	contracts: ContractHistoryItem[];
 	canSeeSalary: boolean;

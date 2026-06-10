@@ -62,13 +62,6 @@ function EmployeesPage() {
 	const [page, setPage] = useState(1);
 	const pageSize = 50;
 
-	const isActive =
-		statusFilter === "Archived"
-			? false
-			: statusFilter === "Active"
-				? true
-				: true;
-
 	const { data, isLoading, isError, refetch } = useQuery(
 		orpc.hrCore.employees.list.queryOptions({
 			input: {

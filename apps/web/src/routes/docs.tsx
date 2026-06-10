@@ -215,7 +215,7 @@ function DocsPage() {
 						<Link className="btn btn-ghost" to="/login">
 							Sign in
 						</Link>
-						<Link className="btn btn-primary" to="/app/dashboard">
+						<Link className="btn btn-primary" to="/app">
 							Get started <ArrowRight size={13} />
 						</Link>
 					</div>
