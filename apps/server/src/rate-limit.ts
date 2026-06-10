@@ -1,4 +1,5 @@
 import type { Context, Next } from "hono";
+import { getConnInfo } from "hono/bun";
 
 /**
  * Simple in-memory fixed-window rate limiter, keyed per client IP + bucket.
@@ -7,17 +8,53 @@ import type { Context, Next } from "hono";
  * MUST be backed by a shared store (Redis / Upstash). This is a first-line
  * brute-force / abuse guard for a single-instance deploy, not a distributed
  * quota. See docs/operations/production-hardening.md.
+ *
+ * Client identity: by default the real TCP peer address is used. `X-Forwarded-
+ * For` is attacker-controlled, so it is consulted ONLY when TRUST_PROXY=true
+ * (i.e. the server genuinely sits behind a trusted reverse proxy that rewrites
+ * XFF). Without that flag a spoofed XFF cannot be used to evade or target the
+ * limiter. When behind a load balancer you MUST set TRUST_PROXY=true, else all
+ * traffic appears to originate from the proxy IP (one shared bucket).
  */
 const WINDOW_MS = 60_000;
 const MAX_BUCKETS = 50_000;
+const TRUST_PROXY = process.env.TRUST_PROXY === "true";
 const store = new Map<string, { count: number; resetAt: number }>();
 
 function clientIp(c: Context): string {
-	const fwd = c.req.header("x-forwarded-for");
-	if (fwd) {
-		return fwd.split(",")[0]?.trim() ?? "unknown";
+	if (TRUST_PROXY) {
+		// Left-most XFF entry is the original client when behind one trusted hop.
+		const first = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
+		if (first) {
+			return first;
+		}
 	}
-	return c.req.header("x-real-ip") ?? "unknown";
+	try {
+		const addr = getConnInfo(c).remote.address;
+		if (addr) {
+			return addr;
+		}
+	} catch {
+		// runtime without connection info — fall through
+	}
+	return "unknown";
+}
+
+function evict(now: number): void {
+	for (const [k, v] of store) {
+		if (v.resetAt <= now) {
+			store.delete(k);
+		}
+	}
+	// Hard cap: if the expired-sweep didn't free enough, drop oldest-inserted
+	// (Map preserves insertion order) until back under the cap.
+	while (store.size > MAX_BUCKETS) {
+		const oldest = store.keys().next().value;
+		if (oldest === undefined) {
+			break;
+		}
+		store.delete(oldest);
+	}
 }
 
 export function rateLimit(opts: { max: number; bucket: string }) {
@@ -35,13 +72,8 @@ export function rateLimit(opts: { max: number; bucket: string }) {
 		} else {
 			store.set(key, { count: 1, resetAt: now + WINDOW_MS });
 		}
-		// Opportunistic eviction of expired buckets to bound memory.
 		if (store.size > MAX_BUCKETS) {
-			for (const [k, v] of store) {
-				if (v.resetAt <= now) {
-					store.delete(k);
-				}
-			}
+			evict(now);
 		}
 		await next();
 	};
