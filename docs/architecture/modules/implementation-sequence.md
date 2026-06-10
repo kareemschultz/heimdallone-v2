@@ -16,9 +16,9 @@ Phase 14:  Projects + Tasks & Timelines ✅ COMPLETE (Operations; 14A spec → 1
 Phase 15:  Performance / PMS ✅ COMPLETE (People&Payroll; 15A→15B→15C→15D→15E→15F→15G→15H→15I QA all ✅) — owns performance data, links read-only (points ≠ pay; reads project task-completion, never writes Projects/Payroll)
 Phase 16:  Finance expansion ✅ COMPLETE (Finance — costing + budgets coordination layer; 16A spec → 16B DB → 16C API → 16D-16G UI → 16I QA). Cross-module labour-cost reporting + project/job costing + budget-vs-actual + Finance product surface; OWNS only finance_budget, links read-only (never mutates payroll/attendance/projects). Payment batches/bank exports/loans/reimbursements remain under Payroll (Phase 8), cross-linked
 Phase 17:  CRM ✅ COMPLETE (17A spec → 17B DB 8 tables → 17C API → 17D-17G UI → 17H QA). Lead→Customer→Deal coordination layer + project handoff seam (crm_customer_project_link.projectId soft-ref stays NULL until Projects links it); money + private-note redaction; transactional convert + won→handoff. New roles sales_admin/sales_rep (project_manager from 14B). audit 147/17
-Phase 18:  Analytics / Executive dashboards (ACTIVE — 18A spec ✅ 2026-06-07, see analytics-implementation-plan.md). Cross-module read-only aggregation layer (link, never own): one executive dashboard rolling up People/Payroll+Operations+Finance+CRM KPIs. `analytics` AC resource, no new table. 18B AC → 18C router → 18D-18F UI → 18I QA
-Phase 19:  Enterprise QA / accessibility / security hardening
-Phase 20:  Production readiness
+Phase 18:  Analytics / Executive dashboards ✅ COMPLETE (18A spec → 18B AC → 18C router → 18D-18F UI → 18I QA). Cross-module read-only aggregation layer (link, never own): one executive dashboard rolling up People/Payroll+Operations+Finance+CRM KPIs. `analytics` AC resource, no new table, ZERO writes. audit 149/18, verify-analytics-api 25/25
+Phase 19:  Enterprise QA / accessibility / security hardening ✅ COMPLETE (theme-consistency + a11y + full gate suite; docs/reviews/phase-19). Navy Corporate theme applied app-wide; shared StatTile + DataTable adopted across all module overviews/lists; collapsible chrome
+Phase 20:  Production readiness ✅ COMPLETE (docs/production-readiness.md — gates, env template, security posture, deployment notes). NO open build phase. NEXT = optional Phase 20-hardening (see docs/reviews/repo-wide-audit-2026-06-10): hr-core cross-tenant IDOR + salary masking, app/index Preview marker, fail-open nav default
 ```
 
 > **Long-term suite direction (user directive 2026-06-02).** Heimdallone is one
