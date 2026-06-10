@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Landmark } from "lucide-react";
@@ -27,6 +31,47 @@ function downloadCsv(filename: string, csv: string) {
 	a.download = filename;
 	a.click();
 	URL.revokeObjectURL(url);
+}
+
+function projectCostColumns(cur: string): ColumnDef<ProjectCostRow, unknown>[] {
+	return [
+		{
+			accessorKey: "projectName",
+			header: "Project",
+			cell: ({ row }) => (
+				<Link
+					className="fn-name-link"
+					params={{ id: row.original.projectId }}
+					to="/app/projects/$id"
+				>
+					{row.original.projectName}
+				</Link>
+			),
+		},
+		{
+			accessorKey: "hours",
+			header: "Hours",
+			cell: ({ row }) => (
+				<span className="num">{formatHours(row.original.hours)}</span>
+			),
+		},
+		{
+			accessorKey: "contributorCount",
+			header: "Contributors",
+			cell: ({ row }) => (
+				<span className="num">{row.original.contributorCount}</span>
+			),
+		},
+		{
+			accessorKey: "estimatedCost",
+			header: "Estimated cost",
+			cell: ({ row }) => (
+				<span className="num">
+					{formatMoney(row.original.estimatedCost, cur)}
+				</span>
+			),
+		},
+	];
 }
 
 function FinanceProjectCostingPage() {
@@ -129,79 +174,23 @@ function FinanceProjectCostingPage() {
 						) : null}
 					</div>
 
-					{costing.isLoading ? <div className="fn-skeleton" /> : null}
-					<ProjectCostSection
-						cur={cur}
-						isError={costing.isError}
-						isLoading={costing.isLoading}
-						rows={rows}
-					/>
+					<div className="card" style={{ overflow: "hidden" }}>
+						<DataTable
+							columns={projectCostColumns(cur)}
+							data={rows}
+							emptyState={
+								<EmptyState
+									compact
+									description="No approved project time in this period."
+									title="No project cost to show"
+								/>
+							}
+							isError={costing.isError}
+							isLoading={costing.isLoading}
+						/>
+					</div>
 				</>
 			) : null}
 		</div>
-	);
-}
-
-function ProjectCostSection({
-	rows,
-	isLoading,
-	isError,
-	cur,
-}: {
-	rows: ProjectCostRow[];
-	isLoading: boolean;
-	isError: boolean;
-	cur: string;
-}) {
-	if (isLoading) {
-		return null;
-	}
-	if (isError) {
-		return (
-			<EmptyState
-				compact
-				description="Could not load project costing."
-				title="Something went wrong"
-			/>
-		);
-	}
-	if (rows.length === 0) {
-		return (
-			<EmptyState
-				compact
-				description="No approved project time in this period."
-				title="No project cost to show"
-			/>
-		);
-	}
-	return (
-		<table className="fn-table">
-			<thead>
-				<tr>
-					<th>Project</th>
-					<th className="num">Hours</th>
-					<th className="num">Contributors</th>
-					<th className="num">Estimated cost</th>
-				</tr>
-			</thead>
-			<tbody>
-				{rows.map((r) => (
-					<tr key={r.projectId}>
-						<td>
-							<Link
-								className="fn-name-link"
-								params={{ id: r.projectId }}
-								to="/app/projects/$id"
-							>
-								{r.projectName}
-							</Link>
-						</td>
-						<td className="num">{formatHours(r.hours)}</td>
-						<td className="num">{r.contributorCount}</td>
-						<td className="num">{formatMoney(r.estimatedCost, cur)}</td>
-					</tr>
-				))}
-			</tbody>
-		</table>
 	);
 }

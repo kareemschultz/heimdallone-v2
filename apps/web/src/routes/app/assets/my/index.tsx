@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Package, Plus, X } from "lucide-react";
@@ -115,6 +119,100 @@ function RequestDialog({
 	);
 }
 
+const custodyColumns: ColumnDef<CustodyRow, unknown>[] = [
+	{
+		accessorKey: "assetName",
+		header: "Asset",
+		cell: ({ row }) => row.original.assetName,
+	},
+	{
+		accessorKey: "trackingId",
+		header: "Tracking ID",
+		cell: ({ row }) => (
+			<span className="asset-mono">{row.original.trackingId}</span>
+		),
+	},
+	{
+		accessorKey: "categoryName",
+		header: "Category",
+		cell: ({ row }) => row.original.categoryName ?? "Uncategorised",
+	},
+	{
+		accessorKey: "assetStatus",
+		header: "Status",
+		cell: ({ row }) => (
+			<Badge tone={statusTone(row.original.assetStatus)}>
+				{statusLabel(row.original.assetStatus)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "assignedAt",
+		header: "Assigned",
+		cell: ({ row }) => fmtDate(row.original.assignedAt),
+	},
+	{
+		accessorKey: "returnDueDate",
+		header: "Return due",
+		cell: ({ row }) =>
+			row.original.returnDueDate ? fmtDate(row.original.returnDueDate) : "—",
+	},
+];
+
+function buildMyRequestColumns({
+	cancelPending,
+	onCancel,
+}: {
+	cancelPending: boolean;
+	onCancel: (id: string) => void;
+}): ColumnDef<MyRequestRow, unknown>[] {
+	return [
+		{
+			accessorKey: "description",
+			header: "Description",
+			cell: ({ row }) => row.original.description ?? "—",
+		},
+		{
+			accessorKey: "categoryName",
+			header: "Category",
+			cell: ({ row }) => row.original.categoryName ?? "Any",
+		},
+		{
+			accessorKey: "createdAt",
+			header: "Requested",
+			cell: ({ row }) => fmtDate(row.original.createdAt),
+		},
+		{
+			accessorKey: "status",
+			header: "Status",
+			cell: ({ row }) => (
+				<Badge tone={requestStatusTone(row.original.status)}>
+					{requestStatusLabel(row.original.status)}
+				</Badge>
+			),
+		},
+		{
+			accessorKey: "id",
+			header: "",
+			cell: ({ row }) =>
+				row.original.status === "requested" ? (
+					<button
+						className="btn btn-sm"
+						disabled={cancelPending}
+						onClick={() => onCancel(row.original.id)}
+						type="button"
+					>
+						Cancel
+					</button>
+				) : (
+					<span className="asset-sub">
+						{row.original.resolutionNote ?? "—"}
+					</span>
+				),
+		},
+	];
+}
+
 function MyAssetsPage() {
 	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
@@ -140,6 +238,10 @@ function MyAssetsPage() {
 	const custodyRows = (custody.data ?? []) as CustodyRow[];
 	const reqResult = requests.data as { data: MyRequestRow[] } | undefined;
 	const reqRows = reqResult?.data ?? [];
+	const requestColumns = buildMyRequestColumns({
+		cancelPending: cancel.isPending,
+		onCancel: (id) => cancel.mutate(id),
+	});
 
 	return (
 		<div className="page">
@@ -166,98 +268,39 @@ function MyAssetsPage() {
 			</div>
 
 			<h3 className="asset-section-title">Currently assigned to me</h3>
-			{custody.isLoading ? <div className="asset-skeleton" /> : null}
-			{!custody.isLoading && custodyRows.length === 0 ? (
-				<EmptyState
-					compact
-					description="You don't have any company assets assigned right now."
-					icon={<Package size={24} />}
-					title="No assets assigned"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={custodyColumns}
+					data={custodyRows as CustodyRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="You don't have any company assets assigned right now."
+							icon={<Package size={24} />}
+							title="No assets assigned"
+						/>
+					}
+					isError={custody.isError}
+					isLoading={custody.isLoading}
 				/>
-			) : null}
-			{custodyRows.length > 0 ? (
-				<table className="asset-table">
-					<thead>
-						<tr>
-							<th>Asset</th>
-							<th>Tracking ID</th>
-							<th>Category</th>
-							<th>Status</th>
-							<th>Assigned</th>
-							<th>Return due</th>
-						</tr>
-					</thead>
-					<tbody>
-						{custodyRows.map((c) => (
-							<tr key={c.id}>
-								<td>{c.assetName}</td>
-								<td>
-									<span className="asset-mono">{c.trackingId}</span>
-								</td>
-								<td>{c.categoryName ?? "Uncategorised"}</td>
-								<td>
-									<Badge tone={statusTone(c.assetStatus)}>
-										{statusLabel(c.assetStatus)}
-									</Badge>
-								</td>
-								<td>{fmtDate(c.assignedAt)}</td>
-								<td>{c.returnDueDate ? fmtDate(c.returnDueDate) : "—"}</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			<h3 className="asset-section-title">My requests</h3>
-			{requests.isLoading ? <div className="asset-skeleton" /> : null}
-			{!requests.isLoading && reqRows.length === 0 ? (
-				<EmptyState
-					compact
-					description="You haven't requested any assets yet."
-					title="No requests"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={requestColumns}
+					data={reqRows as MyRequestRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="You haven't requested any assets yet."
+							title="No requests"
+						/>
+					}
+					isError={requests.isError}
+					isLoading={requests.isLoading}
 				/>
-			) : null}
-			{reqRows.length > 0 ? (
-				<table className="asset-table">
-					<thead>
-						<tr>
-							<th>Description</th>
-							<th>Category</th>
-							<th>Requested</th>
-							<th>Status</th>
-							<th />
-						</tr>
-					</thead>
-					<tbody>
-						{reqRows.map((r) => (
-							<tr key={r.id}>
-								<td>{r.description ?? "—"}</td>
-								<td>{r.categoryName ?? "Any"}</td>
-								<td>{fmtDate(r.createdAt)}</td>
-								<td>
-									<Badge tone={requestStatusTone(r.status)}>
-										{requestStatusLabel(r.status)}
-									</Badge>
-								</td>
-								<td>
-									{r.status === "requested" ? (
-										<button
-											className="btn btn-sm"
-											disabled={cancel.isPending}
-											onClick={() => cancel.mutate(r.id)}
-											type="button"
-										>
-											Cancel
-										</button>
-									) : (
-										<span className="asset-sub">{r.resolutionNote ?? "—"}</span>
-									)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{showRequest ? (
 				<RequestDialog

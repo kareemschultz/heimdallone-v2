@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Package, X } from "lucide-react";
@@ -246,6 +250,68 @@ function RequestRowActions({
 	return <span className="asset-sub">{row.resolutionNote ?? "—"}</span>;
 }
 
+function buildRequestColumns({
+	canManage,
+	canAssign,
+	onApprove,
+	onReject,
+	onFulfill,
+}: {
+	canAssign: boolean;
+	canManage: boolean;
+	onApprove: (id: string) => void;
+	onFulfill: (id: string) => void;
+	onReject: (id: string) => void;
+}): ColumnDef<RequestRow, unknown>[] {
+	return [
+		{
+			accessorKey: "employeeName",
+			header: "Requester",
+			cell: ({ row }) => row.original.employeeName ?? "—",
+		},
+		{
+			accessorKey: "categoryName",
+			header: "Category",
+			cell: ({ row }) => row.original.categoryName ?? "Any",
+		},
+		{
+			accessorKey: "description",
+			header: "Description",
+			cell: ({ row }) => row.original.description ?? "—",
+		},
+		{
+			accessorKey: "createdAt",
+			header: "Requested",
+			cell: ({ row }) => fmtDate(row.original.createdAt),
+		},
+		{
+			accessorKey: "status",
+			header: "Status",
+			cell: ({ row }) => (
+				<Badge tone={requestStatusTone(row.original.status)}>
+					{requestStatusLabel(row.original.status)}
+				</Badge>
+			),
+		},
+		{
+			accessorKey: "id",
+			header: "",
+			cell: ({ row }) => (
+				<span className="asset-row-actions">
+					<RequestRowActions
+						canAssign={canAssign}
+						canManage={canManage}
+						onApprove={onApprove}
+						onFulfill={onFulfill}
+						onReject={onReject}
+						row={row.original}
+					/>
+				</span>
+			),
+		},
+	];
+}
+
 function RequestsPage() {
 	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
@@ -291,6 +357,13 @@ function RequestsPage() {
 
 	const result = list.data as { data: RequestRow[]; total: number } | undefined;
 	const rows = result?.data ?? [];
+	const columns = buildRequestColumns({
+		canManage,
+		canAssign,
+		onApprove: (id) => approve.mutate(id),
+		onFulfill: setFulfill,
+		onReject: setReject,
+	});
 
 	return (
 		<div className="page">
@@ -308,54 +381,21 @@ function RequestsPage() {
 
 			<AssetsTabs />
 
-			{list.isLoading ? <div className="asset-skeleton" /> : null}
-			{!list.isLoading && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="No asset requests yet."
-					title="No requests"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={columns}
+					data={rows as RequestRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="No asset requests yet."
+							title="No requests"
+						/>
+					}
+					isError={list.isError}
+					isLoading={list.isLoading}
 				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="asset-table">
-					<thead>
-						<tr>
-							<th>Requester</th>
-							<th>Category</th>
-							<th>Description</th>
-							<th>Requested</th>
-							<th>Status</th>
-							<th />
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((r) => (
-							<tr key={r.id}>
-								<td>{r.employeeName ?? "—"}</td>
-								<td>{r.categoryName ?? "Any"}</td>
-								<td>{r.description ?? "—"}</td>
-								<td>{fmtDate(r.createdAt)}</td>
-								<td>
-									<Badge tone={requestStatusTone(r.status)}>
-										{requestStatusLabel(r.status)}
-									</Badge>
-								</td>
-								<td className="asset-row-actions">
-									<RequestRowActions
-										canAssign={canAssign}
-										canManage={canManage}
-										onApprove={(id) => approve.mutate(id)}
-										onFulfill={setFulfill}
-										onReject={setReject}
-										row={r}
-									/>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{reject ? (
 				<RejectDialog

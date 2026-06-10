@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
@@ -22,6 +26,52 @@ import { orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/app/performance/reviews/")({
 	component: ReviewsListPage,
 });
+
+const cycleColumns: ColumnDef<CycleRow, unknown>[] = [
+	{
+		accessorKey: "reference",
+		header: "Reference",
+		cell: ({ row }) => (
+			<span className="pf-mono">{row.original.reference}</span>
+		),
+	},
+	{
+		accessorKey: "name",
+		header: "Cycle",
+		cell: ({ row }) => (
+			<Link
+				className="pf-name pf-name-link"
+				params={{ id: row.original.id }}
+				to="/app/performance/reviews/$id"
+			>
+				{row.original.name}
+			</Link>
+		),
+	},
+	{
+		accessorKey: "type",
+		header: "Type",
+		cell: ({ row }) => cycleTypeLabel(row.original.type),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<Badge tone={cycleStatusTone(row.original.status)}>
+				{cycleStatusLabel(row.original.status)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "startDate",
+		header: "Window",
+		cell: ({ row }) => (
+			<>
+				{fmtDate(row.original.startDate)} – {fmtDate(row.original.endDate)}
+			</>
+		),
+	},
+];
 
 function ReviewsListPage() {
 	const org = useContext(OrgCtx);
@@ -83,62 +133,21 @@ function ReviewsListPage() {
 
 			<PerformanceTabs />
 
-			{list.isLoading ? <div className="pf-skeleton" /> : null}
-			{list.isError ? (
-				<EmptyState
-					compact
-					description="Could not load review cycles. Try again."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={cycleColumns}
+					data={rows as CycleRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="No review cycles yet. Create one to start collecting feedback."
+							title="No cycles yet"
+						/>
+					}
+					isError={list.isError}
+					isLoading={list.isLoading}
 				/>
-			) : null}
-			{!(list.isLoading || list.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="No review cycles yet. Create one to start collecting feedback."
-					title="No cycles yet"
-				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="pf-table">
-					<thead>
-						<tr>
-							<th>Reference</th>
-							<th>Cycle</th>
-							<th>Type</th>
-							<th>Status</th>
-							<th>Window</th>
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((c) => (
-							<tr key={c.id}>
-								<td>
-									<span className="pf-mono">{c.reference}</span>
-								</td>
-								<td>
-									<Link
-										className="pf-name pf-name-link"
-										params={{ id: c.id }}
-										to="/app/performance/reviews/$id"
-									>
-										{c.name}
-									</Link>
-								</td>
-								<td>{cycleTypeLabel(c.type)}</td>
-								<td>
-									<Badge tone={cycleStatusTone(c.status)}>
-										{cycleStatusLabel(c.status)}
-									</Badge>
-								</td>
-								<td>
-									{fmtDate(c.startDate)} – {fmtDate(c.endDate)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{showCreate ? (
 				<ReviewCycleForm onClose={() => setShowCreate(false)} />

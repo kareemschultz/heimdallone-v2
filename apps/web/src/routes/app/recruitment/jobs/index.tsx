@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Briefcase } from "lucide-react";
@@ -41,6 +45,83 @@ const STATUS_TONE: Record<JobStatus, string> = {
 	closed: "badge",
 	cancelled: "badge badge-muted",
 };
+
+interface JobRow {
+	employmentType?: string | null;
+	id: string;
+	publishedAt?: string | Date | null;
+	status: string;
+	title: string;
+	vacancyCount: number;
+	workLocation?: string | null;
+}
+
+const jobColumns: ColumnDef<JobRow, unknown>[] = [
+	{
+		accessorKey: "title",
+		header: "Title",
+		cell: ({ row }) => (
+			<Link
+				params={{ id: row.original.id }}
+				style={{
+					fontWeight: 600,
+					color: "var(--fg)",
+					textDecoration: "none",
+				}}
+				to="/app/recruitment/jobs/$id"
+			>
+				{row.original.title}
+			</Link>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<span className={STATUS_TONE[row.original.status as JobStatus]}>
+				{STATUS_LABEL[row.original.status as JobStatus] ?? row.original.status}
+			</span>
+		),
+	},
+	{
+		accessorKey: "vacancyCount",
+		header: "Vacancies",
+		cell: ({ row }) => (
+			<span style={{ textAlign: "right", display: "block" }}>
+				{row.original.vacancyCount}
+			</span>
+		),
+	},
+	{
+		accessorKey: "workLocation",
+		header: "Work location",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>
+				{row.original.workLocation ?? "—"}
+			</span>
+		),
+	},
+	{
+		accessorKey: "employmentType",
+		header: "Employment type",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>
+				{row.original.employmentType ?? "—"}
+			</span>
+		),
+	},
+	{
+		accessorKey: "publishedAt",
+		header: "Opened",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-3)" }}>
+				{row.original.publishedAt
+					? new Date(row.original.publishedAt).toLocaleDateString()
+					: "—"}
+			</span>
+		),
+	},
+];
 
 function JobsListPage() {
 	const org = useContext(OrgCtx);
@@ -114,80 +195,27 @@ function JobsListPage() {
 				))}
 			</div>
 
-			{jobs.isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading jobs…
-				</div>
-			)}
-
-			{!jobs.isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description={
-							filter === "all"
-								? "Create your first job to start collecting candidates."
-								: `No jobs with status “${filter}”.`
-						}
-						icon={<Briefcase size={20} />}
-						title={
-							filter === "all" ? "No jobs yet" : "No jobs match this filter"
-						}
-					/>
-				</div>
-			)}
-
-			{!jobs.isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>Title</th>
-								<th>Status</th>
-								<th style={{ textAlign: "right" }}>Vacancies</th>
-								<th>Work location</th>
-								<th>Employment type</th>
-								<th>Opened</th>
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((job) => (
-								<tr key={job.id}>
-									<td>
-										<Link
-											params={{ id: job.id }}
-											style={{
-												fontWeight: 600,
-												color: "var(--fg)",
-												textDecoration: "none",
-											}}
-											to="/app/recruitment/jobs/$id"
-										>
-											{job.title}
-										</Link>
-									</td>
-									<td>
-										<span className={STATUS_TONE[job.status as JobStatus]}>
-											{STATUS_LABEL[job.status as JobStatus] ?? job.status}
-										</span>
-									</td>
-									<td style={{ textAlign: "right" }}>{job.vacancyCount}</td>
-									<td style={{ color: "var(--fg-2)" }}>
-										{job.workLocation ?? "—"}
-									</td>
-									<td style={{ color: "var(--fg-2)" }}>
-										{job.employmentType ?? "—"}
-									</td>
-									<td style={{ color: "var(--fg-3)" }}>
-										{job.publishedAt
-											? new Date(job.publishedAt).toLocaleDateString()
-											: "—"}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={jobColumns}
+					data={rows as JobRow[]}
+					emptyState={
+						<EmptyState
+							description={
+								filter === "all"
+									? "Create your first job to start collecting candidates."
+									: `No jobs with status “${filter}”.`
+							}
+							icon={<Briefcase size={20} />}
+							title={
+								filter === "all" ? "No jobs yet" : "No jobs match this filter"
+							}
+						/>
+					}
+					isError={jobs.isError}
+					isLoading={jobs.isLoading}
+				/>
+			</div>
 
 			{showCreate && (
 				<JobFormDialog

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Landmark } from "lucide-react";
@@ -26,6 +30,73 @@ function invalidateFinance(qc: ReturnType<typeof useQueryClient>) {
 	qc.invalidateQueries({
 		predicate: (q) => String(q.queryKey[0] ?? "").includes("finance"),
 	});
+}
+
+function budgetColumns(
+	canManage: boolean,
+	onEdit: (b: BudgetRow) => void,
+	onRemove: (b: BudgetRow) => void
+): ColumnDef<BudgetRow, unknown>[] {
+	const columns: ColumnDef<BudgetRow, unknown>[] = [
+		{
+			accessorKey: "label",
+			header: "Label",
+			cell: ({ row }) => <span className="fn-name">{row.original.label}</span>,
+		},
+		{
+			accessorKey: "scope",
+			header: "Scope",
+			cell: ({ row }) => budgetScopeLabel(row.original.scope),
+		},
+		{
+			accessorKey: "category",
+			header: "Category",
+			cell: ({ row }) => budgetCategoryLabel(row.original.category),
+		},
+		{
+			accessorKey: "periodStart",
+			header: "Period",
+			cell: ({ row }) => (
+				<>
+					{row.original.periodStart} → {row.original.periodEnd}
+				</>
+			),
+		},
+		{
+			accessorKey: "budgetedAmount",
+			header: "Budget",
+			cell: ({ row }) => (
+				<span className="num">
+					{formatMoney(row.original.budgetedAmount, row.original.currency)}
+				</span>
+			),
+		},
+	];
+	if (canManage) {
+		columns.push({
+			accessorKey: "id",
+			header: "",
+			cell: ({ row }) => (
+				<div className="fn-row-actions">
+					<button
+						className="fn-btn"
+						onClick={() => onEdit(row.original)}
+						type="button"
+					>
+						Edit
+					</button>
+					<button
+						className="fn-btn danger"
+						onClick={() => onRemove(row.original)}
+						type="button"
+					>
+						Remove
+					</button>
+				</div>
+			),
+		});
+	}
+	return columns;
 }
 
 function FinanceBudgetsPage() {
@@ -113,77 +184,26 @@ function FinanceBudgetsPage() {
 
 			<FinanceTabs />
 
-			{budgets.isLoading ? <div className="fn-skeleton" /> : null}
-			{budgets.isError ? (
-				<EmptyState
-					compact
-					description="Could not load budgets. Please try again."
-					title="Something went wrong"
-				/>
-			) : null}
-
-			{!(budgets.isLoading || budgets.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description={
-						canManage
-							? "Create your first budget to track labour cost against a target."
-							: "No budgets have been set up yet."
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={budgetColumns(canManage, openEdit, handleRemove)}
+					data={rows}
+					emptyState={
+						<EmptyState
+							compact
+							description={
+								canManage
+									? "Create your first budget to track labour cost against a target."
+									: "No budgets have been set up yet."
+							}
+							icon={<Landmark size={26} />}
+							title="No budgets yet"
+						/>
 					}
-					icon={<Landmark size={26} />}
-					title="No budgets yet"
+					isError={budgets.isError}
+					isLoading={budgets.isLoading}
 				/>
-			) : null}
-
-			{!(budgets.isLoading || budgets.isError) && rows.length > 0 ? (
-				<table className="fn-table">
-					<thead>
-						<tr>
-							<th>Label</th>
-							<th>Scope</th>
-							<th>Category</th>
-							<th>Period</th>
-							<th className="num">Budget</th>
-							{canManage ? <th /> : null}
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((b) => (
-							<tr key={b.id}>
-								<td className="fn-name">{b.label}</td>
-								<td>{budgetScopeLabel(b.scope)}</td>
-								<td>{budgetCategoryLabel(b.category)}</td>
-								<td>
-									{b.periodStart} → {b.periodEnd}
-								</td>
-								<td className="num">
-									{formatMoney(b.budgetedAmount, b.currency)}
-								</td>
-								{canManage ? (
-									<td>
-										<div className="fn-row-actions">
-											<button
-												className="fn-btn"
-												onClick={() => openEdit(b)}
-												type="button"
-											>
-												Edit
-											</button>
-											<button
-												className="fn-btn danger"
-												onClick={() => handleRemove(b)}
-												type="button"
-											>
-												Remove
-											</button>
-										</div>
-									</td>
-								) : null}
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{dialogOpen ? (
 				<BudgetForm

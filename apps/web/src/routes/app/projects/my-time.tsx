@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Clock, X } from "lucide-react";
@@ -167,6 +171,66 @@ function LogTimeDialog({
 	);
 }
 
+function makeTimeColumns(
+	onSubmit: (id: string) => void,
+	isSubmitting: boolean
+): ColumnDef<ProjectTimeEntryRow, unknown>[] {
+	return [
+		{
+			accessorKey: "entryDate",
+			header: "Date",
+			cell: ({ row }) => fmtDate(row.original.entryDate),
+		},
+		{
+			accessorKey: "projectName",
+			header: "Project",
+			cell: ({ row }) => row.original.projectName ?? "—",
+		},
+		{
+			accessorKey: "taskTitle",
+			header: "Task",
+			cell: ({ row }) => row.original.taskTitle ?? "—",
+		},
+		{
+			accessorKey: "minutes",
+			header: "Time",
+			cell: ({ row }) => fmtMinutes(row.original.minutes),
+		},
+		{
+			accessorKey: "status",
+			header: "Status",
+			cell: ({ row }) => (
+				<>
+					<Badge tone={timeStatusTone(row.original.status)}>
+						{timeStatusLabel(row.original.status)}
+					</Badge>
+					{row.original.status === "rejected" &&
+					row.original.rejectionReason ? (
+						<div className="pj-sub">{row.original.rejectionReason}</div>
+					) : null}
+				</>
+			),
+		},
+		{
+			accessorKey: "id",
+			header: "Actions",
+			cell: ({ row }) =>
+				row.original.status === "draft" ? (
+					<button
+						className="btn btn-sm"
+						disabled={isSubmitting}
+						onClick={() => onSubmit(row.original.id)}
+						type="button"
+					>
+						Submit
+					</button>
+				) : (
+					"—"
+				),
+		},
+	];
+}
+
 function MyTimePage() {
 	const org = useContext(OrgCtx);
 	const role = org.memberRole;
@@ -190,6 +254,11 @@ function MyTimePage() {
 		onError: (e: { message?: string }) =>
 			toast.error(e?.message ?? "Could not submit the entry"),
 	});
+
+	const timeColumns = makeTimeColumns(
+		(id) => submit.mutate(id),
+		submit.isPending
+	);
 
 	if (!hasAccess) {
 		return (
@@ -233,68 +302,21 @@ function MyTimePage() {
 
 			<ProjectsTabs />
 
-			{entries.isLoading ? <div className="pj-skeleton" /> : null}
-			{entries.isError ? (
-				<EmptyState
-					compact
-					description="Could not load your time entries. Try again."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={timeColumns}
+					data={rows as ProjectTimeEntryRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="You haven't logged any project time yet."
+							title="No time entries"
+						/>
+					}
+					isError={entries.isError}
+					isLoading={entries.isLoading}
 				/>
-			) : null}
-			{!(entries.isLoading || entries.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="You haven't logged any project time yet."
-					title="No time entries"
-				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="pj-table">
-					<thead>
-						<tr>
-							<th>Date</th>
-							<th>Project</th>
-							<th>Task</th>
-							<th>Time</th>
-							<th>Status</th>
-							<th aria-label="Actions" />
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((e) => (
-							<tr key={e.id}>
-								<td>{fmtDate(e.entryDate)}</td>
-								<td>{e.projectName ?? "—"}</td>
-								<td>{e.taskTitle ?? "—"}</td>
-								<td>{fmtMinutes(e.minutes)}</td>
-								<td>
-									<Badge tone={timeStatusTone(e.status)}>
-										{timeStatusLabel(e.status)}
-									</Badge>
-									{e.status === "rejected" && e.rejectionReason ? (
-										<div className="pj-sub">{e.rejectionReason}</div>
-									) : null}
-								</td>
-								<td>
-									{e.status === "draft" ? (
-										<button
-											className="btn btn-sm"
-											disabled={submit.isPending}
-											onClick={() => submit.mutate(e.id)}
-											type="button"
-										>
-											Submit
-										</button>
-									) : (
-										"—"
-									)}
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{showLog ? (
 				<LogTimeDialog

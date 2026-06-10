@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Handshake } from "lucide-react";
@@ -22,6 +26,55 @@ import { client, orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/app/crm/leads/")({
 	component: CrmLeadsPage,
 });
+
+const leadColumns: ColumnDef<LeadRow, unknown>[] = [
+	{
+		accessorKey: "name",
+		header: "Name",
+		cell: ({ row }) => (
+			<Link
+				className="crm-name-link"
+				params={{ id: row.original.id }}
+				to="/app/crm/leads/$id"
+			>
+				{row.original.name}
+			</Link>
+		),
+	},
+	{
+		accessorKey: "companyName",
+		header: "Company",
+		cell: ({ row }) => <>{row.original.companyName ?? "—"}</>,
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<Badge tone={leadStatusTone(row.original.status)}>
+				{leadStatusLabel(row.original.status)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "sourceKey",
+		header: "Source",
+		cell: ({ row }) => <>{sourceLabel(row.original.sourceKey)}</>,
+	},
+	{
+		accessorKey: "ownerName",
+		header: "Owner",
+		cell: ({ row }) => <>{row.original.ownerName ?? "Unassigned"}</>,
+	},
+	{
+		accessorKey: "estimatedValue",
+		header: "Est. value",
+		cell: ({ row }) => (
+			<span className="num">
+				{formatMoney(row.original.estimatedValue, "GYD")}
+			</span>
+		),
+	},
+];
 
 function invalidateCrm(qc: ReturnType<typeof useQueryClient>) {
 	qc.invalidateQueries({
@@ -190,64 +243,26 @@ function CrmLeadsPage() {
 				</select>
 			</div>
 
-			{leads.isLoading ? <div className="crm-skeleton" /> : null}
-			{leads.isError ? (
-				<EmptyState
-					compact
-					description="Could not load leads."
-					title="Something went wrong"
-				/>
-			) : null}
-
-			{!(leads.isLoading || leads.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description={
-						canManage ? "Add your first lead to get started." : "No leads yet."
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={leadColumns}
+					data={rows as LeadRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description={
+								canManage
+									? "Add your first lead to get started."
+									: "No leads yet."
+							}
+							icon={<Handshake size={26} />}
+							title="No leads"
+						/>
 					}
-					icon={<Handshake size={26} />}
-					title="No leads"
+					isError={leads.isError}
+					isLoading={leads.isLoading}
 				/>
-			) : null}
-
-			{!(leads.isLoading || leads.isError) && rows.length > 0 ? (
-				<table className="crm-table">
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Company</th>
-							<th>Status</th>
-							<th>Source</th>
-							<th>Owner</th>
-							<th className="num">Est. value</th>
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((l) => (
-							<tr key={l.id}>
-								<td>
-									<Link
-										className="crm-name-link"
-										params={{ id: l.id }}
-										to="/app/crm/leads/$id"
-									>
-										{l.name}
-									</Link>
-								</td>
-								<td>{l.companyName ?? "—"}</td>
-								<td>
-									<Badge tone={leadStatusTone(l.status)}>
-										{leadStatusLabel(l.status)}
-									</Badge>
-								</td>
-								<td>{sourceLabel(l.sourceKey)}</td>
-								<td>{l.ownerName ?? "Unassigned"}</td>
-								<td className="num">{formatMoney(l.estimatedValue, "GYD")}</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{dialog ? <NewLeadDialog onClose={() => setDialog(false)} /> : null}
 		</div>

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
@@ -73,57 +77,99 @@ const SLA_OPTIONS = [
 	{ value: "not_applicable", label: "No SLA" },
 ];
 
-function QueueRow({ r }: { r: HelpdeskRequestRow }) {
-	return (
-		<tr>
-			<td>
-				<span className="hd-mono">{r.reference}</span>
-			</td>
-			<td>
+const requestColumns: ColumnDef<HelpdeskRequestRow, unknown>[] = [
+	{
+		accessorKey: "reference",
+		header: "Reference",
+		cell: ({ row }) => (
+			<span className="hd-mono">{row.original.reference}</span>
+		),
+	},
+	{
+		accessorKey: "title",
+		header: "Request",
+		cell: ({ row }) => (
+			<>
 				<Link
 					className="hd-name hd-name-link"
-					params={{ id: r.id }}
+					params={{ id: row.original.id }}
 					to="/app/helpdesk/requests/$id"
 				>
-					{r.title}
+					{row.original.title}
 				</Link>
-				<div className="hd-sub">{r.categoryName ?? "Uncategorised"}</div>
-			</td>
-			<td>{r.requesterName ?? "—"}</td>
-			<td>
-				<Badge tone={statusTone(r.status)}>{statusLabel(r.status)}</Badge>
-			</td>
-			<td>
-				<Badge tone={priorityTone(r.priority)}>
-					{priorityLabel(r.priority)}
+				<div className="hd-sub">
+					{row.original.categoryName ?? "Uncategorised"}
+				</div>
+			</>
+		),
+	},
+	{
+		accessorKey: "requesterName",
+		header: "Requester",
+		cell: ({ row }) => row.original.requesterName ?? "—",
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<Badge tone={statusTone(row.original.status)}>
+				{statusLabel(row.original.status)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "priority",
+		header: "Priority",
+		cell: ({ row }) => (
+			<Badge tone={priorityTone(row.original.priority)}>
+				{priorityLabel(row.original.priority)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "slaState",
+		header: "SLA",
+		cell: ({ row }) => (
+			<Badge tone={slaTone(row.original.slaState)}>
+				{slaLabel(row.original.slaState)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "assigneeName",
+		header: "Assigned to",
+		cell: ({ row }) => row.original.assigneeName ?? "Unassigned",
+	},
+	{
+		accessorKey: "approvalStatus",
+		header: "Approval",
+		cell: ({ row }) =>
+			row.original.approvalRequired ? (
+				<Badge tone={approvalTone(row.original.approvalStatus)}>
+					{approvalLabel(row.original.approvalStatus)}
 				</Badge>
-			</td>
-			<td>
-				<Badge tone={slaTone(r.slaState)}>{slaLabel(r.slaState)}</Badge>
-			</td>
-			<td>{r.assigneeName ?? "Unassigned"}</td>
-			<td>
-				{r.approvalRequired ? (
-					<Badge tone={approvalTone(r.approvalStatus)}>
-						{approvalLabel(r.approvalStatus)}
-					</Badge>
-				) : (
-					"—"
-				)}
-			</td>
-			<td>{fmtDate(r.updatedAt)}</td>
-			<td>
-				{hasLinkedContext(r) ? (
-					<span className="hd-linkchip">
-						<Link2 size={11} /> Linked
-					</span>
-				) : (
-					"—"
-				)}
-			</td>
-		</tr>
-	);
-}
+			) : (
+				"—"
+			),
+	},
+	{
+		accessorKey: "updatedAt",
+		header: "Updated",
+		cell: ({ row }) => fmtDate(row.original.updatedAt),
+	},
+	{
+		accessorKey: "id",
+		header: "Linked",
+		cell: ({ row }) =>
+			hasLinkedContext(row.original) ? (
+				<span className="hd-linkchip">
+					<Link2 size={11} /> Linked
+				</span>
+			) : (
+				"—"
+			),
+	},
+];
 
 function RequestQueuePage() {
 	const org = useContext(OrgCtx);
@@ -288,45 +334,21 @@ function RequestQueuePage() {
 				</select>
 			</div>
 
-			{list.isLoading ? <div className="hd-skeleton" /> : null}
-			{list.isError ? (
-				<EmptyState
-					compact
-					description="Could not load the request queue. Try again."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={requestColumns}
+					data={rows as HelpdeskRequestRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="No requests match these filters."
+							title="No requests yet"
+						/>
+					}
+					isError={list.isError}
+					isLoading={list.isLoading}
 				/>
-			) : null}
-			{!(list.isLoading || list.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="No requests match these filters."
-					title="No requests yet"
-				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="hd-table">
-					<thead>
-						<tr>
-							<th>Reference</th>
-							<th>Request</th>
-							<th>Requester</th>
-							<th>Status</th>
-							<th>Priority</th>
-							<th>SLA</th>
-							<th>Assigned to</th>
-							<th>Approval</th>
-							<th>Updated</th>
-							<th>Linked</th>
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((r) => (
-							<QueueRow key={r.id} r={r} />
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{totalPages > 1 ? (
 				<div className="hd-pager">

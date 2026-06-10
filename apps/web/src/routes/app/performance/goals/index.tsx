@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Search, Target } from "lucide-react";
@@ -32,42 +36,60 @@ const STATUS_OPTIONS = [
 	{ value: "cancelled", label: "Cancelled" },
 ];
 
-function GoalRowView({ o }: { o: ObjectiveRow }) {
-	return (
-		<tr>
-			<td>
-				<span className="pf-mono">{o.reference}</span>
-			</td>
-			<td>
+const goalColumns: ColumnDef<ObjectiveRow, unknown>[] = [
+	{
+		accessorKey: "reference",
+		header: "Reference",
+		cell: ({ row }) => (
+			<span className="pf-mono">{row.original.reference}</span>
+		),
+	},
+	{
+		accessorKey: "title",
+		header: "Goal",
+		cell: ({ row }) => (
+			<>
 				<Link
 					className="pf-name pf-name-link"
-					params={{ id: o.id }}
+					params={{ id: row.original.id }}
 					to="/app/performance/goals/$id"
 				>
-					{o.title}
+					{row.original.title}
 				</Link>
-				<div className="pf-sub">{o.employeeName ?? "—"}</div>
-			</td>
-			<td>
-				<Badge tone={objectiveStatusTone(o.status)}>
-					{objectiveStatusLabel(o.status)}
-				</Badge>
-			</td>
-			<td>
-				<div className="pf-progress">
-					<div className="pf-progress-bar">
-						<span
-							className="pf-progress-fill tone-info"
-							style={{ width: `${o.progressPercent}%` }}
-						/>
-					</div>
-					<span className="pf-progress-val">{o.progressPercent}%</span>
+				<div className="pf-sub">{row.original.employeeName ?? "—"}</div>
+			</>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<Badge tone={objectiveStatusTone(row.original.status)}>
+				{objectiveStatusLabel(row.original.status)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "progressPercent",
+		header: "Progress",
+		cell: ({ row }) => (
+			<div className="pf-progress">
+				<div className="pf-progress-bar">
+					<span
+						className="pf-progress-fill tone-info"
+						style={{ width: `${row.original.progressPercent}%` }}
+					/>
 				</div>
-			</td>
-			<td>{fmtDate(o.dueDate)}</td>
-		</tr>
-	);
-}
+				<span className="pf-progress-val">{row.original.progressPercent}%</span>
+			</div>
+		),
+	},
+	{
+		accessorKey: "dueDate",
+		header: "Target date",
+		cell: ({ row }) => fmtDate(row.original.dueDate),
+	},
+];
 
 function GoalsListPage() {
 	const org = useContext(OrgCtx);
@@ -173,40 +195,21 @@ function GoalsListPage() {
 				</select>
 			</div>
 
-			{list.isLoading ? <div className="pf-skeleton" /> : null}
-			{list.isError ? (
-				<EmptyState
-					compact
-					description="Could not load goals. Try again."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={goalColumns}
+					data={rows as ObjectiveRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="No goals match these filters."
+							title="No goals yet"
+						/>
+					}
+					isError={list.isError}
+					isLoading={list.isLoading}
 				/>
-			) : null}
-			{!(list.isLoading || list.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="No goals match these filters."
-					title="No goals yet"
-				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="pf-table">
-					<thead>
-						<tr>
-							<th>Reference</th>
-							<th>Goal</th>
-							<th>Status</th>
-							<th>Progress</th>
-							<th>Target date</th>
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((o) => (
-							<GoalRowView key={o.id} o={o} />
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{showCreate ? (
 				<GoalFormDialog

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { FileWarning, Play, X } from "lucide-react";
@@ -81,6 +85,81 @@ interface DeviceRow {
 	name: string;
 }
 
+interface PunchTableRow extends PunchRow {
+	canMap: boolean;
+	deviceName: string;
+	employeeLabel: string;
+	onMap: () => void;
+}
+
+const punchColumns: ColumnDef<PunchTableRow, unknown>[] = [
+	{
+		accessorKey: "punchTime",
+		header: "When",
+		cell: ({ row }) => fmtDateTime(row.original.punchTime),
+	},
+	{
+		accessorKey: "employeeLabel",
+		header: "Device user / employee",
+		cell: ({ row }) => row.original.employeeLabel,
+	},
+	{
+		accessorKey: "deviceName",
+		header: "Device",
+		cell: ({ row }) => row.original.deviceName,
+	},
+	{
+		accessorKey: "direction",
+		header: "Direction",
+		cell: ({ row }) =>
+			PUNCH_DIRECTION_LABEL[row.original.direction] ?? row.original.direction,
+	},
+	{
+		accessorKey: "verifyMode",
+		header: "Method",
+		cell: ({ row }) =>
+			VERIFY_MODE_LABEL[row.original.verifyMode] ?? row.original.verifyMode,
+	},
+	{
+		accessorKey: "source",
+		header: "Source",
+		cell: ({ row }) =>
+			PUNCH_SOURCE_LABEL[row.original.source] ?? row.original.source,
+	},
+	{
+		accessorKey: "processingStatus",
+		header: "Status",
+		cell: ({ row }) => (
+			<>
+				{PUNCH_STATUS_LABEL[row.original.processingStatus] ??
+					row.original.processingStatus}
+				{row.original.errorReason ? (
+					<div style={{ fontSize: 11.5, color: "var(--fg-3)" }}>
+						{row.original.errorReason}
+					</div>
+				) : null}
+			</>
+		),
+	},
+	{
+		accessorKey: "id",
+		header: "",
+		cell: ({ row }) => (
+			<div style={{ textAlign: "right" }}>
+				{row.original.canMap ? (
+					<button
+						className="btn btn-sm"
+						onClick={row.original.onMap}
+						type="button"
+					>
+						Map
+					</button>
+				) : null}
+			</div>
+		),
+	},
+];
+
 function PunchesPage() {
 	const org = useContext(OrgCtx);
 	if (!canViewBiometrics(org.memberRole)) {
@@ -116,11 +195,35 @@ function PunchReview({ canManage }: { canManage: boolean }) {
 			input: { includeInactive: true },
 		})
 	);
-	const rows = (punches.data ?? []) as PunchRow[];
+	const rawRows = (punches.data ?? []) as PunchRow[];
 	const nameById = new Map<string, string>();
 	for (const d of (devices.data ?? []) as DeviceRow[]) {
 		nameById.set(d.id, d.name);
 	}
+	const rows: PunchTableRow[] = rawRows.map((p) => {
+		const deviceName = p.deviceId ? (nameById.get(p.deviceId) ?? "—") : "—";
+		const employeeLabel = p.employeeFirstName
+			? `${p.employeeFirstName}${p.employeeLastName ? ` ${p.employeeLastName}` : ""}`
+			: (p.deviceUserId ?? "—");
+		const canMap =
+			canManage && p.processingStatus === "unmapped" && Boolean(p.deviceId);
+		return {
+			...p,
+			deviceName,
+			employeeLabel,
+			canMap,
+			onMap: () =>
+				p.deviceId && p.deviceUserId
+					? setMapTarget({
+							deviceId: p.deviceId,
+							deviceName: p.deviceId
+								? (nameById.get(p.deviceId) ?? "Device")
+								: "Device",
+							deviceUserId: p.deviceUserId,
+						})
+					: undefined,
+		};
+	});
 
 	const runProcessor = async () => {
 		setProcessing(true);
@@ -188,61 +291,21 @@ function PunchReview({ canManage }: { canManage: boolean }) {
 				))}
 			</div>
 
-			{punches.isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading punches…
-				</div>
-			)}
-			{!punches.isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description="Import punches on a device, or wait for an API ingest / mobile check-in."
-						icon={<FileWarning size={20} />}
-						title="No punches in this view"
-					/>
-				</div>
-			)}
-			{!punches.isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>When</th>
-								<th>Device user / employee</th>
-								<th>Device</th>
-								<th>Direction</th>
-								<th>Method</th>
-								<th>Source</th>
-								<th>Status</th>
-								<th />
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((p) => (
-								<PunchRowView
-									canManage={canManage}
-									deviceName={
-										p.deviceId ? (nameById.get(p.deviceId) ?? "—") : "—"
-									}
-									key={p.id}
-									onMap={() =>
-										p.deviceId && p.deviceUserId
-											? setMapTarget({
-													deviceId: p.deviceId,
-													deviceName: p.deviceId
-														? (nameById.get(p.deviceId) ?? "Device")
-														: "Device",
-													deviceUserId: p.deviceUserId,
-												})
-											: undefined
-									}
-									punch={p}
-								/>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={punchColumns}
+					data={rows}
+					emptyState={
+						<EmptyState
+							description="Import punches on a device, or wait for an API ingest / mobile check-in."
+							icon={<FileWarning size={20} />}
+							title="No punches in this view"
+						/>
+					}
+					isError={punches.isError}
+					isLoading={punches.isLoading}
+				/>
+			</div>
 
 			{confirmProcess && (
 				<ConfirmProcessDialog
@@ -282,51 +345,6 @@ function PayrollNote() {
 		>
 			{PAYROLL_NOTE}
 		</div>
-	);
-}
-
-function PunchRowView({
-	punch,
-	deviceName,
-	canManage,
-	onMap,
-}: {
-	canManage: boolean;
-	deviceName: string;
-	onMap: () => void;
-	punch: PunchRow;
-}) {
-	const employee = punch.employeeFirstName
-		? `${punch.employeeFirstName}${punch.employeeLastName ? ` ${punch.employeeLastName}` : ""}`
-		: (punch.deviceUserId ?? "—");
-	const canMap =
-		canManage &&
-		punch.processingStatus === "unmapped" &&
-		Boolean(punch.deviceId);
-	return (
-		<tr>
-			<td>{fmtDateTime(punch.punchTime)}</td>
-			<td>{employee}</td>
-			<td>{deviceName}</td>
-			<td>{PUNCH_DIRECTION_LABEL[punch.direction] ?? punch.direction}</td>
-			<td>{VERIFY_MODE_LABEL[punch.verifyMode] ?? punch.verifyMode}</td>
-			<td>{PUNCH_SOURCE_LABEL[punch.source] ?? punch.source}</td>
-			<td>
-				{PUNCH_STATUS_LABEL[punch.processingStatus] ?? punch.processingStatus}
-				{punch.errorReason ? (
-					<div style={{ fontSize: 11.5, color: "var(--fg-3)" }}>
-						{punch.errorReason}
-					</div>
-				) : null}
-			</td>
-			<td style={{ textAlign: "right" }}>
-				{canMap ? (
-					<button className="btn btn-sm" onClick={onMap} type="button">
-						Map
-					</button>
-				) : null}
-			</td>
-		</tr>
 	);
 }
 

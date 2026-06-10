@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { CalendarClock } from "lucide-react";
@@ -50,6 +54,72 @@ function formatWhen(value: Date): string {
 		minute: "2-digit",
 	});
 }
+
+interface InterviewRow {
+	candidateName: string;
+	id: string;
+	interviewerCount: number;
+	interviewerEmployeeIds: string[];
+	interviewType: string;
+	openingTitle: string;
+	status: InterviewStatus;
+	when: Date;
+}
+
+const interviewBaseColumns: ColumnDef<InterviewRow, unknown>[] = [
+	{
+		accessorKey: "when",
+		header: "When",
+		cell: ({ row }) => (
+			<span style={{ whiteSpace: "nowrap", color: "var(--fg)" }}>
+				{formatWhen(row.original.when)}
+			</span>
+		),
+	},
+	{
+		accessorKey: "candidateName",
+		header: "Candidate",
+		cell: ({ row }) => (
+			<span style={{ fontWeight: 600, color: "var(--fg)" }}>
+				{row.original.candidateName}
+			</span>
+		),
+	},
+	{
+		accessorKey: "openingTitle",
+		header: "Opening",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>{row.original.openingTitle}</span>
+		),
+	},
+	{
+		accessorKey: "interviewType",
+		header: "Type",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>
+				{row.original.interviewType || "—"}
+			</span>
+		),
+	},
+	{
+		accessorKey: "interviewerCount",
+		header: "Interviewers",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-3)" }}>
+				{row.original.interviewerCount}
+			</span>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<span className={STATUS_TONE[row.original.status]}>
+				{STATUS_LABEL[row.original.status] ?? row.original.status}
+			</span>
+		),
+	},
+];
 
 function InterviewsPage() {
 	const org = useContext(OrgCtx);
@@ -158,6 +228,35 @@ function InterviewsPage() {
 
 	const isLoading = interviews.isLoading;
 
+	const columns = useMemo<ColumnDef<InterviewRow, unknown>[]>(() => {
+		if (!canView) {
+			return interviewBaseColumns;
+		}
+		return [
+			...interviewBaseColumns,
+			{
+				accessorKey: "id",
+				header: "Actions",
+				id: "actions",
+				cell: ({ row }) => (
+					<div style={{ textAlign: "right" }}>
+						<InterviewActions
+							canManage={canManage}
+							canView={canView}
+							employeesById={employeesById}
+							interview={{
+								id: row.original.id,
+								status: row.original.status,
+								interviewerEmployeeIds: row.original.interviewerEmployeeIds,
+								scheduledStart: row.original.when,
+							}}
+						/>
+					</div>
+				),
+			},
+		];
+	}, [canView, canManage, employeesById]);
+
 	return (
 		<div className="page">
 			<div className="page-header">
@@ -198,84 +297,29 @@ function InterviewsPage() {
 				))}
 			</div>
 
-			{isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading interviews…
-				</div>
-			)}
-
-			{!isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description={
-							filter === "all"
-								? "Once interviews are scheduled from the pipeline, they'll appear here."
-								: "No interviews match this filter."
-						}
-						icon={<CalendarClock size={20} />}
-						title={
-							filter === "all" ? "No interviews yet" : "No matching interviews"
-						}
-					/>
-				</div>
-			)}
-
-			{!isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>When</th>
-								<th>Candidate</th>
-								<th>Opening</th>
-								<th>Type</th>
-								<th>Interviewers</th>
-								<th>Status</th>
-								{canView && <th style={{ textAlign: "right" }}>Actions</th>}
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((iv) => (
-								<tr key={iv.id}>
-									<td style={{ whiteSpace: "nowrap", color: "var(--fg)" }}>
-										{formatWhen(iv.when)}
-									</td>
-									<td style={{ fontWeight: 600, color: "var(--fg)" }}>
-										{iv.candidateName}
-									</td>
-									<td style={{ color: "var(--fg-2)" }}>{iv.openingTitle}</td>
-									<td style={{ color: "var(--fg-2)" }}>
-										{iv.interviewType || "—"}
-									</td>
-									<td style={{ color: "var(--fg-3)" }}>
-										{iv.interviewerCount}
-									</td>
-									<td>
-										<span className={STATUS_TONE[iv.status]}>
-											{STATUS_LABEL[iv.status] ?? iv.status}
-										</span>
-									</td>
-									{canView && (
-										<td style={{ textAlign: "right" }}>
-											<InterviewActions
-												canManage={canManage}
-												canView={canView}
-												employeesById={employeesById}
-												interview={{
-													id: iv.id,
-													status: iv.status,
-													interviewerEmployeeIds: iv.interviewerEmployeeIds,
-													scheduledStart: iv.when,
-												}}
-											/>
-										</td>
-									)}
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={columns}
+					data={rows as InterviewRow[]}
+					emptyState={
+						<EmptyState
+							description={
+								filter === "all"
+									? "Once interviews are scheduled from the pipeline, they'll appear here."
+									: "No interviews match this filter."
+							}
+							icon={<CalendarClock size={20} />}
+							title={
+								filter === "all"
+									? "No interviews yet"
+									: "No matching interviews"
+							}
+						/>
+					}
+					isError={interviews.isError}
+					isLoading={isLoading}
+				/>
+			</div>
 		</div>
 	);
 }

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { ShieldAlert } from "lucide-react";
@@ -78,6 +82,108 @@ interface ExceptionRow {
 	type: string;
 }
 
+const RESOLVED_STATES = new Set(["resolved", "dismissed"]);
+
+interface ExceptionTableRow extends ExceptionRow {
+	closed: boolean;
+	employeeLabel: string;
+	onAcknowledge: () => void;
+	onDismiss: () => void;
+	onResolve: () => void;
+	showActions: boolean;
+}
+
+const exceptionColumns: ColumnDef<ExceptionTableRow, unknown>[] = [
+	{
+		accessorKey: "createdAt",
+		header: "When",
+		cell: ({ row }) => fmtDateTime(row.original.createdAt),
+	},
+	{
+		accessorKey: "employeeLabel",
+		header: "Employee",
+		cell: ({ row }) => row.original.employeeLabel,
+	},
+	{
+		accessorKey: "type",
+		header: "Type",
+		cell: ({ row }) =>
+			EXCEPTION_TYPE_LABEL[row.original.type] ?? row.original.type,
+	},
+	{
+		accessorKey: "source",
+		header: "Source",
+		cell: ({ row }) => exceptionSource(row.original.type),
+	},
+	{
+		accessorKey: "severity",
+		header: "Severity",
+		cell: ({ row }) =>
+			EXCEPTION_SEVERITY_LABEL[row.original.severity] ?? row.original.severity,
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) =>
+			EXCEPTION_STATUS_LABEL[row.original.status] ?? row.original.status,
+	},
+	{
+		accessorKey: "detail",
+		header: "Detail",
+		cell: ({ row }) => (
+			<div style={{ maxWidth: 320 }}>
+				{row.original.detail}
+				{row.original.closed && row.original.resolutionNote ? (
+					<div style={{ fontSize: 11.5, color: "var(--fg-3)", marginTop: 2 }}>
+						Note: {row.original.resolutionNote}
+					</div>
+				) : null}
+			</div>
+		),
+	},
+	{
+		accessorKey: "id",
+		header: "",
+		cell: ({ row }) => (
+			<div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+				{row.original.showActions ? (
+					<div
+						style={{
+							display: "inline-flex",
+							gap: 6,
+							justifyContent: "flex-end",
+						}}
+					>
+						{row.original.status === "open" && (
+							<button
+								className="btn btn-sm"
+								onClick={row.original.onAcknowledge}
+								type="button"
+							>
+								Acknowledge
+							</button>
+						)}
+						<button
+							className="btn btn-sm"
+							onClick={row.original.onResolve}
+							type="button"
+						>
+							Resolve
+						</button>
+						<button
+							className="btn btn-sm"
+							onClick={row.original.onDismiss}
+							type="button"
+						>
+							Dismiss
+						</button>
+					</div>
+				) : null}
+			</div>
+		),
+	},
+];
+
 function ExceptionsPage() {
 	const org = useContext(OrgCtx);
 	if (!canViewBiometrics(org.memberRole)) {
@@ -110,7 +216,7 @@ function ExceptionQueue({ canReview }: { canReview: boolean }) {
 			},
 		})
 	);
-	const rows = (exceptions.data ?? []) as ExceptionRow[];
+	const rawRows = (exceptions.data ?? []) as ExceptionRow[];
 
 	const acknowledge = async (id: string) => {
 		try {
@@ -143,6 +249,22 @@ function ExceptionQueue({ canReview }: { canReview: boolean }) {
 			setAction(null);
 		}
 	};
+
+	const rows: ExceptionTableRow[] = rawRows.map((x) => {
+		const employeeLabel = x.employeeFirstName
+			? `${x.employeeFirstName}${x.employeeLastName ? ` ${x.employeeLastName}` : ""}`
+			: "—";
+		const closed = RESOLVED_STATES.has(x.status);
+		return {
+			...x,
+			employeeLabel,
+			closed,
+			showActions: canReview && !closed,
+			onAcknowledge: () => acknowledge(x.id),
+			onResolve: () => setAction({ id: x.id, kind: "resolve" }),
+			onDismiss: () => setAction({ id: x.id, kind: "dismiss" }),
+		};
+	});
 
 	return (
 		<div className="page">
@@ -192,50 +314,21 @@ function ExceptionQueue({ canReview }: { canReview: boolean }) {
 				))}
 			</div>
 
-			{exceptions.isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading exceptions…
-				</div>
-			)}
-			{!exceptions.isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description="No attendance exceptions in this view. Processing punches may raise new ones."
-						icon={<ShieldAlert size={20} />}
-						title="Nothing to review"
-					/>
-				</div>
-			)}
-			{!exceptions.isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>When</th>
-								<th>Employee</th>
-								<th>Type</th>
-								<th>Source</th>
-								<th>Severity</th>
-								<th>Status</th>
-								<th>Detail</th>
-								<th />
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((x) => (
-								<ExceptionRowView
-									canReview={canReview}
-									exception={x}
-									key={x.id}
-									onAcknowledge={() => acknowledge(x.id)}
-									onDismiss={() => setAction({ id: x.id, kind: "dismiss" })}
-									onResolve={() => setAction({ id: x.id, kind: "resolve" })}
-								/>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={exceptionColumns}
+					data={rows}
+					emptyState={
+						<EmptyState
+							description="No attendance exceptions in this view. Processing punches may raise new ones."
+							icon={<ShieldAlert size={20} />}
+							title="Nothing to review"
+						/>
+					}
+					isError={exceptions.isError}
+					isLoading={exceptions.isLoading}
+				/>
+			</div>
 
 			{action && (
 				<ExceptionActionDialog
@@ -260,74 +353,5 @@ function ExceptionQueue({ canReview }: { canReview: boolean }) {
 				/>
 			)}
 		</div>
-	);
-}
-
-const RESOLVED_STATES = new Set(["resolved", "dismissed"]);
-
-function ExceptionRowView({
-	exception,
-	canReview,
-	onAcknowledge,
-	onResolve,
-	onDismiss,
-}: {
-	canReview: boolean;
-	exception: ExceptionRow;
-	onAcknowledge: () => void;
-	onDismiss: () => void;
-	onResolve: () => void;
-}) {
-	const employee = exception.employeeFirstName
-		? `${exception.employeeFirstName}${exception.employeeLastName ? ` ${exception.employeeLastName}` : ""}`
-		: "—";
-	const closed = RESOLVED_STATES.has(exception.status);
-	const showActions = canReview && !closed;
-	return (
-		<tr>
-			<td>{fmtDateTime(exception.createdAt)}</td>
-			<td>{employee}</td>
-			<td>{EXCEPTION_TYPE_LABEL[exception.type] ?? exception.type}</td>
-			<td>{exceptionSource(exception.type)}</td>
-			<td>
-				{EXCEPTION_SEVERITY_LABEL[exception.severity] ?? exception.severity}
-			</td>
-			<td>{EXCEPTION_STATUS_LABEL[exception.status] ?? exception.status}</td>
-			<td style={{ maxWidth: 320 }}>
-				{exception.detail}
-				{closed && exception.resolutionNote ? (
-					<div style={{ fontSize: 11.5, color: "var(--fg-3)", marginTop: 2 }}>
-						Note: {exception.resolutionNote}
-					</div>
-				) : null}
-			</td>
-			<td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-				{showActions ? (
-					<div
-						style={{
-							display: "inline-flex",
-							gap: 6,
-							justifyContent: "flex-end",
-						}}
-					>
-						{exception.status === "open" && (
-							<button
-								className="btn btn-sm"
-								onClick={onAcknowledge}
-								type="button"
-							>
-								Acknowledge
-							</button>
-						)}
-						<button className="btn btn-sm" onClick={onResolve} type="button">
-							Resolve
-						</button>
-						<button className="btn btn-sm" onClick={onDismiss} type="button">
-							Dismiss
-						</button>
-					</div>
-				) : null}
-			</td>
-		</tr>
 	);
 }

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Package, Plus, X } from "lucide-react";
@@ -102,6 +106,53 @@ function CategoryDialog({
 	);
 }
 
+function buildCategoryColumns({
+	canManage,
+	archivePending,
+	onArchive,
+}: {
+	archivePending: boolean;
+	canManage: boolean;
+	onArchive: (id: string) => void;
+}): ColumnDef<CategoryRow, unknown>[] {
+	const columns: ColumnDef<CategoryRow, unknown>[] = [
+		{
+			accessorKey: "name",
+			header: "Category",
+			cell: ({ row }) => (
+				<>
+					<div className="asset-name-link">{row.original.name}</div>
+					{row.original.description ? (
+						<div className="asset-sub">{row.original.description}</div>
+					) : null}
+				</>
+			),
+		},
+		{
+			accessorKey: "assetCount",
+			header: "Assets",
+			cell: ({ row }) => row.original.assetCount,
+		},
+	];
+	if (canManage) {
+		columns.push({
+			accessorKey: "id",
+			header: "",
+			cell: ({ row }) => (
+				<button
+					className="btn btn-sm"
+					disabled={archivePending}
+					onClick={() => onArchive(row.original.id)}
+					type="button"
+				>
+					Archive
+				</button>
+			),
+		});
+	}
+	return columns;
+}
+
 function CategoriesPage() {
 	const org = useContext(OrgCtx);
 	const qc = useQueryClient();
@@ -140,6 +191,11 @@ function CategoriesPage() {
 	}
 
 	const rows = (categories.data ?? []) as CategoryRow[];
+	const columns = buildCategoryColumns({
+		canManage,
+		archivePending: archive.isPending,
+		onArchive: (id) => archive.mutate(id),
+	});
 
 	return (
 		<div className="page">
@@ -167,51 +223,21 @@ function CategoriesPage() {
 
 			<AssetsTabs />
 
-			{categories.isLoading ? <div className="asset-skeleton" /> : null}
-			{!categories.isLoading && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="Create a category to group your assets."
-					title="No categories yet"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={columns}
+					data={rows as CategoryRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="Create a category to group your assets."
+							title="No categories yet"
+						/>
+					}
+					isError={categories.isError}
+					isLoading={categories.isLoading}
 				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="asset-table">
-					<thead>
-						<tr>
-							<th>Category</th>
-							<th>Assets</th>
-							{canManage ? <th /> : null}
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((c) => (
-							<tr key={c.id}>
-								<td>
-									<div className="asset-name-link">{c.name}</div>
-									{c.description ? (
-										<div className="asset-sub">{c.description}</div>
-									) : null}
-								</td>
-								<td>{c.assetCount}</td>
-								{canManage ? (
-									<td>
-										<button
-											className="btn btn-sm"
-											disabled={archive.isPending}
-											onClick={() => archive.mutate(c.id)}
-											type="button"
-										>
-											Archive
-										</button>
-									</td>
-								) : null}
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{showCreate ? (
 				<CategoryDialog

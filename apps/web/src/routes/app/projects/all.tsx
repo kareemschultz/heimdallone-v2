@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FolderKanban, Link2, Search } from "lucide-react";
@@ -41,54 +45,92 @@ const HEALTH_OPTIONS = [
 	{ value: "no_data", label: "No data" },
 ];
 
-function ProjectRowView({ p }: { p: ProjectRow }) {
-	return (
-		<tr>
-			<td>
-				<span className="pj-mono">{p.reference}</span>
-			</td>
-			<td>
+const projectColumns: ColumnDef<ProjectRow, unknown>[] = [
+	{
+		accessorKey: "reference",
+		header: "Reference",
+		cell: ({ row }) => (
+			<span className="pj-mono">{row.original.reference}</span>
+		),
+	},
+	{
+		accessorKey: "name",
+		header: "Project",
+		cell: ({ row }) => (
+			<>
 				<Link
 					className="pj-name pj-name-link"
-					params={{ id: p.id }}
+					params={{ id: row.original.id }}
 					to="/app/projects/$id"
 				>
-					{p.name}
+					{row.original.name}
 				</Link>
-				<div className="pj-sub">{p.projectManagerName ?? "Unassigned"}</div>
-			</td>
-			<td>
-				<Badge tone={projectStatusTone(p.status)}>
-					{projectStatusLabel(p.status)}
-				</Badge>
-			</td>
-			<td>
-				<Badge tone={healthTone(p.health)}>{healthLabel(p.health)}</Badge>
-			</td>
-			<td>
-				<Badge tone={priorityTone(p.priority)}>
-					{priorityLabel(p.priority)}
-				</Badge>
-			</td>
-			<td>
-				{p.openTaskCount}/{p.taskCount}
-				{p.overdueTaskCount > 0 ? (
-					<span className="pj-overdue"> · {p.overdueTaskCount} overdue</span>
-				) : null}
-			</td>
-			<td>{fmtDate(p.targetEndDate)}</td>
-			<td>
-				{p.hasCrossModuleLinks ? (
-					<span className="pj-linkchip">
-						<Link2 size={11} /> Linked
+				<div className="pj-sub">
+					{row.original.projectManagerName ?? "Unassigned"}
+				</div>
+			</>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<Badge tone={projectStatusTone(row.original.status)}>
+				{projectStatusLabel(row.original.status)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "health",
+		header: "Health",
+		cell: ({ row }) => (
+			<Badge tone={healthTone(row.original.health)}>
+				{healthLabel(row.original.health)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "priority",
+		header: "Priority",
+		cell: ({ row }) => (
+			<Badge tone={priorityTone(row.original.priority)}>
+				{priorityLabel(row.original.priority)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "taskCount",
+		header: "Tasks",
+		cell: ({ row }) => (
+			<>
+				{row.original.openTaskCount}/{row.original.taskCount}
+				{row.original.overdueTaskCount > 0 ? (
+					<span className="pj-overdue">
+						{" "}
+						· {row.original.overdueTaskCount} overdue
 					</span>
-				) : (
-					"—"
-				)}
-			</td>
-		</tr>
-	);
-}
+				) : null}
+			</>
+		),
+	},
+	{
+		accessorKey: "targetEndDate",
+		header: "Target",
+		cell: ({ row }) => fmtDate(row.original.targetEndDate),
+	},
+	{
+		accessorKey: "hasCrossModuleLinks",
+		header: "Linked",
+		cell: ({ row }) =>
+			row.original.hasCrossModuleLinks ? (
+				<span className="pj-linkchip">
+					<Link2 size={11} /> Linked
+				</span>
+			) : (
+				"—"
+			),
+	},
+];
 
 function ProjectsListPage() {
 	const org = useContext(OrgCtx);
@@ -204,43 +246,21 @@ function ProjectsListPage() {
 				</select>
 			</div>
 
-			{list.isLoading ? <div className="pj-skeleton" /> : null}
-			{list.isError ? (
-				<EmptyState
-					compact
-					description="Could not load projects. Try again."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={projectColumns}
+					data={rows as ProjectRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="No projects match these filters."
+							title="No projects yet"
+						/>
+					}
+					isError={list.isError}
+					isLoading={list.isLoading}
 				/>
-			) : null}
-			{!(list.isLoading || list.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="No projects match these filters."
-					title="No projects yet"
-				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="pj-table">
-					<thead>
-						<tr>
-							<th>Reference</th>
-							<th>Project</th>
-							<th>Status</th>
-							<th>Health</th>
-							<th>Priority</th>
-							<th>Tasks</th>
-							<th>Target</th>
-							<th>Linked</th>
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((p) => (
-							<ProjectRowView key={p.id} p={p} />
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 		</div>
 	);
 }

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Handshake } from "lucide-react";
@@ -19,6 +23,55 @@ export const Route = createFileRoute("/app/crm/activities/")({
 
 function fmt(d: string | null): string {
 	return d ? new Date(d).toISOString().slice(0, 10) : "—";
+}
+
+function buildActivityColumns(
+	onComplete: (actId: string) => void
+): ColumnDef<ActivityRow, unknown>[] {
+	return [
+		{
+			accessorKey: "type",
+			header: "Type",
+			cell: ({ row }) => <>{activityTypeLabel(row.original.type)}</>,
+		},
+		{
+			accessorKey: "subject",
+			header: "Subject",
+			cell: ({ row }) => (
+				<span className="crm-name">
+					{row.original.subject}
+					{row.original.isOverdue ? (
+						<span className="crm-badge tone-danger" style={{ marginLeft: 8 }}>
+							Overdue
+						</span>
+					) : null}
+				</span>
+			),
+		},
+		{
+			accessorKey: "dueAt",
+			header: "Due",
+			cell: ({ row }) => <>{fmt(row.original.dueAt)}</>,
+		},
+		{
+			accessorKey: "assigneeName",
+			header: "Assignee",
+			cell: ({ row }) => <>{row.original.assigneeName ?? "Unassigned"}</>,
+		},
+		{
+			accessorKey: "id",
+			header: "",
+			cell: ({ row }) => (
+				<button
+					className="crm-btn"
+					onClick={() => onComplete(row.original.id)}
+					type="button"
+				>
+					Mark done
+				</button>
+			),
+		},
+	];
 }
 
 function CrmActivitiesPage() {
@@ -62,6 +115,8 @@ function CrmActivitiesPage() {
 		}
 	}
 
+	const activityColumns = buildActivityColumns(complete);
+
 	return (
 		<div className="page">
 			<div className="page-header">
@@ -78,66 +133,22 @@ function CrmActivitiesPage() {
 
 			<CrmTabs />
 
-			{activities.isLoading ? <div className="crm-skeleton" /> : null}
-			{activities.isError ? (
-				<EmptyState
-					compact
-					description="Could not load activities."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={activityColumns}
+					data={rows as ActivityRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="Nothing open — you're all caught up."
+							icon={<Handshake size={26} />}
+							title="No open activities"
+						/>
+					}
+					isError={activities.isError}
+					isLoading={activities.isLoading}
 				/>
-			) : null}
-
-			{!(activities.isLoading || activities.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="Nothing open — you're all caught up."
-					icon={<Handshake size={26} />}
-					title="No open activities"
-				/>
-			) : null}
-
-			{!(activities.isLoading || activities.isError) && rows.length > 0 ? (
-				<table className="crm-table">
-					<thead>
-						<tr>
-							<th>Type</th>
-							<th>Subject</th>
-							<th>Due</th>
-							<th>Assignee</th>
-							<th />
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((a) => (
-							<tr key={a.id}>
-								<td>{activityTypeLabel(a.type)}</td>
-								<td className="crm-name">
-									{a.subject}
-									{a.isOverdue ? (
-										<span
-											className="crm-badge tone-danger"
-											style={{ marginLeft: 8 }}
-										>
-											Overdue
-										</span>
-									) : null}
-								</td>
-								<td>{fmt(a.dueAt)}</td>
-								<td>{a.assigneeName ?? "Unassigned"}</td>
-								<td>
-									<button
-										className="crm-btn"
-										onClick={() => complete(a.id)}
-										type="button"
-									>
-										Mark done
-									</button>
-								</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 		</div>
 	);
 }

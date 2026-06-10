@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ChevronLeft, ChevronRight, Package, Search } from "lucide-react";
@@ -36,6 +40,59 @@ interface AssetRow {
 }
 
 const PAGE_SIZE = 25;
+
+const inventoryColumns: ColumnDef<AssetRow, unknown>[] = [
+	{
+		accessorKey: "name",
+		header: "Asset",
+		cell: ({ row }) => (
+			<>
+				<Link
+					className="asset-name-link"
+					params={{ id: row.original.id }}
+					to="/app/assets/inventory/$id"
+				>
+					{row.original.name}
+				</Link>
+				{row.original.lotNumber ? (
+					<div className="asset-sub">Lot {row.original.lotNumber}</div>
+				) : null}
+			</>
+		),
+	},
+	{
+		accessorKey: "trackingId",
+		header: "Tracking ID",
+		cell: ({ row }) => (
+			<span className="asset-mono">{row.original.trackingId}</span>
+		),
+	},
+	{
+		accessorKey: "categoryName",
+		header: "Category",
+		cell: ({ row }) => row.original.categoryName ?? "Uncategorised",
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<Badge tone={statusTone(row.original.status)}>
+				{statusLabel(row.original.status)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "currentAssigneeName",
+		header: "Current holder",
+		cell: ({ row }) => row.original.currentAssigneeName ?? "—",
+	},
+];
+
+const costColumn: ColumnDef<AssetRow, unknown> = {
+	accessorKey: "purchaseCost",
+	header: "Purchase cost",
+	cell: ({ row }) => fmtCost(row.original.purchaseCost),
+};
 
 function InventoryPage() {
 	const org = useContext(OrgCtx);
@@ -93,6 +150,9 @@ function InventoryPage() {
 	const total = result?.total ?? 0;
 	const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 	const cats = (categories.data ?? []) as { id: string; name: string }[];
+	const columns = showCost
+		? [...inventoryColumns, costColumn]
+		: inventoryColumns;
 
 	return (
 		<div className="page">
@@ -163,65 +223,21 @@ function InventoryPage() {
 				</select>
 			</div>
 
-			{list.isLoading ? <div className="asset-skeleton" /> : null}
-			{list.isError ? (
-				<EmptyState
-					compact
-					description="Could not load the asset inventory. Try again."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={columns}
+					data={rows as AssetRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="No assets match these filters."
+							title="No assets"
+						/>
+					}
+					isError={list.isError}
+					isLoading={list.isLoading}
 				/>
-			) : null}
-			{!(list.isLoading || list.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="No assets match these filters."
-					title="No assets"
-				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="asset-table">
-					<thead>
-						<tr>
-							<th>Asset</th>
-							<th>Tracking ID</th>
-							<th>Category</th>
-							<th>Status</th>
-							<th>Current holder</th>
-							{showCost ? <th>Purchase cost</th> : null}
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((a) => (
-							<tr key={a.id}>
-								<td>
-									<Link
-										className="asset-name-link"
-										params={{ id: a.id }}
-										to="/app/assets/inventory/$id"
-									>
-										{a.name}
-									</Link>
-									{a.lotNumber ? (
-										<div className="asset-sub">Lot {a.lotNumber}</div>
-									) : null}
-								</td>
-								<td>
-									<span className="asset-mono">{a.trackingId}</span>
-								</td>
-								<td>{a.categoryName ?? "Uncategorised"}</td>
-								<td>
-									<Badge tone={statusTone(a.status)}>
-										{statusLabel(a.status)}
-									</Badge>
-								</td>
-								<td>{a.currentAssigneeName ?? "—"}</td>
-								{showCost ? <td>{fmtCost(a.purchaseCost)}</td> : null}
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{totalPages > 1 ? (
 				<div className="asset-pager">

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { FolderKanban } from "lucide-react";
@@ -33,12 +37,68 @@ const FILTERS = [
 
 const DONE = new Set(["done", "cancelled"]);
 
+function makeTaskColumns(
+	onOpen: (id: string) => void
+): ColumnDef<ProjectTaskRow, unknown>[] {
+	return [
+		{
+			accessorKey: "reference",
+			header: "Reference",
+			cell: ({ row }) => (
+				<span className="pj-mono">{row.original.reference}</span>
+			),
+		},
+		{
+			accessorKey: "title",
+			header: "Task",
+			cell: ({ row }) => (
+				<button
+					className="pj-name pj-name-link"
+					onClick={() => onOpen(row.original.id)}
+					type="button"
+				>
+					{row.original.title}
+				</button>
+			),
+		},
+		{
+			accessorKey: "projectName",
+			header: "Project",
+			cell: ({ row }) => row.original.projectName ?? "—",
+		},
+		{
+			accessorKey: "status",
+			header: "Status",
+			cell: ({ row }) => (
+				<Badge tone={taskStatusTone(row.original.status)}>
+					{taskStatusLabel(row.original.status)}
+				</Badge>
+			),
+		},
+		{
+			accessorKey: "priority",
+			header: "Priority",
+			cell: ({ row }) => (
+				<Badge tone={priorityTone(row.original.priority)}>
+					{priorityLabel(row.original.priority)}
+				</Badge>
+			),
+		},
+		{
+			accessorKey: "dueDate",
+			header: "Due",
+			cell: ({ row }) => fmtDate(row.original.dueDate),
+		},
+	];
+}
+
 function MyTasksPage() {
 	const org = useContext(OrgCtx);
 	const role = org.memberRole;
 	const hasAccess = canTrackProjectTime(role);
 	const [filter, setFilter] = useState("open");
 	const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+	const taskColumns = makeTaskColumns(setOpenTaskId);
 
 	const tasks = useQuery(
 		orpc.projects.tasks.list.queryOptions({
@@ -106,66 +166,21 @@ function MyTasksPage() {
 				))}
 			</div>
 
-			{tasks.isLoading ? <div className="pj-skeleton" /> : null}
-			{tasks.isError ? (
-				<EmptyState
-					compact
-					description="Could not load your tasks. Try again."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={taskColumns}
+					data={rows as ProjectTaskRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="Nothing matches this filter right now."
+							title="No tasks here"
+						/>
+					}
+					isError={tasks.isError}
+					isLoading={tasks.isLoading}
 				/>
-			) : null}
-			{!(tasks.isLoading || tasks.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="Nothing matches this filter right now."
-					title="No tasks here"
-				/>
-			) : null}
-
-			{rows.length > 0 ? (
-				<table className="pj-table">
-					<thead>
-						<tr>
-							<th>Reference</th>
-							<th>Task</th>
-							<th>Project</th>
-							<th>Status</th>
-							<th>Priority</th>
-							<th>Due</th>
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((t) => (
-							<tr key={t.id}>
-								<td>
-									<span className="pj-mono">{t.reference}</span>
-								</td>
-								<td>
-									<button
-										className="pj-name pj-name-link"
-										onClick={() => setOpenTaskId(t.id)}
-										type="button"
-									>
-										{t.title}
-									</button>
-								</td>
-								<td>{t.projectName ?? "—"}</td>
-								<td>
-									<Badge tone={taskStatusTone(t.status)}>
-										{taskStatusLabel(t.status)}
-									</Badge>
-								</td>
-								<td>
-									<Badge tone={priorityTone(t.priority)}>
-										{priorityLabel(t.priority)}
-									</Badge>
-								</td>
-								<td>{fmtDate(t.dueDate)}</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 
 			{openTaskId ? (
 				<TaskDetailSheet

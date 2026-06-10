@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { Landmark } from "lucide-react";
@@ -24,6 +28,65 @@ function downloadCsv(filename: string, csv: string) {
 	a.download = filename;
 	a.click();
 	URL.revokeObjectURL(url);
+}
+
+function deptColumns(cur: string): ColumnDef<DepartmentCostRow, unknown>[] {
+	return [
+		{
+			accessorKey: "departmentName",
+			header: "Department",
+			cell: ({ row }) => (
+				<span className="fn-name">{row.original.departmentName}</span>
+			),
+		},
+		{
+			accessorKey: "employeeCount",
+			header: "Employees",
+			cell: ({ row }) => (
+				<span className="num">{row.original.employeeCount}</span>
+			),
+		},
+		{
+			accessorKey: "grossPay",
+			header: "Gross",
+			cell: ({ row }) => (
+				<span className="num">{formatMoney(row.original.grossPay, cur)}</span>
+			),
+		},
+		{
+			accessorKey: "totalEmployerContributions",
+			header: "Employer contributions",
+			cell: ({ row }) => (
+				<span className="num">
+					{formatMoney(row.original.totalEmployerContributions, cur)}
+				</span>
+			),
+		},
+		{
+			accessorKey: "totalCost",
+			header: "Total cost",
+			cell: ({ row }) => (
+				<span className="num">{formatMoney(row.original.totalCost, cur)}</span>
+			),
+		},
+	];
+}
+
+function costTypeColumns(cur: string): ColumnDef<CostTypeRow, unknown>[] {
+	return [
+		{
+			accessorKey: "type",
+			header: "Type",
+			cell: ({ row }) => costTypeLabel(row.original.type),
+		},
+		{
+			accessorKey: "amount",
+			header: "Amount",
+			cell: ({ row }) => (
+				<span className="num">{formatMoney(row.original.amount, cur)}</span>
+			),
+		},
+	];
 }
 
 function FinanceCostingPage() {
@@ -123,125 +186,40 @@ function FinanceCostingPage() {
 				) : null}
 			</div>
 
-			{byDept.isLoading ? <div className="fn-skeleton" /> : null}
-			<DeptSection
-				cur={cur}
-				isError={byDept.isError}
-				isLoading={byDept.isLoading}
-				rows={deptRows}
-			/>
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={deptColumns(cur)}
+					data={deptRows}
+					emptyState={
+						<EmptyState
+							compact
+							description="No generated payroll cost in this period."
+							title="No cost to show"
+						/>
+					}
+					isError={byDept.isError}
+					isLoading={byDept.isLoading}
+				/>
+			</div>
 
 			<div className="fn-section">
 				<div className="fn-section-title">By cost type</div>
-				<CostTypeSection cur={cur} isError={byType.isError} rows={typeRows} />
+				<div className="card" style={{ overflow: "hidden" }}>
+					<DataTable
+						columns={costTypeColumns(cur)}
+						data={typeRows}
+						emptyState={
+							<EmptyState
+								compact
+								description="No payslip line items in this period."
+								title="Nothing to show"
+							/>
+						}
+						isError={byType.isError}
+						isLoading={byType.isLoading}
+					/>
+				</div>
 			</div>
 		</div>
-	);
-}
-
-function DeptSection({
-	rows,
-	isLoading,
-	isError,
-	cur,
-}: {
-	rows: DepartmentCostRow[];
-	isLoading: boolean;
-	isError: boolean;
-	cur: string;
-}) {
-	if (isLoading) {
-		return null;
-	}
-	if (isError) {
-		return (
-			<EmptyState
-				compact
-				description="Could not load cost by department."
-				title="Something went wrong"
-			/>
-		);
-	}
-	if (rows.length === 0) {
-		return (
-			<EmptyState
-				compact
-				description="No generated payroll cost in this period."
-				title="No cost to show"
-			/>
-		);
-	}
-	return (
-		<table className="fn-table">
-			<thead>
-				<tr>
-					<th>Department</th>
-					<th className="num">Employees</th>
-					<th className="num">Gross</th>
-					<th className="num">Employer contributions</th>
-					<th className="num">Total cost</th>
-				</tr>
-			</thead>
-			<tbody>
-				{rows.map((r) => (
-					<tr key={r.departmentId ?? "unassigned"}>
-						<td className="fn-name">{r.departmentName}</td>
-						<td className="num">{r.employeeCount}</td>
-						<td className="num">{formatMoney(r.grossPay, cur)}</td>
-						<td className="num">
-							{formatMoney(r.totalEmployerContributions, cur)}
-						</td>
-						<td className="num">{formatMoney(r.totalCost, cur)}</td>
-					</tr>
-				))}
-			</tbody>
-		</table>
-	);
-}
-
-function CostTypeSection({
-	rows,
-	isError,
-	cur,
-}: {
-	rows: CostTypeRow[];
-	isError: boolean;
-	cur: string;
-}) {
-	if (isError) {
-		return (
-			<EmptyState
-				compact
-				description="Could not load cost types."
-				title="Something went wrong"
-			/>
-		);
-	}
-	if (rows.length === 0) {
-		return (
-			<EmptyState
-				compact
-				description="No payslip line items in this period."
-				title="Nothing to show"
-			/>
-		);
-	}
-	return (
-		<table className="fn-table">
-			<thead>
-				<tr>
-					<th>Type</th>
-					<th className="num">Amount</th>
-				</tr>
-			</thead>
-			<tbody>
-				{rows.map((r) => (
-					<tr key={r.type}>
-						<td>{costTypeLabel(r.type)}</td>
-						<td className="num">{formatMoney(r.amount, cur)}</td>
-					</tr>
-				))}
-			</tbody>
-		</table>
 	);
 }

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ClipboardList } from "lucide-react";
@@ -43,6 +47,117 @@ interface TaskRow {
 	status: string;
 	titleSnapshot: string;
 }
+
+interface OnboardingRow {
+	done: number;
+	employeeId: string;
+	employeeNameValue: string;
+	id: string;
+	nextTaskTitle: string | null;
+	overdue: number;
+	pct: number;
+	progressLoading: boolean;
+	skipped: number;
+	startedAt: string | Date;
+	status: string;
+	templateId: string | null;
+	templateNameValue: string;
+	total: number;
+}
+
+const onboardingColumns: ColumnDef<OnboardingRow, unknown>[] = [
+	{
+		accessorKey: "employeeNameValue",
+		header: "Employee",
+		cell: ({ row }) => (
+			<Link
+				params={{ id: row.original.id }}
+				style={{
+					fontWeight: 600,
+					color: "var(--fg)",
+					textDecoration: "none",
+				}}
+				to="/app/onboarding/employees/$id"
+			>
+				{row.original.employeeNameValue}
+			</Link>
+		),
+	},
+	{
+		accessorKey: "templateNameValue",
+		header: "Template",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>
+				{row.original.templateNameValue}
+			</span>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => {
+			const status = row.original.status as OnboardingStatus;
+			return (
+				<>
+					<span className={ONBOARDING_STATUS_TONE[status]}>
+						{ONBOARDING_STATUS_LABEL[status] ?? status}
+					</span>
+					{row.original.overdue > 0 && (
+						<span className="badge badge-warning" style={{ marginLeft: 6 }}>
+							{row.original.overdue} overdue
+						</span>
+					)}
+				</>
+			);
+		},
+	},
+	{
+		accessorKey: "pct",
+		header: "Progress",
+		cell: ({ row }) => {
+			const { progressLoading, pct, done, total, skipped } = row.original;
+			if (progressLoading) {
+				return <span style={{ color: "var(--fg-3)" }}>…</span>;
+			}
+			return (
+				<div
+					style={{
+						display: "flex",
+						flexDirection: "column",
+						gap: 4,
+						minWidth: 140,
+					}}
+				>
+					<div className="ob-progress">
+						<div className="ob-progress-fill" style={{ width: `${pct}%` }} />
+					</div>
+					<span style={{ fontSize: 11.5, color: "var(--fg-3)" }}>
+						{done}/{total} done
+						{skipped > 0 ? ` · ${skipped} skipped` : ""}
+					</span>
+				</div>
+			);
+		},
+	},
+	{
+		accessorKey: "nextTaskTitle",
+		header: "Next task",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)", fontSize: 12.5 }}>
+				{row.original.nextTaskTitle ?? "—"}
+			</span>
+		),
+	},
+	{
+		accessorKey: "startedAt",
+		header: "Started",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-3)" }}>
+				{new Date(row.original.startedAt).toLocaleDateString()}
+			</span>
+		),
+	},
+];
 
 function EmployeeOnboardingListPage() {
 	const org = useContext(OrgCtx);
@@ -111,6 +226,39 @@ function EmployeeOnboardingListPage() {
 			},
 		});
 
+	const tableRows: OnboardingRow[] = rows.map((o, i) => {
+		const tasks = (taskQueries[i]?.data ?? []) as TaskRow[];
+		const total = tasks.length;
+		const done = tasks.filter((t) => t.status === "completed").length;
+		const skipped = tasks.filter((t) => t.status === "skipped").length;
+		const pct = total === 0 ? 0 : Math.round((done / total) * 100);
+		const overdue = tasks.filter(
+			(t) =>
+				!isTaskResolved(t.status) &&
+				t.dueAt &&
+				new Date(t.dueAt).getTime() < Date.now()
+		).length;
+		const nextTask = tasks.find((t) => !isTaskResolved(t.status));
+		return {
+			id: o.id,
+			employeeId: o.employeeId,
+			templateId: o.templateId,
+			status: o.status,
+			startedAt: o.startedAt,
+			employeeNameValue: employeeName.get(o.employeeId) ?? "Employee",
+			templateNameValue: o.templateId
+				? (templateName.get(o.templateId) ?? "—")
+				: "—",
+			progressLoading: taskQueries[i]?.isLoading ?? false,
+			pct,
+			done,
+			total,
+			skipped,
+			overdue,
+			nextTaskTitle: nextTask ? nextTask.titleSnapshot : null,
+		};
+	});
+
 	return (
 		<div className="page">
 			<div className="page-header">
@@ -158,134 +306,29 @@ function EmployeeOnboardingListPage() {
 				))}
 			</div>
 
-			{onboardings.isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading onboardings…
-				</div>
-			)}
-
-			{!onboardings.isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description={
-							filter === "all"
-								? "Start onboarding for a new hire to see it here."
-								: "No onboardings match this filter."
-						}
-						icon={<ClipboardList size={20} />}
-						title={
-							filter === "all"
-								? "No onboardings yet"
-								: "No matching onboardings"
-						}
-					/>
-				</div>
-			)}
-
-			{!onboardings.isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>Employee</th>
-								<th>Template</th>
-								<th>Status</th>
-								<th>Progress</th>
-								<th>Next task</th>
-								<th>Started</th>
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((o, i) => {
-								const tasks = (taskQueries[i]?.data ?? []) as TaskRow[];
-								const total = tasks.length;
-								const done = tasks.filter(
-									(t) => t.status === "completed"
-								).length;
-								const skipped = tasks.filter(
-									(t) => t.status === "skipped"
-								).length;
-								const pct = total === 0 ? 0 : Math.round((done / total) * 100);
-								const overdue = tasks.filter(
-									(t) =>
-										!isTaskResolved(t.status) &&
-										t.dueAt &&
-										new Date(t.dueAt).getTime() < Date.now()
-								).length;
-								const nextTask = tasks.find((t) => !isTaskResolved(t.status));
-								const status = o.status as OnboardingStatus;
-								return (
-									<tr key={o.id}>
-										<td>
-											<Link
-												params={{ id: o.id }}
-												style={{
-													fontWeight: 600,
-													color: "var(--fg)",
-													textDecoration: "none",
-												}}
-												to="/app/onboarding/employees/$id"
-											>
-												{employeeName.get(o.employeeId) ?? "Employee"}
-											</Link>
-										</td>
-										<td style={{ color: "var(--fg-2)" }}>
-											{o.templateId
-												? (templateName.get(o.templateId) ?? "—")
-												: "—"}
-										</td>
-										<td>
-											<span className={ONBOARDING_STATUS_TONE[status]}>
-												{ONBOARDING_STATUS_LABEL[status] ?? status}
-											</span>
-											{overdue > 0 && (
-												<span
-													className="badge badge-warning"
-													style={{ marginLeft: 6 }}
-												>
-													{overdue} overdue
-												</span>
-											)}
-										</td>
-										<td style={{ minWidth: 140 }}>
-											{taskQueries[i]?.isLoading ? (
-												<span style={{ color: "var(--fg-3)" }}>…</span>
-											) : (
-												<div
-													style={{
-														display: "flex",
-														flexDirection: "column",
-														gap: 4,
-													}}
-												>
-													<div className="ob-progress">
-														<div
-															className="ob-progress-fill"
-															style={{ width: `${pct}%` }}
-														/>
-													</div>
-													<span
-														style={{ fontSize: 11.5, color: "var(--fg-3)" }}
-													>
-														{done}/{total} done
-														{skipped > 0 ? ` · ${skipped} skipped` : ""}
-													</span>
-												</div>
-											)}
-										</td>
-										<td style={{ color: "var(--fg-2)", fontSize: 12.5 }}>
-											{nextTask ? nextTask.titleSnapshot : "—"}
-										</td>
-										<td style={{ color: "var(--fg-3)" }}>
-											{new Date(o.startedAt).toLocaleDateString()}
-										</td>
-									</tr>
-								);
-							})}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={onboardingColumns}
+					data={tableRows}
+					emptyState={
+						<EmptyState
+							description={
+								filter === "all"
+									? "Start onboarding for a new hire to see it here."
+									: "No onboardings match this filter."
+							}
+							icon={<ClipboardList size={20} />}
+							title={
+								filter === "all"
+									? "No onboardings yet"
+									: "No matching onboardings"
+							}
+						/>
+					}
+					isError={onboardings.isError}
+					isLoading={onboardings.isLoading}
+				/>
+			</div>
 
 			{showStart && (
 				<StartOnboardingDialog

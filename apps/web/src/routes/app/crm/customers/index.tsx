@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Handshake } from "lucide-react";
@@ -16,6 +20,48 @@ import { orpc } from "@/utils/orpc";
 export const Route = createFileRoute("/app/crm/customers/")({
 	component: CrmCustomersPage,
 });
+
+const customerColumns: ColumnDef<CustomerRow, unknown>[] = [
+	{
+		accessorKey: "name",
+		header: "Name",
+		cell: ({ row }) => (
+			<Link
+				className="crm-name-link"
+				params={{ id: row.original.id }}
+				to="/app/crm/customers/$id"
+			>
+				{row.original.name}
+			</Link>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<Badge tone={customerStatusTone(row.original.status)}>
+				{customerStatusLabel(row.original.status)}
+			</Badge>
+		),
+	},
+	{
+		accessorKey: "industry",
+		header: "Industry",
+		cell: ({ row }) => <>{row.original.industry ?? "—"}</>,
+	},
+	{
+		accessorKey: "ownerName",
+		header: "Owner",
+		cell: ({ row }) => <>{row.original.ownerName ?? "Unassigned"}</>,
+	},
+	{
+		accessorKey: "openDealCount",
+		header: "Open deals",
+		cell: ({ row }) => (
+			<span className="num">{row.original.openDealCount}</span>
+		),
+	},
+];
 
 function CrmCustomersPage() {
 	const org = useContext(OrgCtx);
@@ -71,60 +117,22 @@ function CrmCustomersPage() {
 				/>
 			</div>
 
-			{customers.isLoading ? <div className="crm-skeleton" /> : null}
-			{customers.isError ? (
-				<EmptyState
-					compact
-					description="Could not load customers."
-					title="Something went wrong"
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={customerColumns}
+					data={rows as CustomerRow[]}
+					emptyState={
+						<EmptyState
+							compact
+							description="No customers yet."
+							icon={<Handshake size={26} />}
+							title="No customers"
+						/>
+					}
+					isError={customers.isError}
+					isLoading={customers.isLoading}
 				/>
-			) : null}
-
-			{!(customers.isLoading || customers.isError) && rows.length === 0 ? (
-				<EmptyState
-					compact
-					description="No customers yet."
-					icon={<Handshake size={26} />}
-					title="No customers"
-				/>
-			) : null}
-
-			{!(customers.isLoading || customers.isError) && rows.length > 0 ? (
-				<table className="crm-table">
-					<thead>
-						<tr>
-							<th>Name</th>
-							<th>Status</th>
-							<th>Industry</th>
-							<th>Owner</th>
-							<th className="num">Open deals</th>
-						</tr>
-					</thead>
-					<tbody>
-						{rows.map((c) => (
-							<tr key={c.id}>
-								<td>
-									<Link
-										className="crm-name-link"
-										params={{ id: c.id }}
-										to="/app/crm/customers/$id"
-									>
-										{c.name}
-									</Link>
-								</td>
-								<td>
-									<Badge tone={customerStatusTone(c.status)}>
-										{customerStatusLabel(c.status)}
-									</Badge>
-								</td>
-								<td>{c.industry ?? "—"}</td>
-								<td>{c.ownerName ?? "Unassigned"}</td>
-								<td className="num">{c.openDealCount}</td>
-							</tr>
-						))}
-					</tbody>
-				</table>
-			) : null}
+			</div>
 		</div>
 	);
 }

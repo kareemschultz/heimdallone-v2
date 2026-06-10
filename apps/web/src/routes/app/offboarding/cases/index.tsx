@@ -1,4 +1,8 @@
-import { useQuery } from "@tanstack/react-query";
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
+import { useQueries, useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { LogOut } from "lucide-react";
 import { useContext, useState } from "react";
@@ -41,6 +45,86 @@ const FILTERS: { key: StatusFilter; label: string }[] = [
 function employeeName(emp: { firstName: string; lastName: string | null }) {
 	return `${emp.firstName}${emp.lastName ? ` ${emp.lastName}` : ""}`;
 }
+
+interface CaseRow {
+	employee: string;
+	exitType: string;
+	id: string;
+	lastWorkingDay: string | null;
+	progress: string;
+	status: string;
+}
+
+const caseColumns: ColumnDef<CaseRow, unknown>[] = [
+	{
+		accessorKey: "employee",
+		header: "Employee",
+		cell: ({ row }) => (
+			<Link
+				params={{ id: row.original.id }}
+				style={{
+					fontWeight: 600,
+					color: "var(--fg)",
+					textDecoration: "none",
+				}}
+				to="/app/offboarding/cases/$id"
+			>
+				{row.original.employee}
+			</Link>
+		),
+	},
+	{
+		accessorKey: "exitType",
+		header: "Exit type",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>
+				{exitTypeLabel(row.original.exitType)}
+			</span>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<span className={caseStatusTone(row.original.status)}>
+				{caseStatusLabel(row.original.status)}
+			</span>
+		),
+	},
+	{
+		accessorKey: "lastWorkingDay",
+		header: "Last working day",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-3)" }}>
+				{row.original.lastWorkingDay
+					? new Date(row.original.lastWorkingDay).toLocaleDateString()
+					: "Not set"}
+			</span>
+		),
+	},
+	{
+		accessorKey: "progress",
+		header: "Clearance progress",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>{row.original.progress}</span>
+		),
+	},
+	{
+		accessorKey: "id",
+		header: "",
+		cell: ({ row }) => (
+			<div style={{ textAlign: "right" }}>
+				<Link
+					className="btn btn-sm"
+					params={{ id: row.original.id }}
+					to="/app/offboarding/cases/$id"
+				>
+					View
+				</Link>
+			</div>
+		),
+	},
+];
 
 function CasesListPage() {
 	const org = useContext(OrgCtx);
@@ -126,6 +210,37 @@ function CasesDashboard({ canManage }: { canManage: boolean }) {
 		status: string;
 	}>;
 
+	// Per-case clearance progress (count of resolved tasks). Fetched up front so
+	// the DataTable cell stays a pure render (hooks can't run per-row in a cell).
+	const taskQueries = useQueries({
+		queries: rows.map((c) =>
+			orpc.offboarding.tasks.list.queryOptions({ input: { caseId: c.id } })
+		),
+	});
+
+	const tableRows: CaseRow[] = rows.map((c, i) => {
+		const q = taskQueries[i];
+		const taskRows = q?.data ?? [];
+		const total = taskRows.length;
+		const done = taskRows.filter((t) => isTaskResolved(t.status)).length;
+
+		let progress = "—";
+		if (q?.isLoading) {
+			progress = "…";
+		} else if (total > 0) {
+			progress = `${done}/${total} done`;
+		}
+
+		return {
+			id: c.id,
+			employee: nameById.get(c.employeeId) ?? "Employee",
+			exitType: c.exitType,
+			lastWorkingDay: c.lastWorkingDay,
+			status: c.status,
+			progress,
+		};
+	});
+
 	return (
 		<div className="page">
 			<div className="page-header">
@@ -171,50 +286,21 @@ function CasesDashboard({ canManage }: { canManage: boolean }) {
 				))}
 			</div>
 
-			{cases.isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading cases…
-				</div>
-			)}
-
-			{!cases.isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description="When an employee resigns or is offboarded, their case shows up here."
-						icon={<LogOut size={20} />}
-						title="No offboarding cases"
-					/>
-				</div>
-			)}
-
-			{!cases.isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>Employee</th>
-								<th>Exit type</th>
-								<th>Status</th>
-								<th>Last working day</th>
-								<th>Clearance progress</th>
-								<th />
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((c) => (
-								<CaseRow
-									caseId={c.id}
-									employee={nameById.get(c.employeeId) ?? "Employee"}
-									exitType={c.exitType}
-									key={c.id}
-									lastWorkingDay={c.lastWorkingDay}
-									status={c.status}
-								/>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={caseColumns}
+					data={tableRows}
+					emptyState={
+						<EmptyState
+							description="When an employee resigns or is offboarded, their case shows up here."
+							icon={<LogOut size={20} />}
+							title="No offboarding cases"
+						/>
+					}
+					isError={cases.isError}
+					isLoading={cases.isLoading}
+				/>
+			</div>
 
 			{showCreate && (
 				<OffboardingCreateCaseDialog
@@ -226,74 +312,5 @@ function CasesDashboard({ canManage }: { canManage: boolean }) {
 				/>
 			)}
 		</div>
-	);
-}
-
-interface CaseRowProps {
-	caseId: string;
-	employee: string;
-	exitType: string;
-	lastWorkingDay: string | null;
-	status: string;
-}
-
-function CaseRow({
-	caseId,
-	employee,
-	exitType,
-	lastWorkingDay,
-	status,
-}: CaseRowProps) {
-	const tasks = useQuery(
-		orpc.offboarding.tasks.list.queryOptions({ input: { caseId } })
-	);
-	const taskRows = tasks.data ?? [];
-	const total = taskRows.length;
-	const done = taskRows.filter((t) => isTaskResolved(t.status)).length;
-
-	let progress = "—";
-	if (tasks.isLoading) {
-		progress = "…";
-	} else if (total > 0) {
-		progress = `${done}/${total} done`;
-	}
-
-	return (
-		<tr>
-			<td>
-				<Link
-					params={{ id: caseId }}
-					style={{
-						fontWeight: 600,
-						color: "var(--fg)",
-						textDecoration: "none",
-					}}
-					to="/app/offboarding/cases/$id"
-				>
-					{employee}
-				</Link>
-			</td>
-			<td style={{ color: "var(--fg-2)" }}>{exitTypeLabel(exitType)}</td>
-			<td>
-				<span className={caseStatusTone(status)}>
-					{caseStatusLabel(status)}
-				</span>
-			</td>
-			<td style={{ color: "var(--fg-3)" }}>
-				{lastWorkingDay
-					? new Date(lastWorkingDay).toLocaleDateString()
-					: "Not set"}
-			</td>
-			<td style={{ color: "var(--fg-2)" }}>{progress}</td>
-			<td style={{ textAlign: "right" }}>
-				<Link
-					className="btn btn-sm"
-					params={{ id: caseId }}
-					to="/app/offboarding/cases/$id"
-				>
-					View
-				</Link>
-			</td>
-		</tr>
 	);
 }

@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { FileText } from "lucide-react";
@@ -20,6 +24,93 @@ interface TemplateTaskRow {
 	category: string;
 	isRequired: boolean;
 }
+
+interface TemplateRow {
+	categories: string[];
+	description: string | null;
+	exitType: string | null;
+	id: string;
+	isActive: boolean;
+	name: string;
+	tasksLabel: string;
+	updatedAt: string | Date;
+}
+
+const templateColumns: ColumnDef<TemplateRow, unknown>[] = [
+	{
+		accessorKey: "name",
+		header: "Template",
+		cell: ({ row }) => (
+			<>
+				<Link
+					params={{ id: row.original.id }}
+					style={{
+						fontWeight: 600,
+						color: "var(--fg)",
+						textDecoration: "none",
+					}}
+					to="/app/offboarding/templates/$id"
+				>
+					{row.original.name}
+				</Link>
+				{row.original.description && (
+					<div style={{ fontSize: 12, color: "var(--fg-3)" }}>
+						{row.original.description}
+					</div>
+				)}
+			</>
+		),
+	},
+	{
+		accessorKey: "exitType",
+		header: "Exit type",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>
+				{row.original.exitType ? exitTypeLabel(row.original.exitType) : "Any"}
+			</span>
+		),
+	},
+	{
+		accessorKey: "isActive",
+		header: "Status",
+		cell: ({ row }) => (
+			<span className={row.original.isActive ? "badge badge-success" : "badge"}>
+				{row.original.isActive ? "Active" : "Archived"}
+			</span>
+		),
+	},
+	{
+		accessorKey: "tasksLabel",
+		header: "Tasks",
+		cell: ({ row }) => (
+			<div style={{ textAlign: "right", color: "var(--fg-2)" }}>
+				{row.original.tasksLabel}
+			</div>
+		),
+	},
+	{
+		accessorKey: "categories",
+		header: "Categories",
+		cell: ({ row }) => (
+			<div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+				{row.original.categories.map((c) => (
+					<span className="badge" key={c}>
+						{categoryLabel(c)}
+					</span>
+				))}
+			</div>
+		),
+	},
+	{
+		accessorKey: "updatedAt",
+		header: "Updated",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-3)" }}>
+				{new Date(row.original.updatedAt).toLocaleDateString()}
+			</span>
+		),
+	},
+];
 
 function TemplatesListPage() {
 	const org = useContext(OrgCtx);
@@ -47,6 +138,25 @@ function TemplatesListPage() {
 				enabled: canView,
 			})
 		),
+	});
+
+	const tableRows: TemplateRow[] = rows.map((t, i) => {
+		const tasks = (taskQueries[i]?.data ?? []) as TemplateTaskRow[];
+		const requiredCount = tasks.filter((x) => x.isRequired).length;
+		const categories = [...new Set(tasks.map((x) => x.category))];
+		const tasksLabel = taskQueries[i]?.isLoading
+			? "…"
+			: `${tasks.length} (${requiredCount} required)`;
+		return {
+			id: t.id,
+			name: t.name,
+			description: t.description,
+			exitType: t.exitType,
+			isActive: t.isActive,
+			updatedAt: t.updatedAt,
+			tasksLabel,
+			categories,
+		};
 	});
 
 	const invalidate = () =>
@@ -123,96 +233,21 @@ function TemplatesListPage() {
 				Editing a template does not change cases already in progress.
 			</div>
 
-			{templates.isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading templates…
-				</div>
-			)}
-
-			{!templates.isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description="Create your first template to start offboarding employees faster."
-						icon={<FileText size={20} />}
-						title="No templates yet"
-					/>
-				</div>
-			)}
-
-			{!templates.isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>Template</th>
-								<th>Exit type</th>
-								<th>Status</th>
-								<th style={{ textAlign: "right" }}>Tasks</th>
-								<th>Categories</th>
-								<th>Updated</th>
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((t, i) => {
-								const tasks = (taskQueries[i]?.data ?? []) as TemplateTaskRow[];
-								const requiredCount = tasks.filter((x) => x.isRequired).length;
-								const categories = [...new Set(tasks.map((x) => x.category))];
-								return (
-									<tr key={t.id}>
-										<td>
-											<Link
-												params={{ id: t.id }}
-												style={{
-													fontWeight: 600,
-													color: "var(--fg)",
-													textDecoration: "none",
-												}}
-												to="/app/offboarding/templates/$id"
-											>
-												{t.name}
-											</Link>
-											{t.description && (
-												<div style={{ fontSize: 12, color: "var(--fg-3)" }}>
-													{t.description}
-												</div>
-											)}
-										</td>
-										<td style={{ color: "var(--fg-2)" }}>
-											{t.exitType ? exitTypeLabel(t.exitType) : "Any"}
-										</td>
-										<td>
-											<span
-												className={t.isActive ? "badge badge-success" : "badge"}
-											>
-												{t.isActive ? "Active" : "Archived"}
-											</span>
-										</td>
-										<td style={{ textAlign: "right", color: "var(--fg-2)" }}>
-											{taskQueries[i]?.isLoading
-												? "…"
-												: `${tasks.length} (${requiredCount} required)`}
-										</td>
-										<td>
-											<div
-												style={{ display: "flex", flexWrap: "wrap", gap: 4 }}
-											>
-												{categories.map((c) => (
-													<span className="badge" key={c}>
-														{categoryLabel(c)}
-													</span>
-												))}
-											</div>
-										</td>
-										<td style={{ color: "var(--fg-3)" }}>
-											{new Date(t.updatedAt).toLocaleDateString()}
-										</td>
-									</tr>
-								);
-							})}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={templateColumns}
+					data={tableRows}
+					emptyState={
+						<EmptyState
+							description="Create your first template to start offboarding employees faster."
+							icon={<FileText size={20} />}
+							title="No templates yet"
+						/>
+					}
+					isError={templates.isError}
+					isLoading={templates.isLoading}
+				/>
+			</div>
 
 			{showCreate && (
 				<OffboardingTemplateFormDialog

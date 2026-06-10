@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FileSignature } from "lucide-react";
@@ -110,6 +114,97 @@ function formatAmount(value: string): string {
 		maximumFractionDigits: 2,
 	});
 }
+
+interface OfferRow {
+	baseAmount: string | null;
+	baseAmountFrequency: string;
+	candidateName: string;
+	compHidden: boolean;
+	createdAt: string | Date;
+	currency: string;
+	id: string;
+	openingTitle: string;
+	sentAt: string | Date | null;
+	startDate: string | Date | null;
+	status: OfferStatus;
+}
+
+const offerColumns: ColumnDef<OfferRow, unknown>[] = [
+	{
+		accessorKey: "candidateName",
+		header: "Candidate",
+		cell: ({ row }) => (
+			<Link
+				params={{ id: row.original.id }}
+				style={{
+					fontWeight: 600,
+					color: "var(--fg)",
+					textDecoration: "none",
+				}}
+				to="/app/recruitment/offers/$id"
+			>
+				{row.original.candidateName}
+			</Link>
+		),
+	},
+	{
+		accessorKey: "openingTitle",
+		header: "Opening",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>{row.original.openingTitle}</span>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => (
+			<span className={STATUS_TONE[row.original.status]}>
+				{STATUS_LABEL[row.original.status] ?? row.original.status}
+			</span>
+		),
+	},
+	{
+		accessorKey: "baseAmount",
+		header: "Compensation",
+		cell: ({ row }) => {
+			const o = row.original;
+			return (
+				<span
+					style={{
+						color: o.compHidden ? "var(--fg-3)" : "var(--fg)",
+					}}
+				>
+					{o.compHidden ? (
+						<span style={{ fontStyle: "italic" }}>Compensation hidden</span>
+					) : (
+						`${o.currency} ${formatAmount(o.baseAmount as string)}${formatFrequency(o.baseAmountFrequency)}`
+					)}
+				</span>
+			);
+		},
+	},
+	{
+		accessorKey: "startDate",
+		header: "Start date",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-3)" }}>
+				{row.original.startDate
+					? new Date(row.original.startDate).toLocaleDateString()
+					: "—"}
+			</span>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Next step",
+		id: "nextStep",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-3)" }}>
+				{NEXT_ACTION[row.original.status]}
+			</span>
+		),
+	},
+];
 
 function OffersListPage() {
 	const [filter, setFilter] = useState<FilterKey>("all");
@@ -241,88 +336,25 @@ function OffersListPage() {
 				))}
 			</div>
 
-			{isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading offers…
-				</div>
-			)}
-
-			{!isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description={
-							filter === "all"
-								? "Once offers are created for candidates, they'll appear here."
-								: "No offers match this filter."
-						}
-						icon={<FileSignature size={20} />}
-						title={filter === "all" ? "No offers yet" : "No matching offers"}
-					/>
-				</div>
-			)}
-
-			{!isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>Candidate</th>
-								<th>Opening</th>
-								<th>Status</th>
-								<th>Compensation</th>
-								<th>Start date</th>
-								<th>Next step</th>
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((o) => (
-								<tr key={o.id}>
-									<td>
-										<Link
-											params={{ id: o.id }}
-											style={{
-												fontWeight: 600,
-												color: "var(--fg)",
-												textDecoration: "none",
-											}}
-											to="/app/recruitment/offers/$id"
-										>
-											{o.candidateName}
-										</Link>
-									</td>
-									<td style={{ color: "var(--fg-2)" }}>{o.openingTitle}</td>
-									<td>
-										<span className={STATUS_TONE[o.status]}>
-											{STATUS_LABEL[o.status] ?? o.status}
-										</span>
-									</td>
-									<td
-										style={{
-											color: o.compHidden ? "var(--fg-3)" : "var(--fg)",
-										}}
-									>
-										{o.compHidden ? (
-											<span style={{ fontStyle: "italic" }}>
-												Compensation hidden
-											</span>
-										) : (
-											`${o.currency} ${formatAmount(o.baseAmount as string)}${formatFrequency(o.baseAmountFrequency)}`
-										)}
-									</td>
-									<td style={{ color: "var(--fg-3)" }}>
-										{o.startDate
-											? new Date(o.startDate).toLocaleDateString()
-											: "—"}
-									</td>
-									<td style={{ color: "var(--fg-3)" }}>
-										{NEXT_ACTION[o.status]}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={offerColumns}
+					data={rows as OfferRow[]}
+					emptyState={
+						<EmptyState
+							description={
+								filter === "all"
+									? "Once offers are created for candidates, they'll appear here."
+									: "No offers match this filter."
+							}
+							icon={<FileSignature size={20} />}
+							title={filter === "all" ? "No offers yet" : "No matching offers"}
+						/>
+					}
+					isError={offers.isError}
+					isLoading={isLoading}
+				/>
+			</div>
 		</div>
 	);
 }
