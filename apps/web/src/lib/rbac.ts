@@ -55,6 +55,24 @@ export function seesAllFinance(role: MemberRole): boolean {
 	return canManagePayroll(role) || role === "auditor";
 }
 
+// Analytics (Phase 18) — cross-module executive aggregation. Mirror of
+// packages/api/src/utils/role-helpers.ts; aligned to the `analytics` AC grant
+// (owner/admin/hr_admin/payroll_admin + manager read; auditor read+export).
+// Managers are department-scoped server-side (own + direct reports).
+export function canViewAnalytics(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor" || role === "manager";
+}
+
+export function canExportAnalytics(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
+
+// Whether an analytics viewer sees the WHOLE org (true) or is scoped to their
+// own + direct reports' departments (false — managers).
+export function seesAllAnalytics(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
+
 // CRM (Phase 17) — mirror of packages/api/src/utils/role-helpers.ts; aligned
 // byte-for-byte to the `crm_*` AC grants (hr_admin/recruiter/helpdesk/employee
 // have NO crm grant; "finance" role = payroll_admin).

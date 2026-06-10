@@ -1530,8 +1530,8 @@ button {
 		background 0.15s ease;
 }
 .stat-tile-interactive:hover {
-	border-color: var(--line-strong);
 	background: var(--bg-2);
+	border-color: var(--line-strong);
 }
 .stat-tile-interactive:focus-visible {
 	outline: 2px solid var(--ring);

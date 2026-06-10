@@ -52,6 +52,24 @@ export function seesAllFinance(role: MemberRole): boolean {
 	return canManagePayroll(role) || role === "auditor";
 }
 
+// Analytics (Phase 18) — cross-module executive aggregation. Mirror of
+// apps/web/src/lib/rbac.ts; aligned to the `analytics` AC grant in
+// permissions.ts (owner/admin/hr_admin/payroll_admin + manager read; auditor
+// read+export). Managers are department-scoped in the handler (own + reports).
+export function canViewAnalytics(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor" || role === "manager";
+}
+
+export function canExportAnalytics(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
+
+// Whether an analytics viewer sees the WHOLE org (true) or is scoped to their
+// own + direct reports' departments (false — managers).
+export function seesAllAnalytics(role: MemberRole): boolean {
+	return canManagePayroll(role) || role === "auditor";
+}
+
 // CRM (Phase 17) — Lead→Customer→Deal coordination layer. Mirror of
 // apps/web/src/lib/rbac.ts; aligned BYTE-FOR-BYTE to the `crm_*` AC grants in
 // permissions.ts (NOT spec prose — hr_admin/recruiter/helpdesk/employee have NO

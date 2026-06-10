@@ -48,6 +48,11 @@ export const statement = {
 	// journal/account stay UNCONSUMED (accounting/GL integration deferred).
 	finance: ["read", "manage_budget", "export"],
 
+	// Analytics (Phase 18B) — cross-module executive aggregation. Read-only;
+	// OWNS no table. `read` = exec dashboard/KPIs; `export` = summary CSV.
+	// First consumer = the 18C analytics router → audit 147/17 → ~149/18.
+	analytics: ["read", "export"],
+
 	attendance: ["create", "read", "correct"],
 	attendance_device: ["read", "manage", "sync"],
 	attendance_punch: ["read", "process", "import"],
@@ -255,6 +260,7 @@ export const tenant_owner = ac.newRole({
 		"write_off",
 	],
 	finance: ["read", "manage_budget", "export"],
+	analytics: ["read", "export"],
 	attendance: ["create", "read", "correct"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
@@ -322,6 +328,7 @@ export const tenant_admin = ac.newRole({
 		"write_off",
 	],
 	finance: ["read", "manage_budget", "export"],
+	analytics: ["read", "export"],
 	attendance: ["create", "read", "correct"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
@@ -382,6 +389,7 @@ export const hr_admin = ac.newRole({
 	advance: ["create", "read", "approve_hr"],
 	loan: ["create", "read", "approve_hr"],
 	finance: ["read", "manage_budget", "export"],
+	analytics: ["read", "export"],
 	attendance: ["create", "read", "correct"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
@@ -419,6 +427,7 @@ export const payroll_admin = ac.newRole({
 	advance: ["read", "approve_accounting", "disburse"],
 	loan: ["read", "approve_accounting", "disburse", "write_off"],
 	finance: ["read", "manage_budget", "export"],
+	analytics: ["read", "export"],
 	attendance: ["read"],
 	attendance_device: ["read"],
 	attendance_punch: ["read"],
@@ -489,6 +498,7 @@ export const manager = ac.newRole({
 	task: ["read", "update", "assign", "change_status", "comment"],
 	time_entry: ["read", "approve"],
 	finance: ["read"],
+	analytics: ["read"],
 	crm_customer: ["read"],
 	crm_contact: ["read"],
 	crm_lead: ["read"],
@@ -542,6 +552,7 @@ export const auditor = ac.newRole({
 	advance: ["read"],
 	loan: ["read"],
 	finance: ["read", "export"],
+	analytics: ["read", "export"],
 	attendance: ["read"],
 	leave_request: ["read"],
 	holiday: ["read"],
