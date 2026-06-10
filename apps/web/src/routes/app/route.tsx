@@ -7,6 +7,7 @@ import {
 } from "@tanstack/react-router";
 import {
 	AlertTriangle,
+	BarChart3,
 	Bell,
 	Briefcase,
 	Calendar,
@@ -85,6 +86,9 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"helpdesk",
 	"projects",
 	"performance",
+	// Managers can VIEW the executive dashboard but are department-scoped
+	// server-side. canViewAnalytics includes "manager".
+	"analytics",
 	// Managers can VIEW Finance cost reports but are department-scoped server-side
 	// (own + direct reports' departments). canViewFinance includes "manager".
 	"finance",
@@ -212,6 +216,17 @@ const NAV = [
 				label: "Performance",
 				icon: Target,
 				href: "/app/performance",
+			},
+		],
+	},
+	{
+		group: "Insights",
+		items: [
+			{
+				key: "analytics",
+				label: "Analytics",
+				icon: BarChart3,
+				href: "/app/analytics",
 			},
 		],
 	},
