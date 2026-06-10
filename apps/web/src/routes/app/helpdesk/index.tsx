@@ -1,3 +1,4 @@
+import { StatTile, StatTileGrid } from "@Heimdallone/ui/components/stat-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LifeBuoy } from "lucide-react";
@@ -190,14 +191,16 @@ function HelpdeskOverviewPage() {
 
 			<HelpdeskTabs />
 
-			<div className="hd-tiles">
+			<StatTileGrid className="hd-tiles" min={180}>
 				{tiles.map((t) => (
-					<div className={`hd-tile ${t.alert ? "alert" : ""}`} key={t.label}>
-						<span className="hd-tile-val">{t.value}</span>
-						<span className="hd-tile-lbl">{t.label}</span>
-					</div>
+					<StatTile
+						key={t.label}
+						label={t.label}
+						tone={t.alert ? "warning" : "default"}
+						value={t.value}
+					/>
 				))}
-			</div>
+			</StatTileGrid>
 
 			{queue.isLoading ? <div className="hd-skeleton" /> : null}
 			{queue.isError ? (

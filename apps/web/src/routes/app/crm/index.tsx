@@ -1,3 +1,4 @@
+import { StatTile, StatTileGrid } from "@Heimdallone/ui/components/stat-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Handshake } from "lucide-react";
@@ -118,17 +119,16 @@ function CrmDashboardPage() {
 
 			{loading || errored ? null : (
 				<>
-					<div className="crm-tiles">
+					<StatTileGrid className="crm-tiles" min={180}>
 						{tiles.map((t) => (
-							<div
-								className={`crm-tile ${t.alert ? "alert" : ""}`}
+							<StatTile
 								key={t.label}
-							>
-								<span className="crm-tile-val">{t.value}</span>
-								<span className="crm-tile-lbl">{t.label}</span>
-							</div>
+								label={t.label}
+								tone={t.alert ? "warning" : "default"}
+								value={t.value}
+							/>
 						))}
-					</div>
+					</StatTileGrid>
 
 					<div className="crm-attention">
 						<div className="crm-attention-title">What needs attention</div>

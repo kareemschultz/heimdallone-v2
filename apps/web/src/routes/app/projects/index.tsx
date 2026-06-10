@@ -1,3 +1,4 @@
+import { StatTile, StatTileGrid } from "@Heimdallone/ui/components/stat-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { FolderKanban } from "lucide-react";
@@ -163,14 +164,16 @@ function ProjectsOverviewPage() {
 
 			<ProjectsTabs />
 
-			<div className="pj-tiles">
+			<StatTileGrid className="pj-tiles" min={180}>
 				{tiles.map((t) => (
-					<div className={`pj-tile ${t.alert ? "alert" : ""}`} key={t.label}>
-						<span className="pj-tile-val">{t.value}</span>
-						<span className="pj-tile-lbl">{t.label}</span>
-					</div>
+					<StatTile
+						key={t.label}
+						label={t.label}
+						tone={t.alert ? "warning" : "default"}
+						value={t.value}
+					/>
 				))}
-			</div>
+			</StatTileGrid>
 
 			{projects.isLoading ? <div className="pj-skeleton" /> : null}
 			{projects.isError ? (

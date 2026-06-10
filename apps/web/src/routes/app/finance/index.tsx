@@ -1,3 +1,4 @@
+import { StatTile, StatTileGrid } from "@Heimdallone/ui/components/stat-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Landmark } from "lucide-react";
@@ -181,14 +182,11 @@ function FinanceOverviewPage() {
 			) : null}
 
 			{summary.isLoading || summary.isError ? null : (
-				<div className="fn-tiles">
+				<StatTileGrid className="fn-tiles" min={180}>
 					{tiles.map((t) => (
-						<div className="fn-tile" key={t.label}>
-							<span className="fn-tile-val">{t.value}</span>
-							<span className="fn-tile-lbl">{t.label}</span>
-						</div>
+						<StatTile key={t.label} label={t.label} value={t.value} />
 					))}
-				</div>
+				</StatTileGrid>
 			)}
 
 			<div className="fn-section">
