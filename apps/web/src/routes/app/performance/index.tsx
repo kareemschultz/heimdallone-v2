@@ -1,3 +1,4 @@
+import { StatTile, StatTileGrid } from "@Heimdallone/ui/components/stat-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Award, Target } from "lucide-react";
@@ -221,14 +222,16 @@ function PerformanceOverviewPage() {
 
 			<PerformanceTabs />
 
-			<div className="pf-tiles">
+			<StatTileGrid className="pf-tiles" min={180}>
 				{tiles.map((t) => (
-					<div className={`pf-tile ${t.alert ? "alert" : ""}`} key={t.label}>
-						<span className="pf-tile-val">{t.value}</span>
-						<span className="pf-tile-lbl">{t.label}</span>
-					</div>
+					<StatTile
+						key={t.label}
+						label={t.label}
+						tone={t.alert ? "warning" : "default"}
+						value={t.value}
+					/>
 				))}
-			</div>
+			</StatTileGrid>
 
 			{objectives.isLoading ? <div className="pf-skeleton" /> : null}
 			{objectives.isError ? (
