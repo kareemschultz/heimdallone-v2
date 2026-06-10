@@ -22,6 +22,18 @@ import { useState } from "react";
 
 type Density = "comfortable" | "default" | "compact";
 
+function ariaSortValue(
+	sorted: false | "asc" | "desc"
+): "ascending" | "descending" | undefined {
+	if (sorted === "asc") {
+		return "ascending";
+	}
+	if (sorted === "desc") {
+		return "descending";
+	}
+	return;
+}
+
 interface DataTableProps<TData> {
 	className?: string;
 	columns: ColumnDef<TData, unknown>[];
@@ -128,7 +140,8 @@ function DataTable<TData>({
 					<thead>
 						<tr>
 							{columns.map((_, i) => (
-								<th key={i}>
+								// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton header placeholders never reorder
+								<th key={`sk-h-${i}`}>
 									<div
 										style={{
 											height: 12,
@@ -143,9 +156,11 @@ function DataTable<TData>({
 					</thead>
 					<tbody>
 						{Array.from({ length: loadingRowCount }).map((_, ri) => (
-							<tr key={ri}>
+							// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton rows never reorder
+							<tr key={`sk-r-${ri}`}>
 								{columns.map((_, ci) => (
-									<td key={ci}>
+									// biome-ignore lint/suspicious/noArrayIndexKey: static skeleton cells never reorder
+									<td key={`sk-c-${ci}`}>
 										<div
 											className="skeleton"
 											style={{
@@ -186,13 +201,7 @@ function DataTable<TData>({
 							const sorted = header.column.getIsSorted();
 							return (
 								<th
-									aria-sort={
-										sorted === "asc"
-											? "ascending"
-											: sorted === "desc"
-												? "descending"
-												: undefined
-									}
+									aria-sort={ariaSortValue(sorted)}
 									key={header.id}
 									onClick={
 										canSort
@@ -301,5 +310,6 @@ function DataTable<TData>({
 	);
 }
 
+export type { ColumnDef } from "@tanstack/react-table";
 export type { DataTableProps, Density };
 export { DataTable };

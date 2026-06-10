@@ -1,3 +1,7 @@
+import {
+	type ColumnDef,
+	DataTable,
+} from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Users } from "lucide-react";
@@ -34,6 +38,63 @@ const STATUS_TONE: Record<CandidateStatus, string> = {
 	inactive_pool: "badge",
 	blocked: "badge badge-warning",
 };
+
+interface CandidateRow {
+	createdAt: string | Date;
+	email: string;
+	firstName: string;
+	id: string;
+	lastName?: string | null;
+	status: string;
+}
+
+const candidateColumns: ColumnDef<CandidateRow, unknown>[] = [
+	{
+		accessorKey: "firstName",
+		header: "Name",
+		cell: ({ row }) => (
+			<Link
+				params={{ id: row.original.id }}
+				style={{
+					fontWeight: 600,
+					color: "var(--fg)",
+					textDecoration: "none",
+				}}
+				to="/app/recruitment/candidates/$id"
+			>
+				{row.original.firstName} {row.original.lastName}
+			</Link>
+		),
+	},
+	{
+		accessorKey: "email",
+		header: "Email",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-2)" }}>{row.original.email}</span>
+		),
+	},
+	{
+		accessorKey: "status",
+		header: "Status",
+		cell: ({ row }) => {
+			const status = row.original.status as CandidateStatus;
+			return (
+				<span className={STATUS_TONE[status] ?? "badge"}>
+					{STATUS_LABEL[status] ?? row.original.status}
+				</span>
+			);
+		},
+	},
+	{
+		accessorKey: "createdAt",
+		header: "Added",
+		cell: ({ row }) => (
+			<span style={{ color: "var(--fg-3)" }}>
+				{new Date(row.original.createdAt).toLocaleDateString()}
+			</span>
+		),
+	},
+];
 
 function CandidatesListPage() {
 	const org = useContext(OrgCtx);
@@ -112,70 +173,27 @@ function CandidatesListPage() {
 				/>
 			</div>
 
-			{candidates.isLoading && (
-				<div className="card card-pad" style={{ color: "var(--fg-3)" }}>
-					Loading candidates…
-				</div>
-			)}
-
-			{!candidates.isLoading && rows.length === 0 && (
-				<div className="card card-pad">
-					<EmptyState
-						description={
-							search.trim()
-								? "No candidates match your search."
-								: "Once candidates apply or are added, they'll appear here."
-						}
-						icon={<Users size={20} />}
-						title={
-							search.trim() ? "No matching candidates" : "No candidates yet"
-						}
-					/>
-				</div>
-			)}
-
-			{!candidates.isLoading && rows.length > 0 && (
-				<div className="card" style={{ overflow: "hidden" }}>
-					<table className="tbl">
-						<thead>
-							<tr>
-								<th>Name</th>
-								<th>Email</th>
-								<th>Status</th>
-								<th>Added</th>
-							</tr>
-						</thead>
-						<tbody>
-							{rows.map((c) => (
-								<tr key={c.id}>
-									<td>
-										<Link
-											params={{ id: c.id }}
-											style={{
-												fontWeight: 600,
-												color: "var(--fg)",
-												textDecoration: "none",
-											}}
-											to="/app/recruitment/candidates/$id"
-										>
-											{c.firstName} {c.lastName}
-										</Link>
-									</td>
-									<td style={{ color: "var(--fg-2)" }}>{c.email}</td>
-									<td>
-										<span className={STATUS_TONE[c.status as CandidateStatus]}>
-											{STATUS_LABEL[c.status as CandidateStatus] ?? c.status}
-										</span>
-									</td>
-									<td style={{ color: "var(--fg-3)" }}>
-										{new Date(c.createdAt).toLocaleDateString()}
-									</td>
-								</tr>
-							))}
-						</tbody>
-					</table>
-				</div>
-			)}
+			<div className="card" style={{ overflow: "hidden" }}>
+				<DataTable
+					columns={candidateColumns}
+					data={rows as CandidateRow[]}
+					emptyState={
+						<EmptyState
+							description={
+								search.trim()
+									? "No candidates match your search."
+									: "Once candidates apply or are added, they'll appear here."
+							}
+							icon={<Users size={20} />}
+							title={
+								search.trim() ? "No matching candidates" : "No candidates yet"
+							}
+						/>
+					}
+					isError={candidates.isError}
+					isLoading={candidates.isLoading}
+				/>
+			</div>
 		</div>
 	);
 }
