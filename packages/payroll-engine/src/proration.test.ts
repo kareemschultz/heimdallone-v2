@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 // NOTE: ./proration does not exist yet — this is the RED test (Phase 21D-B).
-import { periodsPerYear, prorateProfile } from "./proration";
+import { periodsPerYear } from "./pay-frequency";
+import { prorateProfile } from "./proration";
 import type { CountryPayrollProfileInput } from "./types";
 
 // GY 2026 statutory profile at MONTHLY magnitude (cents), mirroring the engine's

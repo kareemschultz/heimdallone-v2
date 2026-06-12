@@ -102,7 +102,7 @@ async function main() {
 		endDate?: Date;
 		filingStatusId: string;
 		notes?: string;
-		payFrequency: "monthly" | "weekly" | "semi_monthly";
+		payFrequency: "monthly" | "weekly" | "fortnightly" | "semi_monthly";
 		startDate: Date;
 		status: "active" | "draft" | "expired" | "terminated";
 		wageType: "monthly" | "daily" | "hourly";

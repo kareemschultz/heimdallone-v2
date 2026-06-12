@@ -1,32 +1,12 @@
+import { periodsPerYear } from "./pay-frequency";
 import type { CountryPayrollProfileInput } from "./types";
 
-// Pay-frequency → number of pay periods per year. GRA (and every multi-frequency
-// payroll engine) prorates period-based statutory constants by this count.
-// Keys are NORMALIZED: lowercased with whitespace/underscores collapsed to a
-// single hyphen — so the DB contract enum value "semi_monthly", a UI "Semi
-// Monthly", and "semi-monthly" all resolve to the same entry. (The original bug
-// shipped with only "semi-monthly", missing the DB's actual "semi_monthly".)
-const PERIODS_PER_YEAR: Record<string, number> = {
-	weekly: 52,
-	fortnightly: 26,
-	"bi-weekly": 26,
-	biweekly: 26,
-	"semi-monthly": 24,
-	monthly: 12,
-};
+// Pay-frequency proration. The canonical frequency set + periods-per-year live in
+// ./pay-frequency (the single source of truth shared by the DB enum, API, UI and
+// engine). This module applies that count to the statutory profile. Callers that
+// need the frequency primitives import them directly from ./pay-frequency.
 
 const MONTHS_PER_YEAR = 12;
-
-function normalizeFrequency(payFrequency: string): string {
-	return payFrequency
-		.toLowerCase()
-		.trim()
-		.replace(/[\s_]+/g, "-");
-}
-
-export function periodsPerYear(payFrequency: string): number {
-	return PERIODS_PER_YEAR[normalizeFrequency(payFrequency)] ?? MONTHS_PER_YEAR;
-}
 
 /**
  * Convert a MONTHLY-magnitude statutory amount to the given pay period.

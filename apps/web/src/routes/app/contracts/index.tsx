@@ -18,6 +18,11 @@ import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/contracts.css";
+import {
+	PAY_FREQUENCY_OPTIONS,
+	type PayFrequency,
+	payFrequencyLabel,
+} from "@/lib/pay-frequency";
 import { canManageHR, canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -44,7 +49,7 @@ interface ContractRow {
 	id: string;
 	notes: string | null;
 	noticePeriodDays: number;
-	payFrequency: "weekly" | "monthly" | "semi_monthly";
+	payFrequency: PayFrequency;
 	salaryCurrency: string;
 	startDate: Date;
 	status: ContractStatus;
@@ -69,12 +74,6 @@ const WAGE_TYPE_LABELS: Record<string, string> = {
 	monthly: "Monthly",
 	daily: "Daily",
 	hourly: "Hourly",
-};
-
-const PAY_FREQ_LABELS: Record<string, string> = {
-	monthly: "Monthly",
-	weekly: "Weekly",
-	semi_monthly: "Semi-monthly",
 };
 
 function fmtDate(d: Date | null | string | undefined): string {
@@ -595,7 +594,7 @@ function ContractTableRow({
 			</td>
 			<td>
 				<span style={{ color: "var(--fg-2)", fontSize: "12.5px" }}>
-					{PAY_FREQ_LABELS[c.payFrequency] ?? c.payFrequency}
+					{payFrequencyLabel(c.payFrequency)}
 				</span>
 			</td>
 			{canSeeSalary && (
@@ -785,9 +784,9 @@ function ContractSheet({
 	const [wageType, setWageType] = useState<"daily" | "monthly" | "hourly">(
 		initialData?.wageType ?? "monthly"
 	);
-	const [payFrequency, setPayFrequency] = useState<
-		"weekly" | "monthly" | "semi_monthly"
-	>(initialData?.payFrequency ?? "monthly");
+	const [payFrequency, setPayFrequency] = useState<PayFrequency>(
+		initialData?.payFrequency ?? "monthly"
+	);
 	const [baseSalary, setBaseSalary] = useState(initialData?.baseSalary ?? "");
 	const [salaryCurrency, setSalaryCurrency] = useState(
 		initialData?.salaryCurrency ?? "GYD"
@@ -1072,16 +1071,16 @@ function ContractSheet({
 									className="input"
 									id="cs-pay-freq"
 									onChange={(e) =>
-										setPayFrequency(
-											e.target.value as "weekly" | "monthly" | "semi_monthly"
-										)
+										setPayFrequency(e.target.value as PayFrequency)
 									}
 									style={{ height: 34 }}
 									value={payFrequency}
 								>
-									<option value="monthly">Monthly</option>
-									<option value="weekly">Weekly</option>
-									<option value="semi_monthly">Semi-monthly</option>
+									{PAY_FREQUENCY_OPTIONS.map((opt) => (
+										<option key={opt.value} value={opt.value}>
+											{opt.label}
+										</option>
+									))}
 								</select>
 							</div>
 						</div>
@@ -1296,7 +1295,7 @@ function ActivateDialog({
 						<span className="k">Pay Schedule</span>
 						<span className="v">
 							{WAGE_TYPE_LABELS[contract.wageType]} ·{" "}
-							{PAY_FREQ_LABELS[contract.payFrequency]}
+							{payFrequencyLabel(contract.payFrequency)}
 						</span>
 					</div>
 				</div>

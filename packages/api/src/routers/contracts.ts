@@ -1,5 +1,6 @@
 import { db } from "@Heimdallone/db";
 import * as schema from "@Heimdallone/db/schema/index";
+import { PAY_FREQUENCIES } from "@Heimdallone/payroll-engine/pay-frequency";
 import { ORPCError } from "@orpc/server";
 import { createId } from "@paralleldrive/cuid2";
 import {
@@ -64,7 +65,8 @@ function applyMasking<T extends { baseSalary: string; salaryCurrency: string }>(
 // ─── Zod schemas ──────────────────────────────────────────
 
 const wageTypeEnum = z.enum(["daily", "monthly", "hourly"]);
-const payFrequencyEnum = z.enum(["weekly", "monthly", "semi_monthly"]);
+// Derived from the canonical engine list — API can never drift from the DB enum.
+const payFrequencyEnum = z.enum(PAY_FREQUENCIES);
 const contractStatusEnum = z.enum(["draft", "active", "expired", "terminated"]);
 
 // ─── Filing Statuses ──────────────────────────────────────

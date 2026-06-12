@@ -1,0 +1,1 @@
+ALTER TYPE "public"."contract_pay_frequency" ADD VALUE 'fortnightly';

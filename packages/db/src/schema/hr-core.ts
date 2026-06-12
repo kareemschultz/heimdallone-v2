@@ -317,10 +317,16 @@ export const contractWageTypeEnum = pgEnum("contract_wage_type", [
 	"monthly",
 	"hourly",
 ]);
+// Canonical SET: @Heimdallone/payroll-engine/pay-frequency PAY_FREQUENCIES.
+// Kept literal here (drizzle-kit needs static literals) and guarded against drift
+// by scripts/verify-pay-frequency.ts (CI, set-equality — order is irrelevant; UI
+// order comes from PAY_FREQUENCY_OPTIONS). New values are APPENDED so drizzle
+// emits a clean additive `ALTER TYPE ... ADD VALUE` (no locking type-recreate).
 export const contractPayFrequencyEnum = pgEnum("contract_pay_frequency", [
 	"weekly",
 	"monthly",
 	"semi_monthly",
+	"fortnightly",
 ]);
 export const contractStatusEnum = pgEnum("contract_status", [
 	"draft",

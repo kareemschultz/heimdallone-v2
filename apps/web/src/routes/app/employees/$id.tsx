@@ -28,6 +28,7 @@ import { toast } from "sonner";
 
 import "@/styles/employee-profile.css";
 import "@/styles/contracts.css";
+import { type PayFrequency, payFrequencyLabel } from "@/lib/pay-frequency";
 import { canManageHR, canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -2125,7 +2126,7 @@ interface ContractHistoryItem {
 	contractName: string;
 	endDate: Date | null;
 	id: string;
-	payFrequency: "weekly" | "monthly" | "semi_monthly";
+	payFrequency: PayFrequency;
 	salaryCurrency: string;
 	startDate: Date;
 	status: "draft" | "active" | "expired" | "terminated";
@@ -2243,11 +2244,8 @@ function ContractSection({
 											</span>
 											<span>·</span>
 											<span>
-												{active.payFrequency === "monthly"
-													? "Paid monthly"
-													: active.payFrequency === "weekly"
-														? "Paid weekly"
-														: "Paid semi-monthly"}
+												Paid{" "}
+												{payFrequencyLabel(active.payFrequency).toLowerCase()}
 											</span>
 											<span>·</span>
 											<span>From {fmtContractDate(active.startDate)}</span>

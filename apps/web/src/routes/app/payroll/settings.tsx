@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
 import { PayrollTabs } from "@/features/payroll/payroll-tabs";
+import { PAY_FREQUENCY_OPTIONS } from "@/lib/pay-frequency";
 import { canManagePayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -186,9 +187,11 @@ function PayrollSettingsPage() {
 								style={{ width: "100%" }}
 								value={String(val("defaultPayFrequency", "monthly"))}
 							>
-								<option value="weekly">Weekly</option>
-								<option value="monthly">Monthly</option>
-								<option value="semi_monthly">Semi-monthly</option>
+								{PAY_FREQUENCY_OPTIONS.map((opt) => (
+									<option key={opt.value} value={opt.value}>
+										{opt.label}
+									</option>
+								))}
 							</select>
 						</SettingsField>
 					</SettingsSection>
