@@ -1,0 +1,3356 @@
+{
+  "generatedAt": "2026-06-12T14:54:54.104Z",
+  "v1Url": "postgres://heimdallone:***@172.19.0.2:5432/karetech_erp",
+  "v2Staging": null,
+  "totals": {
+    "tenants": 2,
+    "users": 29,
+    "employees": 23,
+    "payslips": 69,
+    "attendance_punches": 874,
+    "roster_entries": 175,
+    "gl_journal_entries": 13,
+    "notifications": 14,
+    "leave_requests": 2
+  },
+  "tables": [
+    {
+      "v1Table": "account",
+      "v2Target": "account",
+      "classification": "direct_map",
+      "reason": "Better-Auth credential account",
+      "rowCount": 23,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "accounts",
+      "v2Target": null,
+      "classification": "requires_new_v2_feature",
+      "reason": "GL chart of accounts — v2 GL deferred (21D minimal build)",
+      "rowCount": 11,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "announcement_acknowledgements",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "announcements",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "applicant_interactions",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "applicants",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "appraisal_cycles",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "appraisal_kra_scores",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "appraisals",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "asset_assignments",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "asset_categories",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "assets",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "attendance_device_users",
+      "v2Target": "attendance_device_employee_map",
+      "classification": "transform_map",
+      "reason": "device slot <-> employee binding",
+      "rowCount": 19,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "attendance_device_employee_map.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "device_id",
+          "v2": "attendance_device_employee_map.device_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "slot_index",
+          "v2": "attendance_device_employee_map.slot",
+          "status": "mapped"
+        },
+        {
+          "v1": "name",
+          "v2": "(label)",
+          "status": "mapped"
+        },
+        {
+          "v1": "employee_id",
+          "v2": "attendance_device_employee_map.employee_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "synced_at",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync telemetry"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["19 device-user slots", "19 not bound to an employee"]
+    },
+    {
+      "v1Table": "attendance_devices",
+      "v2Target": "attendance_device",
+      "classification": "direct_map",
+      "reason": "device registry",
+      "rowCount": 1,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "attendance_device.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "device_id",
+          "v2": "attendance_device.device_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "device_type",
+          "v2": "attendance_device.type",
+          "status": "mapped"
+        },
+        {
+          "v1": "location_name",
+          "v2": "attendance_device.location",
+          "status": "mapped"
+        },
+        {
+          "v1": "work_location_id",
+          "v2": "geofence_location",
+          "status": "manual_review"
+        },
+        {
+          "v1": "last_seen_at",
+          "v2": "attendance_device.last_seen_at",
+          "status": "mapped"
+        },
+        {
+          "v1": "last_punch_count",
+          "v2": null,
+          "status": "dropped",
+          "note": "telemetry"
+        },
+        {
+          "v1": "is_active",
+          "v2": "attendance_device.is_active",
+          "status": "mapped"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "ip_address",
+          "v2": "attendance_device.ip_address",
+          "status": "mapped"
+        },
+        {
+          "v1": "port",
+          "v2": "attendance_device.port",
+          "status": "mapped"
+        },
+        {
+          "v1": "notes",
+          "v2": "attendance_device.notes",
+          "status": "mapped"
+        },
+        {
+          "v1": "api_key_hash",
+          "v2": "attendance_device.api_key_hash",
+          "status": "manual_review",
+          "note": "device secret — rotate on cutover"
+        },
+        {
+          "v1": "api_key_last_four",
+          "v2": "attendance_device.api_key_last_four",
+          "status": "mapped"
+        },
+        {
+          "v1": "api_key_rotated_at",
+          "v2": "attendance_device.api_key_rotated_at",
+          "status": "mapped"
+        },
+        {
+          "v1": "last_punch_at",
+          "v2": "attendance_device.last_punch_at",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_requested_at",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync telemetry"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["1 devices"]
+    },
+    {
+      "v1Table": "attendance_exceptions",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "attendance_punches",
+      "v2Target": "attendance_punch",
+      "classification": "direct_map",
+      "reason": "raw punches with timestamp/source/device/GPS",
+      "rowCount": 874,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "attendance_punch.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "employee_id",
+          "v2": "attendance_punch.employee_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "punch_at",
+          "v2": "attendance_punch.punched_at",
+          "status": "mapped"
+        },
+        {
+          "v1": "punch_type",
+          "v2": "attendance_punch.type",
+          "status": "mapped",
+          "note": "in/out"
+        },
+        {
+          "v1": "source",
+          "v2": "attendance_punch.source",
+          "status": "mapped"
+        },
+        {
+          "v1": "device_id",
+          "v2": "attendance_punch.device_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "created_by_user_id",
+          "v2": "attendance_punch.created_by",
+          "status": "mapped"
+        },
+        {
+          "v1": "note",
+          "v2": "attendance_punch.note",
+          "status": "mapped"
+        },
+        {
+          "v1": "logical_shift_date",
+          "v2": "attendance_punch.shift_date",
+          "status": "manual_review",
+          "note": "v1 derives logical shift date — confirm v2 derivation"
+        },
+        {
+          "v1": "break_minutes_deducted",
+          "v2": "attendance_punch.break_minutes",
+          "status": "mapped"
+        },
+        {
+          "v1": "device_timestamp",
+          "v2": "attendance_punch.device_timestamp",
+          "status": "mapped"
+        },
+        {
+          "v1": "synced_at",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync telemetry"
+        },
+        {
+          "v1": "latitude",
+          "v2": "geofence_check_in / punch geo",
+          "status": "manual_review",
+          "note": "GPS — confirm v2 punch carries geo"
+        },
+        {
+          "v1": "longitude",
+          "v2": "geofence_check_in / punch geo",
+          "status": "manual_review"
+        },
+        {
+          "v1": "accuracy_meters",
+          "v2": "punch geo accuracy",
+          "status": "manual_review"
+        },
+        {
+          "v1": "is_gps_mocked",
+          "v2": "punch geo mocked flag",
+          "status": "manual_review"
+        },
+        {
+          "v1": "verified_work_location_id",
+          "v2": "geofence_location",
+          "status": "manual_review"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": [
+        "874 punches",
+        "54 carry GPS coordinates (confirm v2 punch geo home)"
+      ]
+    },
+    {
+      "v1Table": "audit_logs",
+      "v2Target": "audit_event",
+      "classification": "archive_only",
+      "reason": "historical audit trail",
+      "rowCount": 178,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "certification_types",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "companies",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "cost_centers",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "departments",
+      "v2Target": "department",
+      "classification": "direct_map",
+      "reason": "department master",
+      "rowCount": 3,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "disciplinary_actions",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "disciplinary_categories",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "disciplinary_records",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "employee_certifications",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "employee_documents",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "employee_payroll_components",
+      "v2Target": "pay_item_assignment",
+      "classification": "transform_map",
+      "reason": "per-employee component amount",
+      "rowCount": 17,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "pay_item_assignment.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "employee_id",
+          "v2": "pay_item_assignment.employee_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "component_id",
+          "v2": "pay_item_assignment.pay_item_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "amount_cents",
+          "v2": "pay_item_assignment.amount",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["17 component assignments"]
+    },
+    {
+      "v1Table": "employee_shift_assignments",
+      "v2Target": "shift_schedule (employee link)",
+      "classification": "transform_map",
+      "reason": "employee -> work schedule binding (date-ranged)",
+      "rowCount": 17,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "(assignment ref)",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "employee_id",
+          "v2": "employee link",
+          "status": "mapped"
+        },
+        {
+          "v1": "work_schedule_id",
+          "v2": "shift.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "from_date",
+          "v2": "effective_from",
+          "status": "mapped"
+        },
+        {
+          "v1": "to_date",
+          "v2": "effective_to",
+          "status": "mapped"
+        },
+        {
+          "v1": "status",
+          "v2": "status",
+          "status": "mapped"
+        },
+        {
+          "v1": "note",
+          "v2": "note",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["17 shift assignments"]
+    },
+    {
+      "v1Table": "employee_skills",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "employee_transfers",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "employee_work_locations",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "employees",
+      "v2Target": "employee_profile (+work_info/+bank_details)",
+      "classification": "transform_map",
+      "reason": "split into profile/work_info/bank; statutory fields need manual review",
+      "rowCount": 23,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "employee_profile.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "employee_number",
+          "v2": "employee_profile.employee_number",
+          "status": "mapped"
+        },
+        {
+          "v1": "user_id",
+          "v2": "employee_profile.user_id",
+          "status": "mapped",
+          "note": "auth link (nullable)"
+        },
+        {
+          "v1": "first_name",
+          "v2": "employee_profile.first_name",
+          "status": "mapped"
+        },
+        {
+          "v1": "last_name",
+          "v2": "employee_profile.last_name",
+          "status": "mapped"
+        },
+        {
+          "v1": "email",
+          "v2": "employee_profile.email",
+          "status": "mapped"
+        },
+        {
+          "v1": "phone",
+          "v2": "employee_profile.phone",
+          "status": "mapped"
+        },
+        {
+          "v1": "date_of_birth",
+          "v2": "employee_profile.date_of_birth",
+          "status": "mapped"
+        },
+        {
+          "v1": "date_of_joining",
+          "v2": "employee_work_info.joining_date",
+          "status": "mapped"
+        },
+        {
+          "v1": "date_of_leaving",
+          "v2": "employee_work_info.leaving_date",
+          "status": "mapped"
+        },
+        {
+          "v1": "status",
+          "v2": "employee_profile.status",
+          "status": "mapped",
+          "note": "active/left -> v2 status enum"
+        },
+        {
+          "v1": "company_id",
+          "v2": "(company/branch)",
+          "status": "manual_review",
+          "note": "v2 has no company sub-entity yet — confirm"
+        },
+        {
+          "v1": "department_id",
+          "v2": "employee_work_info.department_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "job_title_id",
+          "v2": "employee_work_info.job_position_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "reports_to_employee_id",
+          "v2": "employee_work_info.reports_to",
+          "status": "mapped",
+          "note": "manager-scope hierarchy"
+        },
+        {
+          "v1": "attendance_device_id",
+          "v2": "attendance_device_employee_map",
+          "status": "mapped"
+        },
+        {
+          "v1": "kiosk_pin_hash",
+          "v2": "(device/kiosk auth)",
+          "status": "manual_review",
+          "note": "biometric/kiosk PIN — confirm v2 home"
+        },
+        {
+          "v1": "tin_number",
+          "v2": "employee_work_info.tin",
+          "status": "manual_review",
+          "note": "PAYE — confirm column exists"
+        },
+        {
+          "v1": "nis_number",
+          "v2": "employee_work_info.nis",
+          "status": "manual_review",
+          "note": "NIS — confirm column exists"
+        },
+        {
+          "v1": "bank_account_number",
+          "v2": "employee_bank_details.account_number",
+          "status": "mapped"
+        },
+        {
+          "v1": "bank_code",
+          "v2": "employee_bank_details.bank_code",
+          "status": "mapped"
+        },
+        {
+          "v1": "qualifying_children",
+          "v2": "(tax allowance input)",
+          "status": "manual_review",
+          "note": "income-tax child allowance — confirm v2 home or ADD"
+        },
+        {
+          "v1": "medical_insurance_on_file",
+          "v2": "(medical deduction)",
+          "status": "manual_review",
+          "note": "confirm v2 home"
+        },
+        {
+          "v1": "medical_payroll_deduct_cents",
+          "v2": "pay_item_assignment (medical)",
+          "status": "manual_review",
+          "note": "deduction amount — confirm"
+        },
+        {
+          "v1": "medical_external_premium_cents",
+          "v2": "(medical premium)",
+          "status": "manual_review",
+          "note": "confirm v2 home"
+        },
+        {
+          "v1": "has_second_job",
+          "v2": "(second-job tax flag)",
+          "status": "manual_review",
+          "note": "second-job tax treatment — confirm/ADD"
+        },
+        {
+          "v1": "second_job_pay_cents",
+          "v2": "(second-job income)",
+          "status": "manual_review",
+          "note": "drives second-job tax — confirm/ADD"
+        },
+        {
+          "v1": "other_deductions_cents",
+          "v2": "pay_item_assignment (other)",
+          "status": "manual_review",
+          "note": "misc deduction — confirm"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "deleted_at",
+          "v2": "deleted_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": [
+        "23 employees",
+        "8 have NO user_id (no auth login link — will migrate as profile-only)",
+        "6 have NO email",
+        "Statutory fields (TIN/NIS/qualifying_children/second_job/medical) flagged manual_review — confirm v2 home before payroll cutover"
+      ]
+    },
+    {
+      "v1Table": "exit_checklist_run_items",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "exit_checklist_runs",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "expense_categories",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "expense_claim_approvals",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "expense_claim_lines",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "expense_claims",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "feedback_360",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "goals",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "gratuity_settlements",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "insurance_enrollments",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "insurance_plans",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "insurance_premium_deductions",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "interviews",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "invitation",
+      "v2Target": "invitation",
+      "classification": "direct_map",
+      "reason": "Better-Auth invitation",
+      "rowCount": 22,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "job_offers",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "job_postings",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "job_titles",
+      "v2Target": "job_position / job_role",
+      "classification": "transform_map",
+      "reason": "v2 splits position vs role",
+      "rowCount": 14,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "journal_entries",
+      "v2Target": null,
+      "classification": "requires_new_v2_feature",
+      "reason": "GL journals — minimal v2 GL; do NOT clone bug-reversal churn",
+      "rowCount": 13,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "journal_lines",
+      "v2Target": null,
+      "classification": "requires_new_v2_feature",
+      "reason": "GL journal lines — depends on GL build",
+      "rowCount": 53,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "kra_categories",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "kra_definitions",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "leave_balances",
+      "v2Target": "leave_balance",
+      "classification": "direct_map",
+      "reason": "balances",
+      "rowCount": 36,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "leave_encashment_requests",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "leave_policies",
+      "v2Target": "leave_policy_template",
+      "classification": "transform_map",
+      "reason": "leave policy",
+      "rowCount": 6,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "leave_requests",
+      "v2Target": "leave_request",
+      "classification": "direct_map",
+      "reason": "requests",
+      "rowCount": 2,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "loan_installments",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "loan_products",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "loan_requests",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "loan_writeoffs",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "member",
+      "v2Target": "member",
+      "classification": "direct_map",
+      "reason": "Better-Auth membership",
+      "rowCount": 25,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "notifications",
+      "v2Target": null,
+      "classification": "requires_new_v2_feature",
+      "reason": "in-app notifications — v2 has no store (21D); history optional",
+      "rowCount": 14,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "onboarding_checklist_run_items",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "onboarding_checklist_runs",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "onboarding_checklist_template_items",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "onboarding_checklist_templates",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "organization",
+      "v2Target": "organization",
+      "classification": "direct_map",
+      "reason": "Better-Auth org -> v2 organization (1 tenant = 1 org)",
+      "rowCount": 2,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "id",
+          "status": "mapped"
+        },
+        {
+          "v1": "name",
+          "v2": "name",
+          "status": "mapped"
+        },
+        {
+          "v1": "slug",
+          "v2": "slug",
+          "status": "mapped"
+        },
+        {
+          "v1": "logo",
+          "v2": "logo",
+          "status": "mapped"
+        },
+        {
+          "v1": "metadata",
+          "v2": "metadata",
+          "status": "mapped"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["2 tenant(s) -> v2 organizations"]
+    },
+    {
+      "v1Table": "overtime_approvals",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "pay_change_requests",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "payroll_components",
+      "v2Target": "pay_item",
+      "classification": "transform_map",
+      "reason": "earning/deduction component -> pay item",
+      "rowCount": 26,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "pay_item.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "name",
+          "v2": "pay_item.name",
+          "status": "mapped"
+        },
+        {
+          "v1": "component_type",
+          "v2": "pay_item.kind",
+          "status": "mapped",
+          "note": "earning/deduction -> v2 pay_item kind"
+        },
+        {
+          "v1": "default_amount_cents",
+          "v2": "pay_item.default_amount",
+          "status": "mapped",
+          "note": "cents preserved"
+        },
+        {
+          "v1": "active",
+          "v2": "pay_item.is_active",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["26 pay components"]
+    },
+    {
+      "v1Table": "payroll_periods",
+      "v2Target": "pay_period",
+      "classification": "direct_map",
+      "reason": "pay periods",
+      "rowCount": 5,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "pay_period.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "name",
+          "v2": "pay_period.name",
+          "status": "mapped"
+        },
+        {
+          "v1": "period_start",
+          "v2": "pay_period.start_date",
+          "status": "mapped"
+        },
+        {
+          "v1": "period_end",
+          "v2": "pay_period.end_date",
+          "status": "mapped"
+        },
+        {
+          "v1": "pay_frequency",
+          "v2": "pay_period.frequency",
+          "status": "mapped"
+        },
+        {
+          "v1": "status",
+          "v2": "pay_period.status",
+          "status": "mapped"
+        },
+        {
+          "v1": "rules_version",
+          "v2": "country_payroll_profile (selection)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "total_scheduled_days",
+          "v2": "pay_period.scheduled_days",
+          "status": "mapped"
+        },
+        {
+          "v1": "finalized_at",
+          "v2": "pay_period.finalized_at",
+          "status": "mapped"
+        },
+        {
+          "v1": "journal_entry_id",
+          "v2": "(GL link)",
+          "status": "manual_review",
+          "note": "depends on GL build"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "last_run_started_at",
+          "v2": null,
+          "status": "dropped",
+          "note": "run telemetry"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["5 pay periods"]
+    },
+    {
+      "v1Table": "payslip_line_items",
+      "v2Target": "payslip_line_item (historical)",
+      "classification": "archive_only",
+      "reason": "historical payslip detail (note: v1 keeps detail inline on payslip)",
+      "rowCount": 0,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "payslip_line_item.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "payslip_id",
+          "v2": "payslip_line_item.payslip_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "component_id",
+          "v2": "payslip_line_item.pay_item_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "name_snapshot",
+          "v2": "payslip_line_item.label",
+          "status": "mapped"
+        },
+        {
+          "v1": "component_type_snapshot",
+          "v2": "payslip_line_item.kind",
+          "status": "mapped"
+        },
+        {
+          "v1": "amount_cents",
+          "v2": "payslip_line_item.amount",
+          "status": "mapped"
+        }
+      ],
+      "unmappable": [],
+      "notes": [
+        "0 line items",
+        "EMPTY in v1 — payslip breakdown is stored INLINE on payslips + snapshot_json, not in this table"
+      ]
+    },
+    {
+      "v1Table": "payslips",
+      "v2Target": "payslip (historical)",
+      "classification": "archive_only",
+      "reason": "preserve historical payslips as-is; v2 engine computes forward",
+      "rowCount": 69,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "payslip.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "employee_id",
+          "v2": "payslip.employee_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "payroll_period_id",
+          "v2": "payslip.pay_period_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "salary_structure_assignment_id",
+          "v2": "(historical ref)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "status",
+          "v2": "payslip.status",
+          "status": "mapped"
+        },
+        {
+          "v1": "is_reversal",
+          "v2": "payslip.is_reversal",
+          "status": "manual_review",
+          "note": "v1 UTC-bug reversals — flag, do not replay"
+        },
+        {
+          "v1": "reversed_payslip_id",
+          "v2": "payslip.reversed_payslip_id",
+          "status": "manual_review"
+        },
+        {
+          "v1": "gross_pay_cents",
+          "v2": "payslip.gross_pay_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "base_pay_cents",
+          "v2": "payslip.base_pay_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "overtime_pay_cents",
+          "v2": "payslip.overtime_pay_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "saturday_pay_cents",
+          "v2": "payslip.saturday_pay_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "sunday_pay_cents",
+          "v2": "payslip.sunday_pay_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "public_holiday_pay_cents",
+          "v2": "payslip.public_holiday_pay_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "transport_allowance_cents",
+          "v2": "payslip.transport_allowance_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "nis_employee_cents",
+          "v2": "payslip.nis_employee_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "nis_employer_cents",
+          "v2": "payslip.nis_employer_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "paye_cents",
+          "v2": "payslip.paye_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "personal_allowance_cents",
+          "v2": "payslip.personal_allowance_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "chargeable_income_cents",
+          "v2": "payslip.chargeable_income_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "medical_life_cents",
+          "v2": "payslip.medical_life_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "child_allowance_cents",
+          "v2": "payslip.child_allowance_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "other_deductions_cents",
+          "v2": "payslip.other_deductions_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "net_pay_cents",
+          "v2": "payslip.net_pay_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "days_worked",
+          "v2": "payslip.days_worked",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "days_absent",
+          "v2": "payslip.days_absent",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "regular_minutes",
+          "v2": "payslip.regular_minutes",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "overtime_minutes",
+          "v2": "payslip.overtime_minutes",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "saturday_minutes",
+          "v2": "payslip.saturday_minutes",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "sunday_minutes",
+          "v2": "payslip.sunday_minutes",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "public_holiday_minutes",
+          "v2": "payslip.public_holiday_minutes",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "quarters_board_lodging_cents",
+          "v2": "payslip.quarters_board_lodging_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "taxable_allowances_in_kind_cents",
+          "v2": "payslip.taxable_allowances_in_kind_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "non_taxable_allowances_in_kind_cents",
+          "v2": "payslip.non_taxable_allowances_in_kind_cents",
+          "status": "mapped",
+          "note": "historical amount preserved"
+        },
+        {
+          "v1": "rules_version",
+          "v2": "payslip.rules_version",
+          "status": "mapped"
+        },
+        {
+          "v1": "snapshot_json",
+          "v2": "payslip.snapshot",
+          "status": "mapped",
+          "note": "full historical snapshot — preserve verbatim"
+        },
+        {
+          "v1": "journal_entry_id",
+          "v2": "(GL link)",
+          "status": "manual_review",
+          "note": "depends on GL build"
+        },
+        {
+          "v1": "finalized_at",
+          "v2": "payslip.finalized_at",
+          "status": "mapped"
+        },
+        {
+          "v1": "finalized_by_user_id",
+          "v2": "payslip.finalized_by",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": [
+        "69 payslips preserved as historical records",
+        "23 are reversal payslips (v1 UTC-bug corrections) — preserve as history, NOT replayed",
+        "v2 payroll-engine recomputes forward; v1≠v2 -> reconciliation report (21C)"
+      ]
+    },
+    {
+      "v1Table": "public_holidays",
+      "v2Target": "holiday",
+      "classification": "direct_map",
+      "reason": "holiday calendar",
+      "rowCount": 30,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "punch_correction_requests",
+      "v2Target": "attendance_correction",
+      "classification": "direct_map",
+      "reason": "punch correction workflow",
+      "rowCount": 11,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "attendance_correction.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "employee_id",
+          "v2": "attendance_correction.employee_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "original_punch_id",
+          "v2": "attendance_correction.punch_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "requested_punch_at",
+          "v2": "attendance_correction.requested_at",
+          "status": "mapped"
+        },
+        {
+          "v1": "requested_punch_type",
+          "v2": "attendance_correction.requested_type",
+          "status": "mapped"
+        },
+        {
+          "v1": "reason",
+          "v2": "attendance_correction.reason",
+          "status": "mapped"
+        },
+        {
+          "v1": "status",
+          "v2": "attendance_correction.status",
+          "status": "mapped"
+        },
+        {
+          "v1": "reviewed_by_user_id",
+          "v2": "attendance_correction.reviewed_by",
+          "status": "mapped"
+        },
+        {
+          "v1": "reviewed_at",
+          "v2": "attendance_correction.reviewed_at",
+          "status": "mapped"
+        },
+        {
+          "v1": "review_note",
+          "v2": "attendance_correction.review_note",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["11 corrections"]
+    },
+    {
+      "v1Table": "recognition_records",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "resignation_requests",
+      "v2Target": "offboarding_case",
+      "classification": "transform_map",
+      "reason": "resignation -> offboarding",
+      "rowCount": 1,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "salary_advance_installments",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "salary_advance_policies",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "salary_advance_requests",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "salary_structure_assignments",
+      "v2Target": "pay_item_assignment",
+      "classification": "transform_map",
+      "reason": "structure assignment -> per-employee pay setup",
+      "rowCount": 33,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "pay_item_assignment.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "employee_id",
+          "v2": "pay_item_assignment.employee_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "salary_structure_id",
+          "v2": "(structure ref)",
+          "status": "mapped"
+        },
+        {
+          "v1": "from_date",
+          "v2": "pay_item_assignment.effective_from",
+          "status": "mapped"
+        },
+        {
+          "v1": "to_date",
+          "v2": "pay_item_assignment.effective_to",
+          "status": "mapped"
+        },
+        {
+          "v1": "compensation_type",
+          "v2": "pay_item_assignment.basis",
+          "status": "mapped",
+          "note": "salaried/hourly"
+        },
+        {
+          "v1": "rate_cents",
+          "v2": "pay_item_assignment.amount",
+          "status": "mapped"
+        },
+        {
+          "v1": "transport_allowance_cents",
+          "v2": "pay_item_assignment (transport)",
+          "status": "mapped"
+        },
+        {
+          "v1": "other_allowances_json",
+          "v2": "pay_item_assignment (multiple)",
+          "status": "manual_review",
+          "note": "jsonb of extra allowances — expand into pay items"
+        },
+        {
+          "v1": "status",
+          "v2": "pay_item_assignment.status",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "deleted_at",
+          "v2": "deleted_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": ["33 structure assignments"]
+    },
+    {
+      "v1Table": "salary_structure_templates",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "salary_structures",
+      "v2Target": "pay_item (group) + country profile",
+      "classification": "transform_map",
+      "reason": "named structure -> pay item set + country profile selection",
+      "rowCount": 4,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "(structure ref)",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "name",
+          "v2": "pay_item group label",
+          "status": "mapped"
+        },
+        {
+          "v1": "pay_frequency",
+          "v2": "pay_period.frequency",
+          "status": "mapped"
+        },
+        {
+          "v1": "rules_version",
+          "v2": "country_payroll_profile selection",
+          "status": "manual_review",
+          "note": "maps v1 rules_version -> v2 country profile year"
+        },
+        {
+          "v1": "is_archived",
+          "v2": "is_active (inverse)",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "deleted_at",
+          "v2": "deleted_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        }
+      ],
+      "unmappable": [],
+      "notes": [
+        "4 salary structures — no 1:1 v2 table; resolves to pay_item set"
+      ]
+    },
+    {
+      "v1Table": "shift_roster_entries",
+      "v2Target": null,
+      "classification": "requires_new_v2_feature",
+      "reason": "PER-DATE roster with override + custom times + approval — v2 has weekly patterns only",
+      "rowCount": 175,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "roster_entry.id (NEW)",
+          "status": "manual_review",
+          "note": "needs new v2 roster_entry table (21D)"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "manual_review"
+        },
+        {
+          "v1": "employee_id",
+          "v2": "roster_entry.employee_id (NEW)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "date",
+          "v2": "roster_entry.date (NEW)",
+          "status": "manual_review",
+          "note": "per-date — the gap"
+        },
+        {
+          "v1": "work_schedule_id",
+          "v2": "roster_entry.shift_id (NEW)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "override_type",
+          "v2": "roster_entry.override_type (NEW)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "note",
+          "v2": "roster_entry.note (NEW)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "is_approved",
+          "v2": "roster_entry.is_approved (NEW)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "approved_by_user_id",
+          "v2": "roster_entry.approved_by (NEW)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "approved_at",
+          "v2": "roster_entry.approved_at (NEW)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "custom_shift_start_minutes",
+          "v2": "roster_entry.custom_start (NEW)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "custom_shift_end_minutes",
+          "v2": "roster_entry.custom_end (NEW)",
+          "status": "manual_review"
+        }
+      ],
+      "unmappable": [
+        {
+          "id": "0b021b7d-4cf1-4df6-b3fe-23a6aba32cbe",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ddadfe85-1716-4a35-aa24-33eeb13f8fe4",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "bb6a9aa2-01d1-4408-8dd5-4f5668328717",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e4113275-5bec-4b36-8076-18a19251f008",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e4176daa-0ef1-47ad-beb6-aa97cd45a431",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "cef8b145-47a7-4890-bcc0-067ab03f994f",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "765c72c3-bbe2-4d9c-a4c1-8de8e7ca1d06",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "4b0647eb-7b4f-43f2-8775-20d7a865a289",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e31271d9-6a72-4647-8fe1-bff7e4ce78a3",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "554afc4b-b20a-44f7-8f1d-27868b7f5383",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "40c4cb8d-a6a2-45b1-8d15-bf6e541246a7",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "822fd30c-9d60-4b63-9dc9-4b753fb9a539",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "2c3b1a2d-c693-4cbb-8514-6579d17f1afe",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "83f002e7-0609-4fad-9472-c14dd15f0c7e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "287fb4a1-b130-4cf6-b7ba-317636fb4355",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "76f56ef6-080f-4f5f-b400-bf571e5f658e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "1033fbe6-2de1-4df0-ac15-d735b3901abd",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "fe55570e-e8eb-40de-9272-7538ef5cf64a",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "4a9a725f-f2f2-4ab9-9540-db67d91fa064",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "794c56d6-b4ba-4ced-9462-e95398a05677",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "40bd3801-d7aa-4157-b714-8a63bb678703",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "06f1d770-5559-4562-b57a-e78503e1a772",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c5cc8609-b825-4851-8a14-3efecf037777",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "59d802e1-6100-4a2b-9598-2699cceb970e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "9754e8c8-43ce-422f-9030-47952e5c70c9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "a25f32f9-cd10-48c8-bfef-da0e125a0717",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "eabfafd4-799f-4ee9-8bfe-6c3ceaccc9e0",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "71f1b186-03f1-4bf6-9559-9687495934f2",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "907c4466-1543-4edf-9de7-fab150b6e9d4",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "dcaf332a-216c-4017-a3db-0d3e07a7f6b9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "82de2094-0794-438e-95b3-86d66184a2a4",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "71537b4f-f80e-41e8-b8e8-afdbf98f2755",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "487b7f72-fb77-4754-bad3-8b8583e8e44a",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "0972e9d4-d25d-4664-a897-4e8afca1220c",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "2d1d0365-9416-4ac6-86aa-ae65fed7fb9e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "4623986a-dd2b-48f8-b5cb-2450379af0e9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "5cfafcd5-7ffd-455a-811e-4fac1d92e88f",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e870e507-72fe-4864-93a0-b25ffa1a8d32",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "a6c32f79-1bf1-48f6-9107-b71774f9c863",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "43757e3d-6826-4e20-bd6b-c0f82889a89c",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ee7ae1c1-6040-4cf0-b3fe-adc338c454f7",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "d72a1560-1087-44d5-b831-0dee07f9a4c4",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6823ea90-7131-49d1-a3b2-284680d5c6a9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "dc70c8f3-9a83-42ae-91b0-400a6d146f48",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "cd3814b3-d58c-4366-aaaa-add69d599baf",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "8c122871-adbc-4351-804b-0ed6e74e7bc6",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "59e180e2-7ebc-4f4b-8cb0-04fd639aa80e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "4d9c78b0-fd8f-4c2f-a58f-1a7d5b1d969e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6236b37c-89d4-40bf-8402-0a4b5dadf6c6",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "55d05c95-0f67-4713-a0ff-10fe7cfd8479",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "588a0207-673d-49fd-b4a5-cf9cd4360174",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "8bc49f40-ffb4-4948-aad7-7eb422bd0c4e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "9fec78c4-893f-4559-801b-e468818ba98e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "531387cf-ca8d-47d1-abc8-79fe56a2cb6d",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "2fd7cafb-183d-4661-a43c-c3b7d2c28fd1",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "3f72837c-f810-4bce-ab50-64cc20a58a1e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c098b335-afe7-4247-a5d5-af71ed07274d",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "a6c6733c-d085-4e0b-8fd8-a2903a285d77",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "fd87e7fa-bc47-4c5d-a140-ce9dae9493a2",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6ca39226-bc96-40ab-83e5-d2101569cc2a",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "abf0f1be-48ec-42c7-b125-5c4d866bb710",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "1051bd1e-cc16-4c1d-a1a7-96f78e8ffde9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "cd06a95b-1375-45ce-a141-4c8ce151f645",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "141d4cb5-80c3-478a-9fae-6f2c367dcf73",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "f2d36075-6565-453e-a862-bd83baf7c49f",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e8d30dbb-34ed-417f-8982-0739f5d91951",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "b84c0d5f-87e7-4910-b144-053d8ac2f98c",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6d5486f4-61af-4877-ba7f-54b3f5df023f",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "fa4b3574-33d4-49fc-8ad3-553575f6e965",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "3c375f61-650e-4e87-91a2-52b102ff23f6",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "2900a926-351b-4438-876f-5f46724fbb83",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c6ae47ff-54de-43c9-9492-f726027d3a8f",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "1f601040-d829-4cb5-b302-f04608bea996",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "d00e4675-881f-4e54-b82e-1b0de1ddc5d6",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "97b649fd-8029-42ea-b988-75b11c6d517b",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "36b82f5f-3c66-4599-a4a7-7bedf3707426",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "979cd70e-53d6-4594-9e01-f29b7a709a07",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e984b4c5-6f25-4cc2-bf21-ebd4c619304a",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "af7715fd-3021-4abb-b06a-293ab4dae05d",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "7f8190bd-635d-42b6-8dd4-8608f99c9614",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "9456f129-f104-4351-ba7b-48bf18d5feaf",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "78330c34-56db-44b8-91e4-4074243db77b",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "b74cc153-2810-4426-a2fe-b5a6968be55b",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "8411ee82-018c-4a13-ada0-e3201037efaf",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "bb73f3fd-40c8-45dc-80a7-bea325f90a31",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "5e4a4e49-e87a-48cb-82f5-f4fcc277bccd",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "f7355450-93f2-4bae-baff-d9f87b238753",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "acc37757-e5ee-4d95-a7ed-6931eb7d4a79",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "d3c4d1f8-ce04-4189-b112-2ebffd20e221",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "19888e20-b1bb-4e36-a638-0bd0cc3c91d6",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "a0c6ca81-e261-41f3-ac9c-9184b56a4bac",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "1a878093-89eb-4a04-919c-afac747f8e1e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "2e7bc208-7048-4592-99ad-7562da12de80",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "f18c3d96-2ae7-486e-b199-be588c8c9900",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "06dc2eb8-d48d-46e5-8d42-960b7c2794fb",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "651b6039-b3db-4047-8898-994aa7ce8e36",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "5d6945d2-2b2a-4089-b747-dea87932af28",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ff379df1-ceb3-40c2-9ee6-4dd8e1b7bc55",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e652229c-ea3d-4700-9689-fba7ed795c5a",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "0410adc3-4a2d-49b8-9a42-3d32c7c8817c",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "112560d9-a6f3-423a-863c-7d925f48f481",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6bade08a-369a-4d13-9ac0-dc9d93d00d14",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "b64132ba-9851-4103-96ff-0f77ff769a97",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "d9fcd878-3178-460b-a55c-bda9d4742525",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "95d933a7-c59e-4bf5-ba75-53f6a26e9af1",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c1304c4c-99f6-43ae-b710-5fdf1a343b44",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "75776e58-b7da-4efd-9d86-467b3b70d903",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "606e2f4e-72b5-4563-9d83-1ee2441295b4",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ee58609c-a17d-4049-a867-61aa2b5860dc",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e3eae788-e290-4fd7-ac57-1e7a5bb779a2",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ee0f2c55-2703-4093-afba-77778b71726b",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "43be6156-f3e8-4e16-a5d3-d55783a664c4",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6dd6df7b-51d6-4d47-bec8-4c0ef5118ad2",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c3ea6722-746b-4579-82dd-d69f30299f99",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "bdea95fb-bdf6-48b7-a09b-9d79b1aad055",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "81a72d08-ee86-43e7-99a9-6850f46f9390",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "38b7a572-973a-4506-9b92-ab286a2dd19b",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "b021a861-c503-4492-b5fb-57c551825b09",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c944df05-3cac-40f9-bea5-c88f8152f081",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "8a4ead79-c22a-4f5d-a1c5-f0d388bc2c32",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "94d5b48d-6d6f-4694-9bfb-156c93419b83",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "663091d8-2a3a-4e4a-b3d2-35ecbf330309",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c3da7633-a830-4467-af55-dbad49dc2a8c",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "d9d11bfd-0ef3-492d-9487-b86e4a96a168",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "170cdccf-503a-47c5-917e-52fc6d5b2d37",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "994920ee-a246-44d7-ac4d-724ea46577ff",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "1cbd2bfb-9d4f-4c86-b8a6-a6aed8e59bb6",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "62a0cab4-42e5-4a1d-a7f8-c7e24090c664",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "31291c29-e21a-4149-be97-ff13d66893df",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "f659576a-1a17-4255-8f33-c58bea4e52a7",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c2cd2069-ccfd-4df0-9a33-5ad62c5e3923",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "f0eeee11-7c57-41a7-9105-34db740da54b",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e2846cac-3d40-4cbd-bb6b-d407d5c79e48",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "fc3cc40e-5ae3-46e5-ad9b-45c746a68a6c",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "018f117b-a485-4444-b360-338b7c61d8f9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "f9f061ef-da47-49a3-8d52-cc84d6d132a9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "63f3a7e9-3d06-4217-9cb0-653641806e18",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "c9ff259c-ef4d-4246-8ed2-33b70a8ecd92",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "a5445546-5b58-4bd2-baa4-4c2f1ebea6d9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "3729c881-5d65-4498-9306-0692cc5cc711",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "1eb2c5ad-b680-4a7a-bc59-ade65c0bbd33",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "aeb4795d-38ef-40a4-83f7-aebce25b6ab3",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6f9737f6-06c3-4e4f-80df-82a3bab5fe5a",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "e839fdbc-5f47-439d-9699-bc145a2b3a60",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "812a278c-bef6-4a48-ae9c-f3c35d335794",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ddb6bbd7-1474-42c8-8094-1e11a2244513",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "64a5a377-3cb1-4c39-b752-79ce9c4cc89d",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "8c338d06-790d-4c5d-8089-182b54caa491",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "26c98c04-1709-4a5b-a8cf-6efabac2a3b5",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6979461d-a728-42a5-80f8-f247049b51d0",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ac25c0ed-887d-4907-9ebf-55a8efa22d70",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "4838fea6-5548-46e4-b1b3-670ecf2ec077",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "258a9cec-6e26-4936-b63a-a8f62a79d29c",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6709e05d-d199-4e70-9d89-6e903fe5809e",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "51d73981-6dec-4f97-9a66-dcb0a2cdafdd",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "475989a5-d785-4337-ad59-2cc1fb282101",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "19edbee5-08bd-4c17-b375-1245c1205f47",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "675d8922-cc2e-4000-ace0-c93119f17fc7",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "2c1dc303-3210-4f3e-99f6-205e49985ae9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "06e48892-a4f2-4c40-bd43-7191180e0ac5",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "324c7b3f-f8bd-4d3d-a307-db64e437eee9",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "f1d577a2-b23b-42de-80c5-ae2b31cf661a",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6234a8e2-f61d-4bfe-a882-44eee6446aee",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "6bb033e2-4728-4b53-9304-e8c6c5999c87",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "448d490a-2852-46b8-95ca-2efbdbd00e47",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "45fb14e9-b0b9-45f5-9618-72152e0a1a22",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "cfc19909-1ee7-4f8c-bbd7-662563c80474",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "39db92ee-01ba-400d-a23c-0143df1a53b0",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "8dd0bbd5-ca0e-45cb-864d-18ac33fd7c25",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ab1c6141-957a-4469-b071-56d2debfe2ff",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "3b7e7b7a-631d-4b56-845d-4b5c2081e635",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "1bf231c2-6abf-4451-a099-7dae9720e3ee",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "67a32e83-388e-445b-a69b-7956960ab067",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "aa1c9162-c116-47ed-a011-64112c1d26b3",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        },
+        {
+          "id": "ec002418-2162-49b6-81f4-4ca23bea1176",
+          "reason": "no v2 roster table yet (blocked on 21D)"
+        }
+      ],
+      "notes": [
+        "175 per-date roster entries (175 overrides, 175 approved)",
+        "BLOCKER: requires a v2 roster_entry table (21D) before this data can land",
+        "This data feeds attendance/overtime/pay — highest-impact structural gap for the operational tenant"
+      ]
+    },
+    {
+      "v1Table": "skill_categories",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "skill_types",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "staff_feedback",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "survey_anonymous_tokens",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "survey_questions",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "survey_response_answers",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "survey_responses",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "surveys",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "tenant_config",
+      "v2Target": "payroll_setting / org settings",
+      "classification": "transform_map",
+      "reason": "per-tenant config",
+      "rowCount": 1,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "tenant_statutory_rules",
+      "v2Target": "country_payroll_profile",
+      "classification": "transform_map",
+      "reason": "statutory rules -> country profile",
+      "rowCount": 2,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "training_enrollments",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "training_module_completions",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "training_modules",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "training_programs",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "user",
+      "v2Target": "user",
+      "classification": "direct_map",
+      "reason": "Better-Auth user",
+      "rowCount": 29,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "work_locations",
+      "v2Target": null,
+      "classification": "ignore_defer",
+      "reason": "empty scaffold — no data contract",
+      "rowCount": 0,
+      "fields": [],
+      "unmappable": [],
+      "notes": []
+    },
+    {
+      "v1Table": "work_schedules",
+      "v2Target": "shift / shift_schedule (partial)",
+      "classification": "transform_map",
+      "reason": "v1 schedule is far richer than v2 shift; many fields feed payroll with no v2 home",
+      "rowCount": 6,
+      "fields": [
+        {
+          "v1": "id",
+          "v2": "shift.id",
+          "status": "mapped"
+        },
+        {
+          "v1": "tenant_id",
+          "v2": "organization_id",
+          "status": "mapped"
+        },
+        {
+          "v1": "name",
+          "v2": "shift.name",
+          "status": "mapped"
+        },
+        {
+          "v1": "code",
+          "v2": "shift.code",
+          "status": "mapped"
+        },
+        {
+          "v1": "shift_start_minutes",
+          "v2": "shift_schedule.start_time",
+          "status": "mapped"
+        },
+        {
+          "v1": "shift_end_minutes",
+          "v2": "shift_schedule.end_time",
+          "status": "mapped"
+        },
+        {
+          "v1": "standard_daily_minutes",
+          "v2": "shift_schedule.minimum_work_minutes",
+          "status": "manual_review"
+        },
+        {
+          "v1": "standard_weekly_minutes",
+          "v2": "shift.weekly_full_time_minutes",
+          "status": "mapped"
+        },
+        {
+          "v1": "overtime_threshold_daily_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "OT threshold — no v2 home; affects pay"
+        },
+        {
+          "v1": "overtime_threshold_weekly_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "OT threshold — no v2 home; affects pay"
+        },
+        {
+          "v1": "work_days",
+          "v2": "shift_schedule (per day_of_week)",
+          "status": "manual_review",
+          "note": "expand into v2 day rows"
+        },
+        {
+          "v1": "grace_minutes_late",
+          "v2": null,
+          "status": "unmapped",
+          "note": "lateness grace — no v2 home"
+        },
+        {
+          "v1": "grace_minutes_early_out",
+          "v2": null,
+          "status": "unmapped",
+          "note": "early-out grace — no v2 home"
+        },
+        {
+          "v1": "is_flexi_time",
+          "v2": null,
+          "status": "unmapped",
+          "note": "flexi-time — no v2 home"
+        },
+        {
+          "v1": "is_split_shift",
+          "v2": null,
+          "status": "unmapped",
+          "note": "split shift — no v2 home"
+        },
+        {
+          "v1": "split_break_start_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "split shift — no v2 home"
+        },
+        {
+          "v1": "split_break_end_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "split shift — no v2 home"
+        },
+        {
+          "v1": "auto_deduct_break",
+          "v2": null,
+          "status": "unmapped",
+          "note": "break rule — no v2 home"
+        },
+        {
+          "v1": "break_minutes",
+          "v2": "shift_schedule (break)",
+          "status": "manual_review"
+        },
+        {
+          "v1": "minimum_minutes_for_break_deduction",
+          "v2": null,
+          "status": "unmapped",
+          "note": "break rule — no v2 home"
+        },
+        {
+          "v1": "has_night_differential",
+          "v2": null,
+          "status": "unmapped",
+          "note": "night differential — no v2 home; affects pay"
+        },
+        {
+          "v1": "night_diff_start_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "night differential — no v2 home"
+        },
+        {
+          "v1": "night_diff_end_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "night differential — no v2 home"
+        },
+        {
+          "v1": "night_diff_multiplier_num",
+          "v2": null,
+          "status": "unmapped",
+          "note": "night differential — no v2 home; affects pay"
+        },
+        {
+          "v1": "night_diff_multiplier_den",
+          "v2": null,
+          "status": "unmapped",
+          "note": "night differential — no v2 home; affects pay"
+        },
+        {
+          "v1": "is_archived",
+          "v2": "shift.is_active (inverse)",
+          "status": "mapped"
+        },
+        {
+          "v1": "sync_version",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "source_node_id",
+          "v2": null,
+          "status": "dropped",
+          "note": "edge-sync metadata (v2 is central)"
+        },
+        {
+          "v1": "created_at",
+          "v2": "created_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "updated_at",
+          "v2": "updated_at",
+          "status": "mapped",
+          "note": "housekeeping timestamp"
+        },
+        {
+          "v1": "saturday_shift_start_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "Saturday shift — no v2 home"
+        },
+        {
+          "v1": "saturday_shift_end_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "Saturday shift — no v2 home"
+        },
+        {
+          "v1": "day_overrides",
+          "v2": null,
+          "status": "unmapped",
+          "note": "per-day overrides (jsonb) — no v2 home"
+        },
+        {
+          "v1": "cap_daily_paid_minutes",
+          "v2": null,
+          "status": "unmapped",
+          "note": "daily pay cap — no v2 home"
+        }
+      ],
+      "unmappable": [],
+      "notes": [
+        "6 work schedules",
+        "v1 scheduling is much richer than v2 `shift` — night differential, split shift, Saturday rates, OT thresholds, grace, daily caps have NO v2 home and FEED PAYROLL",
+        "DECISION NEEDED: extend v2 shift model or accept simplified scheduling (impacts overtime/night/Saturday pay)"
+      ]
+    }
+  ],
+  "tenants": [
+    {
+      "tenantId": "F48EVSUONAHBFwKtcCa2gBrQ1YW1g4Tc",
+      "name": "Foreign Links Auto Spares",
+      "counts": {
+        "employees": 3,
+        "payslips": 3,
+        "punches": 0,
+        "roster": 0,
+        "journals": 0,
+        "notifications": 0,
+        "leaveRequests": 0
+      },
+      "blockers": ["payroll parity gate (21C) must pass before cutover"],
+      "ready": true
+    },
+    {
+      "tenantId": "netsurf-group-tenant-001",
+      "name": "Netsurf Group of Companies",
+      "counts": {
+        "employees": 20,
+        "payslips": 66,
+        "punches": 874,
+        "roster": 175,
+        "journals": 13,
+        "notifications": 14,
+        "leaveRequests": 2
+      },
+      "blockers": [
+        "175 per-date roster entries need the v2 roster table (21D)",
+        "13 GL journals need the v2 GL decision/build (21D)",
+        "payroll parity gate (21C) must pass before cutover"
+      ],
+      "ready": true
+    }
+  ],
+  "featureGaps": [
+    "accounts (11 rows) — GL chart of accounts — v2 GL deferred (21D minimal build)",
+    "journal_entries (13 rows) — GL journals — minimal v2 GL; do NOT clone bug-reversal churn",
+    "journal_lines (53 rows) — GL journal lines — depends on GL build",
+    "notifications (14 rows) — in-app notifications — v2 has no store (21D); history optional",
+    "shift_roster_entries (175 rows) — PER-DATE roster with override + custom times + approval — v2 has weekly patterns only",
+    "work_schedules — v1 scheduling (night differential / split shift / Saturday rates / OT thresholds) exceeds v2 `shift`; affects pay (decision needed)"
+  ],
+  "statutoryReview": [
+    "employees.company_id — v2 has no company sub-entity yet — confirm",
+    "employees.kiosk_pin_hash — biometric/kiosk PIN — confirm v2 home",
+    "employees.tin_number — PAYE — confirm column exists",
+    "employees.nis_number — NIS — confirm column exists",
+    "employees.qualifying_children — income-tax child allowance — confirm v2 home or ADD",
+    "employees.medical_insurance_on_file — confirm v2 home",
+    "employees.medical_payroll_deduct_cents — deduction amount — confirm",
+    "employees.medical_external_premium_cents — confirm v2 home",
+    "employees.has_second_job — second-job tax treatment — confirm/ADD",
+    "employees.second_job_pay_cents — drives second-job tax — confirm/ADD",
+    "employees.other_deductions_cents — misc deduction — confirm"
+  ]
+}

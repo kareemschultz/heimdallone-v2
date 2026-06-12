@@ -46,6 +46,7 @@
     "audit:permissions": "bun scripts/audit-permissions.ts",
     "verify:db": "bun scripts/verify-performance-db.ts && bun scripts/verify-crm-db.ts && bun scripts/verify-finance-db.ts",
     "verify:core": "bun run audit:permissions && bun run verify:db",
+    "migration:dry-run": "bun run scripts/migration/run-dry-run.ts",
     "prepare": "husky"
   },
   "dependencies": {
@@ -61,6 +62,8 @@
     "drizzle-orm": "^0.45.2",
     "husky": "latest",
     "lefthook": "latest",
+    "pg": "^8.17.1",
+    "@types/pg": "^8.16.0",
     "turbo": "^2.8.12",
     "typescript": "catalog:",
     "ultracite": "7.8.0"

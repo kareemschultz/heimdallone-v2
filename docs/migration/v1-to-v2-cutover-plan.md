@@ -60,10 +60,13 @@ Drop (transient): `session`, `verification`. Drop (v2-architectural): `sync_vers
 
 - **21A — Plan (this doc).** Intent-capture method, data contract, ETL design, reconciliation gate,
   cutover sequence. No code.
-- **21B — ETL foundation.** A read-only v1 connector + a typed mapping layer
-  (`scripts/migration/`): connect to `karetech_erp`, read each v1 table, transform to v2 insert
-  shape, write to a v2 target DB. Idempotent + tenant-scoped + dry-run mode. Starts with the
-  **direct-port** domains (org/auth, departments, employees, holidays, leave).
+- **21B — ETL foundation. ✅ COMPLETE** ([phase-21b-etl-foundation.md](./phase-21b-etl-foundation.md)).
+  Read-only v1 connector + typed mapping layer + dry-run report in `scripts/migration/`. Connects to
+  `karetech_erp` read-only (write-blocked at session level), classifies all 101 v1 tables (13 direct
+  / 13 transform / 5 requires-new-feature / 3 archive / 68 ignore), and emits a PII-free coverage
+  report (`dry-run-report.md`/`.json`). NO writes. Surfaced a 4th feature gap beyond 21A: v1
+  `work_schedules` has 19 pay-affecting fields (night differential, split shift, Saturday rates, OT
+  thresholds) with no v2 home. `bun run migration:dry-run`.
 - **21C — Payroll & attendance ETL + reconciliation harness.** The transform-heavy domains
   (salary structures → pay items, payslips, punches, roster). Ships the **parity gate** (§6):
   recompute each v1 payslip in v2's payroll-engine and assert net-pay match per employee/period.
@@ -184,7 +187,9 @@ No DNS flip until these pass, per tenant:
 
 ## 9. Immediate next step
 
-**21B — ETL foundation.** Build the read-only v1 connector + typed mapping layer in
-`scripts/migration/`, starting with the direct-port domains (org/auth, departments, employees +
-the §3 statutory field map, holidays, leave) against a scratch v2 DB, in dry-run mode. No
-production writes, no cutover — just prove the read + transform + reconcile loop on real data.
+**21B is complete.** Next: **21C — payroll/attendance reconciliation dry-run.** Stand up a scratch
+v2 DB, run the 21B mappers to load the direct/transform domains (org/auth, employees + §3 statutory
+map, holidays, leave, pay inputs), then **recompute every v1 payslip in v2's payroll-engine and
+assert net-pay parity per employee/period** (§6.2). Mismatches triage as v1-bug-corrected (documented)
+vs port-error (fixed). Still read-only on v1; writes go ONLY to the scratch v2 target. GL / per-date
+roster / notifications / scheduling-richness remain blocked on 21D feature builds.
