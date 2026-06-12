@@ -496,3 +496,22 @@ export function canApproveRoster(role: MemberRole): boolean {
 export function seesAllRoster(role: MemberRole): boolean {
 	return canViewPayroll(role);
 }
+
+// General Ledger (Phase 21D-E) — minimal payroll-GL. Mirror of
+// apps/web/src/lib/rbac.ts; aligned BYTE-FOR-BYTE to the `journal`/`account` AC
+// grants in permissions.ts. read (journal:read ∪ account:read): owner/admin/
+// hr_admin/payroll_admin/auditor. manage (journal:post + account:create/update/
+// archive) + reverse (journal:reverse): owner/admin/payroll_admin ONLY (hr_admin
+// is read-only on the books; auditor read-only). GL is org-wide (company books) —
+// no employee scoping, only tenant scope + the AC gate.
+export function canViewGL(role: MemberRole): boolean {
+	return canViewPayroll(role);
+}
+
+export function canManageGL(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "payroll_admin";
+}
+
+export function canReverseGL(role: MemberRole): boolean {
+	return canManageGL(role);
+}

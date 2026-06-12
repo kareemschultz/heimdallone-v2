@@ -473,3 +473,18 @@ export function canApproveRoster(role: MemberRole): boolean {
 export function seesAllRoster(role: MemberRole): boolean {
 	return canViewPayroll(role);
 }
+
+// General Ledger (Phase 21D-E). Mirror of packages/api/src/utils/role-helpers.ts
+// (keep byte-aligned). read: owner/admin/hr_admin/payroll_admin/auditor; manage +
+// reverse: owner/admin/payroll_admin only. Gates UI affordances; server re-checks.
+export function canViewGL(role: MemberRole): boolean {
+	return canViewPayroll(role);
+}
+
+export function canManageGL(role: MemberRole): boolean {
+	return isOwnerOrAdmin(role) || role === "payroll_admin";
+}
+
+export function canReverseGL(role: MemberRole): boolean {
+	return canManageGL(role);
+}
