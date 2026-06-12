@@ -47,6 +47,7 @@
     "verify:db": "bun scripts/verify-performance-db.ts && bun scripts/verify-crm-db.ts && bun scripts/verify-finance-db.ts",
     "verify:core": "bun run audit:permissions && bun run verify:db",
     "migration:dry-run": "bun run scripts/migration/run-dry-run.ts",
+    "migration:reconcile": "bun run scripts/migration/run-reconciliation.ts",
     "prepare": "husky"
   },
   "dependencies": {

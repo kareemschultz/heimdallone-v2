@@ -2,6 +2,20 @@
 
 Phase 8A spec. The highest-risk module in Heimdallone — errors affect real money.
 
+> **🔴 KNOWN ENGINE GAP (found in Phase 21C v1→v2 reconciliation, 2026-06-12):** the
+> payroll-engine (`packages/payroll-engine`) does **not** prorate period-based statutory
+> constants by pay frequency — `computePersonalAllowance` returns the flat monthly GYD 140,000
+> for *every* pay period. **GRA (gra.gov.gy) is the source of truth** and publishes prorated
+> per-period figures (weekly $32,308 / fortnightly $64,615 / monthly $140,000 / yearly
+> $1,680,000). v2 over-grants the allowance and under-computes PAYE for non-monthly payroll
+> (e.g. Netsurf's fortnightly run). The **income-tax band threshold ($280k/mo), NIS ceiling,
+> child allowance, and medical cap carry the same implicit per-month** and must prorate too.
+> **Fix (Phase 21D): a single GRA-cited frequency-proration layer** for weekly/fortnightly/
+> monthly/contract+self-employed, with per-frequency fixtures and its own TDD pass. See
+> `docs/migration/phase-21c-payroll-attendance-reconciliation.md` and the `reference-gra-payroll`
+> memory. Build payroll math around GRA official docs (PAYE *and* beyond), versatile for
+> contract/project/private work.
+
 **Prerequisites complete**: HR Core (Phase 5), Contracts (Phase 6), Attendance (Phase 7B–7D), Leave (Phase 7E–7G), QA/security pass (Phase 7H).
 
 ---

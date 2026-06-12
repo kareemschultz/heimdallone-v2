@@ -1,0 +1,2595 @@
+{
+  "generatedAt": "2026-06-12T18:14:13.119Z",
+  "v1Url": "postgres://heimdallone:***@172.19.0.2:5432/karetech_erp",
+  "scratchDb": null,
+  "scratchCounts": null,
+  "tenants": [
+    {
+      "tenantId": "netsurf-group-tenant-001",
+      "name": "Netsurf Group of Companies",
+      "payslips": 66,
+      "exact": 3,
+      "rounding": 0,
+      "review": 0,
+      "blocked": 40,
+      "v1Bug": 23
+    },
+    {
+      "tenantId": "F48EVSUONAHBFwKtcCa2gBrQ1YW1g4Tc",
+      "name": "Foreign Links Auto Spares",
+      "payslips": 3,
+      "exact": 0,
+      "rounding": 0,
+      "review": 0,
+      "blocked": 3,
+      "v1Bug": 0
+    }
+  ],
+  "componentSummary": [
+    {
+      "component": "nis_employee",
+      "counts": {
+        "exact_match": 46,
+        "acceptable_rounding": 0,
+        "requires_manual_review": 0,
+        "v1_bug_corrected": 0,
+        "mapping_gap": 0,
+        "v2_engine_gap": 0
+      }
+    },
+    {
+      "component": "nis_employer",
+      "counts": {
+        "exact_match": 46,
+        "acceptable_rounding": 0,
+        "requires_manual_review": 0,
+        "v1_bug_corrected": 0,
+        "mapping_gap": 0,
+        "v2_engine_gap": 0
+      }
+    },
+    {
+      "component": "personal_allowance",
+      "counts": {
+        "exact_match": 3,
+        "acceptable_rounding": 0,
+        "requires_manual_review": 0,
+        "v1_bug_corrected": 0,
+        "mapping_gap": 0,
+        "v2_engine_gap": 43
+      }
+    },
+    {
+      "component": "child_allowance",
+      "counts": {
+        "exact_match": 46,
+        "acceptable_rounding": 0,
+        "requires_manual_review": 0,
+        "v1_bug_corrected": 0,
+        "mapping_gap": 0,
+        "v2_engine_gap": 0
+      }
+    },
+    {
+      "component": "paye_brackets",
+      "counts": {
+        "exact_match": 45,
+        "acceptable_rounding": 1,
+        "requires_manual_review": 0,
+        "v1_bug_corrected": 0,
+        "mapping_gap": 0,
+        "v2_engine_gap": 0
+      }
+    },
+    {
+      "component": "net_identity",
+      "counts": {
+        "exact_match": 46,
+        "acceptable_rounding": 0,
+        "requires_manual_review": 0,
+        "v1_bug_corrected": 0,
+        "mapping_gap": 0,
+        "v2_engine_gap": 0
+      }
+    },
+    {
+      "component": "(whole payslip)",
+      "counts": {
+        "exact_match": 0,
+        "acceptable_rounding": 0,
+        "requires_manual_review": 0,
+        "v1_bug_corrected": 23,
+        "mapping_gap": 0,
+        "v2_engine_gap": 0
+      }
+    }
+  ],
+  "attendance": {
+    "totalPunches": 880,
+    "byTenant": [
+      {
+        "tenantId": "netsurf-group-tenant-001",
+        "punches": 880
+      }
+    ],
+    "fieldCoverage": [
+      {
+        "field": "employee",
+        "present": 880,
+        "total": 880
+      },
+      {
+        "field": "timestamp",
+        "present": 880,
+        "total": 880
+      },
+      {
+        "field": "punch_type",
+        "present": 880,
+        "total": 880
+      },
+      {
+        "field": "source",
+        "present": 880,
+        "total": 880
+      },
+      {
+        "field": "device",
+        "present": 675,
+        "total": 880,
+        "note": "device binding"
+      },
+      {
+        "field": "logical_shift_date",
+        "present": 880,
+        "total": 880,
+        "note": "v1 derives this; confirm v2 derivation"
+      },
+      {
+        "field": "device_timestamp",
+        "present": 880,
+        "total": 880
+      },
+      {
+        "field": "gps_latitude",
+        "present": 57,
+        "total": 880,
+        "note": "geo — confirm v2 punch geo home"
+      }
+    ],
+    "rosterGap": {
+      "rosterEntries": 175,
+      "workSchedules": 6,
+      "blocksPayrollReconstruction": true,
+      "note": "Per-date roster + rich work-schedule rules (night diff / split shift / Saturday / OT thresholds) are required to reconstruct earnings (gross/overtime/Saturday/Sunday pay) from punches. v2 has no home for these yet — blocks EARNINGS reconstruction until 21D. The STATUTORY layer (NIS/PAYE/allowances/net) reconciles independently because v1 stored the gross."
+    },
+    "unmappedFields": [
+      "break_minutes_deducted (confirm v2 break model)",
+      "accuracy_meters / is_gps_mocked / verified_work_location_id (geo)"
+    ]
+  },
+  "statutory": [
+    {
+      "field": "tin_number",
+      "present": 3,
+      "total": 23,
+      "status": "manual_review",
+      "note": "PAYE filing — confirm v2 column"
+    },
+    {
+      "field": "nis_number",
+      "present": 3,
+      "total": 23,
+      "status": "manual_review",
+      "note": "NIS — confirm v2 column"
+    },
+    {
+      "field": "qualifying_children",
+      "present": 23,
+      "total": 23,
+      "status": "manual_review",
+      "note": "child allowance — drives PAYE"
+    },
+    {
+      "field": "has_second_job",
+      "present": 23,
+      "total": 23,
+      "status": "manual_review",
+      "note": "second-job tax treatment"
+    },
+    {
+      "field": "second_job_pay_cents",
+      "present": 23,
+      "total": 23,
+      "status": "manual_review",
+      "note": "second-job income"
+    },
+    {
+      "field": "medical_payroll_deduct_cents",
+      "present": 23,
+      "total": 23,
+      "status": "manual_review",
+      "note": "medical deduction"
+    },
+    {
+      "field": "other_deductions_cents",
+      "present": 23,
+      "total": 23,
+      "status": "manual_review",
+      "note": "misc deduction"
+    },
+    {
+      "field": "kiosk_pin_hash",
+      "present": 0,
+      "total": 23,
+      "status": "manual_review",
+      "note": "kiosk/biometric PIN"
+    },
+    {
+      "field": "company_id",
+      "present": 0,
+      "total": 23,
+      "status": "manual_review",
+      "note": "no v2 company sub-entity"
+    }
+  ],
+  "readiness": "blocked",
+  "blockers": [
+    "EARNINGS reconstruction (gross/overtime/Saturday/Sunday pay) blocked on the 21D per-date roster + scheduling-rules build (v1 stored gross, so statutory layer reconciles independently).",
+    "175 per-date roster entries have no v2 home (21D).",
+    "GL + notifications feature builds required before those rows migrate (21D).",
+    "9 employee statutory fields need a confirmed v2 column (payroll-correctness)."
+  ],
+  "next21D": [
+    "Per-date roster table (+ rich work-schedule rules: night differential, split shift, Saturday rates, OT thresholds) — unblocks earnings reconstruction.",
+    "Minimal v2 payroll-GL (accounts + journal entries/lines) — port chart + clean balances, not v1 bug-reversal churn.",
+    "In-app notification subsystem.",
+    "Confirm v2 columns for all employee statutory fields (TIN/NIS/qualifying_children/second_job/medical/other_deductions/company).",
+    "Confirm production country_payroll_profile equals the GY-2026 constants used here."
+  ],
+  "payslips": [
+    {
+      "payslipId": "fc0427ea-4d0f-4d40-af49-d2741b8eee74",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00016",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "0c897bff-a28d-4aef-a997-df870014aebd",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00006",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "e776c32c-649f-4545-b201-f4d15f9fefb1",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00015",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "70912366-d3b6-4764-84e1-a42dd014a8f7",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00003",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "ca6d0a2b-cbea-4323-92af-5dbad020062a",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00001",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "12ab6a25-3d23-455d-901c-4e74e3e682f8",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00004",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "c42f6daa-771e-4f21-9d5b-3d40b2187180",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00015",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "79c8d7f3-5f41-4b4d-98f6-81512afb14bc",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00007",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "8bd46116-bb3d-4bd0-9029-e2b37b6f3203",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00018",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "exact",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "1737259f-580b-46fc-9457-9b4288fcfc0e",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00012",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "c04078cf-407a-4c52-8ea1-f8749aa966f9",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00013",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "2784daab-b0f8-4626-8895-f8607af3bf24",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00011",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "cb60670d-c01d-48be-8a97-c0f842528eb7",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00016",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "b7a7a061-9600-4973-9f4d-6b56e14093d2",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00005",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "ff5f78b1-e876-4ace-ac94-8651ecac49a1",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00006",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "5a59f242-1cf9-42a8-9303-b52d07e7f965",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00018",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "75e10281-396e-45ef-9041-a850f5913d3e",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00012",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "95003e70-54ab-4bec-aebd-30168073a075",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00016",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "a5c2c9dc-6a21-41c0-8ad2-34bea40e0573",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00013",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "f9b496d3-581f-4a9f-abef-9e6c6b809a88",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00010",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "c07d8749-5062-49fe-9c4a-f76adc4035fd",
+      "tenantId": "F48EVSUONAHBFwKtcCa2gBrQ1YW1g4Tc",
+      "employeeId": "da68da58-dc9f-4fa0-96a9-52cef59e759a",
+      "periodId": "50e7378b-80b8-4fdc-b5eb-9003cb9beb5a",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "7d82ce52-04d0-48d8-b882-5c0e5bd4ca74",
+      "tenantId": "F48EVSUONAHBFwKtcCa2gBrQ1YW1g4Tc",
+      "employeeId": "853f75ae-57ce-4f5b-bdbe-c53fcf64b4bf",
+      "periodId": "50e7378b-80b8-4fdc-b5eb-9003cb9beb5a",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "07bf5dfe-dbb3-4d99-aa71-98ad9940ab19",
+      "tenantId": "F48EVSUONAHBFwKtcCa2gBrQ1YW1g4Tc",
+      "employeeId": "112de0e3-ca78-4f75-9b55-64dce5fff5a7",
+      "periodId": "50e7378b-80b8-4fdc-b5eb-9003cb9beb5a",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "2ad52da4-0e9b-49bf-b423-27c0a9d6bb2c",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00015",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "a079afd3-81ae-42a1-91e3-8071fe73cac9",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00008",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 1,
+          "classification": "acceptable_rounding",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "86782af0-a7df-4637-8414-1f526315c5d9",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00003",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "4d578c3a-342a-422e-8037-f220b5bab5db",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00002",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "3bac44a7-d003-4edb-8ac0-70d74ba75780",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00010",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "6cb09b3c-2b08-413b-99e2-895f380a76c9",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00002",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "152e5ca0-fd0d-4af9-a90c-ef954624dda0",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00008",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "7f0365c6-1fd5-457c-bcc2-650b9f0360d7",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00005",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "cbaee613-0431-4fd6-a0ab-37c8351c98dc",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00011",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "bece9f3c-2fea-4d26-9f3c-d2e1bf07fad9",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00003",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "cbddcdba-1231-4f40-bae9-059ea7f8e0fc",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00006",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "d144a10c-9009-4504-b7d2-42cc7b5e99f6",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00001",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "8a9662a9-fff4-4dec-945c-e6879ed2aa80",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00002",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "130ed75c-d6a1-48ce-b551-00019b46ba48",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00003",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "51448706-6fee-4512-a7bb-95d86ec7f130",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00004",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "8601665a-c6c6-4137-9950-2d1183e367e6",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00006",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "c032b268-dc2a-44b1-abd9-a0b3c65dec5e",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00007",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "de45c6c3-1bdd-4d45-9db2-5e87f60d6517",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00008",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "a7194b45-e7e6-4e67-8f69-3a857671d55e",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00010",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "e490bc48-c0a8-48e7-a16c-e0ac43d44942",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00011",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "f6722b5d-71d6-4385-94f3-c1a543987f78",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00015",
+      "periodId": "7b71775f-63d0-40fc-ac9f-2138d995bb12",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "ea6a40fe-0aca-447e-83e1-0d799bb8ef83",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00004",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "6aeb5fa5-21de-43ad-ab2b-1bd55ac07b46",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00005",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "84b6ec90-ba2b-432b-8e65-9f9bb7103af0",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00007",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "966adab3-a5fd-4a6d-a846-d336fd5df8c5",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00018",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "exact",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "6bb13108-f575-488a-8f58-7d9dd3dd4fb9",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00001",
+      "periodId": "netsurf-pp-2026-05-08",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "48c460be-b8ac-4247-953f-52d31c1bea13",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00016",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "63f91b5a-ddd7-4c0c-bbf2-eb162adf2ab8",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00006",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "52cac481-da2c-486d-a93e-84a8b9ad3055",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00001",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "41f900be-57b2-4a5d-bb93-eb9897864200",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00004",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "62b0d367-2bbf-4f60-b537-e2387b0ad597",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00007",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "a96b5e31-9cf2-4406-9c0d-2f6d4c7e8a6a",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00008",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "2fecc419-57b3-4088-bbe6-7ebd827f1f8f",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00010",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "f7d61789-b40a-4c5e-b0e6-2dc578476d63",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00002",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "041b99dd-4bcd-4883-9efd-12c92671ffa8",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00011",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": true,
+      "overall": "v1_bug",
+      "checks": [
+        {
+          "component": "(whole payslip)",
+          "deltaCents": null,
+          "classification": "v1_bug_corrected",
+          "note": "v1 reversal payslip (UTC-bug correction) — preserved as history, not replayed"
+        }
+      ]
+    },
+    {
+      "payslipId": "617d8918-d8fc-4a7e-9556-5cc83645a8b4",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00001",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "5926385d-b7af-466f-bc0f-d5ff8534b6d1",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00004",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "b6a89091-9df3-4226-a78c-7c72f6286753",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00007",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "092ae1f8-7b43-4c34-af3d-435108d7a546",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00008",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "1ae0ebd8-15e0-4d26-9b5c-f9536eecadaf",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00010",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "c243693a-88f7-477e-9073-e02fd95afbe9",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00002",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "2072bd77-4d10-4d7e-bb09-dc5d0135a967",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00011",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "9fc578f8-6e5b-4ae9-8641-448d64f7a838",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00015",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "08bf81e9-205a-43f1-9d77-08ca977f8fd5",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00018",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "exact",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "a87edb9a-b765-4ff7-a269-0fc25eb91daf",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00005",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    },
+    {
+      "payslipId": "04a57fd4-da38-4928-a27e-bddaa47698da",
+      "tenantId": "netsurf-group-tenant-001",
+      "employeeId": "HR-EMP-00003",
+      "periodId": "netsurf-pp-2026-05-22",
+      "isReversal": false,
+      "overall": "blocked",
+      "checks": [
+        {
+          "component": "nis_employee",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "nis_employer",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "personal_allowance",
+          "deltaCents": 7538462,
+          "classification": "v2_engine_gap",
+          "note": "v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover"
+        },
+        {
+          "component": "child_allowance",
+          "deltaCents": 0,
+          "classification": "exact_match"
+        },
+        {
+          "component": "paye_brackets",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "v2 brackets applied to v1's chargeable income"
+        },
+        {
+          "component": "net_identity",
+          "deltaCents": 0,
+          "classification": "exact_match",
+          "note": "gross - NIS(emp) - PAYE - deductions"
+        }
+      ]
+    }
+  ]
+}

@@ -67,12 +67,18 @@ Drop (transient): `session`, `verification`. Drop (v2-architectural): `sync_vers
   report (`dry-run-report.md`/`.json`). NO writes. Surfaced a 4th feature gap beyond 21A: v1
   `work_schedules` has 19 pay-affecting fields (night differential, split shift, Saturday rates, OT
   thresholds) with no v2 home. `bun run migration:dry-run`.
-- **21C — Payroll & attendance ETL + reconciliation harness.** The transform-heavy domains
-  (salary structures → pay items, payslips, punches, roster). Ships the **parity gate** (§6):
-  recompute each v1 payslip in v2's payroll-engine and assert net-pay match per employee/period.
-- **21D — Intent-gap builds (only what the data forces).** Per §4 decisions: minimal GL (if kept),
-  per-date roster table, notification subsystem. Each built the v2 way (schema → migration → AC →
-  router → UI), reusing existing primitives. Each is its own spec→build→verify sub-cycle.
+- **21C — Payroll/attendance reconciliation. ✅ COMPLETE** ([phase-21c-…md](./phase-21c-payroll-attendance-reconciliation.md)).
+  Re-ran every v1 payslip's own inputs through v2's statutory rules; **GRA (gra.gov.gy) is the
+  adjudicator, not v1** (v1 has bugs too). NIS/child/PAYE-brackets/net all reconcile (v2 constants
+  match GRA). **Headline finding: v2 does NOT prorate the personal allowance by pay frequency** —
+  applies flat $140k/mo every period; GRA + v1 use fortnightly $64,615 (×12/26). 43/46 fortnightly
+  payslips → `v2_engine_gap`; readiness **BLOCKED**. Owner directive: v2 must serve weekly/fortnightly/
+  monthly/contract → 21D engine fix must prorate ALL period constants (allowance, $280k tax band, NIS
+  ceiling, child, medical). Scratch-staging path proven on a throwaway DB behind 3 verified guards.
+  `bun run migration:reconcile`.
+- **21D — Intent-gap builds + payroll-engine frequency-proration fix.** TOP priority: GRA-cited,
+  per-frequency proration in `packages/payroll-engine` (own TDD pass). Then minimal GL, per-date
+  roster table, notification subsystem. Each built the v2 way (schema → migration → AC → router → UI).
 - **21E — Cutover dry-run → live.** Foreign Links full migration as a rehearsal; fix; then Netsurf;
   freeze v1 read-only; final delta; flip DNS.
 
@@ -187,9 +193,11 @@ No DNS flip until these pass, per tenant:
 
 ## 9. Immediate next step
 
-**21B is complete.** Next: **21C — payroll/attendance reconciliation dry-run.** Stand up a scratch
-v2 DB, run the 21B mappers to load the direct/transform domains (org/auth, employees + §3 statutory
-map, holidays, leave, pay inputs), then **recompute every v1 payslip in v2's payroll-engine and
-assert net-pay parity per employee/period** (§6.2). Mismatches triage as v1-bug-corrected (documented)
-vs port-error (fixed). Still read-only on v1; writes go ONLY to the scratch v2 target. GL / per-date
-roster / notifications / scheduling-richness remain blocked on 21D feature builds.
+**21B + 21C complete.** Next: **21D — feature builds + the payroll-engine frequency-proration fix.**
+21C reconciliation proved (via GRA, the source of truth) that v2's engine applies a flat monthly
+personal allowance to every pay period instead of prorating by frequency — wrong for the fortnightly/
+weekly/contract businesses v2 must serve. **Top 21D priority: a GRA-cited, frequency-aware proration
+layer in `packages/payroll-engine`** (personal allowance + $280k/mo tax band + NIS ceiling + child +
+medical caps, all prorated weekly/fortnightly/monthly/annual), with its own TDD pass. Then per-date
+roster, minimal GL, notifications. Re-run `migration:reconcile` after the engine fix to confirm the 43
+fortnightly payslips move to exact. Still read-only on v1; writes only to scratch.
