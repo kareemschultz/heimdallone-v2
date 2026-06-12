@@ -58,6 +58,11 @@ export const statement = {
 	attendance_punch: ["read", "process", "import"],
 	geofence: ["read", "manage", "check_in"],
 	attendance_exception: ["read", "resolve"],
+	// Roster (Phase 21D-D) — per-date shift scheduling that FEEDS attendance/
+	// payroll. `read` = view the roster (handler scopes employees to own/team/org);
+	// `manage` = create/edit/remove + bulk pattern assignment; `approve` = approve/
+	// unapprove a rostered day. First consumed by the 21D `roster` router.
+	roster: ["read", "manage", "approve"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
@@ -265,6 +270,7 @@ export const tenant_owner = ac.newRole({
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
+	roster: ["read", "manage", "approve"],
 	leave_policy: ["read", "create", "update", "adopt", "activate", "archive"],
 	audit_log: ["read"],
 	export: ["generate"],
@@ -333,6 +339,7 @@ export const tenant_admin = ac.newRole({
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
+	roster: ["read", "manage", "approve"],
 	leave_policy: ["read", "create", "update", "adopt", "activate", "archive"],
 	audit_log: ["read"],
 	export: ["generate"],
@@ -394,6 +401,7 @@ export const hr_admin = ac.newRole({
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
 	work_location: ["read", "manage"],
+	roster: ["read", "manage", "approve"],
 	leave_policy: ["read", "create", "update", "adopt", "activate", "archive"],
 	audit_log: ["read"],
 	export: ["generate"],
@@ -426,6 +434,8 @@ export const payroll_admin = ac.newRole({
 	payroll_period: ["create", "read", "finalize", "cancel", "delete"],
 	advance: ["read", "approve_accounting", "disburse"],
 	loan: ["read", "approve_accounting", "disburse", "write_off"],
+	// Payroll reads the roster (it feeds pay) but does not edit/approve it.
+	roster: ["read"],
 	finance: ["read", "manage_budget", "export"],
 	analytics: ["read", "export"],
 	attendance: ["read"],
@@ -470,6 +480,8 @@ export const manager = ac.newRole({
 	...memberAc.statements,
 	employee: ["read"],
 	resignation: ["read", "approve"],
+	// Managers roster their own team; the handler scopes to direct reports.
+	roster: ["read", "manage", "approve"],
 	payslip: ["read"],
 	payroll_period: ["read"],
 	attendance: ["read"],
@@ -512,6 +524,8 @@ export const employee = ac.newRole({
 	...memberAc.statements,
 	employee: ["read"],
 	resignation: ["create", "read", "withdraw"],
+	// Employees see their OWN roster (handler self-scopes); cannot edit/approve.
+	roster: ["read"],
 	onboarding: ["read", "complete", "sign_acknowledgement"],
 	payslip: ["read"],
 	payroll_period: ["read"],
@@ -541,6 +555,8 @@ export const auditor = ac.newRole({
 	employee: ["read"],
 	resignation: ["read"],
 	transfer: ["read"],
+	// Read-only oversight of the roster.
+	roster: ["read"],
 	onboarding: ["read"],
 	payroll: ["read"],
 	attendance_device: ["read"],

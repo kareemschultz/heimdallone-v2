@@ -18,6 +18,7 @@ import { payrollRouter } from "./payroll";
 import { performanceRouter } from "./performance";
 import { projectsRouter } from "./projects";
 import { recruitmentRouter } from "./recruitment";
+import { rosterRouter } from "./roster";
 
 export const appRouter = {
 	healthCheck: publicProcedure.handler(() => "OK"),
@@ -40,6 +41,7 @@ export const appRouter = {
 	performance: performanceRouter,
 	projects: projectsRouter,
 	recruitment: recruitmentRouter,
+	roster: rosterRouter,
 	onboarding: onboardingRouter,
 	offboarding: offboardingRouter,
 };

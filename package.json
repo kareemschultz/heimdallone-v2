@@ -45,8 +45,9 @@
     "fix": "ultracite fix",
     "audit:permissions": "bun scripts/audit-permissions.ts",
     "verify:pay-frequency": "bun scripts/verify-pay-frequency.ts",
+    "verify:roster": "bun scripts/verify-roster-api.ts",
     "verify:db": "bun scripts/verify-performance-db.ts && bun scripts/verify-crm-db.ts && bun scripts/verify-finance-db.ts",
-    "verify:core": "bun run audit:permissions && bun run verify:pay-frequency && bun run verify:db",
+    "verify:core": "bun run audit:permissions && bun run verify:pay-frequency && bun run verify:roster && bun run verify:db",
     "migration:dry-run": "bun run scripts/migration/run-dry-run.ts",
     "migration:reconcile": "bun run scripts/migration/run-reconciliation.ts",
     "prepare": "husky"

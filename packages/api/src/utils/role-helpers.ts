@@ -473,3 +473,26 @@ export function canViewOneOnOnes(role: MemberRole): boolean {
 export function canRecordOneOnOne(role: MemberRole): boolean {
 	return canManageHR(role) || role === "manager";
 }
+
+// Roster (Phase 21D-D) — per-date shift scheduling that feeds attendance/payroll.
+// Mirror of apps/web/src/lib/rbac.ts; aligned BYTE-FOR-BYTE to the `roster` AC
+// grant in permissions.ts. read: owner/admin/hr/payroll/manager/employee/auditor;
+// manage+approve: owner/admin/hr + manager. Handlers scope employees: seesAll →
+// whole org, manager → own + direct reports, employee → self only.
+export function canViewRoster(role: MemberRole): boolean {
+	return canViewPayroll(role) || role === "manager" || role === "employee";
+}
+
+export function canManageRoster(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
+
+export function canApproveRoster(role: MemberRole): boolean {
+	return canManageRoster(role);
+}
+
+// Whether a roster viewer sees the WHOLE org (true) or is scoped to their own +
+// direct reports (manager) / themselves (employee).
+export function seesAllRoster(role: MemberRole): boolean {
+	return canViewPayroll(role);
+}

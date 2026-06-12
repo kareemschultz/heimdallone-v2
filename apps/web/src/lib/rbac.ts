@@ -453,3 +453,23 @@ export function canViewOneOnOnes(role: MemberRole): boolean {
 export function canRecordOneOnOne(role: MemberRole): boolean {
 	return canManageHR(role) || role === "manager";
 }
+
+// Roster (Phase 21D-D). Mirror of packages/api/src/utils/role-helpers.ts (keep
+// byte-aligned). Aligned to the `roster` AC grant: read held by owner/admin/hr/
+// payroll/manager/employee/auditor; manage+approve by owner/admin/hr + manager.
+// These gate UI affordances only — the server re-checks and scopes by employee.
+export function canViewRoster(role: MemberRole): boolean {
+	return canViewPayroll(role) || role === "manager" || role === "employee";
+}
+
+export function canManageRoster(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
+
+export function canApproveRoster(role: MemberRole): boolean {
+	return canManageRoster(role);
+}
+
+export function seesAllRoster(role: MemberRole): boolean {
+	return canViewPayroll(role);
+}
