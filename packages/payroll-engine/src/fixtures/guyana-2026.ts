@@ -403,3 +403,34 @@ export const unsupportedCountry: PayrollInput = {
 	countryProfile: { ...GY_PROFILE, countryCode: "BB", effectiveYear: 2026 },
 	settings: DEFAULT_SETTINGS,
 };
+
+// A FORTNIGHTLY-paid salaried employee earning $100,000 for the period.
+// GRA prorates the personal allowance to $64,615.38 fortnightly (1,680,000/26),
+// so the gross EXCEEDS the allowance and PAYE is owed. Under the flat-$140,000
+// bug the allowance swallowed the gross and PAYE was $0. (Phase 21D-B.)
+export const fortnightlySalaried: PayrollInput = {
+	employee: baseEmployee,
+	contract: {
+		...baseContract,
+		baseSalary: 100_000,
+		payFrequency: "fortnightly",
+	},
+	period: {
+		startDate: "2026-05-01",
+		endDate: "2026-05-14",
+		workingDays: 10,
+		expectedHours: 80,
+	},
+	attendance: {
+		...baseAttendance,
+		totalWorkedMinutes: 4800,
+		daysPresent: 10,
+	},
+	leave: noLeave,
+	holidays: noHolidays,
+	payItems: noPayItems,
+	loans: noLoans,
+	reimbursements: noReimbursements,
+	countryProfile: GY_PROFILE,
+	settings: DEFAULT_SETTINGS,
+};

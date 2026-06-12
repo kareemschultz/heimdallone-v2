@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { calculatePayroll } from "./calculate";
 import {
 	atNISCeiling,
+	fortnightlySalaried,
 	highSalaryPAYE,
 	hourlyWithOvertime,
 	missingContract,
@@ -38,6 +39,32 @@ describe("calculatePayroll", () => {
 		expect(result.currency).toBe("GYD");
 		expect(result.lineItems.length).toBeGreaterThan(0);
 		expect(result.explanation.length).toBeGreaterThan(0);
+	});
+
+	test("fortnightly employee gets the GRA-prorated personal allowance, not the flat monthly amount", () => {
+		const result = calculatePayroll(fortnightlySalaried);
+
+		// GRA 2026 fortnightly personal allowance = $64,615.38 = 1,680,000/26
+		// (NOT the full monthly $140,000). Values are in cents.
+		const paStep = result.explanation.find(
+			(e) => e.label === "Personal allowance"
+		);
+		expect(paStep?.result).toBe(6_461_538);
+
+		// Gross ($100,000) exceeds the prorated allowance, so PAYE is owed.
+		// Under the flat-$140,000 bug the allowance swallowed the gross → PAYE 0.
+		expect(result.grossPay).toBe(10_000_000);
+		expect(result.paye).toBeGreaterThan(0);
+	});
+
+	test("monthly employee's personal allowance is unchanged (proration identity)", () => {
+		const result = calculatePayroll(monthlySalariedNormal);
+		const paStep = result.explanation.find(
+			(e) => e.label === "Personal allowance"
+		);
+		// $350,000 gross → gross/3 = 11,666,667 < $140,000/mo threshold ($14M cents),
+		// so the threshold applies and monthly proration is the identity (×1).
+		expect(paStep?.result).toBe(14_000_000);
 	});
 
 	test("hourly employee with approved overtime", () => {

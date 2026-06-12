@@ -1,6 +1,6 @@
 # v1 → v2 Payroll/Attendance Reconciliation Report
 
-**Generated:** 2026-06-12T18:14:13.119Z
+**Generated:** 2026-06-12T18:43:39.652Z
 **v1 source (read-only):** `postgres://heimdallone:***@172.19.0.2:5432/karetech_erp`
 **Scratch DB:** _not run this pass (reconciliation is DB-free; staging is opt-in)_
 
@@ -8,7 +8,7 @@
 > against v1's computed results. No writes to v1 or production v2. Amounts are shown as
 > DELTAS only (PII-safe). Earnings (gross/overtime/Saturday) are roster-derived → blocked on 21D.
 
-## 1. Cutover readiness: **BLOCKED**
+## 1. Cutover readiness: **READY**
 
 Blockers / caveats:
 - EARNINGS reconstruction (gross/overtime/Saturday/Sunday pay) blocked on the 21D per-date roster + scheduling-rules build (v1 stored gross, so statutory layer reconciles independently).
@@ -20,8 +20,8 @@ Blockers / caveats:
 
 | Tenant | Payslips | Exact | Rounding | Review | Blocked | v1-bug (reversal) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| Netsurf Group of Companies | 66 | 3 | 0 | 0 | 40 | 23 |
-| Foreign Links Auto Spares | 3 | 0 | 0 | 0 | 3 | 0 |
+| Netsurf Group of Companies | 66 | 42 | 1 | 0 | 0 | 23 |
+| Foreign Links Auto Spares | 3 | 3 | 0 | 0 | 0 | 0 |
 
 ## 3. Statutory component parity (across all reconciled payslips)
 
@@ -29,7 +29,7 @@ Blockers / caveats:
 | --- | ---: | ---: | ---: | ---: | ---: |
 | nis_employee | 46 | 0 | 0 | 0 | 0 |
 | nis_employer | 46 | 0 | 0 | 0 | 0 |
-| personal_allowance | 3 | 0 | 0 | 43 | 0 |
+| personal_allowance | 46 | 0 | 0 | 0 | 0 |
 | child_allowance | 46 | 0 | 0 | 0 | 0 |
 | paye_brackets | 45 | 1 | 0 | 0 | 0 |
 | net_identity | 46 | 0 | 0 | 0 | 0 |
@@ -37,23 +37,7 @@ Blockers / caveats:
 
 ## 4. Mismatch examples (review / engine gap) — delta only, PII-safe
 
-| payslip id | component | delta (cents) | note |
-| --- | --- | ---: | --- |
-| fc0427ea-4d0f-4d40-af49-d2741b8eee74 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| 0c897bff-a28d-4aef-a997-df870014aebd | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| 70912366-d3b6-4764-84e1-a42dd014a8f7 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| ca6d0a2b-cbea-4323-92af-5dbad020062a | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| 12ab6a25-3d23-455d-901c-4e74e3e682f8 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| c42f6daa-771e-4f21-9d5b-3d40b2187180 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| 79c8d7f3-5f41-4b4d-98f6-81512afb14bc | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| 1737259f-580b-46fc-9457-9b4288fcfc0e | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| c04078cf-407a-4c52-8ea1-f8749aa966f9 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| 2784daab-b0f8-4626-8895-f8607af3bf24 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| cb60670d-c01d-48be-8a97-c0f842528eb7 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| b7a7a061-9600-4973-9f4d-6b56e14093d2 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| ff5f78b1-e876-4ace-ac94-8651ecac49a1 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| 75e10281-396e-45ef-9041-a850f5913d3e | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
-| 95003e70-54ab-4bec-aebd-30168073a075 | personal_allowance | 7538462 | v2 applies full monthly personal allowance; v1 prorates to fortnightly pay period (fortnightly = x12/26) — v2 engine needs frequency proration before cutover |
+_None — all reconciled statutory components match (exact or within rounding)._
 
 ## 5. Attendance mapping audit
 

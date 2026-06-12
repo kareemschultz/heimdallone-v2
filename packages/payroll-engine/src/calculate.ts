@@ -7,8 +7,10 @@ import {
 import { deriveConfidence } from "./confidence";
 import { resolveCountryRules } from "./countries/registry";
 import { divideCents, toCents } from "./money";
+import { prorateProfile } from "./proration";
 import type {
 	CalculationExplanation,
+	CountryPayrollProfileInput,
 	CountryRules,
 	PayItemInput,
 	PayrollInput,
@@ -20,6 +22,10 @@ interface CalcContext {
 	explanations: CalculationExplanation[];
 	input: PayrollInput;
 	lineItems: PayslipLineItemResult[];
+	// The country profile with period-based statutory amounts (allowance, NIS
+	// ceiling, child/OT/insurance caps, tax bands) prorated to the contract's
+	// pay frequency. Rates are unchanged. Use this for ALL statutory math.
+	periodProfile: CountryPayrollProfileInput;
 	rules: CountryRules;
 	sortOrder: number;
 }
@@ -169,10 +175,7 @@ const computeOvertime = (
 	);
 	const total = weekdayOT + saturdayOT + sundayOT + holidayOT;
 
-	const split = ctx.rules.splitOvertimeTaxability(
-		total,
-		ctx.input.countryProfile
-	);
+	const split = ctx.rules.splitOvertimeTaxability(total, ctx.periodProfile);
 	addExplanation(
 		ctx,
 		6,
@@ -269,7 +272,7 @@ const computePreTaxDeductions = (
 	let preTax = 0;
 	let employerContrib = 0;
 
-	const nis = rules.computeNIS(grossPay, input.countryProfile);
+	const nis = rules.computeNIS(grossPay, ctx.periodProfile);
 	preTax += nis.employee;
 	employerContrib += nis.employer;
 
@@ -306,11 +309,7 @@ const computePreTaxDeductions = (
 		}
 
 		if (item.title.toLowerCase().includes("insurance")) {
-			amount = rules.computeInsuranceCap(
-				amount,
-				grossPay,
-				input.countryProfile
-			);
+			amount = rules.computeInsuranceCap(amount, grossPay, ctx.periodProfile);
 		}
 		preTax += amount;
 		addLine(ctx, {
@@ -380,11 +379,11 @@ const computeTaxAndPostTax = (
 
 	const personalAllowance = rules.computePersonalAllowance(
 		grossPay,
-		input.countryProfile
+		ctx.periodProfile
 	);
 	const childAllowance = rules.computeChildAllowance(
 		input.employee.dependentChildren,
-		input.countryProfile
+		ctx.periodProfile
 	);
 	addExplanation(
 		ctx,
@@ -418,7 +417,7 @@ const computeTaxAndPostTax = (
 		taxableGross
 	);
 
-	const paye = rules.computePAYE(taxableGross, input.countryProfile);
+	const paye = rules.computePAYE(taxableGross, ctx.periodProfile);
 	addExplanation(
 		ctx,
 		14,
@@ -559,6 +558,10 @@ export const calculatePayroll = (input: PayrollInput): PayrollPreviewResult => {
 		lineItems: [],
 		explanations: [],
 		sortOrder: 0,
+		periodProfile: prorateProfile(
+			input.countryProfile,
+			input.contract?.payFrequency ?? "monthly"
+		),
 	};
 
 	const rawBasePay = computeBasePay(ctx);
@@ -629,7 +632,7 @@ export const calculatePayroll = (input: PayrollInput): PayrollPreviewResult => {
 	const postWarnings = detectPostCalcWarnings(netPay, input, loanDeductions);
 	const allBlockers = [...preBlockers, ...postBlockers];
 	const allWarnings = [...preWarnings, ...postWarnings];
-	const nis = ctx.rules.computeNIS(grossPay, input.countryProfile);
+	const nis = ctx.rules.computeNIS(grossPay, ctx.periodProfile);
 
 	return {
 		employeeId: input.employee.id,

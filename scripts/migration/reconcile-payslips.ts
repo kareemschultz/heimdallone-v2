@@ -11,6 +11,7 @@
 // net identity), which is roster-independent because v1 stored the gross.
 
 import type { Client } from "pg";
+import { prorateProfile } from "../../packages/payroll-engine/src/proration";
 import {
 	parseSnapshot,
 	reconInputsFromSnapshot,
@@ -168,7 +169,12 @@ function reconcileOne(row: any): PayslipReconResult {
 		};
 	}
 
-	const { rules, profile } = resolved;
+	const { rules } = resolved;
+	// Phase 21D-B: prorate the profile to the payslip's pay frequency before
+	// running the rules — mirrors the engine's fix so the reconciliation reflects
+	// the CORRECTED v2 behavior (fortnightly personal allowance = monthly x12/26).
+	const freq = (snap.payFrequency ?? "monthly").toLowerCase();
+	const profile = prorateProfile(resolved.profile, freq);
 	const inp = reconInputsFromSnapshot(snap);
 	const c = snap.computed;
 	const num = (v: unknown): number | null => (v == null ? null : Number(v));
@@ -177,11 +183,9 @@ function reconcileOne(row: any): PayslipReconResult {
 	const personal = rules.computePersonalAllowance(inp.grossCents, profile);
 	const child = rules.computeChildAllowance(inp.qualifyingChildren, profile);
 
-	// Personal allowance: a mismatch on a NON-monthly pay frequency is a real v2
-	// engine gap — v2 applies the full monthly allowance every period, while v1
-	// (correctly) prorates it (fortnightly = x12/26). Reclassify so the report
-	// reads as "v2 engine needs frequency proration", not vague manual review.
-	const freq = (snap.payFrequency ?? "monthly").toLowerCase();
+	// Personal allowance: after the 21D-B engine fix this should now MATCH v1 for
+	// non-monthly frequencies (both prorate). A residual non-monthly mismatch is
+	// still surfaced as a v2_engine_gap for review rather than a silent pass.
 	const personalCheck = check(
 		"personal_allowance",
 		num(c.personalAllowanceCents),
