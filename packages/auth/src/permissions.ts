@@ -53,6 +53,13 @@ export const statement = {
 	// First consumer = the 18C analytics router → audit 147/17 → ~149/18.
 	analytics: ["read", "export"],
 
+	// Notifications (Phase 21D-F) — a per-user in-app inbox held by EVERY member
+	// (granted to all roles). `read` = list own inbox / unread count; `manage` =
+	// mark read / dismiss OWN notifications. The handler always self-scopes to the
+	// caller; creation is a server-side helper (other modules emit), not a user
+	// action, so there is no `create` action here.
+	notification: ["read", "manage"],
+
 	attendance: ["create", "read", "correct"],
 	attendance_device: ["read", "manage", "sync"],
 	attendance_punch: ["read", "process", "import"],
@@ -236,6 +243,7 @@ const FULL_OFFBOARDING = [
 
 export const tenant_owner = ac.newRole({
 	...ownerAc.statements,
+	notification: ["read", "manage"],
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
 	onboarding: [
 		"read",
@@ -305,6 +313,7 @@ export const tenant_owner = ac.newRole({
 
 export const tenant_admin = ac.newRole({
 	...adminAc.statements,
+	notification: ["read", "manage"],
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
 	onboarding: [
 		"read",
@@ -374,6 +383,7 @@ export const tenant_admin = ac.newRole({
 
 export const hr_admin = ac.newRole({
 	...adminAc.statements,
+	notification: ["read", "manage"],
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
 	onboarding: [
 		"read",
@@ -427,6 +437,7 @@ export const hr_admin = ac.newRole({
 
 export const payroll_admin = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	resignation: ["read", "complete"],
 	payroll: ["create", "read", "update", "delete"],
@@ -478,6 +489,7 @@ export const payroll_admin = ac.newRole({
 
 export const manager = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	resignation: ["read", "approve"],
 	// Managers roster their own team; the handler scopes to direct reports.
@@ -522,6 +534,7 @@ export const manager = ac.newRole({
 
 export const employee = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	resignation: ["create", "read", "withdraw"],
 	// Employees see their OWN roster (handler self-scopes); cannot edit/approve.
@@ -552,6 +565,7 @@ export const employee = ac.newRole({
 
 export const auditor = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	resignation: ["read"],
 	transfer: ["read"],
@@ -605,6 +619,7 @@ export const auditor = ac.newRole({
 
 export const recruiter = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	posting: ["create", "read", "update", "publish", "archive"],
 	applicant: ["create", "read", "update", "convert"],
@@ -619,6 +634,7 @@ export const recruiter = ac.newRole({
 
 export const helpdesk_agent = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	document: ["read"],
@@ -637,6 +653,7 @@ export const helpdesk_agent = ac.newRole({
 // scope.)
 export const project_manager = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	document: ["read"],
 	project: [
@@ -661,6 +678,7 @@ export const project_manager = ac.newRole({
 // hr_admin / payroll_admin / project_manager.
 export const sales_admin = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	document: ["read"],
 	...FULL_CRM,
@@ -671,6 +689,7 @@ export const sales_admin = ac.newRole({
 // may read private notes they author/own (handler-scoped).
 export const sales_rep = ac.newRole({
 	...memberAc.statements,
+	notification: ["read", "manage"],
 	employee: ["read"],
 	document: ["read"],
 	crm_customer: ["create", "read", "update"],

@@ -488,3 +488,14 @@ export function canManageGL(role: MemberRole): boolean {
 export function canReverseGL(role: MemberRole): boolean {
 	return canManageGL(role);
 }
+
+// Notifications (Phase 21D-F). Mirror of packages/api/src/utils/role-helpers.ts.
+// The inbox is universal (granted to all roles) — these gate the bell/inbox
+// affordance; the server self-scopes every query to the caller.
+export function canViewNotifications(_role: MemberRole): boolean {
+	return true;
+}
+
+export function canManageNotifications(_role: MemberRole): boolean {
+	return true;
+}

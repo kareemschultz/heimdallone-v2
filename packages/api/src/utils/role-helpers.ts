@@ -515,3 +515,15 @@ export function canManageGL(role: MemberRole): boolean {
 export function canReverseGL(role: MemberRole): boolean {
 	return canManageGL(role);
 }
+
+// Notifications (Phase 21D-F) — a per-user inbox held by EVERY role. Mirror of
+// apps/web/src/lib/rbac.ts. The grant is universal (all 12 roles), so these gate
+// only the always-present bell/inbox affordance; the handler self-scopes to the
+// caller. Kept as helpers (not inlined `true`) for byte-alignment + future tuning.
+export function canViewNotifications(_role: MemberRole): boolean {
+	return true;
+}
+
+export function canManageNotifications(_role: MemberRole): boolean {
+	return true;
+}
