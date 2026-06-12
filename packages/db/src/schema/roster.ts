@@ -40,9 +40,12 @@ export const rosterEntry = pgTable(
 	{
 		id: cuid(),
 		organizationId: orgRef(),
+		// RESTRICT (not cascade) — matches every sibling per-employee history table
+		// (attendance/leave/payroll). Roster is approved, payroll-feeding history;
+		// a hard employee delete must not silently erase it.
 		employeeId: text("employee_id")
 			.notNull()
-			.references(() => employeeProfile.id, { onDelete: "cascade" }),
+			.references(() => employeeProfile.id, { onDelete: "restrict" }),
 		// The date this roster entry applies to (the per-date key v2 lacked).
 		date: date("date", { mode: "date" }).notNull(),
 		// Assigned shift; SET NULL so archiving a shift doesn't delete history.

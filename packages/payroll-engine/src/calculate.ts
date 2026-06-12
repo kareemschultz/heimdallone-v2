@@ -396,7 +396,7 @@ const computeTaxAndPostTax = (
 		ctx,
 		12,
 		"Child allowance",
-		`${input.countryProfile.childAllowancePerChild} × ${input.employee.dependentChildren} children`,
+		`${ctx.periodProfile.childAllowancePerChild} × ${input.employee.dependentChildren} children`,
 		childAllowance
 	);
 

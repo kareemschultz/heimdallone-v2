@@ -31,6 +31,14 @@ describe("periodsPerYear", () => {
 		expect(periodsPerYear("monthly")).toBe(12);
 	});
 
+	test("handles the literal DB enum spelling 'semi_monthly' (underscore)", () => {
+		// The contract pay_frequency pg enum stores "semi_monthly" (underscore).
+		// Proration MUST recognise it or semi-monthly employees keep the bug.
+		expect(periodsPerYear("semi_monthly")).toBe(24);
+		expect(periodsPerYear("semi-monthly")).toBe(24);
+		expect(periodsPerYear("bi-weekly")).toBe(26);
+	});
+
 	test("defaults unknown frequencies to monthly (12)", () => {
 		expect(periodsPerYear("annually")).toBe(12);
 		expect(periodsPerYear("")).toBe(12);

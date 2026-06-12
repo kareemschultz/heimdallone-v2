@@ -15,31 +15,46 @@ function getProdV2Url(): string | undefined {
 	return process.env.V2_PROD_DATABASE_URL ?? process.env.DATABASE_URL;
 }
 
-function targetKey(url: string): string {
+/** Normalized {host:port, db} — lowercased host, default port 5432 supplied. */
+function normKey(url: string): { hostPort: string; db: string } {
 	try {
 		const u = new URL(url);
-		return `${u.host}${u.pathname}`;
+		return {
+			hostPort: `${u.hostname.toLowerCase()}:${u.port || "5432"}`,
+			db: u.pathname.replace(/^\//, ""),
+		};
 	} catch {
-		return url;
+		return { hostPort: url, db: "" };
 	}
 }
 
 export function assertNotProduction(url: string): void {
-	if (url.includes(V1_DB_NAME)) {
+	const t = normKey(url);
+	if (t.db === V1_DB_NAME) {
 		throw new Error(
 			"Refusing: the v2 staging target must not be the v1 database (karetech_erp)."
 		);
 	}
 	const prod = getProdV2Url();
-	if (prod && targetKey(url) === targetKey(prod)) {
-		throw new Error(
-			"Refusing: V2_STAGING_DATABASE_URL points at the v2 PRODUCTION database. " +
-				"Use a disposable staging/scratch database."
-		);
+	if (prod) {
+		const p = normKey(prod);
+		// Same host+db, OR same db NAME regardless of host (a prod DB reachable via
+		// a different host alias / the container IP must still be refused).
+		if (
+			(t.hostPort === p.hostPort && t.db === p.db) ||
+			(t.db && t.db === p.db)
+		) {
+			throw new Error(
+				"Refusing: V2_STAGING_DATABASE_URL resolves to the v2 PRODUCTION database. " +
+					"Use a disposable staging/scratch database."
+			);
+		}
 	}
+	// Disposability heuristic tests the DB NAME only (not the whole URL, so a
+	// username/host containing 'test' can't smuggle a real DB through).
 	const looksDisposable =
 		process.env.ALLOW_V2_TARGET === "1" ||
-		/stag|scratch|migrat|test/i.test(url);
+		/stag|scratch|migrat|test/i.test(t.db);
 	if (!looksDisposable) {
 		throw new Error(
 			"Refusing: v2 staging target does not look like a staging/scratch DB. " +

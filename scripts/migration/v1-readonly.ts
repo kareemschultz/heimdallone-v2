@@ -12,7 +12,24 @@ import { Client } from "pg";
 const V1_DB_NAME = "karetech_erp";
 
 export function redact(url: string): string {
-	return url.replace(/\/\/([^:]+):[^@]+@/, "//$1:***@");
+	// Parse + blank the password so a password containing '@' can't leak.
+	try {
+		const u = new URL(url);
+		if (u.password) {
+			u.password = "***";
+		}
+		return u.toString();
+	} catch {
+		return "<unparseable url redacted>";
+	}
+}
+
+export function dbNameOf(url: string): string {
+	try {
+		return new URL(url).pathname.replace(/^\//, "");
+	} catch {
+		return "";
+	}
 }
 
 export function getV1Url(): string {
@@ -24,13 +41,25 @@ export function getV1Url(): string {
 				`postgres://heimdallone:****@172.19.0.2:5432/${V1_DB_NAME}`
 		);
 	}
-	if (!url.includes(V1_DB_NAME)) {
+	// Exact db-name match (not substring) — refuse karetech_erp_test, or a url that
+	// merely mentions the name in a query param.
+	if (dbNameOf(url) !== V1_DB_NAME) {
 		throw new Error(
 			`Refusing to connect: V1_DATABASE_URL must target the v1 database '${V1_DB_NAME}' ` +
-				`(got: ${redact(url)}).`
+				`(got db '${dbNameOf(url)}' in ${redact(url)}).`
 		);
 	}
 	return url;
+}
+
+const SAFE_IDENT = /^[a-z0-9_]+$/i;
+
+/** Guard a table/column identifier before interpolating it into SQL. */
+function assertSafeIdent(ident: string): string {
+	if (!SAFE_IDENT.test(ident)) {
+		throw new Error(`Unsafe SQL identifier refused: ${JSON.stringify(ident)}`);
+	}
+	return ident;
 }
 
 export async function openV1ReadOnly(): Promise<Client> {
@@ -57,7 +86,9 @@ export async function listV1Tables(client: Client): Promise<string[]> {
 
 /** Row count for a registry table name (not user input — safe to interpolate). */
 export async function v1Count(client: Client, table: string): Promise<number> {
-	const r = await client.query(`SELECT count(*)::int AS n FROM "${table}"`);
+	const r = await client.query(
+		`SELECT count(*)::int AS n FROM "${assertSafeIdent(table)}"`
+	);
 	return r.rows[0]?.n ?? 0;
 }
 

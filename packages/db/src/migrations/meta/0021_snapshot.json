@@ -1,5 +1,5 @@
 {
-  "id": "ed9cf218-fb18-4a3d-8fbd-e301de5d85ea",
+  "id": "4dc96fbb-6f86-4672-bb8c-0ba43e1b0039",
   "prevId": "82e0a117-93dc-4ce7-b677-de1e9e442f38",
   "version": "7",
   "dialect": "postgresql",
@@ -5777,6 +5777,15 @@
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
+        },
+        "gl_account_parent_account_id_gl_account_id_fk": {
+          "name": "gl_account_parent_account_id_gl_account_id_fk",
+          "tableFrom": "gl_account",
+          "tableTo": "gl_account",
+          "columnsFrom": ["parent_account_id"],
+          "columnsTo": ["id"],
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -5822,6 +5831,12 @@
         "entry_date": {
           "name": "entry_date",
           "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
           "primaryKey": false,
           "notNull": true
         },
@@ -21262,7 +21277,7 @@
           "tableTo": "employee_profile",
           "columnsFrom": ["employee_id"],
           "columnsTo": ["id"],
-          "onDelete": "cascade",
+          "onDelete": "restrict",
           "onUpdate": "no action"
         },
         "roster_entry_shift_id_shift_id_fk": {

@@ -17,6 +17,7 @@
 
 import { relations } from "drizzle-orm";
 import {
+	type AnyPgColumn,
 	boolean,
 	date,
 	index,
@@ -63,9 +64,12 @@ export const glAccount = pgTable(
 		subType: text("sub_type"),
 		isPostable: boolean("is_postable").default(true).notNull(),
 		isArchived: boolean("is_archived").default(false).notNull(),
-		// Self-ref for a chart hierarchy; SET NULL so archiving a parent doesn't
-		// cascade-delete children.
-		parentAccountId: text("parent_account_id"),
+		// Real self-FK for a chart hierarchy; SET NULL so removing a parent
+		// re-parents children to root rather than cascade-deleting them.
+		parentAccountId: text("parent_account_id").references(
+			(): AnyPgColumn => glAccount.id,
+			{ onDelete: "set null" }
+		),
 		...timestamps,
 	},
 	(t) => [
@@ -82,6 +86,9 @@ export const glJournalEntry = pgTable(
 		reference: text("reference").notNull(),
 		description: text("description"),
 		entryDate: date("entry_date", { mode: "date" }).notNull(),
+		// Per-entry currency (double-entry is single-currency). Required so a
+		// multi-country org + migrated v1 opening balances are never currency-less.
+		currency: text("currency").notNull(),
 		source: glJournalSourceEnum("source").default("manual").notNull(),
 		status: glJournalStatusEnum("status").default("draft").notNull(),
 		// Reversal links are SOFT self-refs (no FK cycle): the entry this one

@@ -23,6 +23,7 @@ CREATE TABLE "gl_journal_entry" (
 	"reference" text NOT NULL,
 	"description" text,
 	"entry_date" date NOT NULL,
+	"currency" text NOT NULL,
 	"source" "gl_journal_source" DEFAULT 'manual' NOT NULL,
 	"status" "gl_journal_status" DEFAULT 'draft' NOT NULL,
 	"reverses_entry_id" text,
@@ -79,6 +80,7 @@ CREATE TABLE "roster_entry" (
 );
 --> statement-breakpoint
 ALTER TABLE "gl_account" ADD CONSTRAINT "gl_account_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "gl_account" ADD CONSTRAINT "gl_account_parent_account_id_gl_account_id_fk" FOREIGN KEY ("parent_account_id") REFERENCES "public"."gl_account"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gl_journal_entry" ADD CONSTRAINT "gl_journal_entry_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gl_journal_entry" ADD CONSTRAINT "gl_journal_entry_posted_by_user_id_user_id_fk" FOREIGN KEY ("posted_by_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "gl_journal_line" ADD CONSTRAINT "gl_journal_line_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
@@ -87,7 +89,7 @@ ALTER TABLE "gl_journal_line" ADD CONSTRAINT "gl_journal_line_account_id_gl_acco
 ALTER TABLE "notification" ADD CONSTRAINT "notification_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "notification" ADD CONSTRAINT "notification_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "roster_entry" ADD CONSTRAINT "roster_entry_organization_id_organization_id_fk" FOREIGN KEY ("organization_id") REFERENCES "public"."organization"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "roster_entry" ADD CONSTRAINT "roster_entry_employee_id_employee_profile_id_fk" FOREIGN KEY ("employee_id") REFERENCES "public"."employee_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "roster_entry" ADD CONSTRAINT "roster_entry_employee_id_employee_profile_id_fk" FOREIGN KEY ("employee_id") REFERENCES "public"."employee_profile"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "roster_entry" ADD CONSTRAINT "roster_entry_shift_id_shift_id_fk" FOREIGN KEY ("shift_id") REFERENCES "public"."shift"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "roster_entry" ADD CONSTRAINT "roster_entry_approved_by_user_id_user_id_fk" FOREIGN KEY ("approved_by_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "gl_account_org_type_idx" ON "gl_account" USING btree ("organization_id","type");--> statement-breakpoint
