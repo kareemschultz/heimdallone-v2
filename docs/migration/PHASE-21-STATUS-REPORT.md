@@ -1,14 +1,16 @@
 # Phase 21 — v1 → v2 Migration Workstream: Status Report & Audit
 
-**Date:** 2026-06-12
+**Date:** 2026-06-13
 **Prepared for:** owner review (autonomous session)
-**Repo state at report time:** `HEAD == origin/master == 78eac13`, tree clean.
+**Repo state at report time:** `HEAD == origin/master == fff2b74`, tree clean.
 **Source of truth for payroll math:** GRA (gra.gov.gy) — see [[reference-gra-payroll]].
 
-> Honest framing up front: the **migration discovery, the payroll-correctness fix, and the v2 data
-> homes are done and gated**. The **cutover itself is not done** — it needs the remaining write-ETL,
-> a few feature routers/UIs, and the operator decisions listed in §6. Nothing in this workstream wrote
-> to v1 or to production v2; all DB writes went to disposable throwaway Postgres containers.
+> Honest framing up front: the **migration discovery, the payroll-correctness fix, the v2 data
+> homes, the feature routers (roster/GL/notifications), the fortnightly-first-class work, and a
+> proven write-ETL path are now done and gated**. The **live cutover itself is not done** — it needs
+> the write-ETL run against the *real* v1 DB (requires the infra read-only role + Infisical creds),
+> the module UIs, and the operator decisions in §6. Nothing in this workstream wrote to v1 or to
+> production v2; all DB writes went to disposable throwaway Postgres containers.
 
 ---
 
@@ -32,6 +34,11 @@ against **GRA** (not v1), and migrate safely.
 | 21D-C recon proof | 43 fortnightly payslips → exact | `7c25e54` |
 | 21D-D/E/F schemas | roster / payroll-GL / notifications + migration 0021 | `09ccb64` |
 | 21D-I QA/audit fixes | 3 Fable-5 audits → critical + high fixes | `78eac13` |
+| 21D fortnightly | First-class pay frequency (canonical module + enum 0022 + UI + drift guard) | `7e9bdd2` |
+| 21D-D roster API | `roster` router + RBAC + `verify:roster` 68/68 | `cefceb1` |
+| 21D-E GL API/import | `gl` router (accounts/journals, balance + post-immutability + reversal) + `verify:gl` 64/64 | `bd8e35d` |
+| 21D-F notifications API | `notifications` router (per-user inbox) + emit helper + `verify:notifications` 49/49 | `78705a9` |
+| 21E write-ETL | scratch-only tenant load (Foreign Links → Netsurf), GL-balanced, isolated; transformers 19/19 | `fff2b74` |
 
 ## 3. The headline result — payroll correctness
 
@@ -103,40 +110,55 @@ destructive ops) and was **verified by applying the full 0000–0021 journal to 
 
 ## 6. What remains before cutover (owner decisions + build)
 
-**Decisions only you can make:**
-1. **Fortnightly contract enum.** v1 tenants run fortnightly payroll, but v2's `contract.pay_frequency`
-   enum is `weekly | monthly | semi_monthly`. Add `fortnightly` (a small enum migration touching
-   schema + zod + UI) before migrating fortnightly employees, or map them to another frequency.
-2. **GRA rounding** — confirm whether GRA's calculator uses whole-dollar or cent precision for the
-   per-period free-pay (v1 used cents, and the reconciliation matched v1 at cents; GRA *displays*
+**Decisions only you can make (status updated 2026-06-13):**
+1. ✅ **RESOLVED — Fortnightly contract enum.** `fortnightly` is now first-class: a single canonical
+   `pay-frequency.ts` module feeds the DB enum (migration `0022`), Zod validation, UI labels, and the
+   engine, with a CI drift guard (`verify:pay-frequency`). The write-ETL normalizes v1 free-text
+   (`"Fortnightly"`, `"Bi-Weekly"`) → the canonical `fortnightly` value and refuses (throws) on
+   anything unmappable — no silent default.
+2. **OPEN — GRA rounding** — confirm whether GRA's calculator uses whole-dollar or cent precision for
+   the per-period free-pay (v1 used cents, and the reconciliation matched v1 at cents; GRA *displays*
    whole dollars). Pull the live GRA calculator to lock fixtures byte-for-byte.
-3. **GL scope at cutover** — port v1's chart + clean opening balances (recommended) vs export to the
-   client's external accountant + archive v1 GL.
-4. **Notification history** — port v1's 14 rows or start clean.
-5. **Dedicated read-only v1 DB role** (infra) — create a `SELECT`-only Postgres role on
-   postgres-central for the migration tooling (defense-in-depth over the session GUC).
+3. **OPEN — GL scope at cutover** — port v1's chart + clean opening balances (recommended) vs export
+   to the client's external accountant + archive v1 GL. (The GL API now supports both: account/journal
+   import + balanced posting + reversal.)
+4. **OPEN — Notification history** — port v1's 14 rows or start clean. (The notifications API + ETL
+   mapper support import either way.)
+5. **OPEN — Dedicated read-only v1 DB role** (infra) — create a `SELECT`-only Postgres role on
+   postgres-central + load its creds from Infisical so `migration:dry-run` / `migration:reconcile`
+   and the **live** write-ETL can run. This is the gating blocker for the real-data cutover run.
 
 **Build remaining (next phases):**
-- **Routers + RBAC + verify** for roster / GL / notifications (the C-phase of each — turns the schemas
-  into usable, AC-gated features; GL router must enforce the balance/post-immutability invariants).
-- **UI** for each (the D-phase).
-- **Effective-dating architecture** (21D-A roadmap): resolve rules by pay date, store constants
+- ✅ **DONE — Routers + RBAC + verify** for roster / GL / notifications. All three are AC-gated
+  (audit 161/21), two-layer authz, db-free verify scripts (roster 68 / GL 64 / notifications 49). The
+  GL router enforces balance + post-immutability + reversal-as-counter-entry; zero payroll writes.
+- ✅ **DONE — write-ETL path (21E), proven against scratch.** Tenant-by-tenant transform → load → FK
+  integrity → GL-balance → cross-tenant isolation, Foreign Links pilot first then Netsurf, PII-safe
+  report, zero production writes. **Remaining:** swap the synthetic source for the v1-readonly loader
+  and run against the *real* v1 DB (gated on decision #5), then freeze + DNS cutover.
+- **OPEN — UI** for roster / GL / notifications (the D-phase of each).
+- **OPEN — Effective-dating architecture** (21D-A roadmap): resolve rules by pay date, store constants
   annually, per-payslip rule-version audit, contractor/project billing, GRA full-suite tax module.
   Until then the engine is correct-for-2026 but a new budget is still a code/seed change, not a pure
   data update.
-- **The write-ETL** (21E): the actual tenant-by-tenant data migration into a real v2 target +
-  reconciliation gate, dry-run on Foreign Links first, then Netsurf, then freeze + DNS cutover.
 
 ## 7. Gates at report time
-`check-types` 3/3 · `build` 2/2 · `audit:permissions` 149/18 · payroll-engine tests **36/36** ·
-lint clean on all changed files · migration 0021 applies clean on a fresh DB · `migration:dry-run`
-and `migration:reconcile` both produce reports · `migration:reconcile` readiness **READY**
-(personal_allowance 46/46 exact). No production writes anywhere in the workstream.
+`check-types` 3/3 · `build` 2/2 · `audit:permissions` **161/21** · payroll-engine tests **47/47** ·
+`verify:pay-frequency` clean · `verify:roster` **68/68** · `verify:gl` **64/64** ·
+`verify:notifications` **49/49** · write-ETL transformers **19/19** · lint clean on all changed files ·
+migrations **0000–0022** apply clean on a fresh throwaway DB (23 applied) · **`migration:write-etl`
+loads 2 isolated tenants to scratch, GL balanced=true, isolation=true** · `migration:reconcile`
+readiness **READY** (personal_allowance 46/46 exact). `migration:dry-run` / `migration:reconcile`
+need live `V1_DATABASE_URL` to re-run (unreachable this session; last green reports committed).
+**No production writes anywhere in the workstream.**
 
 ## 8. One-paragraph verdict
-The migration is **de-risked and on a sound footing**: we know exactly what v1 holds, we found and
-fixed a real payroll-correctness bug (certified against GRA, proven against live client payslips), the
-three blocking feature gaps now have audited v2 schemas, and the tooling is read-only-safe and
-PII-clean. It is **not yet cutover-ready** — that needs the fortnightly-enum decision, the feature
-routers/UIs, the effective-dating architecture for future-proofing, and the write-ETL with its
-reconciliation gate. None of those are blocked; they're the next, well-scoped phases.
+The migration is **de-risked, built, and proven end-to-end against scratch**: we know exactly what v1
+holds, we found and fixed a real payroll-correctness bug (certified against GRA, proven against live
+client payslips), the three blocking feature gaps now have audited v2 **schemas + AC-gated routers**,
+pay frequency is **first-class** (fortnightly included, with a drift guard), and the write-ETL
+transforms + loads v1-intent data into a real v2 schema with GL balance and tenant isolation holding.
+It is **not yet live-cutover-ready** — that needs exactly one infra unblock (a read-only v1 DB role +
+Infisical creds, §6.5) to run the ETL/reconcile against the *real* v1 data, plus the module UIs and
+the effective-dating architecture for future budgets. None of those are blocked by code; they're the
+next, well-scoped steps.
