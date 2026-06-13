@@ -12,6 +12,38 @@ Biome (the underlying engine) provides robust linting and formatting. Most issue
 
 ---
 
+## ⭐ Heimdallone SaaS Architecture Rule — No Client-Specific Builds (OVERRIDE)
+
+Heimdallone v2 is a **multi-tenant SaaS platform**. It is **not** a one-off Netsurf migration, a Foreign Links migration, or a custom internal tool for one company. Live v1 data from Netsurf and Foreign Links proves real business intent, real workflows, and real migration edge cases — use it to **validate** v2, never to **limit** v2.
+
+**Golden phrase:** *Netsurf proves the need; it does not define the product. Foreign Links proves another workflow; it does not define the limit.*
+
+**Core rule:** every module is a **configurable, tenant-safe SaaS capability**. Do not hardcode assumptions for one company, industry, pay cycle, workflow, country, department structure, or operating style. If a requirement comes from one tenant, **generalize it into a reusable product capability**.
+
+**Required design standard** — for every new module / feature / migration / schema / API / UI / workflow, ask: *Is this a tenant-configurable SaaS capability, or am I hardcoding one client's workflow? If hardcoded, redesign it.*
+
+**Every module must support:** multiple tenants · (multiple companies under a tenant where needed) · multiple countries over time · departments · locations · roles & permission scopes · approval workflows · configurable policies · effective-dated rules · historical records · imports/exports · audit history · soft archive · self-service · manager/team-scoped views · admin/org-wide views · read-only auditor views · clearly-labelled preview/staged features · **no cross-tenant leakage · no frontend-only security · no hardcoded client names · no hardcoded country assumptions outside a country-rule module · no hardcoded payroll/roster/GL/CRM/workflow assumptions**.
+
+**Module seams:** each module owns its domain and may **read/link** to others through clear seams, but must **not mutate** another module unless that integration is explicitly designed and documented.
+
+**Migration:** v1 is a migration source and intent source — **not automatically the truth**. Preserve history; identify intent; correct v1 bugs where official rules or clean design prove they were bugs; map into v2's generalized model; never clone v1 quirks or hardcode per-client migration paths; document each field/table as **direct map / transform map / archive-only / requires-new-v2-feature / deliberately-dropped**.
+
+**Payroll:** country-rule-driven, **effective-dated, multi-frequency** engine — weekly/fortnightly/semi-monthly/monthly/annual; fixed/hourly/shift/rostered/contractor/project/commission/allowance-heavy workers; multiple statutory systems over time; employee-specific tax settings; employer contributions; historical payslip preservation; future rule changes **without rewriting old results**. **GRA is the source of truth for Guyana**; equivalent official authorities for other countries.
+
+**Roster:** recurring schedules · per-date entries · overrides · custom hours · day-off/swap · split shifts · night differential · weekend & public-holiday rules · approval workflows · payroll-impacting flags · multiple work locations · attendance integration · historical preservation.
+
+**GL/Finance:** chart of accounts per tenant · account hierarchy · journal entries/lines · currency · reversals · source-module metadata · payroll posting · imports from legacy · auditability. **GL links to payroll but must not mutate payroll.**
+
+**Notifications:** reusable subsystem (not a one-off table) — per-tenant · per-user inbox · read/unread · soft entity links · module source · type · future delivery channels · migration import.
+
+**UI:** reusable & role-aware — list/detail/create-edit · filters · empty/loading/error states · bulk & import/export where useful · role-scoped nav · clear no-access state · mobile-friendly · **no raw IDs as primary display · no raw enums as user-facing labels · no fake data presented as live**.
+
+**Verification (every module proves):** tenant isolation · RBAC alignment · manager scope · employee self-scope · auditor read-only · sensitive-field redaction · no cross-module mutation unless designed · no production write during migration dry-runs · quality gates pass.
+
+**Product standard:** build for the **platform**, not the current tenant. Current tenants are proof cases; the product must remain configurable for the next business, industry, and country.
+
+---
+
 ## Core Principles
 
 Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
