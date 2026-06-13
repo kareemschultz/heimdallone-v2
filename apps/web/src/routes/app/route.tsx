@@ -1,3 +1,4 @@
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
 	createFileRoute,
 	Link,
@@ -6,12 +7,10 @@ import {
 	useMatches,
 } from "@tanstack/react-router";
 import {
-	AlertTriangle,
 	BarChart3,
 	Bell,
 	Briefcase,
 	Calendar,
-	Check,
 	ChevronDown,
 	Clock,
 	Command,
@@ -50,6 +49,7 @@ import {
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
 import { canViewPayroll } from "@/lib/rbac";
+import { client, orpc } from "@/utils/orpc";
 
 interface OrgContext {
 	memberRole: string;
@@ -60,8 +60,8 @@ interface OrgContext {
 }
 
 export const OrgCtx = createContext<OrgContext>({
-	orgName: "Atlas Shipping",
-	orgSlug: "atlas-shipping",
+	orgName: "Workspace",
+	orgSlug: "",
 	memberRole: "employee",
 	userName: "User",
 	userEmail: "",
@@ -452,10 +452,7 @@ function AppSidebar() {
 								gap: "5px",
 							}}
 						>
-							<span>GY</span>
-							<span>TT</span>
-							<span>BB</span>
-							<span style={{ color: "var(--fg-4)" }}>+ 2 more</span>
+							<span>{org.memberRole.replace(/_/g, " ")}</span>
 						</div>
 					</div>
 					<ChevronDown size={14} style={{ color: "var(--fg-3)" }} />
@@ -471,7 +468,7 @@ function AppSidebar() {
 						top: "calc(100% - 6px)",
 					}}
 				>
-					<div className="menu-section">Switch workspace</div>
+					<div className="menu-section">Workspace</div>
 					<button
 						className="menu-item"
 						onClick={() => setTenantMenuOpen(false)}
@@ -486,52 +483,10 @@ function AppSidebar() {
 								fontSize: "10px",
 							}}
 						>
-							AS
+							{initials}
 						</span>
-						<span style={{ flex: 1 }}>Atlas Shipping</span>
+						<span style={{ flex: 1 }}>{org.orgName}</span>
 						<span className="menu-meta">current</span>
-					</button>
-					<button
-						className="menu-item"
-						onClick={() => setTenantMenuOpen(false)}
-						type="button"
-					>
-						<span
-							className="tenant-avatar"
-							style={{
-								width: "22px",
-								height: "22px",
-								borderRadius: "7px",
-								fontSize: "10px",
-								background: "linear-gradient(135deg, #4f8dff, #7aa9ff)",
-								color: "#fff",
-							}}
-						>
-							MG
-						</span>
-						<span style={{ flex: 1 }}>Mahaica Group</span>
-						<span className="menu-meta">328 emp</span>
-					</button>
-					<button
-						className="menu-item"
-						onClick={() => setTenantMenuOpen(false)}
-						type="button"
-					>
-						<span
-							className="tenant-avatar"
-							style={{
-								width: "22px",
-								height: "22px",
-								borderRadius: "7px",
-								fontSize: "10px",
-								background: "linear-gradient(135deg, #3ddc97, #5fe6ad)",
-								color: "#0a1813",
-							}}
-						>
-							TC
-						</span>
-						<span style={{ flex: 1 }}>Trident Capital</span>
-						<span className="menu-meta">84 emp</span>
 					</button>
 					<div className="menu-sep" />
 					<button
@@ -757,11 +712,61 @@ function AppSidebar() {
 	);
 }
 
+function relativeTime(value: string | Date): string {
+	const then = new Date(value).getTime();
+	if (Number.isNaN(then)) {
+		return "";
+	}
+	const seconds = Math.round((Date.now() - then) / 1000);
+	if (seconds < 60) {
+		return "just now";
+	}
+	const minutes = Math.round(seconds / 60);
+	if (minutes < 60) {
+		return `${minutes} min ago`;
+	}
+	const hours = Math.round(minutes / 60);
+	if (hours < 24) {
+		return `${hours}h ago`;
+	}
+	const days = Math.round(hours / 24);
+	if (days < 7) {
+		return `${days}d ago`;
+	}
+	return new Date(value).toLocaleDateString();
+}
+
 function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+	const org = useContext(OrgCtx);
+	const queryClient = useQueryClient();
 	const [_theme, setTheme] = useState("dark");
 	const [syncMenuOpen, setSyncMenuOpen] = useState(false);
 	const [notifMenuOpen, setNotifMenuOpen] = useState(false);
 	const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+	const userInitials =
+		org.userName
+			.split(" ")
+			.map((w) => w[0])
+			.join("")
+			.slice(0, 2)
+			.toUpperCase() || "·";
+
+	// Real per-user inbox (notifications subsystem, Phase 21D-F). No fake chrome.
+	const unreadQuery = useQuery(orpc.notifications.unreadCount.queryOptions({}));
+	const unreadCount = unreadQuery.data?.count ?? 0;
+	const notifQuery = useQuery(
+		orpc.notifications.list.queryOptions({ input: { limit: 8 } })
+	);
+	const notifications = notifQuery.data ?? [];
+	const markAllRead = useMutation({
+		mutationFn: () => client.notifications.markAllRead(),
+		onSuccess: () => {
+			queryClient.invalidateQueries({
+				queryKey: orpc.notifications.key(),
+			});
+		},
+	});
 
 	useEffect(() => {
 		const stored = document.documentElement.getAttribute("data-theme");
@@ -920,18 +925,20 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 						type="button"
 					>
 						<Bell size={16} />
-						<span
-							style={{
-								position: "absolute",
-								top: "7px",
-								right: "7px",
-								width: "6px",
-								height: "6px",
-								background: "var(--accent)",
-								borderRadius: "50%",
-								border: "1.5px solid var(--bg)",
-							}}
-						/>
+						{unreadCount > 0 ? (
+							<span
+								style={{
+									position: "absolute",
+									top: "7px",
+									right: "7px",
+									width: "6px",
+									height: "6px",
+									background: "var(--accent)",
+									borderRadius: "50%",
+									border: "1.5px solid var(--bg)",
+								}}
+							/>
+						) : null}
 					</button>
 					<div
 						className="menu menu-wide"
@@ -940,40 +947,57 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 					>
 						<div className="menu-header">
 							<span className="ttl">Notifications</span>
-							<span className="clear">Mark all read</span>
+							{unreadCount > 0 ? (
+								<button
+									className="clear"
+									onClick={() => markAllRead.mutate()}
+									style={{
+										background: "none",
+										border: 0,
+										cursor: "pointer",
+										font: "inherit",
+										color: "inherit",
+									}}
+									type="button"
+								>
+									Mark all read
+								</button>
+							) : null}
 						</div>
-						<div className="menu-notif-item">
-							<div className="icon warn">
-								<AlertTriangle size={13} />
-							</div>
-							<div>
-								<div className="ttl">NIS rate change · Guyana</div>
-								<div className="desc">
-									Profile gy.v2026.2 staged. Effective 1 Oct.
+						{notifQuery.isError ? (
+							<div className="menu-notif-item">
+								<div>
+									<div className="desc">
+										Notifications are unavailable right now.
+									</div>
 								</div>
-								<div className="time">12 min ago</div>
 							</div>
-						</div>
-						<div className="menu-notif-item">
-							<div className="icon info">
-								<Info size={13} />
+						) : null}
+						{!notifQuery.isError && notifications.length === 0 ? (
+							<div className="menu-notif-item">
+								<div>
+									<div className="desc">
+										{notifQuery.isLoading
+											? "Loading…"
+											: "You're all caught up."}
+									</div>
+								</div>
 							</div>
-							<div>
-								<div className="ttl">14 contracts renew this quarter</div>
-								<div className="desc">Renewal pack ready for review.</div>
-								<div className="time">38 min ago</div>
-							</div>
-						</div>
-						<div className="menu-notif-item">
-							<div className="icon success">
-								<Check size={13} />
-							</div>
-							<div>
-								<div className="ttl">Barbados pay run sealed</div>
-								<div className="desc">BBD 412,600 · 88 employees · by you</div>
-								<div className="time">14:08</div>
-							</div>
-						</div>
+						) : null}
+						{notifications.length > 0
+							? notifications.map((n) => (
+									<div className="menu-notif-item" key={n.id}>
+										<div className="icon info">
+											<Bell size={13} />
+										</div>
+										<div>
+											<div className="ttl">{n.title}</div>
+											{n.body ? <div className="desc">{n.body}</div> : null}
+											<div className="time">{relativeTime(n.createdAt)}</div>
+										</div>
+									</div>
+								))
+							: null}
 						<div className="menu-sep" />
 						<button
 							className="menu-item"
@@ -1015,10 +1039,10 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 							cursor: "pointer",
 							fontFamily: "inherit",
 						}}
-						title="Maya Persaud"
+						title={org.userName}
 						type="button"
 					>
-						MP
+						{userInitials}
 					</button>
 					<div
 						className="menu"
@@ -1033,10 +1057,10 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 							}}
 						>
 							<div style={{ fontSize: "12.5px", fontWeight: 500 }}>
-								Maya Persaud
+								{org.userName}
 							</div>
 							<div style={{ fontSize: "11px", color: "var(--fg-3)" }}>
-								maya@atlas-shipping.com
+								{org.userEmail}
 							</div>
 						</div>
 						<button className="menu-item" onClick={closeAll} type="button">
@@ -1095,8 +1119,8 @@ function AppLayout() {
 			return next;
 		});
 	const [orgCtx, setOrgCtx] = useState<OrgContext>({
-		orgName: "Atlas Shipping",
-		orgSlug: "atlas-shipping",
+		orgName: "Workspace",
+		orgSlug: "",
 		memberRole: "employee",
 		userName: session?.user?.name ?? "User",
 		userEmail: session?.user?.email ?? "",
@@ -1108,8 +1132,8 @@ function AppLayout() {
 				(m: { userId: string }) => m.userId === session?.user?.id
 			);
 			setOrgCtx({
-				orgName: activeOrg.data.name ?? "Atlas Shipping",
-				orgSlug: activeOrg.data.slug ?? "atlas-shipping",
+				orgName: activeOrg.data.name ?? "Workspace",
+				orgSlug: activeOrg.data.slug ?? "",
 				memberRole: (member?.role as string) ?? "employee",
 				userName: session?.user?.name ?? "User",
 				userEmail: session?.user?.email ?? "",

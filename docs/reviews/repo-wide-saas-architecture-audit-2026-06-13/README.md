@@ -23,8 +23,8 @@ The remaining risk is **not security or client-coupling** — it is **generaliza
 | Severity | Count | Status |
 |---|---|---|
 | 🔴 Critical | 2 | ✅ both fixed (`cb392ab`) |
-| 🟠 High | 10 | open (1 partially mitigated) |
-| 🟡 Medium | 9 | open (1 fixed this pass) |
+| 🟠 High | 10 | 1 fixed (H6, Phase 21F-H6); 9 open (roadmap 21G–21K) |
+| 🟡 Medium | 9 | 1 fixed (M3); 8 open |
 | 🟢 Good / clean | majority | — |
 
 ---
@@ -55,7 +55,7 @@ The remaining risk is **not security or client-coupling** — it is **generaliza
 | Notifications | yes | 0 | 0 | 0 | no |
 | Migration / ETL | yes | 0 | 0 | 1 (loader maps) | no |
 | RBAC / Nav / role-helpers | yes (deny-by-default) | 0 | 0 | 0 | no |
-| UI shared / app shell | mixed | 0 | 1 (fake-as-live shell) | 1 | **yes²** |
+| UI shared / app shell | yes (after fix) | 0 | 1 ✅fixed | 1 | no² (resolved) |
 
 ¹ Effective-dating + weekend are correctness issues that only *manifest* for tenants outside the current proof case (mid-year statutory change, back-dated runs, non-Sat/Sun weekend). Not a blocker for the two Guyana/Sat-Sun pilot tenants; **must** be done before onboarding a tenant they affect.
 ² The app-shell fake data (fake user identity, fake notifications, fake org switcher) is a blocker for any **production login by real users** or external demo — it shows "Maya Persaud / atlas-shipping.com" to everyone.
@@ -80,7 +80,7 @@ The remaining risk is **not security or client-coupling** — it is **generaliza
 | H3 | Attendance | `attendance-recalc.ts:58-69` | Weekend hardcoded Sun(0)/Sat(6) for every tenant; `dayType` flows to OT via `payroll-input-builder.ts:392/536` | Country/operating-style assumption; wrong weekend/Saturday pay for non-Sat/Sun tenants | Tenant/location workweek policy (weekend mask), not a weekday constant | **21G** | no¹ |
 | H4 | Payroll/Contracts | `engine/types.ts:39`, `schema/hr-core.ts:315`, `contracts.ts:67`; `pay-frequency.ts` | `WageType` = `daily\|monthly\|hourly` only; no `annual` frequency | Cannot model contractor/project/commission/piece-rate/retainer/casual/temporary | Extend worker-type taxonomy + base-pay branching; add `annual` | **21I** | no |
 | H5 | Payroll | `countries/registry.ts`, no `country_payroll_profile` create/update API | One-entry compile-time Map; profiles seed-only | Adding a country/budget is a code change, not a dated-row insert | Effective-dated rule-management surface; country-keyed rule store | **21G/21I** | no |
-| H6 | UI / app shell | `apps/web/src/routes/app/route.tsx:455-458, 483-535, 945-976, 1018-1040` | Hardcoded country chips (GY·TT·BB), fake workspaces (Atlas/Mahaica/Trident), fake notifications (NIS/Barbados pay run), fake user identity (Maya Persaud / atlas-shipping.com) — all presented as live | "No fake data presented as live"; shows a fixed fake identity/tenant to every real user | Wire avatar/name/email to session `OrgCtx`; consume the real notifications API (now exists, 21D-F); real org switcher; derive country chips from the org's configured countries | **quick win** | **yes** |
+| H6 | UI / app shell | `apps/web/src/routes/app/route.tsx` | Hardcoded country chips (GY·TT·BB), fake workspaces (Atlas/Mahaica/Trident), fake notifications (NIS/Barbados pay run), fake user identity (Maya Persaud / atlas-shipping.com) — all presented as live | "No fake data presented as live"; showed a fixed fake identity/tenant to every real user | ✅ **FIXED (Phase 21F-H6)** — avatar/name/email/initials now from session `OrgCtx`; topbar consumes the real notifications API (unreadCount + list + mark-all-read, honest error/empty states); switcher shows the real active org only; country chips replaced with the real membership role. Browser-verified 3 roles (Sasha Bharrat/Rohan Gopaul/Andre Sealey), 0 console errors. | done | **resolved** |
 | H7 | CRM | `crm.ts:706,863`, `schema/crm.ts:208` | `crm_deal.currency` set to literal `"GYD"` on create + convert; column has no default and no input field | Hardcoded country assumption; non-Guyana tenant pipeline mislabeled | Accept `currency` input / resolve tenant default currency | **21H** | no |
 | H8 | Recruitment | `schema/recruitment.ts:46,181`, `recruitment.ts` | `applicationStageEnum` fixed; `jobOpening.pipelineConfig jsonb` exists but is **never read** | Hiring funnel not tenant-configurable | Drive stages from `pipelineConfig` (template pattern onboarding/offboarding already use) | defer (before recruitment's next build) | no |
 | H9 | Roster | `schema/roster.ts`, `roster.ts` | No split shifts, night differential, weekend/holiday multipliers, `locationId`; `swap` enum has no counterparty column | Too narrow vs SaaS roster rule; can't reconstruct pay for many tenant types | Tenant-configurable shift-rule/pay-policy layer + location + swap counterparty | **21J** | no |
@@ -133,7 +133,7 @@ The remaining risk is **not security or client-coupling** — it is **generaliza
 - M8: document the recruitment→hr-core hire seam (one comment block + a line in the module-seam docs).
 
 ## 6. Cutover blockers
-- **H6 app-shell fake data** — must be wired to real data before real users log in (or any external demo). This is the only *strict* cutover blocker found.
+- ✅ **H6 app-shell fake data — FIXED (Phase 21F-H6)**, browser-verified across admin/employee/manager with zero console errors. The only strict cutover blocker is now resolved. *(Note: the login page `login.tsx` has a similar decorative "Atlas Shipping · GY · TT" chip — cosmetic, pre-auth, out of the app-shell scope; recommend a follow-up clean-up before external demo.)*
 - Everything else is either fixed (C1/C2/M3) or correctness/generalization work that is **required before onboarding a tenant it affects** (different statutory year, non-Sat/Sun weekend, non-GYD currency, contractor workforce) but does **not** block the two Guyana/Sat-Sun/fortnightly pilot tenants.
 
 ## 7. Post-cutover enhancements
@@ -147,7 +147,7 @@ The remaining risk is **not security or client-coupling** — it is **generaliza
 |---|---|---|
 | **Live v1 → v2 scratch write-ETL rehearsal** | **GO (tooling-safe)** | v1 access is read-only-guarded; scratch is name/CONFIRM-guarded; dry-run + reconcile already **PASS/READY** against live v1; no cross-tenant logic. Build the v1-readonly loader + M6 mapping, run into a **named disposable scratch only**. *Owner has chosen to sequence this after 21G — see below.* |
 | **Freeze v1** | **NO-GO** | Only after the live write-ETL rehearsal + reconcile of loaded data succeed. |
-| **DNS cutover** | **NO-GO** | Only after rehearsal + freeze + effective-dating (21G) + H6 app-shell fix. |
+| **DNS cutover** | **NO-GO** | H6 app-shell fix ✅ done; still gated on rehearsal + freeze + effective-dating (21G). |
 
 **Recommended immediate next phase: 21G (effective-dated policy/rule resolution).** Owner's sequencing puts SaaS-correctness (21G) before the live ETL rehearsal, because today's rules silently rewriting yesterday's results is the biggest class of future payroll/leave bugs. This audit concurs: H1/H2/H3 are the highest-leverage work.
 
