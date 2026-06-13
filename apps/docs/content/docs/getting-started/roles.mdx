@@ -1,0 +1,42 @@
+---
+title: Roles & permissions
+description: The Heimdallone role model and how access is scoped by role.
+icon: ShieldCheck
+---
+
+Access in Heimdallone is **deny-by-default** and enforced on the server (never
+front-end only). Each role is granted explicit resource/action pairs; the UI only
+shows what the server permits.
+
+<Callout type="warn" title="Security model">
+  Permissions are enforced server-side with tenant isolation on every request. A
+  role never sees another tenant's data, and managers/employees are scoped to
+  their own team / their own records.
+</Callout>
+
+## Role tiers
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>Manager</Tag>
+  <Tag>Employee</Tag>
+  <Tag>Auditor</Tag>
+</Tags>
+
+| Tier | Typical access |
+| --- | --- |
+| Owner / Admin | Tenant-wide configuration, people, payroll, finance |
+| HR / Payroll admin | HR records and payroll within their domain |
+| Manager | Their team — approvals and scoped reports |
+| Employee | Self-service — own payslips, leave, requests |
+| Auditor | Read-only across the tenant for review |
+
+<Callout title="Scope examples">
+  A manager sees their direct reports' departments; an employee sees only their own
+  records; an auditor can read but not change anything.
+</Callout>
+
+## Module-specific roles
+
+Some modules add focused roles (for example sales and project leadership). Each
+module's page documents the exact roles and the actions they unlock.

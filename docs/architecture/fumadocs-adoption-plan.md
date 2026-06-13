@@ -1,7 +1,29 @@
 # Fumadocs Adoption Plan — smallest safe path
 
-**Status:** Proposal (awaiting owner go-ahead before install). · **Date:** 2026-06-13 · **Rule:** satisfies
-the standing **Documentation Rule — Fumadocs UI Required** (AGENTS.md / CLAUDE.md).
+**Status:** D1 DONE — `apps/docs` scaffolded (Option A: TanStack Start + Fumadocs), docs build passes,
+starter module structure + tag system in place. · **Date:** 2026-06-13 · **Rule:** satisfies the standing
+**Documentation Rule — Fumadocs UI Required** (AGENTS.md / CLAUDE.md).
+
+## D1 result (delivered)
+
+- `apps/docs` created via the official Fumadocs TanStack Start template (`fumadocs-core`/`-ui`/`-mdx`,
+  React 19, Vite, Tailwind 4, Orama search) — **isolated workspace**, product app untouched.
+- Reusable **tag/badge** component (`src/components/tag.tsx`) covering the full label set (Live, Preview,
+  Beta, Migration, Admin, Manager, Employee, Auditor, Payroll, HR, Finance, Security, Tenant
+  Configurable, Country Rule, Effective Dated, Self-Service, Requires Setup), registered for MDX.
+- **Starter module structure** under `content/docs/`: index (module cards) + Getting Started
+  (Overview/Roles/Navigation) + Payroll (Overview + Effective-dated rules) + HR/Time/Finance/
+  Operations/Administration/Developer landings, ordered via `meta.json`.
+- `docs#build` added to the turbo pipeline (`bun run build` now 3/3); root ultracite excludes `apps/docs`
+  (it self-lints via its own biome).
+- **Docs build passes** (13 pages prerendered). The `apps/web` docs route is **not** replaced yet (safe).
+
+### D1 docs debt (→ D2)
+- 3 lint warnings remain in **generated** Fumadocs/TanStack files (`__root.tsx` unused import + html-lang,
+  `app.css` 2× !important, `docs/$.tsx` hook-at-top-level) — left untouched to avoid destabilising the
+  generated build; clean up in D2.
+- nitro build preset is `vercel` (template default); set the self-host preset + docs domain at deploy.
+- Per-module deep pages (D3/D4) and the `apps/web` `docs.tsx` content migration + retirement still pending.
 
 ## 1. Current docs setup (inspected)
 

@@ -1,0 +1,5 @@
+{
+  "title": "Payroll",
+  "icon": "Banknote",
+  "pages": ["index", "effective-dating"]
+}

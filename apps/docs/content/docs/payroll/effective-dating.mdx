@@ -1,0 +1,75 @@
+---
+title: Effective-dated rules
+description: How statutory rules resolve by pay date, and how historical payslips are corrected without losing the original record.
+icon: CalendarClock
+---
+
+<Tags>
+  <Tag>Payroll</Tag>
+  <Tag>Country Rule</Tag>
+  <Tag>Effective Dated</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Migration</Tag>
+  <Tag>Beta</Tag>
+</Tags>
+
+<Callout type="warn" title="Status">
+  This capability is being rolled out (Phase 21G). The data model is in place; the
+  resolve-by-date wiring and the correction workflow are being delivered in stages.
+  This page describes the intended behaviour and will be marked <Tag>Live</Tag> when
+  complete.
+</Callout>
+
+## Why effective dating
+
+A statutory rule is **data with a validity window**, resolved by the date of the
+event being computed — not a hand-toggled "current" flag. A 2024 payslip must
+compute on 2024 rules forever; a backdated leave request must use the policy that
+was in force on the request date.
+
+- **Payroll** resolves by the **pay date**.
+- **Leave** resolves by the **request start date**.
+- **Workweek / weekend** resolves by the **work date** (tenant-configurable, not
+  hardcoded to Sat/Sun).
+
+A new national budget — or a new country — is **one dated rule row**, not a code
+change.
+
+## Historical payslip correction
+
+When a historical payslip was computed under the wrong or missing rule, it can be
+**corrected** — but never silently and never destructively.
+
+<Steps>
+<Step>**Identify** the affected payslips.</Step>
+<Step>**Resolve** the correct historical rule by pay date.</Step>
+<Step>**Recompute** and compare original vs corrected, component by component.</Step>
+<Step>**Preview** the changes and the proposed ledger adjustment.</Step>
+<Step>**Approve** (admin only) and apply in a single transaction.</Step>
+<Step>**Record** the correction with reason, actor, rule used, and a ledger adjustment.</Step>
+</Steps>
+
+<Callout title="The original is never lost">
+  The originally issued payslip is preserved as an immutable audit record. The
+  corrected figures become the corrected historical truth, linked to the original
+  with a per-component breakdown. Every correction is explicit, auditable, and tied
+  to the correct effective-dated rule.
+</Callout>
+
+## What you'll see
+
+<Tabs items={["Admin", "Employee", "Auditor"]}>
+<Tab value="Admin">
+Run corrections from the payroll area: review the preview, approve, and apply. The
+payslip detail shows original vs corrected, the reason, who corrected it, the rule
+used, and the ledger adjustment status.
+</Tab>
+<Tab value="Employee">
+If one of your payslips was corrected, you'll see both the originally issued figures
+and the corrected figures, with the correction date and reason.
+</Tab>
+<Tab value="Auditor">
+Read-only access to the full correction history — original, corrected, deltas,
+reason, actor, and rule — for review and compliance.
+</Tab>
+</Tabs>

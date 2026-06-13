@@ -1,0 +1,30 @@
+---
+title: Finance overview
+description: Costing, budgets, and the general ledger — a coordination layer over payroll and projects.
+icon: Landmark
+---
+
+<Tags>
+  <Tag>Finance</Tag>
+  <Tag>Payroll</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Auditor</Tag>
+</Tags>
+
+Finance is a **coordination layer**: it reads payroll actuals, approved project
+time, and contract rates to produce cost reports and budgets, and owns the general
+ledger. It links to other modules but never mutates them.
+
+## Modules
+
+<Cards>
+  <Card title="General Ledger" href="/docs/finance" description="Chart of accounts, journals, posting, reversals." />
+  <Card title="Journal entries" href="/docs/finance" description="Balanced entries, post-immutability." />
+  <Card title="Payroll posting" href="/docs/finance" description="Payroll cost into the ledger (read-only of payroll)." />
+  <Card title="Currency" href="/docs/finance" description="Per-tenant currency handling." />
+</Cards>
+
+<Callout title="Guardrail">
+  The ledger links to payroll via soft references and never writes payroll records.
+  Cost reports are read models built from payroll and project actuals.
+</Callout>

@@ -1,0 +1,37 @@
+---
+title: Payroll overview
+description: How Heimdallone payroll works — country-rule-driven, effective-dated, multi-frequency.
+icon: Banknote
+---
+
+<Tags>
+  <Tag>Payroll</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Country Rule</Tag>
+  <Tag>Effective Dated</Tag>
+  <Tag>Tenant Configurable</Tag>
+</Tags>
+
+Heimdallone payroll is a **country-rule-driven, effective-dated, multi-frequency**
+engine. It supports weekly, fortnightly, semi-monthly, monthly, and annual cycles,
+and statutory rules are resolved by the **pay date** of each run — so historical
+runs always compute on the rules that were in force at the time.
+
+<Callout title="Guyana / GRA">
+  For Guyana, the Guyana Revenue Authority (GRA) is the source of truth for PAYE,
+  NIS, and allowances. Statutory amounts are stored as effective-dated data and
+  prorated per pay frequency.
+</Callout>
+
+## Key concepts
+
+- **Country profile** — the statutory rule set (tax bands, NIS, allowances) for a
+  country, valid over a date window.
+- **Pay frequency** — weekly / fortnightly / semi-monthly / monthly / annual;
+  period statutory amounts are derived from annual figures.
+- **Payslip** — the issued record for an employee in a period; preserved immutably.
+
+## Pages
+
+- [Effective-dated rules](/docs/payroll/effective-dating) — how rules resolve by date,
+  and how historical payslips are corrected.

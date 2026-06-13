@@ -1,0 +1,33 @@
+---
+title: Developer / Operator
+description: Architecture, module boundaries, quality gates, deployment, and how to keep docs in sync with code.
+icon: Terminal
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>Security</Tag>
+</Tags>
+
+This area is for engineers and operators running and extending Heimdallone.
+
+## Topics
+
+- **Architecture** — TanStack Start + oRPC + Drizzle on a Bun/Turborepo monorepo.
+- **Module boundaries** — each module owns its domain; coordination layers link, never mutate.
+- **RBAC** — byte-aligned helpers between server and client; deny-by-default.
+- **Quality gates** — `check-types`, `build`, permission audit, lint baseline, verify scripts.
+- **Migration scripts** — read-only v1 access, scratch-only writes, reconciliation.
+- **Deployment** — apps and the docs site.
+
+<Callout title="Keeping docs in sync">
+  Documentation is part of the product. When the UI, a workflow, permissions, or a
+  module changes, the relevant docs in this site change with it — ideally in the same
+  commit. See the Documentation Rule in `AGENTS.md`.
+</Callout>
+
+## This docs site
+
+These docs are built with **Fumadocs** on **TanStack Start** in `apps/docs`, isolated
+from the product app. Content is MDX under `apps/docs/content/docs`. Build with
+`bun run -F docs build`; develop with `bun run -F docs dev`.

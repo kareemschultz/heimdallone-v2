@@ -28,7 +28,8 @@
       "!**/convex/_generated",
       "!design_handoff_heimdallone",
       "!.references",
-      "!.agents"
+      "!.agents",
+      "!apps/docs"
     ]
   },
   "formatter": {
