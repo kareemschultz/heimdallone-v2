@@ -94,6 +94,22 @@ export const payPeriodStatusEnum = pgEnum("pay_period_status", [
 	"closed",
 ]);
 
+// Why a historical payslip was corrected (21G-G bitemporal workflow).
+export const payslipCorrectionReasonEnum = pgEnum("payslip_correction_reason", [
+	"wrong_rule",
+	"missing_effective_rule",
+	"wrong_proration",
+	"engine_bug",
+	"data_fix",
+	"other",
+]);
+
+// State of the explicit GL adjustment that accompanies a correction.
+export const payslipCorrectionGlStatusEnum = pgEnum(
+	"payslip_correction_gl_status",
+	["not_required", "pending", "posted", "failed"]
+);
+
 // ─── Tables ──────────────────────────────────────────
 
 export const countryPayrollProfile = pgTable(
@@ -104,7 +120,13 @@ export const countryPayrollProfile = pgTable(
 		countryCode: text("country_code").notNull(),
 		countryName: text("country_name").notNull(),
 		currency: text("currency").notNull(),
+		// effectiveYear is now a HUMAN LABEL only (display + backfill helper).
+		// Resolution is by the [effectiveFrom, effectiveTo) validity window below,
+		// matched against the PAY DATE — see effective-dating-implementation-plan.md.
 		effectiveYear: integer("effective_year").notNull(),
+		// Validity window (half-open). effectiveTo = null => current/open-ended.
+		effectiveFrom: date("effective_from", { mode: "date" }).notNull(),
+		effectiveTo: date("effective_to", { mode: "date" }),
 		taxBrackets: jsonb("tax_brackets").notNull(),
 		personalAllowanceFormula: text("personal_allowance_formula")
 			.default("standard")
@@ -136,17 +158,28 @@ export const countryPayrollProfile = pgTable(
 		}).notNull(),
 		nisMaxEarnings: numeric("nis_max_earnings", { precision: 12, scale: 2 }),
 		otherStatutoryRules: jsonb("other_statutory_rules"),
-		isActive: boolean("is_active").default(true).notNull(),
+		// Renamed from isActive (21G-B). PUBLISH guard, NOT a "current rule" flag:
+		// resolution = isPublished AND date-window. An unpublished future row is
+		// invisible to resolution.
+		isPublished: boolean("is_published").default(true).notNull(),
 		...timestamps,
 	},
 	(t) => [
-		unique("cpp_org_country_year_uq").on(
+		// No-overlap backstop: two windows for the same (org, country) may not
+		// start on the same day. Full range-exclusion (GiST) is a future hardening.
+		unique("cpp_org_country_from_uq").on(
 			t.organizationId,
 			t.countryCode,
-			t.effectiveYear
+			t.effectiveFrom
 		),
 		index("cpp_org_idx").on(t.organizationId),
 		index("cpp_country_year_idx").on(t.countryCode, t.effectiveYear),
+		// Resolution index (resolve-by-date lookups).
+		index("cpp_resolve_idx").on(
+			t.organizationId,
+			t.countryCode,
+			t.effectiveFrom
+		),
 	]
 );
 
@@ -186,7 +219,11 @@ export const payrollSetting = pgTable(
 		})
 			.default("1.00")
 			.notNull(),
+		// ISO weekday numbering (1=Mon … 7=Sun), consistent across workDays +
+		// weekendDays. weekendDays drives the OT rest-day classifier (21G-E) so a
+		// tenant whose weekend is not Sat/Sun is no longer mis-bucketed.
 		workDays: jsonb("work_days").default([1, 2, 3, 4, 5]).notNull(),
+		weekendDays: jsonb("weekend_days").default([6, 7]).notNull(),
 		standardHoursPerDay: numeric("standard_hours_per_day", {
 			precision: 4,
 			scale: 2,
@@ -349,6 +386,9 @@ export const payrollRun = pgTable(
 			() => countryPayrollProfile.id,
 			{ onDelete: "set null" }
 		),
+		// Human-readable provenance of the resolved statutory rule (e.g.
+		// "GY 2026 (from 2026-01-01)"). Pinned at generate time (21G-C).
+		ruleVersionLabel: text("rule_version_label"),
 		generatedBy: text("generated_by")
 			.notNull()
 			.references(() => user.id, { onDelete: "restrict" }),
@@ -419,6 +459,10 @@ export const payslip = pgTable(
 		status: payslipStatusEnum("status").default("draft").notNull(),
 		isReversed: boolean("is_reversed").default(false).notNull(),
 		reversalOfId: text("reversal_of_id"),
+		// Bitemporal: the ORIGINAL issued payslip is never mutated beyond this
+		// convenience back-pointer to its correction (21G-G). The authoritative
+		// link is payslipCorrection.originalPayslipId. Soft ref (like reversalOfId).
+		supersededByCorrectionId: text("superseded_by_correction_id"),
 		explanation: jsonb("explanation"),
 		blockers: jsonb("blockers"),
 		warnings: jsonb("warnings"),
@@ -437,6 +481,58 @@ export const payslip = pgTable(
 		index("payslip_employee_idx").on(t.employeeId),
 		index("payslip_run_idx").on(t.payrollRunId),
 		index("payslip_period_idx").on(t.periodStart, t.periodEnd),
+	]
+);
+
+// Bitemporal historical correction (21G-G). The ORIGINAL issued payslip is
+// preserved immutable; this row records the corrected truth + full lineage.
+export const payslipCorrection = pgTable(
+	"payslip_correction",
+	{
+		id: cuid(),
+		organizationId: orgRef(),
+		// The immutable original issued payslip (restrict => can never be deleted).
+		originalPayslipId: text("original_payslip_id")
+			.notNull()
+			.references(() => payslip.id, { onDelete: "restrict" }),
+		// The corrected payslip row (lives in a correction run). Nullable until applied.
+		correctedPayslipId: text("corrected_payslip_id").references(
+			() => payslip.id,
+			{ onDelete: "set null" }
+		),
+		// The payroll run that produced the correction.
+		correctionRunId: text("correction_run_id").references(() => payrollRun.id, {
+			onDelete: "set null",
+		}),
+		reasonCode: payslipCorrectionReasonEnum("reason_code").notNull(),
+		reasonNote: text("reason_note"),
+		// The historical profile resolved by pay date for the recompute.
+		resolvedProfileId: text("resolved_profile_id").references(
+			() => countryPayrollProfile.id,
+			{ onDelete: "set null" }
+		),
+		ruleVersionLabel: text("rule_version_label"),
+		// Explicit GL adjustment (via the gl router). glJournalId is a SOFT ref —
+		// payroll requests a GL adjustment; it never mutates GL history.
+		glAdjustmentStatus: payslipCorrectionGlStatusEnum("gl_adjustment_status")
+			.default("not_required")
+			.notNull(),
+		glJournalId: text("gl_journal_id"),
+		// Per-component original → corrected → delta (gross, PAYE, NIS, net, …).
+		componentDeltas: jsonb("component_deltas"),
+		correctedAt: timestamp("corrected_at").defaultNow().notNull(),
+		correctedBy: text("corrected_by").references(() => user.id, {
+			onDelete: "set null",
+		}),
+		...timestamps,
+	},
+	(t) => [
+		index("payslip_correction_org_idx").on(t.organizationId),
+		index("payslip_correction_original_idx").on(t.originalPayslipId),
+		index("payslip_correction_gl_status_idx").on(
+			t.organizationId,
+			t.glAdjustmentStatus
+		),
 	]
 );
 

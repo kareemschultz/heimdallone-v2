@@ -162,6 +162,13 @@
       "when": 1781301282054,
       "tag": "0022_normal_unicorn",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1781386679526,
+      "tag": "0023_effective_dating",
+      "breakpoints": true
     }
   ]
 }

@@ -295,13 +295,15 @@ async function buildReimbursementInputs(
 async function buildCountryProfile(
 	organizationId: string
 ): Promise<CountryPayrollProfileInput> {
+	// TODO(21G-C): honor the run's pinned countryProfileId / resolve by pay date.
+	// 21G-B only renames isActive -> isPublished (behavior preserved).
 	const profile = await db
 		.select()
 		.from(countryPayrollProfile)
 		.where(
 			and(
 				eq(countryPayrollProfile.organizationId, organizationId),
-				eq(countryPayrollProfile.isActive, true)
+				eq(countryPayrollProfile.isPublished, true)
 			)
 		)
 		.limit(1)

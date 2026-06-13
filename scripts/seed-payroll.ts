@@ -97,6 +97,8 @@ function buildGuyanProfile(orgId: string) {
 		countryName: "Guyana",
 		currency: "GYD",
 		effectiveYear: 2026,
+		effectiveFrom: new Date("2026-01-01"),
+		effectiveTo: null,
 		taxBrackets: [
 			{ min: 0, max: 280_000, rate: 0.25, fixedAmount: 0 },
 			{ min: 280_000, max: null, rate: 0.35, fixedAmount: 0 },
@@ -117,7 +119,7 @@ function buildGuyanProfile(orgId: string) {
 			annualLeaveMinDays: 12,
 			maternityWeeks: 13,
 		},
-		isActive: true,
+		isPublished: true,
 	};
 }
 
@@ -133,6 +135,7 @@ function buildPayrollSetting(orgId: string) {
 		publicHolidayMultiplier: "2.00",
 		nightShiftMultiplier: "1.00",
 		workDays: [1, 2, 3, 4, 5],
+		weekendDays: [6, 7],
 		standardHoursPerDay: "8.00",
 		lunchDeductionMinutes: 60,
 		paidHolidaysForHourly: true,

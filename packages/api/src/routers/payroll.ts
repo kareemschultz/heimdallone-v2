@@ -1346,13 +1346,15 @@ const runsCreateDraft = authorizedProcedure("payroll", "create")
 			throw new ORPCError("NOT_FOUND", { message: "Pay period not found." });
 		}
 
+		// TODO(21G-C): resolve by the period's PAY DATE, not the published flag.
+		// 21G-B only renames isActive -> isPublished (behavior preserved).
 		const [profile] = await db
 			.select()
 			.from(countryPayrollProfile)
 			.where(
 				and(
 					eq(countryPayrollProfile.organizationId, orgId(context)),
-					eq(countryPayrollProfile.isActive, true)
+					eq(countryPayrollProfile.isPublished, true)
 				)
 			)
 			.limit(1);
