@@ -1290,6 +1290,30 @@ const workInfoGet = authorizedProcedure("employee", "read")
 		return info;
 	});
 
+// Tenant guard: the target employee MUST belong to the caller's org. Without this
+// a privileged caller (HR/payroll) in tenant A could write another tenant's
+// employee by id (cross-tenant write IDOR). Mirrors the read-path guard on
+// bankDetailsGet. Throws NOT_FOUND so a foreign id is indistinguishable from a
+// missing one.
+async function assertEmployeeInOrg(
+	oid: string,
+	employeeId: string
+): Promise<void> {
+	const [owner] = await db
+		.select({ id: schema.employeeProfile.id })
+		.from(schema.employeeProfile)
+		.where(
+			and(
+				eq(schema.employeeProfile.id, employeeId),
+				eq(schema.employeeProfile.organizationId, oid)
+			)
+		)
+		.limit(1);
+	if (!owner) {
+		throw new ORPCError("NOT_FOUND", { message: "Employee not found." });
+	}
+}
+
 const workInfoUpdate = authorizedProcedure("employee", "update")
 	.input(
 		z.object({
@@ -1318,6 +1342,7 @@ const workInfoUpdate = authorizedProcedure("employee", "update")
 		}
 
 		const { employeeId, ...fields } = input;
+		await assertEmployeeInOrg(orgId(context), employeeId);
 
 		if (fields.reportingManagerId) {
 			const isCycle = await checkReportingManagerCycle(
@@ -1429,6 +1454,7 @@ const bankDetailsUpdate = authorizedProcedure("employee", "update")
 			});
 		}
 		const { employeeId, ...fields } = input;
+		await assertEmployeeInOrg(orgId(context), employeeId);
 		const existing = await db
 			.select()
 			.from(schema.employeeBankDetails)
