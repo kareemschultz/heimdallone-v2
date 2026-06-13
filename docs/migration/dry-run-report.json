@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-06-12T14:54:54.104Z",
-  "v1Url": "postgres://heimdallone:***@172.19.0.2:5432/karetech_erp",
+  "generatedAt": "2026-06-13T13:36:59.120Z",
+  "v1Url": "postgresql://migration_reader:***@172.19.0.2:5432/karetech_erp",
   "v2Staging": null,
   "totals": {
     "tenants": 2,
     "users": 29,
     "employees": 23,
     "payslips": 69,
-    "attendance_punches": 874,
+    "attendance_punches": 888,
     "roster_entries": 175,
     "gl_journal_entries": 13,
     "notifications": 14,
@@ -179,7 +179,10 @@
         }
       ],
       "unmappable": [],
-      "notes": ["19 device-user slots", "19 not bound to an employee"]
+      "notes": [
+        "19 device-user slots",
+        "19 not bound to an employee"
+      ]
     },
     {
       "v1Table": "attendance_devices",
@@ -290,7 +293,9 @@
         }
       ],
       "unmappable": [],
-      "notes": ["1 devices"]
+      "notes": [
+        "1 devices"
+      ]
     },
     {
       "v1Table": "attendance_exceptions",
@@ -307,7 +312,7 @@
       "v2Target": "attendance_punch",
       "classification": "direct_map",
       "reason": "raw punches with timestamp/source/device/GPS",
-      "rowCount": 874,
+      "rowCount": 888,
       "fields": [
         {
           "v1": "id",
@@ -424,8 +429,8 @@
       ],
       "unmappable": [],
       "notes": [
-        "874 punches",
-        "54 carry GPS coordinates (confirm v2 punch geo home)"
+        "888 punches",
+        "59 carry GPS coordinates (confirm v2 punch geo home)"
       ]
     },
     {
@@ -433,7 +438,7 @@
       "v2Target": "audit_event",
       "classification": "archive_only",
       "reason": "historical audit trail",
-      "rowCount": 178,
+      "rowCount": 181,
       "fields": [],
       "unmappable": [],
       "notes": []
@@ -586,7 +591,9 @@
         }
       ],
       "unmappable": [],
-      "notes": ["17 component assignments"]
+      "notes": [
+        "17 component assignments"
+      ]
     },
     {
       "v1Table": "employee_shift_assignments",
@@ -661,7 +668,9 @@
         }
       ],
       "unmappable": [],
-      "notes": ["17 shift assignments"]
+      "notes": [
+        "17 shift assignments"
+      ]
     },
     {
       "v1Table": "employee_skills",
@@ -1294,7 +1303,9 @@
         }
       ],
       "unmappable": [],
-      "notes": ["2 tenant(s) -> v2 organizations"]
+      "notes": [
+        "2 tenant(s) -> v2 organizations"
+      ]
     },
     {
       "v1Table": "overtime_approvals",
@@ -1381,7 +1392,9 @@
         }
       ],
       "unmappable": [],
-      "notes": ["26 pay components"]
+      "notes": [
+        "26 pay components"
+      ]
     },
     {
       "v1Table": "payroll_periods",
@@ -1478,7 +1491,9 @@
         }
       ],
       "unmappable": [],
-      "notes": ["5 pay periods"]
+      "notes": [
+        "5 pay periods"
+      ]
     },
     {
       "v1Table": "payslip_line_items",
@@ -1890,7 +1905,9 @@
         }
       ],
       "unmappable": [],
-      "notes": ["11 corrections"]
+      "notes": [
+        "11 corrections"
+      ]
     },
     {
       "v1Table": "recognition_records",
@@ -2038,7 +2055,9 @@
         }
       ],
       "unmappable": [],
-      "notes": ["33 structure assignments"]
+      "notes": [
+        "33 structure assignments"
+      ]
     },
     {
       "v1Table": "salary_structure_templates",
@@ -3309,7 +3328,9 @@
         "notifications": 0,
         "leaveRequests": 0
       },
-      "blockers": ["payroll parity gate (21C) must pass before cutover"],
+      "blockers": [
+        "payroll parity gate (21C) must pass before cutover"
+      ],
       "ready": true
     },
     {
@@ -3318,7 +3339,7 @@
       "counts": {
         "employees": 20,
         "payslips": 66,
-        "punches": 874,
+        "punches": 888,
         "roster": 175,
         "journals": 13,
         "notifications": 14,

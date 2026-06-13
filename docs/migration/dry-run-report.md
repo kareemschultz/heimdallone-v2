@@ -1,7 +1,7 @@
 # v1 → v2 Migration Dry-Run Report
 
-**Generated:** 2026-06-12T14:54:54.104Z
-**v1 source (read-only):** `postgres://heimdallone:***@172.19.0.2:5432/karetech_erp`
+**Generated:** 2026-06-13T13:36:59.120Z
+**v1 source (read-only):** `postgresql://migration_reader:***@172.19.0.2:5432/karetech_erp`
 **v2 staging target:** _none configured (schema-from-code mode)_
 
 > DRY RUN — no rows were written to v1 or to any v2 database. This report
@@ -15,7 +15,7 @@
 | users | 29 |
 | employees | 23 |
 | payslips | 69 |
-| attendance_punches | 874 |
+| attendance_punches | 888 |
 | roster_entries | 175 |
 | gl_journal_entries | 13 |
 | notifications | 14 |
@@ -25,8 +25,8 @@
 
 | v1 table | rows | classification | v2 target | mapped/review/unmapped/dropped |
 | --- | ---: | --- | --- | --- |
-| attendance_punches | 874 | Direct map | attendance_punch | 12/6/0/3 |
-| audit_logs | 178 | Archive only | audit_event | — |
+| attendance_punches | 888 | Direct map | attendance_punch | 12/6/0/3 |
+| audit_logs | 181 | Archive only | audit_event | — |
 | shift_roster_entries | 175 | Requires new v2 feature | — | 2/12/0/2 |
 | payslips | 69 | Archive only | payslip (historical) | 37/4/0/2 |
 | journal_lines | 53 | Requires new v2 feature | — | — |
@@ -244,7 +244,7 @@
   - payroll parity gate (21C) must pass before cutover
 
 ### Netsurf Group of Companies (`netsurf-group-tenant-001`) — ✅ data maps (pending feature builds)
-- employees: 20 · payslips: 66 · punches: 874 · roster: 175 · journals: 13 · notifications: 14 · leaveRequests: 2
+- employees: 20 · payslips: 66 · punches: 888 · roster: 175 · journals: 13 · notifications: 14 · leaveRequests: 2
 - Blockers:
   - 175 per-date roster entries need the v2 roster table (21D)
   - 13 GL journals need the v2 GL decision/build (21D)

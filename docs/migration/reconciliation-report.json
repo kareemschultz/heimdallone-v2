@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-06-12T19:03:17.579Z",
-  "v1Url": "postgres://heimdallone:***@172.19.0.2:5432/karetech_erp",
+  "generatedAt": "2026-06-13T13:37:20.637Z",
+  "v1Url": "postgresql://migration_reader:***@172.19.0.2:5432/karetech_erp",
   "scratchDb": null,
   "scratchCounts": null,
   "tenants": [
@@ -105,55 +105,55 @@
     }
   ],
   "attendance": {
-    "totalPunches": 880,
+    "totalPunches": 888,
     "byTenant": [
       {
         "tenantId": "netsurf-group-tenant-001",
-        "punches": 880
+        "punches": 888
       }
     ],
     "fieldCoverage": [
       {
         "field": "employee",
-        "present": 880,
-        "total": 880
+        "present": 888,
+        "total": 888
       },
       {
         "field": "timestamp",
-        "present": 880,
-        "total": 880
+        "present": 888,
+        "total": 888
       },
       {
         "field": "punch_type",
-        "present": 880,
-        "total": 880
+        "present": 888,
+        "total": 888
       },
       {
         "field": "source",
-        "present": 880,
-        "total": 880
+        "present": 888,
+        "total": 888
       },
       {
         "field": "device",
-        "present": 675,
-        "total": 880,
+        "present": 681,
+        "total": 888,
         "note": "device binding"
       },
       {
         "field": "logical_shift_date",
-        "present": 880,
-        "total": 880,
+        "present": 888,
+        "total": 888,
         "note": "v1 derives this; confirm v2 derivation"
       },
       {
         "field": "device_timestamp",
-        "present": 880,
-        "total": 880
+        "present": 888,
+        "total": 888
       },
       {
         "field": "gps_latitude",
-        "present": 57,
-        "total": 880,
+        "present": 59,
+        "total": 888,
         "note": "geo — confirm v2 punch geo home"
       }
     ],
