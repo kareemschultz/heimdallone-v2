@@ -108,6 +108,101 @@ The product must remain configurable enough for the next business, the next indu
 
 ---
 
+## ⭐ Heimdallone Documentation Rule — Fumadocs UI Required (STANDING OVERRIDE)
+
+Documentation is part of the SaaS product, not an afterthought. Every feature, UI change, workflow
+change, permission/RBAC change, migration feature, or quality-of-life improvement must be reflected in
+the docs. Docs evolve with the product — **a feature is not complete until its documentation is updated.**
+
+### Core Rule
+
+- Whenever the **UI** changes, the docs change with it.
+- Whenever a **module** changes, that module's docs are updated.
+- Whenever a **workflow** changes, the docs explain the new workflow.
+- Whenever **permissions/RBAC** change, the docs explain who can do what.
+- Whenever a feature is **preview/staged/not fully live**, the docs clearly label it.
+
+### Documentation System
+
+Use **Fumadocs UI** as the documentation foundation (long-term system of record). Do not create
+scattered one-off Markdown only — the durable docs live in Fumadocs with consistent navigation, tags,
+callouts, role-based sections, and module pages. Docs must be: searchable · well-organized · role-aware
+where useful · module-based · consistent · usable by non-technical users · clear about live vs
+preview/staged · updated in the same PR/commit as the feature change when practical.
+
+> Internal `docs/architecture`, `docs/implementation`, `docs/reviews`, `docs/migration` markdown remain
+> the **developer/operator** record (plans, specs, QA evidence). **Fumadocs is the user-facing product
+> documentation.** Both are required; they are different audiences.
+
+### Per-Module Quality Standard
+
+Every module's docs cover: what it does · who can access it · key roles & permissions · main workflows ·
+list/detail/create/edit behavior · filters & search · bulk actions · imports/exports · approval flows ·
+status meanings · empty/loading/error states · audit/history · sensitive-data visibility/redaction ·
+cross-module integration · screenshots/UI references where helpful · common mistakes/troubleshooting ·
+FAQ · admin setup/config · migration notes where relevant.
+
+### Required Tags / Labels (consistent across docs)
+
+`Live` · `Preview` · `Beta` · `Migration` · `Admin` · `Manager` · `Employee` · `Auditor` · `Payroll` ·
+`HR` · `Finance` · `Security` · `Tenant Configurable` · `Country Rule` · `Effective Dated` ·
+`Self-Service` · `Requires Setup`.
+
+### Role-Aware Documentation
+
+Where a workflow differs by role, document each view (Admin / Manager / Employee / Auditor). Do not
+write docs only for admins — employees and managers must understand what they can do without reading
+implementation notes.
+
+### Fumadocs UX Patterns (use where useful)
+
+Sidebar nav by module · section grouping · callouts/admonitions (warning/tip/important) · cards for
+module entry points · status badges/tags · tabs for role-specific instructions · steps for workflows ·
+code blocks for commands · tables for permissions/statuses · accordions for FAQ · links between related
+modules · "last updated"/changelog notes · "Applies to" role/module tags.
+
+### Screenshots
+
+Include screenshot references where useful; update them when UI changes significantly. **Never include
+fake data in docs unless clearly marked sample/demo data.**
+
+### Admin/Operator + Developer Docs
+
+Operator docs: setup · tenant onboarding · org settings · payroll/country/statutory config · imports ·
+migrations · backup/restore · cutover · troubleshooting · known limitations · feature flags/preview
+modules. Developer docs: module boundaries · API/router responsibilities · schema ownership · RBAC
+resources/actions · cross-module seams · verification scripts · migration scripts · quality gates · how
+to update docs when code changes.
+
+### Documentation Gates (before marking a feature complete)
+
+User-facing docs updated · admin/operator docs updated where needed · permissions documented ·
+screenshots updated where useful · preview/staged status documented · related module docs linked ·
+changelog/status updated · docs build passes · no stale fake screenshots or fake live data.
+
+### Required Audit Question (before every final report)
+
+**"Did this change require Fumadocs documentation updates?"** If yes, list the docs updated. If no,
+explain why not.
+
+### Suggested Structure
+
+Getting Started (Overview · Roles & permissions · Navigation · Tenant setup) · HR (Employees ·
+Contracts · Onboarding · Offboarding · Performance · Assets) · Time (Attendance · Biometric ·
+Geofencing · Rosters · Leave · Holidays) · Payroll (Setup · Pay frequencies · Country rules · Guyana/GRA
+rules · Payslips · Reconciliation · Contractors & project work) · Finance (GL · Journal entries ·
+Payroll posting · Currency) · Operations (Notifications · Helpdesk · Projects · CRM · Analytics) ·
+Administration (RBAC · Tenant settings · Imports/exports · Audit logs · Migration & cutover) ·
+Developer/Operator (Architecture · Module boundaries · Quality gates · Deployment · Backup/restore ·
+Troubleshooting).
+
+### Product Standard
+
+Docs must evolve with the product. A feature is not truly complete until the relevant Fumadocs
+documentation is updated.
+
+---
+
 ## Core Principles
 
 Write code that is **accessible, performant, type-safe, and maintainable**. Focus on clarity and explicit intent over brevity.
