@@ -12,35 +12,99 @@ Biome (the underlying engine) provides robust linting and formatting. Most issue
 
 ---
 
-## ⭐ Heimdallone SaaS Architecture Rule — No Client-Specific Builds (OVERRIDE)
+## ⭐ Heimdallone SaaS Architecture Rule — No Client-Specific Builds (STANDING OVERRIDE)
 
-Heimdallone v2 is a **multi-tenant SaaS platform**. It is **not** a one-off Netsurf migration, a Foreign Links migration, or a custom internal tool for one company. Live v1 data from Netsurf and Foreign Links proves real business intent, real workflows, and real migration edge cases — use it to **validate** v2, never to **limit** v2.
+Heimdallone v2 is a multi-tenant SaaS platform.
 
-**Golden phrase:** *Netsurf proves the need; it does not define the product. Foreign Links proves another workflow; it does not define the limit.*
+It is not a one-off Netsurf migration, a Foreign Links migration, or a custom internal tool for one company.
 
-**Core rule:** every module is a **configurable, tenant-safe SaaS capability**. Do not hardcode assumptions for one company, industry, pay cycle, workflow, country, department structure, or operating style. If a requirement comes from one tenant, **generalize it into a reusable product capability**.
+Live v1 data from Netsurf and Foreign Links is valuable because it proves real business intent, real operational workflows, and real migration edge cases. It must be used to validate v2, but it must not limit v2.
 
-**Required design standard** — for every new module / feature / migration / schema / API / UI / workflow, ask: *Is this a tenant-configurable SaaS capability, or am I hardcoding one client's workflow? If hardcoded, redesign it.*
+### Core Rule
 
-**Every module must support:** multiple tenants · (multiple companies under a tenant where needed) · multiple countries over time · departments · locations · roles & permission scopes · approval workflows · configurable policies · effective-dated rules · historical records · imports/exports · audit history · soft archive · self-service · manager/team-scoped views · admin/org-wide views · read-only auditor views · clearly-labelled preview/staged features · **no cross-tenant leakage · no frontend-only security · no hardcoded client names · no hardcoded country assumptions outside a country-rule module · no hardcoded payroll/roster/GL/CRM/workflow assumptions**.
+Every module must be designed as a configurable, tenant-safe SaaS capability.
 
-**Module seams:** each module owns its domain and may **read/link** to others through clear seams, but must **not mutate** another module unless that integration is explicitly designed and documented.
+Do not hardcode assumptions for one company, one industry, one pay cycle, one workflow, one country, one department structure, or one operating style.
 
-**Migration:** v1 is a migration source and intent source — **not automatically the truth**. Preserve history; identify intent; correct v1 bugs where official rules or clean design prove they were bugs; map into v2's generalized model; never clone v1 quirks or hardcode per-client migration paths; document each field/table as **direct map / transform map / archive-only / requires-new-v2-feature / deliberately-dropped**.
+If a requirement comes from one tenant, generalize it into a reusable product capability.
 
-**Payroll:** country-rule-driven, **effective-dated, multi-frequency** engine — weekly/fortnightly/semi-monthly/monthly/annual; fixed/hourly/shift/rostered/contractor/project/commission/allowance-heavy workers; multiple statutory systems over time; employee-specific tax settings; employer contributions; historical payslip preservation; future rule changes **without rewriting old results**. **GRA is the source of truth for Guyana**; equivalent official authorities for other countries.
+### Golden Phrase
 
-**Roster:** recurring schedules · per-date entries · overrides · custom hours · day-off/swap · split shifts · night differential · weekend & public-holiday rules · approval workflows · payroll-impacting flags · multiple work locations · attendance integration · historical preservation.
+Netsurf proves the need; it does not define the product.
 
-**GL/Finance:** chart of accounts per tenant · account hierarchy · journal entries/lines · currency · reversals · source-module metadata · payroll posting · imports from legacy · auditability. **GL links to payroll but must not mutate payroll.**
+Foreign Links proves another workflow; it does not define the limit.
 
-**Notifications:** reusable subsystem (not a one-off table) — per-tenant · per-user inbox · read/unread · soft entity links · module source · type · future delivery channels · migration import.
+Heimdallone v2 must be a configurable multi-tenant SaaS platform for many businesses, countries, workflows, and operating models. Every module should be built around tenant-configurable policy + reusable primitives, not client-specific logic.
 
-**UI:** reusable & role-aware — list/detail/create-edit · filters · empty/loading/error states · bulk & import/export where useful · role-scoped nav · clear no-access state · mobile-friendly · **no raw IDs as primary display · no raw enums as user-facing labels · no fake data presented as live**.
+### Required Design Standard
 
-**Verification (every module proves):** tenant isolation · RBAC alignment · manager scope · employee self-scope · auditor read-only · sensitive-field redaction · no cross-module mutation unless designed · no production write during migration dry-runs · quality gates pass.
+For every new module, feature, migration, schema, API, UI, or workflow, ask:
 
-**Product standard:** build for the **platform**, not the current tenant. Current tenants are proof cases; the product must remain configurable for the next business, industry, and country.
+Is this a tenant-configurable SaaS capability, or am I hardcoding one client's workflow?
+
+If it is hardcoded, redesign it.
+
+### SaaS Requirements Across All Modules
+
+Every module should support: multiple tenants · multiple companies under a tenant where needed · multiple countries over time · multiple departments · multiple locations · multiple roles and permission scopes · multiple approval workflows · configurable policies · effective-dated rules · historical records · imports and exports · audit history · soft archive where appropriate · self-service where appropriate · manager/team-scoped views · admin/org-wide views · read-only auditor views · preview/staged features clearly labelled · no cross-tenant leakage · no frontend-only security · no hardcoded client names · no hardcoded country assumptions unless inside a country-rule module · no hardcoded payroll, roster, GL, CRM, or workflow assumptions.
+
+### Module Rule
+
+Each module owns its own domain but can link to other modules through clear seams.
+
+A module may read/link to another module when needed, but must not mutate another module unless that integration is explicitly designed and documented.
+
+### Migration Rule
+
+v1 data is a migration source and intent source. v1 is not automatically the truth.
+
+For migration: preserve historical data · identify the intent behind v1 behavior · correct v1 bugs where official rules or clean product design prove they were bugs · map v1 data into v2's generalized model · do not clone v1 quirks blindly · do not hardcode Netsurf-specific migration paths · do not hardcode Foreign Links-specific migration paths · document each field/table as direct map, transform map, archive-only, requires new v2 feature, or deliberately dropped.
+
+### Payroll Rule
+
+Payroll must be a country-rule-driven, effective-dated, multi-frequency engine.
+
+It must support: weekly · fortnightly · semi-monthly · monthly · annual calculations · fixed salary workers · hourly workers · shift workers · rostered workers · contractors · project-based workers · commission workers · allowance-heavy workers · multiple statutory systems over time · country-specific rules · employee-specific tax settings · employer contributions · historical payslip preservation · future payroll rule changes without rewriting old results.
+
+GRA is the source of truth for Guyana payroll/tax rules, not v1. Equivalent official authorities should be used for other countries.
+
+### Roster / Scheduling Rule
+
+Rostering must support more than one company's current shift pattern.
+
+It must support: recurring schedules · per-date roster entries · overrides · custom hours · day off / swap logic · split shifts · night differential · weekend rules · public holiday rules · approval workflows · payroll-impacting flags · multiple work locations · attendance integration · historical roster preservation.
+
+### General Ledger / Finance Rule
+
+GL and finance must be tenant-configurable.
+
+They must support: chart of accounts per tenant · account hierarchy · journal entries · journal lines · currency · reversals · source module metadata · payroll posting · future accounting integrations · imports from legacy systems · auditability.
+
+GL can link to payroll, but GL must not mutate payroll.
+
+### Notifications Rule
+
+Notifications must be a reusable subsystem, not a one-off migration table.
+
+They must support: per-tenant notifications · per-user inbox · read/unread state · soft entity links · module source · notification type · future delivery channels · migration import where useful.
+
+### UI Rule
+
+UI must be reusable and role-aware.
+
+Every module should include: list view · detail view · create/edit flow where applicable · filters · empty/loading/error states · bulk actions where useful · import/export where useful · role-scoped navigation · clear no-access state · mobile-friendly layout · no raw IDs as primary display · no raw enums as user-facing labels · no fake data presented as live.
+
+### Verification Rule
+
+Every module must prove: tenant isolation · RBAC alignment · manager scope · employee self-scope · auditor read-only behavior · sensitive field redaction · no cross-module mutation unless explicitly designed · no production write during migration dry-runs · quality gates pass.
+
+### Product Standard
+
+Every feature must be built for the platform, not just the current tenant.
+
+Current tenants are proof cases.
+
+The product must remain configurable enough for the next business, the next industry, and the next country.
 
 ---
 

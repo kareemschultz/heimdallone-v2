@@ -160,7 +160,10 @@ async function scopedEmployeeIds(
 		return [];
 	}
 	if (memberRole === "manager") {
-		const reports = await getDirectReportIds(cur.id);
+		// Pass org for the defense-in-depth tenant bound (matches the 13H hardening
+		// other modules adopted — a manager's scope can't widen via a cross-tenant
+		// reportingManagerId pointer).
+		const reports = await getDirectReportIds(cur.id, org);
 		return [cur.id, ...reports];
 	}
 	return [cur.id];
