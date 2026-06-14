@@ -1,9 +1,13 @@
 # Phase 21 — v1 → v2 Migration Workstream: Status Report & Audit
 
-**Date:** 2026-06-13
+**Date:** 2026-06-14 (updated after 21G + 21K; original body 2026-06-13)
 **Prepared for:** owner review (autonomous session)
-**Repo state at report time:** `HEAD == origin/master == fff2b74`, tree clean.
+**Repo state at report time:** `HEAD == origin/master == d0b14294c55ce7a1e759a0d7c363549e14d8040a`, tree clean.
 **Source of truth for payroll math:** GRA (gra.gov.gy) — see [[reference-gra-payroll]].
+
+> **2026-06-14 update — see §10 (Phase 21G effective-dating ✅ COMPLETE) and §11 (Phase 21K
+> live write-ETL rehearsal ✅ PASSED) appended at the end for current state.** §1–§9 below are
+> the 2026-06-13 record through 21F and remain accurate as of that point in time.
 
 > Honest framing up front: the **migration discovery, the payroll-correctness fix, the v2 data
 > homes, the feature routers (roster/GL/notifications), the fortnightly-first-class work, and a
@@ -162,3 +166,56 @@ It is **not yet live-cutover-ready** — that needs exactly one infra unblock (a
 Infisical creds, §6.5) to run the ETL/reconcile against the *real* v1 data, plus the module UIs and
 the effective-dating architecture for future budgets. None of those are blocked by code; they're the
 next, well-scoped steps.
+
+---
+
+## 10. Phase 21G — Effective-dating ✅ COMPLETE (2026-06-14)
+
+Statutory rules now resolve by the **event date** (pay date / leave-request date / work date),
+not by a mutable `isActive` flag. Commits `db0c25d → 324b8d9 → cdeeb4e → 39954c8 → 9fd14eb →
+f6524e9` (all pushed). **No new AC pair across 21G → audit stays 161/21.**
+
+| Sub-phase | Delivered | Proof |
+| --- | --- | --- |
+| 21G-C payroll resolve-by-pay-date + run pin | pure `resolveAsOf` core; run pins profile + `ruleVersionLabel`; generation honors pin | engine 12 unit + `verify:payroll-resolver` 8/8 |
+| 21G-D leave resolve-by-request-date + server days (H10) | `resolveLeavePolicyAsOf` (no migration); `countLeaveDays` server-authoritative | `verify:leave-resolver` 13/13 |
+| 21G-E workweek/weekend classifier | `classifyDayType` reads tenant `weekendDays` + holidays | `verify:workweek` 13/13 |
+| 21G-G historical payslip correction (API) | preview/apply/list/getById; original IMMUTABLE (back-pointer only); GL adjustment = obligation, payroll never writes ledger | `verify:payslip-correction` 11/11 |
+| 21G-F UI | payslip original→corrected panel + run rule-version label | web tsc baseline unchanged |
+| 21G-I QA | independent adversarial review — all 7 categories CLEAN | `docs/reviews/phase-21g/` |
+
+## 11. Phase 21K — Live v1 → v2 scratch write-ETL rehearsal ✅ PASSED (2026-06-14)
+
+Commit `d0b1429`. Ran the write-ETL end-to-end against **real v1 data** into a disposable scratch
+DB. Full record: `docs/migration/phase-21k-live-write-etl-rehearsal.md`.
+
+- **Hard rules honored:** NO v1 writes (read-only session), NO production v2 writes, NO freeze,
+  NO DNS cutover, no secrets in files/commits (v1 cred in gitignored `.env.migration`).
+- **Live v1 dry-run: PASS** — 101 tables classified (read-only).
+- **Live v1 reconcile: READY** — personal_allowance / NIS-emp / NIS-employer / child / net_identity
+  **46/46 exact**, PAYE 45 exact + 1 rounding; 21G did not regress reconciliation.
+- **Scratch target:** `heimdallone_v2_migration_scratch` (guards held) — **24 migrations through
+  `0023_effective_dating` → 129 public tables**.
+- **Records read from v1:** 23 employees / 29 users / 33 assignments / 11 accounts / 13 journals /
+  53 lines / 14 notifications / 175 roster / 6 schedules / 69 payslips / 891 punches.
+- **Records written to scratch:** 2 orgs, 15 users, 15 members, 23 employees, 18 contracts (17
+  fortnightly), 6 shifts, 175 roster, 10 GL accounts, 11 journals / 47 lines, 6 notifications.
+- **Source-JSON staged** (no v2 app-table home yet): 69 payslips · 891 attendance punches · 6
+  work_schedules.
+- **Excluded mappings (3, by design):** 1 unmapped GL account type, 2 v1-quality journals
+  (imbalanced / non-single-sided line).
+- **Manual-review items:** 11 statutory fields; 6 employees missing v1 email → deterministic
+  `migrated-<id>@migrated.invalid` placeholders; 1 GL account type + 2 journals; work_schedules
+  richness (night-diff/split-shift/Saturday/OT) staged as source JSON.
+- **GL balance: PASS** (Netsurf debit == credit == 1,204,726.65). **Tenant isolation: PASS**
+  (20 Netsurf + 3 Foreign Links, no cross-tenant rows). **PII scan: PASS** (no names/emails/
+  salaries/bank/TIN/NIS in any report).
+- **Effective-dating / correction compatibility:** scratch carries the 0023 columns
+  (`effective_from/to`, `is_published`, `weekend_days`, `rule_version_label`) + `payslip_correction`
+  table — migrated data is schema-compatible with 21G.
+- **Go / No-Go:** live write-ETL rehearsal **GO ✅**; **freeze NO-GO**; **DNS cutover NO-GO (and
+  none performed).**
+
+### Immediate next step (supersedes §9)
+Operator sign-off on the §11 manual-review items, then a **full-data dress rehearsal** (same guarded
+path) before any freeze decision. Code is not blocking; the remaining gaps are operational/data.

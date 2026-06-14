@@ -1,7 +1,7 @@
 # Phase 21 — v1 → v2 Migration & Cutover Plan
 
-**Date:** 2026-06-11
-**Status:** 21A spec (planning) — no code yet
+**Date:** 2026-06-11 (status updated 2026-06-14 after 21K)
+**Status:** 21B–21G + 21K complete — live write-ETL rehearsal **PASSED** (freeze/DNS cutover NO-GO). See §9.
 **Predecessor:** [v1→v2 Gap Analysis](./v1-to-v2-gap-analysis.md)
 **Guiding principle (owner's directive):** *Capture v1's **intent**, map it onto what v2 already
 has, and port the data. Do NOT faithfully clone v1's implementation — v1 has known bugs/quirks
@@ -193,11 +193,20 @@ No DNS flip until these pass, per tenant:
 
 ## 9. Immediate next step
 
-**21B + 21C complete.** Next: **21D — feature builds + the payroll-engine frequency-proration fix.**
-21C reconciliation proved (via GRA, the source of truth) that v2's engine applies a flat monthly
-personal allowance to every pay period instead of prorating by frequency — wrong for the fortnightly/
-weekly/contract businesses v2 must serve. **Top 21D priority: a GRA-cited, frequency-aware proration
-layer in `packages/payroll-engine`** (personal allowance + $280k/mo tax band + NIS ceiling + child +
-medical caps, all prorated weekly/fortnightly/monthly/annual), with its own TDD pass. Then per-date
-roster, minimal GL, notifications. Re-run `migration:reconcile` after the engine fix to confirm the 43
-fortnightly payslips move to exact. Still read-only on v1; writes only to scratch.
+**21B–21G + 21K complete.** The engine frequency-proration fix (21D-B) shipped and reconcile is
+**READY** (personal_allowance 46/46 exact on live v1); roster/GL/notifications routers + fortnightly-
+first-class + effective-dating (21G: resolve-by-date payroll/leave/workweek + historical payslip
+correction) are all built and gated; and **21K ran the live v1 → scratch write-ETL end-to-end**
+(real v1 data, read-only → disposable `heimdallone_v2_migration_scratch`, 129 tables; GL balanced,
+tenant isolation, PII scan all PASS — see `phase-21k-live-write-etl-rehearsal.md`).
+
+**Go/no-go:** live write-ETL rehearsal **GO**; **freeze NO-GO**; **DNS cutover NO-GO** (none
+performed).
+
+**Next:** operator sign-off on the 21K manual-review items — 11 statutory employee fields
+(TIN/NIS/children/second-job/medical), 6 employees with no v1 email (placeholder addresses),
+1 unmapped GL account type + 2 excluded v1 journals, and wiring `work_schedules` richness
+(night-diff/split-shift/Saturday/OT) from source-JSON staging into v2 roster/payroll — then a
+**full-data dress rehearsal** on the same guarded path before any freeze decision. Module UIs
+(roster/GL/notifications) and the broader effective-dating architecture for future budgets remain.
+Still read-only on v1; writes only to scratch.
