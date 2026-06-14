@@ -202,8 +202,10 @@ DB. Full record: `docs/migration/phase-21k-live-write-etl-rehearsal.md`.
   fortnightly), 6 shifts, 175 roster, 10 GL accounts, 11 journals / 47 lines, 6 notifications.
 - **Source-JSON staged** (no v2 app-table home yet): 69 payslips · 891 attendance punches · 6
   work_schedules.
-- **Excluded mappings (3, by design):** 1 unmapped GL account type, 2 v1-quality journals
-  (imbalanced / non-single-sided line).
+- **Excluded mappings (2, by design):** 2 v1-quality journals (imbalanced / non-single-sided
+  line). *(Follow-up `dc79885`: v1 `revenue`→v2 `income` account-type mapping recovered the
+  previously-excluded account → 11/11 accounts migrate; full v1 employee rows now staged in
+  `migration_source_employee` JSONB, preserving the 11 statutory fields losslessly.)*
 - **Manual-review items:** 11 statutory fields; 6 employees missing v1 email → deterministic
   `migrated-<id>@migrated.invalid` placeholders; 1 GL account type + 2 journals; work_schedules
   richness (night-diff/split-shift/Saturday/OT) staged as source JSON.
