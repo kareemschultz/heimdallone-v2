@@ -23,6 +23,7 @@ import {
 	getEmployeeShiftInfo,
 	getShiftScheduleForDay,
 	recalculateRecord,
+	resolveDayTypeConfig,
 } from "../utils/attendance-recalc";
 import { createAuditEvent } from "../utils/audit";
 import {
@@ -140,7 +141,8 @@ const clockCheckIn = tenantProcedure
 
 		if (!existing) {
 			const timeStr = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-			const dayType = classifyDayType(todayDate, todayDow);
+			const dayTypeConfig = await resolveDayTypeConfig(orgId(context));
+			const dayType = classifyDayType(todayDate, todayDow, dayTypeConfig);
 			await db.insert(attendanceRecord).values({
 				id: createId(),
 				organizationId: orgId(context),

@@ -11,11 +11,15 @@ import {
 	attendanceRecord,
 	attendanceSetting,
 	employeeWorkInfo,
+	holiday,
+	payrollSetting,
 	shiftSchedule,
 } from "@Heimdallone/db/schema/index";
 import { and, eq } from "drizzle-orm";
+import { type HolidayWindow, isHolidayOn } from "./leave-days";
 
 const DEFAULT_MIN_MINUTES = 495;
+const DEFAULT_WEEKEND_DAYS = [6, 7]; // ISO: Sat, Sun
 const DEFAULT_GRACE_MINUTES = 15;
 const DEFAULT_SHIFT_START_HOUR = 8;
 
@@ -55,17 +59,63 @@ export async function getShiftScheduleForDay(
 	return schedule ?? null;
 }
 
+/** Tenant config that drives day-type classification (21G-E). */
+export interface DayTypeConfig {
+	/** Public-holiday calendar; a holiday takes precedence over weekend. */
+	holidays: HolidayWindow[];
+	/** Rest days, ISO numbering (1 = Mon … 7 = Sun). Default Sat/Sun. */
+	weekendDays: number[];
+}
+
+/**
+ * Classify a work date into the OT-multiplier bucket using TENANT config (21G-E),
+ * not a hardcoded Sat/Sun weekend. A public holiday wins; otherwise a day whose
+ * ISO weekday is in `weekendDays` is a rest day — Sunday keeps the distinct
+ * `sunday` bucket, every other rest day maps to the `saturday` (rest-day premium)
+ * bucket since the schema carries exactly two named weekend multipliers. For the
+ * default Sat/Sun tenant this is identical to the previous behaviour.
+ */
 export function classifyDayType(
-	_date: Date,
-	dow: number
+	date: Date,
+	dow: number,
+	config: DayTypeConfig
 ): "weekday" | "saturday" | "sunday" | "holiday" {
-	if (dow === 0) {
-		return "sunday";
+	if (config.holidays.length > 0 && isHolidayOn(date, config.holidays)) {
+		return "holiday";
 	}
-	if (dow === 6) {
-		return "saturday";
+	const iso = dow === 0 ? 7 : dow; // JS getDay() 0 = Sun → ISO 7
+	if (config.weekendDays.includes(iso)) {
+		return iso === 7 ? "sunday" : "saturday";
 	}
 	return "weekday";
+}
+
+/**
+ * Load the tenant's day-type config: `weekendDays` from payroll settings (the
+ * single source of the workweek, shared with the OT multipliers) and the org
+ * public-holiday calendar. Defaults to a Sat/Sun weekend when unset.
+ */
+export async function resolveDayTypeConfig(
+	organizationId: string
+): Promise<DayTypeConfig> {
+	const [settings] = await db
+		.select({ weekendDays: payrollSetting.weekendDays })
+		.from(payrollSetting)
+		.where(eq(payrollSetting.organizationId, organizationId))
+		.limit(1);
+	const holidays = await db
+		.select({
+			startDate: holiday.startDate,
+			endDate: holiday.endDate,
+			isRecurring: holiday.isRecurring,
+		})
+		.from(holiday)
+		.where(eq(holiday.organizationId, organizationId));
+	return {
+		weekendDays:
+			(settings?.weekendDays as number[] | undefined) ?? DEFAULT_WEEKEND_DAYS,
+		holidays,
+	};
 }
 
 interface DayAggregate {

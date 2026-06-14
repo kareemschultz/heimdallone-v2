@@ -34,7 +34,11 @@ function dayKey(d: Date): number {
 	return d.getUTCFullYear() * 10_000 + d.getUTCMonth() * 100 + d.getUTCDate();
 }
 
-function isHoliday(day: Date, holidays: readonly HolidayWindow[]): boolean {
+/** True when `day` falls on any holiday (single, range, or recurring annual). */
+export function isHolidayOn(
+	day: Date,
+	holidays: readonly HolidayWindow[]
+): boolean {
 	const dk = dayKey(day);
 	const mdk = monthDayKey(day);
 	for (const h of holidays) {
@@ -99,7 +103,7 @@ export function countLeaveDays(opts: {
 
 	while (dayKey(cursor) <= lastKey) {
 		const working = workSet.has(isoWeekday(cursor));
-		const excluded = excludeHolidays && isHoliday(cursor, holidays);
+		const excluded = excludeHolidays && isHolidayOn(cursor, holidays);
 		if (working && !excluded) {
 			const isStart = sameDay(cursor, startDate);
 			const isEnd = sameDay(cursor, endDate);

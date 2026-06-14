@@ -1,6 +1,16 @@
 # Phase 21G — Effective-Dated Policy & Rule Resolution (cross-module)
 
-**Status:** 21G-A spec ✅ · 21G-B schema/migration 0023 ✅ · 21G-C payroll resolve-by-date ✅ · **21G-D leave resolve-by-date + server-computed days ✅ (delivered).** · **Date:** 2026-06-14 · §10 Q1/Q2 owner-decided.
+**Status:** 21G-A spec ✅ · 21G-B schema/migration 0023 ✅ · 21G-C payroll resolve-by-date ✅ · 21G-D leave resolve-by-date + server-computed days ✅ · **21G-E workweek/weekend classifier from tenant config ✅ (delivered).** · **Date:** 2026-06-14 · §10 Q1/Q2 owner-decided.
+
+> **21G-E delivered.** `classifyDayType` (`packages/api/src/utils/attendance-recalc.ts`) no longer hardcodes
+> Sat=6/Sun=0 — it reads `payrollSetting.weekendDays` (ISO) + the org holiday calendar via new
+> `resolveDayTypeConfig(orgId)`, classifying each work date into the OT-multiplier bucket
+> (weekday/saturday/sunday/holiday). Holiday wins; Sunday keeps its distinct bucket; every other rest day
+> maps to the `saturday` (rest-day premium) bucket (schema carries two named weekend multipliers). Default
+> Sat/Sun tenant = byte-identical to before. Both call sites (attendance check-in, biometric punch
+> processor) fetch config and pass it; holiday matching reuses the 21G-D `isHolidayOn`. The `holiday`
+> bucket is now actually populated (previously dead). Proof: `verify:workweek` 13/13 (default unchanged,
+> Fri/Sat + Sun/Mon weekends, holiday precedence + recurring). No new AC pair → audit stays 161/21.
 
 > **21G-D delivered.** Leave policy resolves by **request start date**, not `status='active'` alone:
 > `packages/api/src/utils/leave-policy-resolver.ts` (`resolveLeavePolicyAsOf`) reuses the 21G-C pure
@@ -293,7 +303,7 @@ The config already exists — the bug is one classifier ignoring it.
 | **21G-B** | Schema + migration | `country_payroll_profile` gains `effectiveFrom/effectiveTo`; backfill from `effectiveYear`; `weekendDays` on `payrollSetting`; migration `0023_*`; idempotent seed updates; DB-verify |
 | **21G-C ✅** | Payroll resolve-by-date | **DONE.** `effective-dating.ts` (pure `resolveAsOf`, 12 tests) + `payroll-profile-resolver.ts`; run-create pins profile + `ruleVersionLabel`; generation honors pin (`resolveRunProfilePin`, pre-21G backfill); `buildPayrollInput({pinnedProfileId})`; engine registry unchanged; `verify:payroll-resolver` 8/8; reconcile structurally 46/46 |
 | **21G-D ✅** | Leave resolve-by-date + server-computed days | **DONE.** `leave-policy-resolver.ts` (`resolveLeavePolicyAsOf`, reuses `resolveAsOf`, no migration) + `leave-days.ts` (`countLeaveDays`); `getPolicyHealth` resolves as-of today; `requestsCreate` server-authoritative day count (H10, client advisory); `verify:leave-resolver` 13/13; audit stays 161/21 |
-| **21G-E** | Tenant workweek/weekend | `weekendDays` config honored by `attendance-recalc.ts classifyDay`; OT buckets from config; tests |
+| **21G-E ✅** | Tenant workweek/weekend | **DONE.** `classifyDayType` reads `payrollSetting.weekendDays` + holiday calendar via `resolveDayTypeConfig`; OT buckets from config (holiday wins, Sunday distinct, other rest days → saturday bucket); default Sat/Sun unchanged; `holiday` bucket now populated; `verify:workweek` 13/13; audit stays 161/21 |
 | **21G-F** | UI surfacing | Payslip/run + leave detail show the resolved rule-version label honestly; payslip detail shows original-vs-corrected when superseded; payroll settings expose `weekendDays`; no fake data |
 | **21G-G** | Historical payslip correction workflow (Q1) | `payslip_correction` table + reason/GL-status enums (21G-B); identify→resolve→recompute→preview→approve→apply-in-txn; immutable original + corrected record + per-component deltas; explicit GL adjustment via `gl` router; audit events; exportable report; admin-only |
 | **21G-I** | QA / RBAC / security / browser pass | parallel read-only review agents; reconcile regression 46/46; correction workflow audited (original never mutated, no silent recompute, txn-or-nothing, GL adjustment explicit); close Phase 21G |

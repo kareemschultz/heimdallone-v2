@@ -29,6 +29,7 @@ import {
 	getEmployeeShiftInfo,
 	getShiftScheduleForDay,
 	recalculateRecord,
+	resolveDayTypeConfig,
 } from "./attendance-recalc";
 
 const DEFAULT_MIN_MINUTES = 495;
@@ -167,6 +168,7 @@ async function ensureRecordStub(
 	const schedule = empInfo?.shiftId
 		? await getShiftScheduleForDay(empInfo.shiftId, dow)
 		: null;
+	const dayTypeConfig = await resolveDayTypeConfig(organizationId);
 	await db.insert(attendanceRecord).values({
 		id: createId(),
 		organizationId,
@@ -174,7 +176,7 @@ async function ensureRecordStub(
 		date: eventDate,
 		shiftId: empInfo?.shiftId ?? null,
 		minimumMinutes: schedule?.minimumWorkMinutes ?? DEFAULT_MIN_MINUTES,
-		dayType: classifyDayType(eventDate, dow),
+		dayType: classifyDayType(eventDate, dow, dayTypeConfig),
 	});
 }
 
