@@ -14,10 +14,11 @@ icon: CalendarClock
 </Tags>
 
 <Callout type="warn" title="Status">
-  This capability is being rolled out (Phase 21G). The data model is in place; the
-  resolve-by-date wiring and the correction workflow are being delivered in stages.
-  This page describes the intended behaviour and will be marked <Tag>Live</Tag> when
-  complete.
+  This capability is being rolled out (Phase 21G). The data model is in place and
+  **payroll now resolves its statutory rule by pay date** (21G-C). Leave and
+  workweek resolution and the historical correction workflow are being delivered in
+  later stages. This page describes the intended behaviour and will be marked
+  <Tag>Live</Tag> when complete.
 </Callout>
 
 ## Why effective dating
@@ -34,6 +35,36 @@ was in force on the request date.
 
 A new national budget — or a new country — is **one dated rule row**, not a code
 change.
+
+## How payroll resolves its rule
+
+<Tags>
+  <Tag>Live</Tag>
+  <Tag>Payroll</Tag>
+</Tags>
+
+When you **create a payroll run**, Heimdallone resolves the country payroll
+profile whose validity window contains the period's **pay date** (falling back to
+the period end date) and **pins** that profile to the run, recording a
+human-readable rule version (for example, `GY 2026 (from 2026-01-01)`).
+
+- **Generation honours the pin.** Every payslip in the run computes under the
+  pinned profile, so re-previewing a run never silently switches it to a newer
+  rule that was published after the run was created.
+- **Resolution is by date, not a toggle.** A profile is selectable when it is
+  **published** *and* its window contains the date. Publishing a 2027 profile in
+  advance does not change how a 2026 run computes.
+- **Older runs are handled.** A run created before this change carries no pinned
+  profile; the first time it is generated, Heimdallone resolves the rule by its
+  pay date and records the pin going forward.
+- **Ad-hoc previews and pay projections** (which are not tied to a run) resolve
+  the rule in force on the relevant period's pay date.
+
+<Callout title="Historical payslips don't change on their own">
+  Issued payslips are never recomputed as a side effect of viewing them or of a
+  newer rule being published. Changing a historical result is an explicit,
+  audited correction — see below.
+</Callout>
 
 ## Historical payslip correction
 

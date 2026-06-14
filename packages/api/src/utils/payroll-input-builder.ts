@@ -17,7 +17,6 @@ import {
 } from "@Heimdallone/db/schema/hr-core";
 import { leaveRequest, leaveType } from "@Heimdallone/db/schema/leave";
 import {
-	countryPayrollProfile,
 	loan,
 	loanInstallment,
 	payItem,
@@ -38,6 +37,12 @@ import type {
 	PayrollSettingInput,
 } from "@Heimdallone/payroll-engine/types";
 import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
+import {
+	mapCountryPayrollProfile,
+	NONE_COUNTRY_PROFILE,
+	resolveProfileById,
+	resolvePublishedProfileForOrgAsOf,
+} from "./payroll-profile-resolver";
 
 // Short, plain-language labels for the exception-summary message (Phase 11G CP2).
 const EXCEPTION_SHORT_LABEL: Record<string, string> = {
@@ -55,7 +60,16 @@ const EXCEPTION_SHORT_LABEL: Record<string, string> = {
 export async function buildPayrollInput(
 	organizationId: string,
 	employeeId: string,
-	periodId: string
+	periodId: string,
+	options?: {
+		/**
+		 * Profile pinned on the payroll run (21G-C). When set, the statutory rule
+		 * is resolved by id so a run reproduces its original ruleset; when absent
+		 * (ad-hoc preview / projection), the rule is resolved by the period's pay
+		 * date.
+		 */
+		pinnedProfileId?: string | null;
+	}
 ): Promise<PayrollInput> {
 	const [emp, workInfo, activeContract, period, settings] = await Promise.all([
 		db
@@ -140,7 +154,11 @@ export async function buildPayrollInput(
 		organizationId,
 		employeeId
 	);
-	const countryProfileInput = await buildCountryProfile(organizationId);
+	const countryProfileInput = await buildCountryProfile(
+		organizationId,
+		period,
+		options?.pinnedProfileId
+	);
 	const settingsInput = buildSettings(settings);
 
 	// Org policy: do open attendance exceptions block payroll? (default true)
@@ -293,73 +311,32 @@ async function buildReimbursementInputs(
 }
 
 async function buildCountryProfile(
-	organizationId: string
+	organizationId: string,
+	period: typeof payPeriod.$inferSelect | undefined,
+	pinnedProfileId?: string | null
 ): Promise<CountryPayrollProfileInput> {
-	// TODO(21G-C): honor the run's pinned countryProfileId / resolve by pay date.
-	// 21G-B only renames isActive -> isPublished (behavior preserved).
-	const profile = await db
-		.select()
-		.from(countryPayrollProfile)
-		.where(
-			and(
-				eq(countryPayrollProfile.organizationId, organizationId),
-				eq(countryPayrollProfile.isPublished, true)
-			)
-		)
-		.limit(1)
-		.then((r) => r[0]);
-
-	if (!profile) {
-		return {
-			countryCode: "NONE",
-			effectiveYear: 0,
-			taxBrackets: [],
-			personalAllowanceFormula: "",
-			personalAllowanceThreshold: 0,
-			childAllowancePerChild: 0,
-			overtimeAllowanceCap: 0,
-			insurancePremiumCapAmount: 0,
-			employeeNISRate: 0,
-			employerNISRate: 0,
-			nisMaxEarnings: 0,
-		};
+	// 1. Honor a run's pinned profile (21G-C): a run computed under one ruleset
+	//    reproduces it even after a newer profile ships. A dangling pin (profile
+	//    since deleted) falls through to resolve-by-date rather than failing.
+	if (pinnedProfileId) {
+		const pinned = await resolveProfileById(organizationId, pinnedProfileId);
+		if (pinned) {
+			return mapCountryPayrollProfile(pinned);
+		}
 	}
 
-	const brackets = profile.taxBrackets as Array<{
-		min: number;
-		max: number | null;
-		rate: number;
-		fixedAmount: number;
-	}>;
-
-	return {
-		countryCode: profile.countryCode,
-		effectiveYear: profile.effectiveYear,
-		taxBrackets: brackets.map((b) => ({
-			min: toCents(b.min),
-			max: b.max === null ? null : toCents(b.max),
-			rate: b.rate,
-			fixedAmount: toCents(b.fixedAmount),
-		})),
-		personalAllowanceFormula: profile.personalAllowanceFormula,
-		personalAllowanceThreshold: toCents(
-			Number(profile.personalAllowanceThreshold ?? 0)
-		),
-		childAllowancePerChild: toCents(
-			Number(profile.childAllowancePerChild ?? 0)
-		),
-		overtimeAllowanceCap: toCents(Number(profile.overtimeAllowanceCap ?? 0)),
-		insurancePremiumCapAmount: toCents(
-			Number(profile.insurancePremiumCapAmount ?? 0)
-		),
-		// Phase 8J.3 fix #2: DB stores NIS rates as percent (e.g. "5.60" for 5.6%)
-		// but the engine's percentOfCents() multiplies cents by a decimal
-		// (so 5.6% must be 0.056). Without this divide-by-100, NIS deductions
-		// land at ~560% of base — a money-correctness bug.
-		employeeNISRate: Number(profile.employeeNISRate) / 100,
-		employerNISRate: Number(profile.employerNISRate) / 100,
-		nisMaxEarnings: toCents(Number(profile.nisMaxEarnings ?? 0)),
-	};
+	// 2. No pin (ad-hoc preview / projection / pre-21G run): resolve the statutory
+	//    rule in force on the period's PAY DATE (fallback to period end), never on
+	//    a mutable "current" flag — so a 2024 period resolves the 2024 rule.
+	const asOf = period?.payDate ?? period?.endDate ?? null;
+	if (!asOf) {
+		return NONE_COUNTRY_PROFILE;
+	}
+	const resolved = await resolvePublishedProfileForOrgAsOf({
+		organizationId,
+		asOf,
+	});
+	return resolved ? mapCountryPayrollProfile(resolved) : NONE_COUNTRY_PROFILE;
 }
 
 function buildSettings(

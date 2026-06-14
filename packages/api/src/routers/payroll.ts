@@ -41,6 +41,10 @@ import { authorizedProcedure, tenantProcedure } from "../index";
 import { createAuditEvent, diffChanges } from "../utils/audit";
 import { resolveCurrentEmployee } from "../utils/employee-scope";
 import { buildPayrollInput } from "../utils/payroll-input-builder";
+import {
+	resolvePublishedProfileForOrgAsOf,
+	ruleVersionLabelFor,
+} from "../utils/payroll-profile-resolver";
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -1346,18 +1350,13 @@ const runsCreateDraft = authorizedProcedure("payroll", "create")
 			throw new ORPCError("NOT_FOUND", { message: "Pay period not found." });
 		}
 
-		// TODO(21G-C): resolve by the period's PAY DATE, not the published flag.
-		// 21G-B only renames isActive -> isPublished (behavior preserved).
-		const [profile] = await db
-			.select()
-			.from(countryPayrollProfile)
-			.where(
-				and(
-					eq(countryPayrollProfile.organizationId, orgId(context)),
-					eq(countryPayrollProfile.isPublished, true)
-				)
-			)
-			.limit(1);
+		// Resolve the statutory rule in force on the period's PAY DATE (21G-C) and
+		// PIN it on the run, so generation reproduces this ruleset even after a
+		// newer profile is published. Pay date falls back to the period end date.
+		const profile = await resolvePublishedProfileForOrgAsOf({
+			organizationId: orgId(context),
+			asOf: period.payDate ?? period.endDate,
+		});
 
 		const [settings] = await db
 			.select()
@@ -1374,6 +1373,7 @@ const runsCreateDraft = authorizedProcedure("payroll", "create")
 			status: "draft",
 			currency: settings?.defaultCurrency ?? "GYD",
 			countryProfileId: profile?.id ?? null,
+			ruleVersionLabel: profile ? ruleVersionLabelFor(profile) : null,
 			generatedBy: actorId(context),
 		});
 
@@ -1388,6 +1388,46 @@ const runsCreateDraft = authorizedProcedure("payroll", "create")
 
 		return { id };
 	});
+
+/**
+ * Resolve the country profile a run's payslips should compute under (21G-C).
+ *
+ * Honors `run.countryProfileId` when present so a run reproduces its original
+ * ruleset. Pre-21G runs carry no pin: resolve the rule in force on the period's
+ * pay date and BACKFILL the run (documented migration fallback) so its statutory
+ * provenance is recorded. Returns the profile id to pin per payslip, or null
+ * when the org has no published profile in force.
+ */
+async function resolveRunProfilePin(
+	organizationId: string,
+	run: typeof payrollRun.$inferSelect,
+	period: typeof payPeriod.$inferSelect
+): Promise<string | null> {
+	if (run.countryProfileId) {
+		return run.countryProfileId;
+	}
+	const resolved = await resolvePublishedProfileForOrgAsOf({
+		organizationId,
+		asOf: period.payDate ?? period.endDate,
+	});
+	if (!resolved) {
+		return null;
+	}
+	await db
+		.update(payrollRun)
+		.set({
+			countryProfileId: resolved.id,
+			ruleVersionLabel: ruleVersionLabelFor(resolved),
+			updatedAt: new Date(),
+		})
+		.where(
+			and(
+				eq(payrollRun.id, run.id),
+				eq(payrollRun.organizationId, organizationId)
+			)
+		);
+	return resolved.id;
+}
 
 const runsPreview = authorizedProcedure("payroll", "update")
 	.input(z.object({ id: z.string() }))
@@ -1427,6 +1467,14 @@ const runsPreview = authorizedProcedure("payroll", "update")
 		if (!period) {
 			throw new ORPCError("NOT_FOUND", { message: "Pay period not found." });
 		}
+
+		// Honor the rule pinned at run-create (21G-C); pre-21G runs are backfilled
+		// by resolving the period's pay date (see resolveRunProfilePin).
+		const pinnedProfileId = await resolveRunProfilePin(
+			orgId(context),
+			run,
+			period
+		);
 
 		const allEmployees = await db
 			.select({ id: employeeProfile.id })
@@ -1468,7 +1516,8 @@ const runsPreview = authorizedProcedure("payroll", "update")
 			const payrollInput = await buildPayrollInput(
 				orgId(context),
 				empId,
-				period.id
+				period.id,
+				{ pinnedProfileId }
 			);
 			const result = calculatePayroll(payrollInput);
 			tallyConfidence(result.confidence);
