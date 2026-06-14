@@ -41,6 +41,7 @@ interface ReportMeta {
 		payslips: number;
 		attendancePunches: number;
 		workSchedules: number;
+		employees: number;
 	};
 }
 
@@ -129,7 +130,7 @@ export function writeEtlReport(
 	if (json.sourceJson) {
 		lines.push("## Source-JSON staging (fields with no v2 app-table home)");
 		lines.push(
-			`- Historical payslips ${json.sourceJson.payslips} · Attendance punches ${json.sourceJson.attendancePunches} · Work schedules ${json.sourceJson.workSchedules}`
+			`- Historical payslips ${json.sourceJson.payslips} · Attendance punches ${json.sourceJson.attendancePunches} · Work schedules ${json.sourceJson.workSchedules} · Employees (full row, incl. statutory fields) ${json.sourceJson.employees}`
 		);
 		lines.push("");
 	}

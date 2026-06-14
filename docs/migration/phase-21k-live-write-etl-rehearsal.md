@@ -62,7 +62,8 @@ Source swapped from synthetic to the new **v1-readonly loader**
 | Netsurf | 20 | 15 (14) | 175 | 11/47 (✅) | 6 |
 | **Scratch totals** | **23** | **18** | **175** | **11/47** | **6** |
 
-Also created: 2 organizations, 15 users, 15 members, 10 GL accounts.
+Also created: 2 organizations, 15 users, 15 members, **11 GL accounts** (all v1
+accounts mapped — v1 `revenue` → v2 `income`).
 
 **Records read → written:** v1 read 23 employees / 29 users / 33 assignments / 11
 accounts / 13 journals / 53 lines / 14 notifications / 175 roster / 6 schedules /
@@ -71,30 +72,51 @@ active per employee; notifications filtered to migrated users).
 
 ### Source-JSON staging (no v2 app-table home yet)
 
-Parked in `migration_source_*` JSONB (preserved as source, computed forward):
-**69 historical payslips · 891 attendance punches · 6 work_schedules**.
+Parked in `migration_source_*` JSONB (preserved losslessly as source, computed
+forward): **69 historical payslips · 891 attendance punches · 6 work_schedules ·
+23 employees (full row)**. The employee rows carry the **11 statutory fields**
+(TIN/NIS/qualifying_children/second_job/medical/bank) that v2's employee schema
+does not yet model — preserved here until the statutory-fields build, so nothing
+is dropped.
 
-## 5. Failed / excluded mappings (3)
+## 5. Failed / excluded mappings (2)
 
 | Tenant | Kind | Reason |
 | --- | --- | --- |
-| netsurf | account | unmapped account type (1 of 11) |
 | netsurf | journal | imbalanced (v1 bug — excluded) |
 | netsurf | journal | line not single-sided (v1 quirk — excluded) |
 
-These are v1 data-quality issues excluded by design (capture v1 intent, not v1
-bugs). 10/11 accounts and 11/13 journals migrated; all migrated journals balance.
+These are genuine v1 data-quality defects excluded by design (capture v1 intent,
+not v1 bugs). **11/11 accounts** and **11/13 journals** migrated; all migrated
+journals balance. The 2 excluded journals are part of the same v1 reversal churn
+already classified `v1_bug` in reconciliation.
+
+> **Refinement (2026-06-14, follow-up):** added the `revenue→income` account-type
+> mapping (recovered the 1 previously-excluded account → 11/11) and full-employee
+> source-JSON staging (preserves the 11 statutory fields). Excluded mappings
+> 3 → 2; both remaining are true v1-bug journals.
 
 ## 6. Manual-review items (carried forward)
 
-- 11 statutory employee fields (TIN/NIS/qualifying_children/second_job/medical)
-  — payroll-correctness review before live cutover.
-- 6 employees had no v1 email → deterministic non-deliverable placeholders
-  (`migrated-<id>@migrated.invalid`); confirm real addresses pre-cutover.
-- 1 unmapped GL account type + 2 excluded v1 journals — confirm chart-of-accounts
-  mapping + opening-balance treatment.
-- work_schedules richness (night-diff/split-shift/Saturday/OT) staged as source
-  JSON — wire into v2 roster/payroll where pay-affecting.
+These need owner ground-truth or a scoped build — they are **not** completable by
+the ETL alone:
+
+- **11 statutory employee fields** (TIN/NIS/qualifying_children/second_job/medical
+  /bank) — now **preserved losslessly** in `migration_source_employee` JSONB, but
+  v2's employee schema has **no homes** for them yet. Needs a scoped
+  statutory-fields **schema build** (migration + employee columns + payroll-engine
+  wiring, e.g. `qualifying_children` → child allowance) with owner-reviewed
+  correctness. Deferred build, not a quick map. *(Owner sign-off + build.)*
+- **6 employees with no v1 email** → deterministic non-deliverable placeholders
+  (`migrated-<id>@migrated.invalid`). Confirm real addresses pre-cutover.
+  *(Owner ground-truth — addresses don't exist in v1.)*
+- **2 excluded v1 journals** — genuine v1 bugs (imbalanced / non-single-sided),
+  part of the reversal churn. Confirm opening-balance treatment. *(Owner
+  decision; correctly excluded by design.)* The previously-unmapped account is
+  **resolved** (revenue→income).
+- **work_schedules richness** (night-diff/split-shift/Saturday/OT) staged as
+  source JSON — wire into v2 roster/payroll where pay-affecting. *(Scoped
+  roster/payroll build.)*
 
 ## 7. Verification results
 

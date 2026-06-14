@@ -49,6 +49,12 @@ const VALID_ACCOUNT_TYPES = new Set([
 	"income",
 	"expense",
 ]);
+// v1 chart-of-accounts type names → v2 gl_account_type enum. v1 says "revenue",
+// v2's enum is "income" (same concept). Extend here for other tenants' charts.
+const ACCOUNT_TYPE_MAP: Record<string, string> = {
+	revenue: "income",
+	sales: "income",
+};
 
 /** Normalise a v1 date/timestamp value to a YYYY-MM-DD string. */
 function ymd(v: unknown): string {
@@ -234,12 +240,14 @@ async function loadAccounts(
 	const accounts: V1Account[] = [];
 	for (const r of rows) {
 		codeById.set(r.id as string, r.code as string);
-		if (!VALID_ACCOUNT_TYPES.has(String(r.type))) {
+		const rawType = String(r.type);
+		const type = ACCOUNT_TYPE_MAP[rawType] ?? rawType;
+		if (!VALID_ACCOUNT_TYPES.has(type)) {
 			failures.push({
 				tenantSlug: slug,
 				kind: "account",
 				id: r.id,
-				reason: "unmapped account type",
+				reason: `unmapped account type "${rawType}"`,
 			});
 			continue;
 		}
@@ -247,7 +255,7 @@ async function loadAccounts(
 			id: r.id as string,
 			code: r.code as string,
 			name: (r.name as string) ?? r.code,
-			type: String(r.type) as V1Account["type"],
+			type: type as V1Account["type"],
 		});
 	}
 	return { accounts, codeById };
@@ -407,9 +415,12 @@ export async function loadV1Tenants(
 }
 
 /**
- * Stage v1 rows that have NO v2 app-table home into the scratch
- * migration_source_* JSONB tables (preserved as source for later mapping):
- * historical payslips, attendance punches, and the richer v1 work_schedules.
+ * Stage v1 rows that have NO v2 app-table home (or fields with no v2 home yet)
+ * into the scratch migration_source_* JSONB tables — preserved losslessly as
+ * source for later mapping: historical payslips, attendance punches, the richer
+ * v1 work_schedules, and the FULL employees row (carries the 11 statutory fields
+ * — TIN/NIS/qualifying_children/second_job/medical — that v2's employee schema
+ * does not yet model; they ride along here until the statutory-fields build).
  */
 export async function stageSourceJson(
 	v1: Client,
@@ -418,8 +429,14 @@ export async function stageSourceJson(
 	payslips: number;
 	attendancePunches: number;
 	workSchedules: number;
+	employees: number;
 }> {
-	const counts = { payslips: 0, attendancePunches: 0, workSchedules: 0 };
+	const counts = {
+		payslips: 0,
+		attendancePunches: 0,
+		workSchedules: 0,
+		employees: 0,
+	};
 	const jobs: Array<{ table: string; sql: string; key: keyof typeof counts }> =
 		[
 			{
@@ -436,6 +453,11 @@ export async function stageSourceJson(
 				table: "migration_source_work_schedule",
 				sql: "SELECT * FROM work_schedules",
 				key: "workSchedules",
+			},
+			{
+				table: "migration_source_employee",
+				sql: "SELECT * FROM employees WHERE deleted_at IS NULL",
+				key: "employees",
 			},
 		];
 	for (const job of jobs) {

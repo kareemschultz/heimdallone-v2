@@ -9,19 +9,18 @@
 | Tenant | Emp | Contracts (fortnightly) | Roster (approved) | Accounts | Journals/Lines | Notifs | GL balanced |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | flas-hxn1 | 3 | 3 (3) | 0 (0) | 0 | 0/0 | 0 | ✅ |
-| netsurf | 20 | 15 (14) | 175 (175) | 10 | 11/47 | 6 | ✅ |
+| netsurf | 20 | 15 (14) | 175 (175) | 11 | 11/47 | 6 | ✅ |
 
 ## Totals
 - Employees 23 · Contracts 18 (fortnightly 17) · Roster 175
-- GL accounts 10 · Journals 11 / lines 47 · Notifications 6
+- GL accounts 11 · Journals 11 / lines 47 · Notifications 6
 
 ## Source-JSON staging (fields with no v2 app-table home)
-- Historical payslips 69 · Attendance punches 891 · Work schedules 6
+- Historical payslips 69 · Attendance punches 891 · Work schedules 6 · Employees (full row, incl. statutory fields) 23
 
-## Failed / excluded mappings (3)
+## Failed / excluded mappings (2)
 | Tenant | Kind | Id | Reason |
 | --- | --- | --- | --- |
-| netsurf | account | d084c02e-377f-4567-a069-9cb73c9283df | unmapped account type |
 | netsurf | journal | b2efdd1b-09d4-4ece-a0bd-5796110ae6a2 | imbalanced (v1 bug — excluded) |
 | netsurf | journal | f8f42e15-d9dc-4090-a65a-dc1aec88c946 | line not single-sided (v1 quirk — excluded) |
 

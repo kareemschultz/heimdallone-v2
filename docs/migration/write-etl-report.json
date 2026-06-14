@@ -10,12 +10,6 @@
   "failures": [
     {
       "tenantSlug": "netsurf",
-      "kind": "account",
-      "id": "d084c02e-377f-4567-a069-9cb73c9283df",
-      "reason": "unmapped account type"
-    },
-    {
-      "tenantSlug": "netsurf",
       "kind": "journal",
       "id": "b2efdd1b-09d4-4ece-a0bd-5796110ae6a2",
       "reason": "imbalanced (v1 bug — excluded)"
@@ -30,7 +24,8 @@
   "sourceJson": {
     "payslips": 69,
     "attendancePunches": 891,
-    "workSchedules": 6
+    "workSchedules": 6,
+    "employees": 23
   },
   "tenants": [
     {
@@ -63,7 +58,7 @@
       "shifts": 6,
       "rosterEntries": 175,
       "rosterApproved": 175,
-      "accounts": 10,
+      "accounts": 11,
       "journals": 11,
       "journalLines": 47,
       "notifications": 6,
@@ -75,7 +70,7 @@
     "contracts": 18,
     "fortnightlyContracts": 17,
     "rosterEntries": 175,
-    "accounts": 10,
+    "accounts": 11,
     "journals": 11,
     "journalLines": 47,
     "notifications": 6

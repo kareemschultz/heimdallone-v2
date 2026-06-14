@@ -247,7 +247,12 @@ async function main() {
 	let tenants = SYNTHETIC_TENANTS;
 	let failures: MappingFailure[] = [];
 	let sourceJson:
-		| { payslips: number; attendancePunches: number; workSchedules: number }
+		| {
+				payslips: number;
+				attendancePunches: number;
+				workSchedules: number;
+				employees: number;
+		  }
 		| undefined;
 	let v1Client: Awaited<ReturnType<typeof openV1ReadOnly>> | null = null;
 	let source = "synthetic (no live v1 / no production writes)";
@@ -265,7 +270,8 @@ async function main() {
 			sourceJson = await stageSourceJson(v1Client, pool);
 			process.stdout.write(
 				`[write-etl] staged source JSON — payslips ${sourceJson.payslips}, ` +
-					`attendance ${sourceJson.attendancePunches}, work_schedules ${sourceJson.workSchedules}\n`
+					`attendance ${sourceJson.attendancePunches}, work_schedules ${sourceJson.workSchedules}, ` +
+					`employees ${sourceJson.employees}\n`
 			);
 		}
 
