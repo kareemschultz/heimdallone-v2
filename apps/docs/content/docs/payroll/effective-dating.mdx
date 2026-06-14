@@ -87,6 +87,15 @@ When a historical payslip was computed under the wrong or missing rule, it can b
   to the correct effective-dated rule.
 </Callout>
 
+<Callout type="info" title="Status">
+  The correction engine is <Tag>Live</Tag>: recompute-by-pay-date, the per-component
+  diff, the admin-only transactional apply, the immutable original, and the recorded
+  GL adjustment obligation all work via the payroll API. The general-ledger entry is
+  posted through the Finance/GL module (payroll records the obligation but never
+  writes the ledger). The in-product admin screens for running corrections are being
+  finished (21G-F).
+</Callout>
+
 ## What you'll see
 
 <Tabs items={["Admin", "Employee", "Auditor"]}>

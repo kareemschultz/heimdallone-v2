@@ -1,6 +1,20 @@
 # Phase 21G — Effective-Dated Policy & Rule Resolution (cross-module)
 
-**Status:** 21G-A spec ✅ · 21G-B schema/migration 0023 ✅ · 21G-C payroll resolve-by-date ✅ · 21G-D leave resolve-by-date + server-computed days ✅ · **21G-E workweek/weekend classifier from tenant config ✅ (delivered).** · **Date:** 2026-06-14 · §10 Q1/Q2 owner-decided.
+**Status:** 21G-A spec ✅ · 21G-B schema/migration 0023 ✅ · 21G-C payroll resolve-by-date ✅ · 21G-D leave resolve-by-date + server-computed days ✅ · 21G-E workweek/weekend classifier ✅ · **21G-G historical payslip correction (API) ✅ (delivered).** · **Date:** 2026-06-14 · §10 Q1/Q2 owner-decided.
+
+> **21G-G delivered (correction API/core).** `payroll.corrections.{preview,apply,list,getById}` +
+> exported core `computeCorrection` / `applyPayslipCorrection` + pure `buildComponentDeltas`
+> (`packages/api/src/utils/payslip-correction.ts`). **preview** recomputes an issued payslip under the
+> rule resolved by its PAY DATE (never the original run's possibly-wrong pin) and diffs per component
+> (gross / taxableGross / totalDeductions / net / employer contributions) — read-only. **apply** (admin,
+> `payroll:update`) is transactional: inserts `payslip_correction` (reason + resolved historical rule +
+> ruleVersionLabel + componentDeltas) and sets ONLY the original's sanctioned `supersededByCorrectionId`
+> back-pointer — **the original issued values are never mutated** (Migration Rule). The GL adjustment is
+> recorded as an **explicit obligation** (`glAdjustmentStatus` `not_required`/`pending` + net delta);
+> **payroll never writes the ledger** (cross-module guardrail) — posting happens via the GL module.
+> Double-correction and no-change are blocked. Reuses `payroll:read/update` → **audit stays 161/21**.
+> Proof: `verify:payslip-correction` 11/11 (pure deltas + DB lifecycle: read-only preview, txn apply,
+> original immutable, GL obligation, double-block). UI surfacing = 21G-F.
 
 > **21G-E delivered.** `classifyDayType` (`packages/api/src/utils/attendance-recalc.ts`) no longer hardcodes
 > Sat=6/Sun=0 — it reads `payrollSetting.weekendDays` (ISO) + the org holiday calendar via new
@@ -305,7 +319,7 @@ The config already exists — the bug is one classifier ignoring it.
 | **21G-D ✅** | Leave resolve-by-date + server-computed days | **DONE.** `leave-policy-resolver.ts` (`resolveLeavePolicyAsOf`, reuses `resolveAsOf`, no migration) + `leave-days.ts` (`countLeaveDays`); `getPolicyHealth` resolves as-of today; `requestsCreate` server-authoritative day count (H10, client advisory); `verify:leave-resolver` 13/13; audit stays 161/21 |
 | **21G-E ✅** | Tenant workweek/weekend | **DONE.** `classifyDayType` reads `payrollSetting.weekendDays` + holiday calendar via `resolveDayTypeConfig`; OT buckets from config (holiday wins, Sunday distinct, other rest days → saturday bucket); default Sat/Sun unchanged; `holiday` bucket now populated; `verify:workweek` 13/13; audit stays 161/21 |
 | **21G-F** | UI surfacing | Payslip/run + leave detail show the resolved rule-version label honestly; payslip detail shows original-vs-corrected when superseded; payroll settings expose `weekendDays`; no fake data |
-| **21G-G** | Historical payslip correction workflow (Q1) | `payslip_correction` table + reason/GL-status enums (21G-B); identify→resolve→recompute→preview→approve→apply-in-txn; immutable original + corrected record + per-component deltas; explicit GL adjustment via `gl` router; audit events; exportable report; admin-only |
+| **21G-G ✅** | Historical payslip correction workflow (Q1) | **DONE (API/core).** `payroll.corrections.{preview,apply,list,getById}` + `applyPayslipCorrection`/`computeCorrection` + pure `buildComponentDeltas`; recompute-by-pay-date → per-component deltas; txn apply; immutable original (back-pointer only); GL adjustment as obligation (`pending`/`not_required`, posted via GL module — payroll never writes the ledger); admin-only; double/no-change blocked; `verify:payslip-correction` 11/11; audit stays 161/21. Deferred: corrected-payslip row + GL posting + exportable report (UI = 21G-F) |
 | **21G-I** | QA / RBAC / security / browser pass | parallel read-only review agents; reconcile regression 46/46; correction workflow audited (original never mutated, no silent recompute, txn-or-nothing, GL adjustment explicit); close Phase 21G |
 
 ---

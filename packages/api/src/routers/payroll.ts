@@ -18,6 +18,7 @@ import {
 	payrollRun,
 	payrollSetting,
 	payslip,
+	payslipCorrection,
 	payslipLineItem,
 	reimbursement,
 } from "@Heimdallone/db/schema/payroll";
@@ -45,6 +46,10 @@ import {
 	resolvePublishedProfileForOrgAsOf,
 	ruleVersionLabelFor,
 } from "../utils/payroll-profile-resolver";
+import {
+	buildComponentDeltas,
+	type CorrectionComponent,
+} from "../utils/payslip-correction";
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -3004,6 +3009,274 @@ const paymentBatchesGenerateCsv = authorizedProcedure("payroll", "read")
 // ROUTER EXPORT
 // ═══════════════════════════════════════════════════════════════
 
+// ═══════════════════════════════════════════════════════════════
+// 11. HISTORICAL PAYSLIP CORRECTION (21G-G)
+// ═══════════════════════════════════════════════════════════════
+
+const CORRECTION_REASONS = [
+	"missing_effective_rule",
+	"wrong_proration",
+	"engine_bug",
+	"data_fix",
+	"other",
+] as const;
+
+/**
+ * Recompute an issued payslip under the CORRECT effective-dated rule (resolved by
+ * its pay date) and diff it against the stored original. Pure read — no writes.
+ * Shared by preview and apply so they can never diverge.
+ */
+export async function computeCorrection(
+	organizationId: string,
+	payslipId: string
+) {
+	const [original] = await db
+		.select()
+		.from(payslip)
+		.where(
+			and(eq(payslip.id, payslipId), eq(payslip.organizationId, organizationId))
+		)
+		.limit(1);
+	if (!original) {
+		throw new ORPCError("NOT_FOUND", { message: "Payslip not found." });
+	}
+
+	const [run] = await db
+		.select()
+		.from(payrollRun)
+		.where(
+			and(
+				eq(payrollRun.id, original.payrollRunId),
+				eq(payrollRun.organizationId, organizationId)
+			)
+		)
+		.limit(1);
+	const [period] = run
+		? await db
+				.select()
+				.from(payPeriod)
+				.where(
+					and(
+						eq(payPeriod.id, run.payPeriodId),
+						eq(payPeriod.organizationId, organizationId)
+					)
+				)
+				.limit(1)
+		: [];
+	if (!period) {
+		throw new ORPCError("NOT_FOUND", {
+			message: "Pay period for this payslip not found.",
+		});
+	}
+
+	// The bug being corrected is exactly "wrong/missing rule", so resolve the
+	// CORRECT rule by the pay date — never reuse the original run's (possibly
+	// wrong) pin.
+	const asOf = period.payDate ?? period.endDate ?? original.periodEnd;
+	const profile = await resolvePublishedProfileForOrgAsOf({
+		organizationId,
+		asOf,
+	});
+	if (!profile) {
+		throw new ORPCError("PRECONDITION_FAILED", {
+			message: `No published payroll profile in force on ${asOf.toISOString().slice(0, 10)} to recompute against.`,
+		});
+	}
+
+	const payrollInput = await buildPayrollInput(
+		organizationId,
+		original.employeeId,
+		period.id,
+		{ pinnedProfileId: profile.id }
+	);
+	const result = calculatePayroll(payrollInput);
+
+	const originalValues: Record<CorrectionComponent, number> = {
+		grossPay: Number(original.grossPay),
+		taxableGross: Number(original.taxableGross),
+		totalDeductions: Number(original.totalDeductions),
+		netPay: Number(original.netPay),
+		employerContributions: Number(original.totalEmployerContributions),
+	};
+	const correctedValues: Record<CorrectionComponent, number> = {
+		grossPay: fromCents(result.grossPay),
+		taxableGross: fromCents(result.taxableGross),
+		totalDeductions: fromCents(result.totalDeductions),
+		netPay: fromCents(result.netPay),
+		employerContributions: fromCents(result.totalEmployerContributions),
+	};
+	const { deltas, netDelta, hasChanges } = buildComponentDeltas(
+		originalValues,
+		correctedValues
+	);
+
+	return {
+		original,
+		profile,
+		ruleVersionLabel: ruleVersionLabelFor(profile),
+		deltas,
+		netDelta,
+		hasChanges,
+	};
+}
+
+const correctionsPreview = authorizedProcedure("payroll", "read")
+	.input(z.object({ payslipId: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const c = await computeCorrection(orgId(context), input.payslipId);
+		return {
+			payslipId: input.payslipId,
+			alreadyCorrected: Boolean(c.original.supersededByCorrectionId),
+			ruleVersionLabel: c.ruleVersionLabel,
+			resolvedProfileId: c.profile.id,
+			componentDeltas: c.deltas,
+			netDelta: c.netDelta,
+			hasChanges: c.hasChanges,
+		};
+	});
+
+/**
+ * Apply a historical payslip correction (21G-G), transactionally. Writes ONLY
+ * payroll tables: the payslip_correction record + the original's sanctioned
+ * back-pointer. The GL adjustment is recorded as an obligation (never posted by
+ * payroll — the cross-module guardrail). Throws on already-corrected / no-change.
+ */
+export async function applyPayslipCorrection(
+	organizationId: string,
+	actorUserId: string,
+	input: {
+		payslipId: string;
+		reasonCode: (typeof CORRECTION_REASONS)[number];
+		reasonNote?: string;
+	}
+): Promise<{ id: string; netDelta: number; glAdjustmentStatus: string }> {
+	const c = await computeCorrection(organizationId, input.payslipId);
+
+	if (c.original.supersededByCorrectionId) {
+		throw new ORPCError("CONFLICT", {
+			message: "This payslip has already been corrected.",
+		});
+	}
+	if (!c.hasChanges) {
+		throw new ORPCError("PRECONDITION_FAILED", {
+			message:
+				"Recomputing under the correct rule produced no changes — nothing to correct.",
+		});
+	}
+
+	// GL adjustment is an explicit OBLIGATION recorded here; posting happens via
+	// the GL module (payroll never writes the ledger — cross-module guardrail).
+	const glAdjustmentStatus = c.netDelta === 0 ? "not_required" : "pending";
+
+	const correctionId = createId();
+	await db.transaction(async (tx) => {
+		await tx.insert(payslipCorrection).values({
+			id: correctionId,
+			organizationId,
+			originalPayslipId: input.payslipId,
+			correctedPayslipId: null,
+			correctionRunId: null,
+			reasonCode: input.reasonCode,
+			reasonNote: input.reasonNote ?? null,
+			resolvedProfileId: c.profile.id,
+			ruleVersionLabel: c.ruleVersionLabel,
+			glAdjustmentStatus,
+			componentDeltas: c.deltas,
+			correctedBy: actorUserId,
+		});
+		// The ONLY sanctioned mutation of the immutable original: its back-pointer.
+		await tx
+			.update(payslip)
+			.set({ supersededByCorrectionId: correctionId, updatedAt: new Date() })
+			.where(
+				and(
+					eq(payslip.id, input.payslipId),
+					eq(payslip.organizationId, organizationId)
+				)
+			);
+	});
+
+	await createAuditEvent(db as never, {
+		organizationId,
+		entityType: "payslip",
+		entityId: input.payslipId,
+		action: "update",
+		actorId: actorUserId,
+		metadata: {
+			correction: correctionId,
+			reasonCode: input.reasonCode,
+			netDelta: c.netDelta,
+			ruleVersionLabel: c.ruleVersionLabel,
+			glAdjustmentStatus,
+		},
+	});
+
+	return { id: correctionId, netDelta: c.netDelta, glAdjustmentStatus };
+}
+
+const correctionsApply = authorizedProcedure("payroll", "update")
+	.input(
+		z.object({
+			payslipId: z.string(),
+			reasonCode: z.enum(CORRECTION_REASONS),
+			reasonNote: z.string().optional(),
+		})
+	)
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", {
+				message: "Only payroll administrators can correct payslips.",
+			});
+		}
+		return await applyPayslipCorrection(
+			orgId(context),
+			actorId(context),
+			input
+		);
+	});
+
+const correctionsList = authorizedProcedure("payroll", "read")
+	.input(z.object({ payslipId: z.string().optional() }).optional())
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const conditions = [eq(payslipCorrection.organizationId, orgId(context))];
+		if (input?.payslipId) {
+			conditions.push(eq(payslipCorrection.originalPayslipId, input.payslipId));
+		}
+		return await db
+			.select()
+			.from(payslipCorrection)
+			.where(and(...conditions))
+			.orderBy(desc(payslipCorrection.correctedAt));
+	});
+
+const correctionsGetById = authorizedProcedure("payroll", "read")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		if (!canManagePayroll(role(context))) {
+			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
+		}
+		const [row] = await db
+			.select()
+			.from(payslipCorrection)
+			.where(
+				and(
+					eq(payslipCorrection.id, input.id),
+					eq(payslipCorrection.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!row) {
+			throw new ORPCError("NOT_FOUND", { message: "Correction not found." });
+		}
+		return row;
+	});
+
 export const payrollRouter = {
 	settings: {
 		get: settingsGet,
@@ -3059,6 +3332,12 @@ export const payrollRouter = {
 		getOwn: payslipsGetOwn,
 		getOwnById: payslipsGetOwnById,
 		previewEmployee: payslipsPreviewEmployee,
+	},
+	corrections: {
+		preview: correctionsPreview,
+		apply: correctionsApply,
+		list: correctionsList,
+		getById: correctionsGetById,
 	},
 	issues: {
 		list: issuesList,
