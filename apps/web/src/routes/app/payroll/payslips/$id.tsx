@@ -398,6 +398,8 @@ function PayslipDetailPage() {
 				</div>
 			</div>
 
+			<CorrectionPanel canManage={canManage} payslipId={id} />
+
 			{/* Calculation explanation — screen only, not printed, collapsible */}
 			{explanations.length > 0 && (
 				<details className="emp-table no-print" style={{ marginTop: 14 }}>
@@ -429,6 +431,171 @@ function PayslipDetailPage() {
 					</div>
 				</details>
 			)}
+		</div>
+	);
+}
+
+const CORRECTION_COMPONENT_LABELS: Record<string, string> = {
+	grossPay: "Gross pay",
+	taxableGross: "Taxable gross",
+	totalDeductions: "Total deductions",
+	netPay: "Net pay",
+	employerContributions: "Employer contributions",
+};
+
+const CORRECTION_REASON_LABELS: Record<string, string> = {
+	missing_effective_rule: "Missing effective rule",
+	wrong_proration: "Wrong proration",
+	engine_bug: "Engine bug",
+	data_fix: "Data fix",
+	other: "Other",
+};
+
+const GL_STATUS_LABELS: Record<string, string> = {
+	not_required: "No ledger adjustment needed",
+	pending: "Ledger adjustment pending (post via Finance)",
+	posted: "Ledger adjustment posted",
+	failed: "Ledger adjustment failed",
+};
+
+function fmtMoney(n: number): string {
+	return n.toLocaleString(undefined, {
+		minimumFractionDigits: 2,
+		maximumFractionDigits: 2,
+	});
+}
+
+function deltaColor(delta: number): string {
+	if (delta === 0) {
+		return "var(--fg-3)";
+	}
+	return delta > 0 ? "var(--success)" : "var(--warning)";
+}
+
+/**
+ * Read-only original-vs-corrected view (21G-F). The issued payslip above is the
+ * immutable original; this panel shows what a correction changed, per component,
+ * with the historical rule used and the ledger-adjustment status.
+ */
+function CorrectionPanel({
+	payslipId,
+	canManage,
+}: {
+	payslipId: string;
+	canManage: boolean;
+}) {
+	const query = useQuery({
+		...orpc.payroll.corrections.list.queryOptions({
+			input: { payslipId },
+		}),
+		enabled: canManage,
+	});
+
+	if (!canManage) {
+		return null;
+	}
+	const corrections = (query.data ?? []) as Record<string, unknown>[];
+	if (query.isLoading || corrections.length === 0) {
+		return null;
+	}
+
+	return (
+		<div className="emp-table no-print" style={{ marginTop: 14 }}>
+			<div className="emp-head">
+				<span style={{ fontWeight: 600, fontSize: 14 }}>Corrections</span>
+				<span style={{ fontSize: 11, color: "var(--fg-3)" }}>
+					Original issued figures are preserved above and never changed.
+				</span>
+			</div>
+			<div style={{ padding: 16, display: "grid", gap: 16 }}>
+				{corrections.map((c) => {
+					const deltas = (c.componentDeltas ?? {}) as Record<
+						string,
+						{ original: number; corrected: number; delta: number }
+					>;
+					return (
+						<div
+							key={c.id as string}
+							style={{
+								border: "1px solid var(--line)",
+								borderRadius: 10,
+								overflow: "hidden",
+							}}
+						>
+							<div
+								style={{
+									display: "flex",
+									flexWrap: "wrap",
+									gap: 12,
+									padding: "10px 14px",
+									background: "var(--bg-1)",
+									fontSize: 12,
+								}}
+							>
+								<span>
+									<strong>Reason:</strong>{" "}
+									{CORRECTION_REASON_LABELS[c.reasonCode as string] ??
+										(c.reasonCode as string)}
+								</span>
+								<span>
+									<strong>Rule:</strong> {(c.ruleVersionLabel as string) ?? "—"}
+								</span>
+								<span>
+									<strong>Ledger:</strong>{" "}
+									{GL_STATUS_LABELS[c.glAdjustmentStatus as string] ??
+										(c.glAdjustmentStatus as string)}
+								</span>
+								<span style={{ color: "var(--fg-3)" }}>
+									{fmtDate(c.correctedAt as string)}
+								</span>
+							</div>
+							{Boolean(c.reasonNote) && (
+								<div
+									style={{
+										padding: "8px 14px",
+										fontSize: 12,
+										color: "var(--fg-3)",
+									}}
+								>
+									{c.reasonNote as string}
+								</div>
+							)}
+							<table className="data-table" style={{ width: "100%" }}>
+								<thead>
+									<tr>
+										<th>Component</th>
+										<th style={{ textAlign: "right" }}>Original</th>
+										<th style={{ textAlign: "right" }}>Corrected</th>
+										<th style={{ textAlign: "right" }}>Change</th>
+									</tr>
+								</thead>
+								<tbody>
+									{Object.entries(deltas).map(([key, d]) => (
+										<tr key={key}>
+											<td>{CORRECTION_COMPONENT_LABELS[key] ?? key}</td>
+											<td style={{ textAlign: "right" }}>
+												{fmtMoney(d.original)}
+											</td>
+											<td style={{ textAlign: "right" }}>
+												{fmtMoney(d.corrected)}
+											</td>
+											<td
+												style={{
+													textAlign: "right",
+													color: deltaColor(d.delta),
+												}}
+											>
+												{d.delta > 0 ? "+" : ""}
+												{fmtMoney(d.delta)}
+											</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					);
+				})}
+			</div>
 		</div>
 	);
 }

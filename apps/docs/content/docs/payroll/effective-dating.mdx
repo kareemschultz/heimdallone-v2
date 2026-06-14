@@ -92,8 +92,11 @@ When a historical payslip was computed under the wrong or missing rule, it can b
   diff, the admin-only transactional apply, the immutable original, and the recorded
   GL adjustment obligation all work via the payroll API. The general-ledger entry is
   posted through the Finance/GL module (payroll records the obligation but never
-  writes the ledger). The in-product admin screens for running corrections are being
-  finished (21G-F).
+  writes the ledger). In the product, a corrected payslip shows an **original →
+  corrected → change** breakdown with the reason, the historical rule used, and the
+  ledger-adjustment status, and the payroll run shows the **statutory rule version**
+  it was pinned to. Running a correction from a button in the payslip screen is the
+  remaining UI step.
 </Callout>
 
 ## What you'll see

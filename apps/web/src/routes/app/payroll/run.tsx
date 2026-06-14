@@ -1123,9 +1123,9 @@ function FinalizeStep({
 		orpc.payroll.runs.getById.queryOptions({ input: { id: runId } })
 	);
 
-	const runStatus = (run as Record<string, unknown> | undefined)?.status as
-		| string
-		| undefined;
+	const runRow = run as Record<string, unknown> | undefined;
+	const runStatus = runRow?.status as string | undefined;
+	const ruleVersionLabel = runRow?.ruleVersionLabel as string | undefined;
 	const isConfirmed = runStatus === "confirmed" || runStatus === "paid";
 
 	if (isConfirmed) {
@@ -1148,6 +1148,11 @@ function FinalizeStep({
 				<div style={{ fontSize: 12, color: "var(--fg-4)" }}>
 					Run ID: {runId}
 				</div>
+				{ruleVersionLabel && (
+					<div style={{ fontSize: 12, color: "var(--fg-4)", marginTop: 4 }}>
+						Statutory rule: {ruleVersionLabel}
+					</div>
+				)}
 			</div>
 		);
 	}
@@ -1173,6 +1178,22 @@ function FinalizeStep({
 					confirmed, payslips will be locked and visible to employees. Ensure
 					all blockers are resolved and previews are reviewed before proceeding.
 				</div>
+
+				{ruleVersionLabel && (
+					<div
+						style={{
+							marginBottom: 20,
+							fontSize: 12.5,
+							color: "var(--fg-3)",
+						}}
+					>
+						Statutory rule version:{" "}
+						<strong style={{ color: "var(--fg-2)" }}>{ruleVersionLabel}</strong>
+						<span style={{ marginLeft: 8, fontSize: 11, color: "var(--fg-4)" }}>
+							Resolved by pay date and pinned to this run.
+						</span>
+					</div>
+				)}
 
 				<div className="sum-row" style={{ marginBottom: 20 }}>
 					<div className="sum-card">
