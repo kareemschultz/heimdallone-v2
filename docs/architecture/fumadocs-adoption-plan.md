@@ -18,10 +18,15 @@ starter module structure + tag system in place. · **Date:** 2026-06-13 · **Rul
   (it self-lints via its own biome).
 - **Docs build passes** (13 pages prerendered). The `apps/web` docs route is **not** replaced yet (safe).
 
-### D1 docs debt (→ D2)
-- 3 lint warnings remain in **generated** Fumadocs/TanStack files (`__root.tsx` unused import + html-lang,
-  `app.css` 2× !important, `docs/$.tsx` hook-at-top-level) — left untouched to avoid destabilising the
-  generated build; clean up in D2.
+### D2 lint cleanup (done, commit `7215341`)
+- The 2 generated-file lint **errors** are cleared: `__root.tsx` `<html lang>` (a11y) + dropped unused
+  React import + fixed leftover template `<title>`; `docs/$.tsx` `useMDXComponents()` → `getMDXComponents()`
+  (not a real hook — sidesteps `useHookAtTopLevel`). `docs lint` now exits 0.
+- **Remaining (intentional, non-blocking):** 2 warnings on `app.css` `!important`
+  (`[data-scroll-locked]` / `--removed-body-scroll-bar-size`) — Fumadocs' `react-remove-scroll` reset;
+  flagged "unsafe fix", behavior-critical, kept on purpose.
+
+### Remaining docs debt
 - nitro build preset is `vercel` (template default); set the self-host preset + docs domain at deploy.
 - Per-module deep pages (D3/D4) and the `apps/web` `docs.tsx` content migration + retirement still pending.
 
