@@ -30,6 +30,7 @@ import {
 import {
 	contract,
 	employeeProfile,
+	employeeStatutory,
 	shift,
 } from "../../../packages/db/src/schema/hr-core";
 import { notification } from "../../../packages/db/src/schema/notification";
@@ -52,6 +53,7 @@ import {
 	mapOrganization,
 	mapRosterEntry,
 	mapShift,
+	mapStatutory,
 	mapUser,
 	type V1TenantSource,
 } from "./transformers";
@@ -71,6 +73,8 @@ type TenantCounts = {
 	users: number;
 	members: number;
 	employees: number;
+	statutory: number;
+	noLogin: number;
 	contracts: number;
 	fortnightlyContracts: number;
 	shifts: number;
@@ -123,10 +127,19 @@ async function loadTenant(db: Db, src: V1TenantSource): Promise<TenantCounts> {
 			.values(userRows.map((u) => mapMember(oid, u.id, "employee")));
 	}
 
-	// 3. employees
+	// 3. employees (+ statutory satellite where present)
 	await db
 		.insert(employeeProfile)
 		.values(src.employees.map((e) => mapEmployee(e, oid)));
+	const statutoryRows = src.employees
+		.filter((e) => e.statutory)
+		.map((e) =>
+			mapStatutory(e.statutory as NonNullable<typeof e.statutory>, e.id)
+		);
+	if (statutoryRows.length > 0) {
+		await db.insert(employeeStatutory).values(statutoryRows);
+	}
+	const noLoginEmployees = src.employees.filter((e) => !e.email).length;
 
 	// 4. contracts (pay frequency normalised — fortnightly fix lands here)
 	const contractRows = src.contracts.map((c) => mapContract(c, oid));
@@ -192,6 +205,8 @@ async function loadTenant(db: Db, src: V1TenantSource): Promise<TenantCounts> {
 		users: userRows.length,
 		members: userRows.length,
 		employees: src.employees.length,
+		statutory: statutoryRows.length,
+		noLogin: noLoginEmployees,
 		contracts: contractRows.length,
 		fortnightlyContracts: fortnightly,
 		shifts: src.shifts.length,
@@ -252,6 +267,8 @@ async function main() {
 				attendancePunches: number;
 				workSchedules: number;
 				employees: number;
+				journals: number;
+				journalLines: number;
 		  }
 		| undefined;
 	let v1Client: Awaited<ReturnType<typeof openV1ReadOnly>> | null = null;
@@ -271,7 +288,7 @@ async function main() {
 			process.stdout.write(
 				`[write-etl] staged source JSON — payslips ${sourceJson.payslips}, ` +
 					`attendance ${sourceJson.attendancePunches}, work_schedules ${sourceJson.workSchedules}, ` +
-					`employees ${sourceJson.employees}\n`
+					`employees ${sourceJson.employees}, GL ${sourceJson.journals} entries/${sourceJson.journalLines} lines\n`
 			);
 		}
 

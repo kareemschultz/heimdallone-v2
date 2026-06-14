@@ -25,7 +25,9 @@
     "payslips": 69,
     "attendancePunches": 891,
     "workSchedules": 6,
-    "employees": 23
+    "employees": 23,
+    "journals": 13,
+    "journalLines": 53
   },
   "tenants": [
     {
@@ -35,6 +37,8 @@
       "users": 0,
       "members": 0,
       "employees": 3,
+      "statutory": 3,
+      "noLogin": 3,
       "contracts": 3,
       "fortnightlyContracts": 3,
       "shifts": 0,
@@ -53,6 +57,8 @@
       "users": 15,
       "members": 15,
       "employees": 20,
+      "statutory": 20,
+      "noLogin": 3,
       "contracts": 15,
       "fortnightlyContracts": 14,
       "shifts": 6,
@@ -67,6 +73,8 @@
   ],
   "totals": {
     "employees": 23,
+    "statutory": 23,
+    "noLogin": 6,
     "contracts": 18,
     "fortnightlyContracts": 17,
     "rosterEntries": 175,

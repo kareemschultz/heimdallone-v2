@@ -1,6 +1,6 @@
 # v1 → v2 Migration Dry-Run Report
 
-**Generated:** 2026-06-14T20:15:24.895Z
+**Generated:** 2026-06-14T23:24:13.560Z
 **v1 source (read-only):** `postgresql://migration_reader:***@localhost:5432/karetech_erp`
 **v2 staging target:** _none configured (schema-from-code mode)_
 
@@ -37,7 +37,7 @@
 | payroll_components | 26 | Transform map | pay_item | 8/0/0/2 |
 | member | 25 | Direct map | member | — |
 | account | 23 | Direct map | account | — |
-| employees | 23 | Transform map | employee_profile (+work_info/+bank_details) | 21/11/0/2 |
+| employees | 23 | Transform map | employee_profile (+work_info/+bank_details) | 30/2/0/2 |
 | invitation | 22 | Direct map | invitation | — |
 | attendance_device_users | 19 | Transform map | attendance_device_employee_map | 6/0/0/1 |
 | employee_payroll_components | 17 | Transform map | pay_item_assignment | 7/0/0/2 |
@@ -145,15 +145,6 @@
 ### employees
 - `company_id` → (company/branch) — _manual_review_: v2 has no company sub-entity yet — confirm
 - `kiosk_pin_hash` → (device/kiosk auth) — _manual_review_: biometric/kiosk PIN — confirm v2 home
-- `tin_number` → employee_work_info.tin — _manual_review_: PAYE — confirm column exists
-- `nis_number` → employee_work_info.nis — _manual_review_: NIS — confirm column exists
-- `qualifying_children` → (tax allowance input) — _manual_review_: income-tax child allowance — confirm v2 home or ADD
-- `medical_insurance_on_file` → (medical deduction) — _manual_review_: confirm v2 home
-- `medical_payroll_deduct_cents` → pay_item_assignment (medical) — _manual_review_: deduction amount — confirm
-- `medical_external_premium_cents` → (medical premium) — _manual_review_: confirm v2 home
-- `has_second_job` → (second-job tax flag) — _manual_review_: second-job tax treatment — confirm/ADD
-- `second_job_pay_cents` → (second-job income) — _manual_review_: drives second-job tax — confirm/ADD
-- `other_deductions_cents` → pay_item_assignment (other) — _manual_review_: misc deduction — confirm
 
 ### payroll_periods
 - `rules_version` → country_payroll_profile (selection) — _manual_review_
@@ -226,15 +217,6 @@
 
 - employees.company_id — v2 has no company sub-entity yet — confirm
 - employees.kiosk_pin_hash — biometric/kiosk PIN — confirm v2 home
-- employees.tin_number — PAYE — confirm column exists
-- employees.nis_number — NIS — confirm column exists
-- employees.qualifying_children — income-tax child allowance — confirm v2 home or ADD
-- employees.medical_insurance_on_file — confirm v2 home
-- employees.medical_payroll_deduct_cents — deduction amount — confirm
-- employees.medical_external_premium_cents — confirm v2 home
-- employees.has_second_job — second-job tax treatment — confirm/ADD
-- employees.second_job_pay_cents — drives second-job tax — confirm/ADD
-- employees.other_deductions_cents — misc deduction — confirm
 
 ## 7. Per-tenant migration readiness
 

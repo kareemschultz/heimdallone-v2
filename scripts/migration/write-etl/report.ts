@@ -16,12 +16,14 @@ interface TenantCounts {
 	journalLines: number;
 	journals: number;
 	members: number;
+	noLogin: number;
 	notifications: number;
 	organizations: number;
 	rosterApproved: number;
 	rosterEntries: number;
 	shifts: number;
 	slug: string;
+	statutory: number;
 	tenant: string;
 	users: number;
 }
@@ -42,6 +44,8 @@ interface ReportMeta {
 		attendancePunches: number;
 		workSchedules: number;
 		employees: number;
+		journals: number;
+		journalLines: number;
 	};
 }
 
@@ -69,6 +73,8 @@ export function writeEtlReport(
 		totals: results.reduce(
 			(acc, r) => {
 				acc.employees += r.employees;
+				acc.statutory += r.statutory;
+				acc.noLogin += r.noLogin;
 				acc.contracts += r.contracts;
 				acc.fortnightlyContracts += r.fortnightlyContracts;
 				acc.rosterEntries += r.rosterEntries;
@@ -80,6 +86,8 @@ export function writeEtlReport(
 			},
 			{
 				employees: 0,
+				statutory: 0,
+				noLogin: 0,
 				contracts: 0,
 				fortnightlyContracts: 0,
 				rosterEntries: 0,
@@ -121,7 +129,7 @@ export function writeEtlReport(
 	lines.push("## Totals");
 	const t = json.totals;
 	lines.push(
-		`- Employees ${t.employees} · Contracts ${t.contracts} (fortnightly ${t.fortnightlyContracts}) · Roster ${t.rosterEntries}`
+		`- Employees ${t.employees} (statutory rows ${t.statutory} · no-login ${t.noLogin}) · Contracts ${t.contracts} (fortnightly ${t.fortnightlyContracts}) · Roster ${t.rosterEntries}`
 	);
 	lines.push(
 		`- GL accounts ${t.accounts} · Journals ${t.journals} / lines ${t.journalLines} · Notifications ${t.notifications}`
@@ -131,6 +139,9 @@ export function writeEtlReport(
 		lines.push("## Source-JSON staging (fields with no v2 app-table home)");
 		lines.push(
 			`- Historical payslips ${json.sourceJson.payslips} · Attendance punches ${json.sourceJson.attendancePunches} · Work schedules ${json.sourceJson.workSchedules} · Employees (full row, incl. statutory fields) ${json.sourceJson.employees}`
+		);
+		lines.push(
+			`- Complete v1 GL preserved for accountant review (21L-C): journal entries ${json.sourceJson.journals} · journal lines ${json.sourceJson.journalLines}`
 		);
 		lines.push("");
 	}

@@ -1,0 +1,61 @@
+---
+title: Statutory & no-login employees
+description: The employee statutory record (tax/NIS identifiers, dependents, second job, medical) and the no-login employee policy.
+icon: IdCard
+---
+
+<Tags>
+  <Tag>HR</Tag>
+  <Tag>Payroll</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Security</Tag>
+  <Tag>Country Rule</Tag>
+  <Tag>Migration</Tag>
+  <Tag>Beta</Tag>
+</Tags>
+
+<Callout type="warn" title="Status">
+  The statutory record and the no-login policy ship as schema + API (Phase 21L).
+  A dedicated statutory-editing screen is part of a later UI rollout; today the data
+  is read/written through the HR employee API and is populated by the v1→v2
+  migration. This page will be marked <Tag>Live</Tag> when the editing UI ships.
+</Callout>
+
+## Employee statutory record
+
+Each employee can have a one-to-one **statutory record** holding the tax and
+payroll-affecting attributes that the country payroll rules need. Column names are
+country-neutral — the country rule engine, not the schema, interprets them.
+
+| Field | Purpose |
+| --- | --- |
+| Tax identification number | Statutory tax ID (Guyana: TIN). Sensitive — masked for non-payroll roles. |
+| Social security number | Statutory social-security ID (Guyana: NIS). Sensitive — masked for non-payroll roles. |
+| Dependent children | Drives the country rule's **child allowance**. |
+| Has second job (+ pay) | Affects tax treatment of a second income. |
+| Medical: on file / payroll deduction / external premium | Medical scheme attributes. |
+| Other deductions | Miscellaneous recurring deduction amount. |
+
+<Callout type="info" title="Who sees what">
+  The tax and social-security identifiers are **masked for non-payroll roles**
+  (only HR/payroll administrators see the full value), mirroring the bank
+  account-number policy. Editing the statutory record is restricted to HR/payroll
+  administrators, and every record is scoped to the caller's organization.
+</Callout>
+
+## No-login employees
+
+Some staff exist for **HR and payroll purposes only** and never sign in — they have
+no system account and no email on file. Heimdallone supports these as **no-login
+employees**:
+
+- An employee's email is **optional**. A no-login employee has no email and no
+  linked user account.
+- Email uniqueness still applies to employees that *do* have an email.
+- In the employee profile, a missing email is shown as **"— (no login)"**.
+
+<Callout type="info" title="Migration note">
+  When live v1 data is migrated, employees without an email are imported as no-login
+  employees (no fake placeholder address is invented). If such an employee should in
+  fact have a login, an administrator adds a real email afterwards.
+</Callout>

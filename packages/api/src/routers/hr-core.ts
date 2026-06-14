@@ -1000,7 +1000,8 @@ const employeeCreate = authorizedProcedure("employee", "create")
 		z.object({
 			firstName: z.string().min(1).max(200),
 			lastName: z.string().max(200).optional(),
-			email: z.string().email(),
+			// Optional: no-login employees (HR/payroll-only staff) have no email (21L-B).
+			email: z.string().email().nullish(),
 			phone: z.string().optional(),
 			dateOfBirth: z.string().optional(),
 			gender: z.enum(["male", "female", "other"]).optional(),
@@ -1036,20 +1037,23 @@ const employeeCreate = authorizedProcedure("employee", "create")
 			});
 		}
 
-		const [existingEmail] = await db
-			.select({ id: schema.employeeProfile.id })
-			.from(schema.employeeProfile)
-			.where(
-				and(
-					eq(schema.employeeProfile.organizationId, orgId(context)),
-					eq(schema.employeeProfile.email, input.email)
+		// Uniqueness only applies when an email is provided (no-login employees skip it).
+		if (input.email) {
+			const [existingEmail] = await db
+				.select({ id: schema.employeeProfile.id })
+				.from(schema.employeeProfile)
+				.where(
+					and(
+						eq(schema.employeeProfile.organizationId, orgId(context)),
+						eq(schema.employeeProfile.email, input.email)
+					)
 				)
-			)
-			.limit(1);
-		if (existingEmail) {
-			throw new ORPCError("CONFLICT", {
-				message: "An employee with this email already exists.",
-			});
+				.limit(1);
+			if (existingEmail) {
+				throw new ORPCError("CONFLICT", {
+					message: "An employee with this email already exists.",
+				});
+			}
 		}
 
 		if (input.badgeId) {
@@ -1078,7 +1082,7 @@ const employeeCreate = authorizedProcedure("employee", "create")
 				organizationId: orgId(context),
 				firstName: input.firstName,
 				lastName: input.lastName ?? null,
-				email: input.email,
+				email: input.email ?? null,
 				phone: input.phone ?? null,
 				dateOfBirth: input.dateOfBirth ? new Date(input.dateOfBirth) : null,
 				gender: input.gender ?? null,
@@ -1128,7 +1132,8 @@ const employeeUpdate = authorizedProcedure("employee", "update")
 			id: z.string(),
 			firstName: z.string().min(1).max(200).optional(),
 			lastName: z.string().max(200).nullable().optional(),
-			email: z.string().email().optional(),
+			// Nullable: an employee can be set to no-login by clearing the email (21L-B).
+			email: z.string().email().nullable().optional(),
 			phone: z.string().nullable().optional(),
 			dateOfBirth: z.string().nullable().optional(),
 			gender: z.enum(["male", "female", "other"]).nullable().optional(),
@@ -1494,6 +1499,117 @@ const bankDetailsUpdate = authorizedProcedure("employee", "update")
 		return result;
 	});
 
+// ─── Employee Statutory (tax/NIS/payroll attributes) ──────
+
+// TIN/NIS are sensitive statutory identifiers — masked for non-payroll roles,
+// mirroring the bank account-number policy.
+function maskStatutoryId(value: string | null): string | null {
+	if (!value) {
+		return value;
+	}
+	if (value.length <= 3) {
+		return "****";
+	}
+	return `****${value.slice(-3)}`;
+}
+
+const statutoryGet = authorizedProcedure("employee", "read")
+	.input(z.object({ employeeId: z.string() }))
+	.handler(async ({ context, input }) => {
+		// Tenant scope: target must belong to the caller's org (closes the same
+		// cross-tenant IDOR class as bankDetailsGet).
+		const [owner] = await db
+			.select({ id: schema.employeeProfile.id })
+			.from(schema.employeeProfile)
+			.where(
+				and(
+					eq(schema.employeeProfile.id, input.employeeId),
+					eq(schema.employeeProfile.organizationId, orgId(context))
+				)
+			)
+			.limit(1);
+		if (!owner) {
+			return null;
+		}
+		const [details] = await db
+			.select()
+			.from(schema.employeeStatutory)
+			.where(eq(schema.employeeStatutory.employeeId, input.employeeId))
+			.limit(1);
+		if (!details) {
+			return null;
+		}
+
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		if (!canManagePayroll(role)) {
+			return {
+				...details,
+				taxIdentificationNumber: maskStatutoryId(
+					details.taxIdentificationNumber
+				),
+				socialSecurityNumber: maskStatutoryId(details.socialSecurityNumber),
+			};
+		}
+		return details;
+	});
+
+const statutoryUpdate = authorizedProcedure("employee", "update")
+	.input(
+		z.object({
+			employeeId: z.string(),
+			taxIdentificationNumber: z.string().nullable().optional(),
+			socialSecurityNumber: z.string().nullable().optional(),
+			dependentChildren: z.number().int().min(0).optional(),
+			hasSecondJob: z.boolean().optional(),
+			secondJobPayAmount: z.string().optional(),
+			medicalInsuranceOnFile: z.boolean().optional(),
+			medicalPayrollDeductionAmount: z.string().optional(),
+			medicalExternalPremiumAmount: z.string().optional(),
+			otherDeductionsAmount: z.string().optional(),
+		})
+	)
+	.handler(async ({ context, input }) => {
+		const role = (context as unknown as { memberRole: string }).memberRole;
+		// Statutory data drives payroll; editing is restricted to HR/payroll, like
+		// bank details.
+		if (!canReadFullBankDetails(role)) {
+			throw new ORPCError("FORBIDDEN", {
+				message:
+					"Only HR and payroll administrators can edit statutory details.",
+			});
+		}
+		const { employeeId, ...fields } = input;
+		await assertEmployeeInOrg(orgId(context), employeeId);
+		const existing = await db
+			.select({ id: schema.employeeStatutory.id })
+			.from(schema.employeeStatutory)
+			.where(eq(schema.employeeStatutory.employeeId, employeeId))
+			.limit(1);
+
+		let result: typeof schema.employeeStatutory.$inferSelect | undefined;
+		if (existing.length === 0) {
+			[result] = await db
+				.insert(schema.employeeStatutory)
+				.values({ id: createId(), employeeId, ...fields })
+				.returning();
+		} else {
+			[result] = await db
+				.update(schema.employeeStatutory)
+				.set(fields)
+				.where(eq(schema.employeeStatutory.employeeId, employeeId))
+				.returning();
+		}
+
+		await createAuditEvent(db as never, {
+			organizationId: orgId(context),
+			entityType: "employee_statutory",
+			entityId: employeeId,
+			action: existing.length === 0 ? "create" : "update",
+			actorId: actorId(context),
+		});
+		return result;
+	});
+
 // ─── Employee Documents ───────────────────────────────────
 
 const documentsList = authorizedProcedure("employee", "read")
@@ -1789,6 +1905,10 @@ export const hrCoreRouter = {
 		bankDetails: {
 			get: bankDetailsGet,
 			update: bankDetailsUpdate,
+		},
+		statutory: {
+			get: statutoryGet,
+			update: statutoryUpdate,
 		},
 		documents: {
 			list: documentsList,

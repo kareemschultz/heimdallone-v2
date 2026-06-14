@@ -12,11 +12,12 @@
 | netsurf | 20 | 15 (14) | 175 (175) | 11 | 11/47 | 6 | ✅ |
 
 ## Totals
-- Employees 23 · Contracts 18 (fortnightly 17) · Roster 175
+- Employees 23 (statutory rows 23 · no-login 6) · Contracts 18 (fortnightly 17) · Roster 175
 - GL accounts 11 · Journals 11 / lines 47 · Notifications 6
 
 ## Source-JSON staging (fields with no v2 app-table home)
 - Historical payslips 69 · Attendance punches 891 · Work schedules 6 · Employees (full row, incl. statutory fields) 23
+- Complete v1 GL preserved for accountant review (21L-C): journal entries 13 · journal lines 53
 
 ## Failed / excluded mappings (2)
 | Tenant | Kind | Id | Reason |

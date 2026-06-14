@@ -193,20 +193,26 @@ No DNS flip until these pass, per tenant:
 
 ## 9. Immediate next step
 
-**21B–21G + 21K complete.** The engine frequency-proration fix (21D-B) shipped and reconcile is
+**21B–21G + 21K + 21L complete.** The engine frequency-proration fix (21D-B) shipped and reconcile is
 **READY** (personal_allowance 46/46 exact on live v1); roster/GL/notifications routers + fortnightly-
 first-class + effective-dating (21G: resolve-by-date payroll/leave/workweek + historical payslip
-correction) are all built and gated; and **21K ran the live v1 → scratch write-ETL end-to-end**
-(real v1 data, read-only → disposable `heimdallone_v2_migration_scratch`, 129 tables; GL balanced,
-tenant isolation, PII scan all PASS — see `phase-21k-live-write-etl-rehearsal.md`).
+correction) are all built and gated; **21K ran the live v1 → scratch write-ETL end-to-end**; and
+**21L closed the four manual-review items + a full-data dress rehearsal** (see
+`phase-21l-statutory-nologin-journal-handoff.md`):
 
-**Go/no-go:** live write-ETL rehearsal **GO**; **freeze NO-GO**; **DNS cutover NO-GO** (none
-performed).
+- statutory employee fields now have v2 homes — `employee_statutory` satellite (migration `0024`),
+  with `dependent_children` wired into the payroll input builder (was hardcoded 0);
+- no-login employees supported — `employee_profile.email` is nullable, the fake placeholder is gone;
+- the 2 v1-bug journals are handed off to an accountant — full v1 GL staged for review, **no balancing
+  entry fabricated**, corrected opening-balance entered via the `gl` router post-cutover;
+- `work_schedules` richness has a written plan (Phase 21J), data preserved losslessly;
+- the dress rehearsal loaded all of the above into a fresh scratch (132 tables) and reconcile stayed
+  **READY 46/46** with statutory review dropping 11 → 2 (only `company_id` + `kiosk_pin_hash`).
 
-**Next:** operator sign-off on the 21K manual-review items — 11 statutory employee fields
-(TIN/NIS/children/second-job/medical), 6 employees with no v1 email (placeholder addresses),
-1 unmapped GL account type + 2 excluded v1 journals, and wiring `work_schedules` richness
-(night-diff/split-shift/Saturday/OT) from source-JSON staging into v2 roster/payroll — then a
-**full-data dress rehearsal** on the same guarded path before any freeze decision. Module UIs
-(roster/GL/notifications) and the broader effective-dating architecture for future budgets remain.
-Still read-only on v1; writes only to scratch.
+**Go/no-go:** dress rehearsal **GO**; **freeze NO-GO**; **DNS cutover NO-GO** (none performed).
+
+**Next (residual owner decisions, not code):** real email addresses for any of the 6 no-login
+employees intended to have logins; the accountant's treatment of the 2 excluded journals; and the
+Phase 21J `work_schedules` richness build if those pay rules are needed at cutover. Then freeze →
+DNS cutover. Module UIs (roster/GL/notifications) and the broader effective-dating architecture for
+future budgets remain. Still read-only on v1; writes only to scratch.

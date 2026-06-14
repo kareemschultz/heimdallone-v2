@@ -438,7 +438,7 @@ function EmployeeProfilePage() {
 									<div className="kv">
 										<span className="k">Email</span>
 										<span className="v" style={{ fontSize: "11.5px" }}>
-											{emp.email}
+											{emp.email ?? "— (no login)"}
 										</span>
 									</div>
 									<div className="kv">

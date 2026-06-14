@@ -72,6 +72,9 @@ const SOURCE_TABLES = [
 	"migration_source_attendance_punch",
 	"migration_source_roster",
 	"migration_source_work_schedule",
+	// 21L-C: complete v1 GL preserved for accountant review of excluded journals.
+	"migration_source_journal",
+	"migration_source_journal_line",
 ] as const;
 
 /** Create the scratch DB (if absent) + the source-staging tables. */

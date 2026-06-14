@@ -13,6 +13,7 @@ import {
 	contract,
 	department,
 	employeeProfile,
+	employeeStatutory,
 	employeeWorkInfo,
 } from "@Heimdallone/db/schema/hr-core";
 import { leaveRequest, leaveType } from "@Heimdallone/db/schema/leave";
@@ -204,6 +205,14 @@ async function buildEmployeeInput(
 				.then((r) => r[0])
 		: null;
 
+	// Dependent children drive the country rule's child allowance. Sourced from
+	// the employee_statutory satellite (21L-A); absent row → 0 (no allowance).
+	const [statutory] = await db
+		.select({ dependentChildren: employeeStatutory.dependentChildren })
+		.from(employeeStatutory)
+		.where(eq(employeeStatutory.employeeId, employeeId))
+		.limit(1);
+
 	return {
 		id: emp?.id ?? employeeId,
 		organizationId,
@@ -212,7 +221,7 @@ async function buildEmployeeInput(
 		employeeCode: emp?.badgeId ?? "",
 		departmentId: workInfo?.departmentId ?? null,
 		departmentName: dept?.name ?? null,
-		dependentChildren: 0,
+		dependentChildren: statutory?.dependentChildren ?? 0,
 	};
 }
 

@@ -17,12 +17,28 @@ export interface V1Tenant {
 	slug: string;
 }
 export interface V1Employee {
-	email: string;
+	// null => no email on file (no-login employee, 21L-B). employee_profile.email
+	// is now nullable; we no longer synthesize a fake placeholder address.
+	email: string | null;
 	firstName: string;
 	id: string;
 	lastName?: string | null;
+	// optional statutory/payroll attributes (21L-A). Absent => no statutory row.
+	statutory?: V1Statutory | null;
 	// optional login user (v1 had a users table); null => employee without a login
 	user?: { id: string; name: string; email: string } | null;
+}
+// v1 statutory columns, normalised: *_cents → numeric amount strings, ids verbatim.
+export interface V1Statutory {
+	dependentChildren: number;
+	hasSecondJob: boolean;
+	medicalExternalPremiumAmount: string;
+	medicalInsuranceOnFile: boolean;
+	medicalPayrollDeductionAmount: string;
+	otherDeductionsAmount: string;
+	secondJobPayAmount: string;
+	socialSecurityNumber: string | null;
+	taxIdentificationNumber: string | null;
 }
 export interface V1Contract {
 	baseSalary: string;
@@ -137,8 +153,25 @@ export function mapEmployee(e: V1Employee, orgId: string) {
 		userId: e.user?.id ?? null,
 		firstName: e.firstName,
 		lastName: e.lastName ?? null,
-		email: e.email,
+		email: e.email, // may be null (no-login employee, 21L-B)
 		isActive: true,
+	};
+}
+
+// ── employee_statutory (21L-A) ──
+export function mapStatutory(s: V1Statutory, employeeId: string) {
+	return {
+		id: createId(),
+		employeeId,
+		taxIdentificationNumber: s.taxIdentificationNumber ?? null,
+		socialSecurityNumber: s.socialSecurityNumber ?? null,
+		dependentChildren: s.dependentChildren,
+		hasSecondJob: s.hasSecondJob,
+		secondJobPayAmount: s.secondJobPayAmount,
+		medicalInsuranceOnFile: s.medicalInsuranceOnFile,
+		medicalPayrollDeductionAmount: s.medicalPayrollDeductionAmount,
+		medicalExternalPremiumAmount: s.medicalExternalPremiumAmount,
+		otherDeductionsAmount: s.otherDeductionsAmount,
 	};
 }
 

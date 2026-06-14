@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-14T20:15:24.895Z",
+  "generatedAt": "2026-06-14T23:24:13.560Z",
   "v1Url": "postgresql://migration_reader:***@localhost:5432/karetech_erp",
   "v2Staging": null,
   "totals": {
@@ -697,7 +697,7 @@
       "v1Table": "employees",
       "v2Target": "employee_profile (+work_info/+bank_details)",
       "classification": "transform_map",
-      "reason": "split into profile/work_info/bank; statutory fields need manual review",
+      "reason": "split into profile/work_info/bank/statutory (21L-A gave statutory fields homes on employee_statutory)",
       "rowCount": 23,
       "fields": [
         {
@@ -797,15 +797,13 @@
         },
         {
           "v1": "tin_number",
-          "v2": "employee_work_info.tin",
-          "status": "manual_review",
-          "note": "PAYE — confirm column exists"
+          "v2": "employee_statutory.tax_identification_number",
+          "status": "mapped"
         },
         {
           "v1": "nis_number",
-          "v2": "employee_work_info.nis",
-          "status": "manual_review",
-          "note": "NIS — confirm column exists"
+          "v2": "employee_statutory.social_security_number",
+          "status": "mapped"
         },
         {
           "v1": "bank_account_number",
@@ -819,45 +817,38 @@
         },
         {
           "v1": "qualifying_children",
-          "v2": "(tax allowance input)",
-          "status": "manual_review",
-          "note": "income-tax child allowance — confirm v2 home or ADD"
+          "v2": "employee_statutory.dependent_children",
+          "status": "mapped"
         },
         {
           "v1": "medical_insurance_on_file",
-          "v2": "(medical deduction)",
-          "status": "manual_review",
-          "note": "confirm v2 home"
+          "v2": "employee_statutory.medical_insurance_on_file",
+          "status": "mapped"
         },
         {
           "v1": "medical_payroll_deduct_cents",
-          "v2": "pay_item_assignment (medical)",
-          "status": "manual_review",
-          "note": "deduction amount — confirm"
+          "v2": "employee_statutory.medical_payroll_deduction_amount",
+          "status": "mapped"
         },
         {
           "v1": "medical_external_premium_cents",
-          "v2": "(medical premium)",
-          "status": "manual_review",
-          "note": "confirm v2 home"
+          "v2": "employee_statutory.medical_external_premium_amount",
+          "status": "mapped"
         },
         {
           "v1": "has_second_job",
-          "v2": "(second-job tax flag)",
-          "status": "manual_review",
-          "note": "second-job tax treatment — confirm/ADD"
+          "v2": "employee_statutory.has_second_job",
+          "status": "mapped"
         },
         {
           "v1": "second_job_pay_cents",
-          "v2": "(second-job income)",
-          "status": "manual_review",
-          "note": "drives second-job tax — confirm/ADD"
+          "v2": "employee_statutory.second_job_pay_amount",
+          "status": "mapped"
         },
         {
           "v1": "other_deductions_cents",
-          "v2": "pay_item_assignment (other)",
-          "status": "manual_review",
-          "note": "misc deduction — confirm"
+          "v2": "employee_statutory.other_deductions_amount",
+          "status": "mapped"
         },
         {
           "v1": "sync_version",
@@ -894,8 +885,8 @@
       "notes": [
         "23 employees",
         "8 have NO user_id (no auth login link — will migrate as profile-only)",
-        "6 have NO email",
-        "Statutory fields (TIN/NIS/qualifying_children/second_job/medical) flagged manual_review — confirm v2 home before payroll cutover"
+        "6 have NO email (migrate as no-login employees — 21L-B, email now nullable)",
+        "Statutory fields (TIN/NIS/qualifying_children/second_job/medical/other) now map to employee_statutory (21L-A); kiosk_pin_hash remains manual_review (biometric)"
       ]
     },
     {
@@ -3342,15 +3333,6 @@
   ],
   "statutoryReview": [
     "employees.company_id — v2 has no company sub-entity yet — confirm",
-    "employees.kiosk_pin_hash — biometric/kiosk PIN — confirm v2 home",
-    "employees.tin_number — PAYE — confirm column exists",
-    "employees.nis_number — NIS — confirm column exists",
-    "employees.qualifying_children — income-tax child allowance — confirm v2 home or ADD",
-    "employees.medical_insurance_on_file — confirm v2 home",
-    "employees.medical_payroll_deduct_cents — deduction amount — confirm",
-    "employees.medical_external_premium_cents — confirm v2 home",
-    "employees.has_second_job — second-job tax treatment — confirm/ADD",
-    "employees.second_job_pay_cents — drives second-job tax — confirm/ADD",
-    "employees.other_deductions_cents — misc deduction — confirm"
+    "employees.kiosk_pin_hash — biometric/kiosk PIN — confirm v2 home"
   ]
 }

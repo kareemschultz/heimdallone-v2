@@ -169,6 +169,13 @@
       "when": 1781386679526,
       "tag": "0023_effective_dating",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1781477990216,
+      "tag": "0024_steady_chameleon",
+      "breakpoints": true
     }
   ]
 }

@@ -18,6 +18,7 @@ import type {
 	V1Notification,
 	V1RosterEntry,
 	V1Shift,
+	V1Statutory,
 	V1TenantSource,
 } from "./transformers";
 
@@ -75,6 +76,10 @@ async function loadEmployees(
 	const rows = await v1Rows<any>(
 		c,
 		`SELECT e.id, e.email, e.first_name, e.last_name, e.user_id,
+		        e.tin_number, e.nis_number, e.qualifying_children,
+		        e.has_second_job, e.second_job_pay_cents,
+		        e.medical_insurance_on_file, e.medical_payroll_deduct_cents,
+		        e.medical_external_premium_cents, e.other_deductions_cents,
 		        u.id AS u_id, u.name AS u_name, u.email AS u_email
 		 FROM employees e
 		 LEFT JOIN "user" u ON u.id = e.user_id
@@ -94,19 +99,33 @@ async function loadEmployees(
 		if (user) {
 			userIds.add(user.id);
 		}
-		// employee_profile.email is NOT NULL; some v1 employees have no email.
-		// Synthesize a deterministic, obviously-non-deliverable placeholder so the
-		// load stays faithful (real emails preserved; missing ones clearly marked).
-		const email =
-			(r.email as string) && String(r.email).trim() !== ""
-				? (r.email as string)
-				: `migrated-${r.id}@migrated.invalid`;
+		// 21L-B: employee_profile.email is now NULLABLE. We no longer synthesize a
+		// fake placeholder — a missing v1 email becomes null (no-login employee).
+		const rawEmail = (r.email as string) ?? "";
+		const email = rawEmail.trim() !== "" ? rawEmail : null;
+		// 21L-A: statutory/payroll attributes (cents → numeric amount strings).
+		const statutory: V1Statutory = {
+			taxIdentificationNumber: (r.tin_number as string) ?? null,
+			socialSecurityNumber: (r.nis_number as string) ?? null,
+			dependentChildren: Number(r.qualifying_children ?? 0),
+			hasSecondJob: Boolean(r.has_second_job),
+			secondJobPayAmount: centsToAmount(r.second_job_pay_cents),
+			medicalInsuranceOnFile: Boolean(r.medical_insurance_on_file),
+			medicalPayrollDeductionAmount: centsToAmount(
+				r.medical_payroll_deduct_cents
+			),
+			medicalExternalPremiumAmount: centsToAmount(
+				r.medical_external_premium_cents
+			),
+			otherDeductionsAmount: centsToAmount(r.other_deductions_cents),
+		};
 		return {
 			id: r.id as string,
 			email,
 			firstName: (r.first_name as string) ?? "Unknown",
 			lastName: (r.last_name as string) ?? null,
 			user,
+			statutory,
 		} satisfies V1Employee;
 	});
 	return { employees, userIds };
@@ -418,9 +437,12 @@ export async function loadV1Tenants(
  * Stage v1 rows that have NO v2 app-table home (or fields with no v2 home yet)
  * into the scratch migration_source_* JSONB tables — preserved losslessly as
  * source for later mapping: historical payslips, attendance punches, the richer
- * v1 work_schedules, and the FULL employees row (carries the 11 statutory fields
- * — TIN/NIS/qualifying_children/second_job/medical — that v2's employee schema
- * does not yet model; they ride along here until the statutory-fields build).
+ * v1 work_schedules, the FULL employees row (carries the 11 statutory fields
+ * — TIN/NIS/qualifying_children/second_job/medical — now mostly given homes in
+ * 21L-A), and the COMPLETE v1 GL (entries + lines). The full GL is staged so an
+ * accountant can review the journals the balance-invariant excludes (21L-C): the
+ * load never fabricates a balancing entry — the corrected opening-balance journal
+ * is the accountant's call, entered post-cutover via the gl router.
  */
 export async function stageSourceJson(
 	v1: Client,
@@ -430,12 +452,16 @@ export async function stageSourceJson(
 	attendancePunches: number;
 	workSchedules: number;
 	employees: number;
+	journals: number;
+	journalLines: number;
 }> {
 	const counts = {
 		payslips: 0,
 		attendancePunches: 0,
 		workSchedules: 0,
 		employees: 0,
+		journals: 0,
+		journalLines: 0,
 	};
 	const jobs: Array<{ table: string; sql: string; key: keyof typeof counts }> =
 		[
@@ -458,6 +484,19 @@ export async function stageSourceJson(
 				table: "migration_source_employee",
 				sql: "SELECT * FROM employees WHERE deleted_at IS NULL",
 				key: "employees",
+			},
+			// 21L-C: complete GL preserved verbatim (incl. the excluded v1-bug
+			// journals) for accountant review. Excluded ids + reasons live in the
+			// PII-safe failures report; the full content lives here in scratch.
+			{
+				table: "migration_source_journal",
+				sql: "SELECT * FROM journal_entries",
+				key: "journals",
+			},
+			{
+				table: "migration_source_journal_line",
+				sql: "SELECT * FROM journal_lines",
+				key: "journalLines",
 			},
 		];
 	for (const job of jobs) {

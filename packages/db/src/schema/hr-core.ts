@@ -191,7 +191,11 @@ export const employeeProfile = pgTable(
 		badgeId: text("badge_id"),
 		firstName: text("first_name").notNull(),
 		lastName: text("last_name"),
-		email: text("email").notNull(),
+		// Nullable: supports "no-login employees" — staff who exist for HR/payroll
+		// but have no system account (userId null) and no email on file. The
+		// (organizationId, email) unique still holds for real emails (Postgres
+		// treats NULLs as distinct, so many no-login employees can coexist).
+		email: text("email"),
 		phone: text("phone"),
 		profileImageUrl: text("profile_image_url"),
 		dateOfBirth: date("date_of_birth", { mode: "date" }),
@@ -277,6 +281,55 @@ export const employeeBankDetails = pgTable("employee_bank_details", {
 	bankCode1: text("bank_code_1"),
 	bankCode2: text("bank_code_2"),
 	country: text("country"),
+	...timestamps,
+});
+
+// One-to-one satellite holding tax/statutory/payroll-affecting attributes.
+// Column names are COUNTRY-NEUTRAL (tax id, social-security number) so the
+// country-rule payroll engine — not the schema — interprets them. v1's
+// Guyana-specific TIN/NIS map onto the generic identifiers; the amount fields
+// are stored as numeric(12,2) (v2 money convention), not v1's *_cents.
+export const employeeStatutory = pgTable("employee_statutory", {
+	id: cuid(),
+	employeeId: text("employee_id")
+		.notNull()
+		.unique()
+		.references(() => employeeProfile.id, { onDelete: "cascade" }),
+	// Statutory identifiers (sensitive PII — masked at the API for non-payroll
+	// roles, like bank account numbers).
+	taxIdentificationNumber: text("tax_identification_number"),
+	socialSecurityNumber: text("social_security_number"),
+	// Payroll-affecting attributes. dependentChildren drives the country rule's
+	// child allowance (engine input.employee.dependentChildren).
+	dependentChildren: integer("dependent_children").default(0).notNull(),
+	hasSecondJob: boolean("has_second_job").default(false).notNull(),
+	secondJobPayAmount: numeric("second_job_pay_amount", {
+		precision: 12,
+		scale: 2,
+	})
+		.default("0")
+		.notNull(),
+	medicalInsuranceOnFile: boolean("medical_insurance_on_file")
+		.default(false)
+		.notNull(),
+	medicalPayrollDeductionAmount: numeric("medical_payroll_deduction_amount", {
+		precision: 12,
+		scale: 2,
+	})
+		.default("0")
+		.notNull(),
+	medicalExternalPremiumAmount: numeric("medical_external_premium_amount", {
+		precision: 12,
+		scale: 2,
+	})
+		.default("0")
+		.notNull(),
+	otherDeductionsAmount: numeric("other_deductions_amount", {
+		precision: 12,
+		scale: 2,
+	})
+		.default("0")
+		.notNull(),
 	...timestamps,
 });
 

@@ -7,9 +7,11 @@ import {
 	mapNotification,
 	mapOrganization,
 	mapRosterEntry,
+	mapStatutory,
 	type V1Contract,
 	type V1Journal,
 	type V1RosterEntry,
+	type V1Statutory,
 } from "./transformers";
 
 const ORG = "org_test";
@@ -231,5 +233,52 @@ describe("mapOrganization / mapEmployee / mapAccount — tenant scoping", () => 
 		);
 		expect(row.isPostable).toBe(true);
 		expect(row.isArchived).toBe(false);
+	});
+
+	test("no-login employee maps a null email (21L-B, no fake placeholder)", () => {
+		const row = mapEmployee(
+			{ id: "emp_2", firstName: "B", email: null, user: null },
+			ORG
+		);
+		expect(row.email).toBeNull();
+		expect(row.userId).toBeNull();
+	});
+});
+
+describe("mapStatutory — TIN/NIS + payroll attributes (21L-A)", () => {
+	const S: V1Statutory = {
+		taxIdentificationNumber: "TIN123",
+		socialSecurityNumber: "NIS456",
+		dependentChildren: 3,
+		hasSecondJob: true,
+		secondJobPayAmount: "1500.00",
+		medicalInsuranceOnFile: true,
+		medicalPayrollDeductionAmount: "200.00",
+		medicalExternalPremiumAmount: "50.00",
+		otherDeductionsAmount: "0.00",
+	};
+
+	test("carries identifiers + dependent children + scopes to the employee", () => {
+		const row = mapStatutory(S, "emp_1");
+		expect(row.employeeId).toBe("emp_1");
+		expect(row.taxIdentificationNumber).toBe("TIN123");
+		expect(row.socialSecurityNumber).toBe("NIS456");
+		expect(row.dependentChildren).toBe(3);
+	});
+
+	test("preserves numeric amount strings + second-job flag", () => {
+		const row = mapStatutory(S, "emp_1");
+		expect(row.hasSecondJob).toBe(true);
+		expect(row.secondJobPayAmount).toBe("1500.00");
+		expect(row.medicalPayrollDeductionAmount).toBe("200.00");
+	});
+
+	test("null identifiers stay null (missing TIN/NIS)", () => {
+		const row = mapStatutory(
+			{ ...S, taxIdentificationNumber: null, socialSecurityNumber: null },
+			"emp_1"
+		);
+		expect(row.taxIdentificationNumber).toBeNull();
+		expect(row.socialSecurityNumber).toBeNull();
 	});
 });

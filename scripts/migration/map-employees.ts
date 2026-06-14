@@ -62,15 +62,14 @@ const KNOWN: Record<string, { v2: string | null; status: any; note?: string }> =
 			status: "manual_review",
 			note: "biometric/kiosk PIN — confirm v2 home",
 		},
+		// 21L-A: statutory fields now have v2 homes on employee_statutory.
 		tin_number: {
-			v2: "employee_work_info.tin",
-			status: "manual_review",
-			note: "PAYE — confirm column exists",
+			v2: "employee_statutory.tax_identification_number",
+			status: "mapped",
 		},
 		nis_number: {
-			v2: "employee_work_info.nis",
-			status: "manual_review",
-			note: "NIS — confirm column exists",
+			v2: "employee_statutory.social_security_number",
+			status: "mapped",
 		},
 		bank_account_number: {
 			v2: "employee_bank_details.account_number",
@@ -78,39 +77,32 @@ const KNOWN: Record<string, { v2: string | null; status: any; note?: string }> =
 		},
 		bank_code: { v2: "employee_bank_details.bank_code", status: "mapped" },
 		qualifying_children: {
-			v2: "(tax allowance input)",
-			status: "manual_review",
-			note: "income-tax child allowance — confirm v2 home or ADD",
+			v2: "employee_statutory.dependent_children",
+			status: "mapped",
 		},
 		medical_insurance_on_file: {
-			v2: "(medical deduction)",
-			status: "manual_review",
-			note: "confirm v2 home",
+			v2: "employee_statutory.medical_insurance_on_file",
+			status: "mapped",
 		},
 		medical_payroll_deduct_cents: {
-			v2: "pay_item_assignment (medical)",
-			status: "manual_review",
-			note: "deduction amount — confirm",
+			v2: "employee_statutory.medical_payroll_deduction_amount",
+			status: "mapped",
 		},
 		medical_external_premium_cents: {
-			v2: "(medical premium)",
-			status: "manual_review",
-			note: "confirm v2 home",
+			v2: "employee_statutory.medical_external_premium_amount",
+			status: "mapped",
 		},
 		has_second_job: {
-			v2: "(second-job tax flag)",
-			status: "manual_review",
-			note: "second-job tax treatment — confirm/ADD",
+			v2: "employee_statutory.has_second_job",
+			status: "mapped",
 		},
 		second_job_pay_cents: {
-			v2: "(second-job income)",
-			status: "manual_review",
-			note: "drives second-job tax — confirm/ADD",
+			v2: "employee_statutory.second_job_pay_amount",
+			status: "mapped",
 		},
 		other_deductions_cents: {
-			v2: "pay_item_assignment (other)",
-			status: "manual_review",
-			note: "misc deduction — confirm",
+			v2: "employee_statutory.other_deductions_amount",
+			status: "mapped",
 		},
 	};
 
@@ -119,7 +111,7 @@ export const employeeMapper: Mapper = {
 	v2Target: "employee_profile (+work_info/+bank_details)",
 	classification: "transform_map",
 	reason:
-		"split into profile/work_info/bank; statutory fields need manual review",
+		"split into profile/work_info/bank/statutory (21L-A gave statutory fields homes on employee_statutory)",
 	selectSql: 'SELECT * FROM "employees"',
 	inspect(rows) {
 		const fields = coverFields(rows, KNOWN);
@@ -143,8 +135,8 @@ export const employeeMapper: Mapper = {
 		const notes = [
 			`${rows.length} employees`,
 			`${noAuthLink} have NO user_id (no auth login link — will migrate as profile-only)`,
-			`${noEmail} have NO email`,
-			"Statutory fields (TIN/NIS/qualifying_children/second_job/medical) flagged manual_review — confirm v2 home before payroll cutover",
+			`${noEmail} have NO email (migrate as no-login employees — 21L-B, email now nullable)`,
+			"Statutory fields (TIN/NIS/qualifying_children/second_job/medical/other) now map to employee_statutory (21L-A); kiosk_pin_hash remains manual_review (biometric)",
 		];
 		return { fields, unmappable, notes };
 	},

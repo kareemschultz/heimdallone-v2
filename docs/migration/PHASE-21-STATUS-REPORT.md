@@ -218,6 +218,33 @@ DB. Full record: `docs/migration/phase-21k-live-write-etl-rehearsal.md`.
 - **Go / No-Go:** live write-ETL rehearsal **GO ✅**; **freeze NO-GO**; **DNS cutover NO-GO (and
   none performed).**
 
-### Immediate next step (supersedes §9)
-Operator sign-off on the §11 manual-review items, then a **full-data dress rehearsal** (same guarded
-path) before any freeze decision. Code is not blocking; the remaining gaps are operational/data.
+## 12. Phase 21L — Statutory fields · no-login policy · journal handoff · dress rehearsal ✅ COMPLETE (2026-06-14)
+
+Closes the four §11 manual-review items + a full-data dress rehearsal. Doc:
+`phase-21l-statutory-nologin-journal-handoff.md`.
+
+- **21L-A statutory fields:** new `employee_statutory` satellite (migration `0024`) homes
+  TIN→`tax_identification_number`, NIS→`social_security_number`, `qualifying_children`→`dependent_children`,
+  second-job (+pay), medical (on-file/payroll-deduction/external-premium), other-deductions. `hrCore.employees.statutory.{get,update}`
+  (TIN/NIS masked for non-payroll, edit HR/payroll-only) — **reuses `employee` AC → audit stays 161/21**.
+  **Wired `dependent_children` into `payroll-input-builder` (was hardcoded `0`)** so child allowance computes from real data.
+  `mapStatutory` mapper + 4 new transformer tests.
+- **21L-B no-login policy:** `employee_profile.email` now NULLABLE (migration `0024`); mapper drops the fake
+  `migrated-<id>@migrated.invalid` placeholder (→ null); `employeeCreate/Update` accept null email; detail UI shows `— (no login)`.
+- **21L-C journal handoff:** full v1 GL (entries + lines) staged in `migration_source_journal[_line]` for
+  accountant review; **the 2 v1-bug journals stay excluded — no balancing entry is ever fabricated**; corrected
+  opening-balance entry is the accountant's call via the `gl` router post-cutover.
+- **21L-D work_schedules richness:** plan `docs/architecture/work-schedules-richness-plan.md` (effective-dated
+  per-shift `shift_rule` satellite, engine seams) — **plan only**, scheduled as Phase 21J; data preserved losslessly.
+- **21L-E full-data dress rehearsal:** fresh scratch (25 migrations / 132 tables) ← live v1. **23/23 statutory rows,
+  6 no-login employees, 13/53 GL staged, 11 balanced journals loaded, isolation PASS.** Live reconcile **READY,
+  personal_allowance + NIS + child + net 46/46 exact (NO regression)**; dry-run statutory review **11 → 2** (only
+  `company_id` + `kiosk_pin_hash`, neither a tax field).
+- **Gates:** check-types 3/3 · build 3/3 · audit 161/21 · transformers 23/23 · engine 59/59 · changed files lint-clean.
+- **Hard rules held:** no v1 writes · no prod v2 writes · no freeze · no DNS cutover · no secrets committed.
+
+### Immediate next step (supersedes §9 / §11)
+Operator sign-off on the residual items — real emails for any of the 6 no-login employees intended to have
+logins, accountant treatment of the 2 excluded journals, and the Phase 21J work_schedules richness build if those
+pay rules are needed at cutover — then freeze + DNS cutover. **Code is not blocking; the remaining gaps are
+operational/data decisions.**
