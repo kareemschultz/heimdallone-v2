@@ -1,58 +1,83 @@
 {
-  "phase": "21E",
+  "phase": "21K",
   "kind": "write-etl-dry-run",
-  "source": "synthetic (no live v1 / no production writes)",
-  "tenantsInOrder": ["foreign-links-synthetic", "netsurf-synthetic"],
+  "source": "live v1 (read-only) → scratch (no v1/production writes)",
+  "tenantsInOrder": ["flas-hxn1", "netsurf"],
   "summary": {
     "isolated": true,
     "allBalanced": true
   },
+  "failures": [
+    {
+      "tenantSlug": "netsurf",
+      "kind": "account",
+      "id": "d084c02e-377f-4567-a069-9cb73c9283df",
+      "reason": "unmapped account type"
+    },
+    {
+      "tenantSlug": "netsurf",
+      "kind": "journal",
+      "id": "b2efdd1b-09d4-4ece-a0bd-5796110ae6a2",
+      "reason": "imbalanced (v1 bug — excluded)"
+    },
+    {
+      "tenantSlug": "netsurf",
+      "kind": "journal",
+      "id": "f8f42e15-d9dc-4090-a65a-dc1aec88c946",
+      "reason": "line not single-sided (v1 quirk — excluded)"
+    }
+  ],
+  "sourceJson": {
+    "payslips": 69,
+    "attendancePunches": 891,
+    "workSchedules": 6
+  },
   "tenants": [
     {
-      "tenant": "Foreign Links (SYNTHETIC)",
-      "slug": "foreign-links-synthetic",
+      "tenant": "Foreign Links Auto Spares",
+      "slug": "flas-hxn1",
       "organizations": 1,
-      "users": 1,
-      "members": 1,
-      "employees": 2,
-      "contracts": 1,
-      "fortnightlyContracts": 0,
-      "shifts": 1,
-      "rosterEntries": 2,
-      "rosterApproved": 1,
-      "accounts": 2,
-      "journals": 1,
-      "journalLines": 2,
-      "notifications": 1,
+      "users": 0,
+      "members": 0,
+      "employees": 3,
+      "contracts": 3,
+      "fortnightlyContracts": 3,
+      "shifts": 0,
+      "rosterEntries": 0,
+      "rosterApproved": 0,
+      "accounts": 0,
+      "journals": 0,
+      "journalLines": 0,
+      "notifications": 0,
       "glBalanced": true
     },
     {
-      "tenant": "Netsurf Group (SYNTHETIC)",
-      "slug": "netsurf-synthetic",
+      "tenant": "Netsurf Group of Companies",
+      "slug": "netsurf",
       "organizations": 1,
-      "users": 2,
-      "members": 2,
-      "employees": 2,
-      "contracts": 2,
-      "fortnightlyContracts": 2,
-      "shifts": 2,
-      "rosterEntries": 3,
-      "rosterApproved": 2,
-      "accounts": 4,
-      "journals": 1,
-      "journalLines": 4,
-      "notifications": 2,
+      "users": 15,
+      "members": 15,
+      "employees": 20,
+      "contracts": 15,
+      "fortnightlyContracts": 14,
+      "shifts": 6,
+      "rosterEntries": 175,
+      "rosterApproved": 175,
+      "accounts": 10,
+      "journals": 11,
+      "journalLines": 47,
+      "notifications": 6,
       "glBalanced": true
     }
   ],
   "totals": {
-    "employees": 4,
-    "contracts": 3,
-    "fortnightlyContracts": 2,
-    "rosterEntries": 5,
-    "accounts": 6,
-    "journals": 2,
-    "journalLines": 6,
-    "notifications": 3
+    "employees": 23,
+    "contracts": 18,
+    "fortnightlyContracts": 17,
+    "rosterEntries": 175,
+    "accounts": 10,
+    "journals": 11,
+    "journalLines": 47,
+    "notifications": 6
   }
 }

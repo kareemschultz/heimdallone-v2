@@ -1,19 +1,29 @@
-# Phase 21E — Write-ETL dry-run report
+# Phase 21K — Write-ETL report
 
-**Source:** synthetic (no live v1 / no production writes)
-**Tenant order:** foreign-links-synthetic → netsurf-synthetic
+**Source:** live v1 (read-only) → scratch (no v1/production writes)
+**Tenant order:** flas-hxn1 → netsurf
 **GL balanced (all tenants):** ✅ · **Tenant isolation:** ✅
 
 > PII-safe: counts + pass/fail only. No names / emails / salaries / bank / TIN / NIS.
 
 | Tenant | Emp | Contracts (fortnightly) | Roster (approved) | Accounts | Journals/Lines | Notifs | GL balanced |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| foreign-links-synthetic | 2 | 1 (0) | 2 (1) | 2 | 1/2 | 1 | ✅ |
-| netsurf-synthetic | 2 | 2 (2) | 3 (2) | 4 | 1/4 | 2 | ✅ |
+| flas-hxn1 | 3 | 3 (3) | 0 (0) | 0 | 0/0 | 0 | ✅ |
+| netsurf | 20 | 15 (14) | 175 (175) | 10 | 11/47 | 6 | ✅ |
 
 ## Totals
-- Employees 4 · Contracts 3 (fortnightly 2) · Roster 5
-- GL accounts 6 · Journals 2 / lines 6 · Notifications 3
+- Employees 23 · Contracts 18 (fortnightly 17) · Roster 175
+- GL accounts 10 · Journals 11 / lines 47 · Notifications 6
+
+## Source-JSON staging (fields with no v2 app-table home)
+- Historical payslips 69 · Attendance punches 891 · Work schedules 6
+
+## Failed / excluded mappings (3)
+| Tenant | Kind | Id | Reason |
+| --- | --- | --- | --- |
+| netsurf | account | d084c02e-377f-4567-a069-9cb73c9283df | unmapped account type |
+| netsurf | journal | b2efdd1b-09d4-4ece-a0bd-5796110ae6a2 | imbalanced (v1 bug — excluded) |
+| netsurf | journal | f8f42e15-d9dc-4090-a65a-dc1aec88c946 | line not single-sided (v1 quirk — excluded) |
 
 ## What this proves
 - The transform + load path writes valid v2-schema rows (org → user → member → employeeProfile → contract → shift → roster_entry → gl_account → gl_journal_entry/line → notification) with all FK constraints satisfied.

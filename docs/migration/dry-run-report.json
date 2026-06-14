@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-06-13T13:36:59.120Z",
-  "v1Url": "postgresql://migration_reader:***@172.19.0.2:5432/karetech_erp",
+  "generatedAt": "2026-06-14T20:15:24.895Z",
+  "v1Url": "postgresql://migration_reader:***@localhost:5432/karetech_erp",
   "v2Staging": null,
   "totals": {
     "tenants": 2,
     "users": 29,
     "employees": 23,
     "payslips": 69,
-    "attendance_punches": 888,
+    "attendance_punches": 891,
     "roster_entries": 175,
     "gl_journal_entries": 13,
     "notifications": 14,
@@ -307,7 +307,7 @@
       "v2Target": "attendance_punch",
       "classification": "direct_map",
       "reason": "raw punches with timestamp/source/device/GPS",
-      "rowCount": 888,
+      "rowCount": 891,
       "fields": [
         {
           "v1": "id",
@@ -424,7 +424,7 @@
       ],
       "unmappable": [],
       "notes": [
-        "888 punches",
+        "891 punches",
         "59 carry GPS coordinates (confirm v2 punch geo home)"
       ]
     },
@@ -3318,7 +3318,7 @@
       "counts": {
         "employees": 20,
         "payslips": 66,
-        "punches": 888,
+        "punches": 891,
         "roster": 175,
         "journals": 13,
         "notifications": 14,

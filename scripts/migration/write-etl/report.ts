@@ -28,16 +28,42 @@ interface TenantCounts {
 
 const OUT_DIR = join(process.cwd(), "docs", "migration");
 
+interface ReportMeta {
+	failures?: Array<{
+		tenantSlug: string;
+		kind: string;
+		id: string;
+		reason: string;
+	}>;
+	phase?: string;
+	source?: string;
+	sourceJson?: {
+		payslips: number;
+		attendancePunches: number;
+		workSchedules: number;
+	};
+}
+
 export function writeEtlReport(
 	results: TenantCounts[],
-	summary: { isolated: boolean; allBalanced: boolean }
+	summary: { isolated: boolean; allBalanced: boolean },
+	meta: ReportMeta = {}
 ): void {
+	// PII-safe: failures carry kind + opaque id + reason only (no row content).
+	const failures = (meta.failures ?? []).map((f) => ({
+		tenantSlug: f.tenantSlug,
+		kind: f.kind,
+		id: f.id,
+		reason: f.reason,
+	}));
 	const json = {
-		phase: "21E",
+		phase: meta.phase ?? "21E",
 		kind: "write-etl-dry-run",
-		source: "synthetic (no live v1 / no production writes)",
+		source: meta.source ?? "synthetic (no live v1 / no production writes)",
 		tenantsInOrder: results.map((r) => r.slug),
 		summary,
+		failures,
+		sourceJson: meta.sourceJson ?? null,
 		tenants: results,
 		totals: results.reduce(
 			(acc, r) => {
@@ -69,7 +95,7 @@ export function writeEtlReport(
 	);
 
 	const lines: string[] = [];
-	lines.push("# Phase 21E — Write-ETL dry-run report");
+	lines.push(`# Phase ${json.phase} — Write-ETL report`);
 	lines.push("");
 	lines.push(`**Source:** ${json.source}`);
 	lines.push(`**Tenant order:** ${json.tenantsInOrder.join(" → ")}`);
@@ -99,6 +125,24 @@ export function writeEtlReport(
 	lines.push(
 		`- GL accounts ${t.accounts} · Journals ${t.journals} / lines ${t.journalLines} · Notifications ${t.notifications}`
 	);
+	lines.push("");
+	if (json.sourceJson) {
+		lines.push("## Source-JSON staging (fields with no v2 app-table home)");
+		lines.push(
+			`- Historical payslips ${json.sourceJson.payslips} · Attendance punches ${json.sourceJson.attendancePunches} · Work schedules ${json.sourceJson.workSchedules}`
+		);
+		lines.push("");
+	}
+	lines.push(`## Failed / excluded mappings (${failures.length})`);
+	if (failures.length === 0) {
+		lines.push("- None — every source row mapped to a valid v2 row.");
+	} else {
+		lines.push("| Tenant | Kind | Id | Reason |");
+		lines.push("| --- | --- | --- | --- |");
+		for (const f of failures) {
+			lines.push(`| ${f.tenantSlug} | ${f.kind} | ${f.id} | ${f.reason} |`);
+		}
+	}
 	lines.push("");
 	lines.push("## What this proves");
 	lines.push(

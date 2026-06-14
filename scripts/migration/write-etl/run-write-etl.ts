@@ -39,6 +39,7 @@ import {
 	assertWriteConfirmed,
 	getScratchUrl,
 } from "../create-scratch-db";
+import { openV1ReadOnly } from "../v1-readonly";
 import { writeEtlReport } from "./report";
 import { SYNTHETIC_TENANTS } from "./synthetic-source";
 import {
@@ -54,6 +55,11 @@ import {
 	mapUser,
 	type V1TenantSource,
 } from "./transformers";
+import {
+	loadV1Tenants,
+	type MappingFailure,
+	stageSourceJson,
+} from "./v1-source";
 
 const { organization, user, member } = authSchema;
 
@@ -230,12 +236,41 @@ async function main() {
 		`[write-etl] scratch target db: ${new URL(url).pathname.replace(/^\//, "")}\n`
 	);
 
-	const pool = new Pool({ connectionString: url, statement_timeout: 60_000 });
+	const pool = new Pool({ connectionString: url, statement_timeout: 120_000 });
 	const db = drizzle(pool);
 	const results: TenantCounts[] = [];
+
+	// Source selection: real live v1 (read-only) when USE_V1_SOURCE=1, else the
+	// synthetic fixtures. v1 is NEVER written; the live path also stages payslips/
+	// attendance/work_schedules into the scratch migration_source_* JSONB tables.
+	const useV1 = process.env.USE_V1_SOURCE === "1";
+	let tenants = SYNTHETIC_TENANTS;
+	let failures: MappingFailure[] = [];
+	let sourceJson:
+		| { payslips: number; attendancePunches: number; workSchedules: number }
+		| undefined;
+	let v1Client: Awaited<ReturnType<typeof openV1ReadOnly>> | null = null;
+	let source = "synthetic (no live v1 / no production writes)";
+
 	try {
+		if (useV1) {
+			v1Client = await openV1ReadOnly();
+			const loaded = await loadV1Tenants(v1Client);
+			tenants = loaded.tenants;
+			failures = loaded.failures;
+			source = "live v1 (read-only) → scratch (no v1/production writes)";
+			process.stdout.write(
+				`[write-etl] LIVE v1 source: ${tenants.length} tenants, ${failures.length} excluded mappings\n`
+			);
+			sourceJson = await stageSourceJson(v1Client, pool);
+			process.stdout.write(
+				`[write-etl] staged source JSON — payslips ${sourceJson.payslips}, ` +
+					`attendance ${sourceJson.attendancePunches}, work_schedules ${sourceJson.workSchedules}\n`
+			);
+		}
+
 		// Tenant ORDER matters: Foreign Links pilot first, then Netsurf.
-		for (const src of SYNTHETIC_TENANTS) {
+		for (const src of tenants) {
 			process.stdout.write(`[write-etl] loading tenant: ${src.tenant.name}\n`);
 			const counts = await loadTenant(db, src);
 			results.push(counts);
@@ -246,9 +281,13 @@ async function main() {
 					`${counts.notifications} notifications\n`
 			);
 		}
-		const isolated = await assertTenantIsolation(db, SYNTHETIC_TENANTS);
+		const isolated = await assertTenantIsolation(db, tenants);
 		const allBalanced = results.every((r) => r.glBalanced);
-		writeEtlReport(results, { isolated, allBalanced });
+		writeEtlReport(
+			results,
+			{ isolated, allBalanced },
+			{ phase: useV1 ? "21K" : "21E", source, failures, sourceJson }
+		);
 		process.stdout.write(
 			`\n[write-etl] DONE — ${results.length} tenants, GL balanced=${allBalanced}, isolation=${isolated}\n`
 		);
@@ -256,6 +295,9 @@ async function main() {
 			process.exitCode = 1;
 		}
 	} finally {
+		if (v1Client) {
+			await v1Client.end();
+		}
 		await pool.end();
 	}
 }
