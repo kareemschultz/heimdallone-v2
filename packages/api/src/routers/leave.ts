@@ -3,12 +3,14 @@ import {
 	companyLeaveDay,
 	department,
 	employeeProfile,
+	holiday,
 	leaveAllocationRequest,
 	leaveBalance,
 	leaveRequest,
 	leaveRequestApproval,
 	leaveRestriction,
 	leaveType,
+	payrollSetting,
 } from "@Heimdallone/db/schema/index";
 import { ORPCError } from "@orpc/server";
 import { createId } from "@paralleldrive/cuid2";
@@ -22,6 +24,49 @@ import {
 	getDirectReportIds,
 	resolveCurrentEmployee,
 } from "../utils/employee-scope";
+import { countLeaveDays, type LeaveBreakdown } from "../utils/leave-days";
+
+const DEFAULT_WORK_DAYS = [1, 2, 3, 4, 5];
+
+/**
+ * Server-authoritative leave-day count (21G-D / H10). Loads the tenant workweek
+ * (`payrollSetting.workDays`, ISO numbering) and — when the leave type excludes
+ * holidays — the org public-holiday calendar, then counts working days in range
+ * honoring half-day breakdowns. The client's value is never trusted for this.
+ */
+async function computeServerLeaveDays(
+	organizationId: string,
+	excludeHolidays: boolean,
+	args: {
+		startDate: Date;
+		endDate: Date;
+		startBreakdown: LeaveBreakdown;
+		endBreakdown: LeaveBreakdown;
+	}
+): Promise<number> {
+	const [settings] = await db
+		.select({ workDays: payrollSetting.workDays })
+		.from(payrollSetting)
+		.where(eq(payrollSetting.organizationId, organizationId))
+		.limit(1);
+	const workDays =
+		(settings?.workDays as number[] | undefined) ?? DEFAULT_WORK_DAYS;
+
+	// Small per-org table; load all holidays so recurring (annual) entries match
+	// regardless of year. Skipped entirely when the type doesn't exclude holidays.
+	const holidays = excludeHolidays
+		? await db
+				.select({
+					startDate: holiday.startDate,
+					endDate: holiday.endDate,
+					isRecurring: holiday.isRecurring,
+				})
+				.from(holiday)
+				.where(eq(holiday.organizationId, organizationId))
+		: [];
+
+	return countLeaveDays({ ...args, workDays, holidays, excludeHolidays });
+}
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -106,7 +151,7 @@ const typesList = authorizedProcedure("leave_request", "read")
 		if (!input.includeInactive) {
 			conditions.push(eq(leaveType.isActive, true));
 		}
-		return db
+		return await db
 			.select()
 			.from(leaveType)
 			.where(and(...conditions));
@@ -609,6 +654,26 @@ const requestsCreate = tenantProcedure
 			throw new ORPCError("NOT_FOUND", { message: "Leave type not found." });
 		}
 
+		// H10 (21G-D): the SERVER computes the day count from the dates, breakdowns,
+		// tenant workweek, and holiday calendar — the client's requestedDays is
+		// advisory only and never trusted for balance math.
+		const serverDays = await computeServerLeaveDays(
+			orgId(context),
+			lt.excludeHolidays,
+			{
+				startDate: new Date(input.startDate),
+				endDate: new Date(input.endDate),
+				startBreakdown: input.startBreakdown,
+				endBreakdown: input.endBreakdown,
+			}
+		);
+		if (serverDays <= 0) {
+			throw new ORPCError("PRECONDITION_FAILED", {
+				message:
+					"The selected dates contain no working days. Adjust the range or check your organization's workweek and holidays.",
+			});
+		}
+
 		const [balance] = await db
 			.select()
 			.from(leaveBalance)
@@ -623,9 +688,9 @@ const requestsCreate = tenantProcedure
 		if (lt.isPaid && balance) {
 			const totalAvailable =
 				Number(balance.availableDays) + Number(balance.carryForwardDays);
-			if (Number(input.requestedDays) > totalAvailable) {
+			if (serverDays > totalAvailable) {
 				throw new ORPCError("PRECONDITION_FAILED", {
-					message: `Insufficient leave balance. You have ${totalAvailable} days available but requested ${input.requestedDays} days.`,
+					message: `Insufficient leave balance. You have ${totalAvailable} days available but this request is ${serverDays} working day(s).`,
 				});
 			}
 		}
@@ -658,7 +723,7 @@ const requestsCreate = tenantProcedure
 			endDate: new Date(input.endDate),
 			startBreakdown: input.startBreakdown,
 			endBreakdown: input.endBreakdown,
-			requestedDays: input.requestedDays,
+			requestedDays: String(serverDays),
 			description: input.description ?? null,
 			attachmentUrl: input.attachmentUrl ?? null,
 			status: "requested",
@@ -673,7 +738,7 @@ const requestsCreate = tenantProcedure
 			actorId: actorId(context),
 			metadata: {
 				leaveType: lt.name,
-				days: input.requestedDays,
+				days: serverDays,
 				dates: `${input.startDate} to ${input.endDate}`,
 			},
 		});

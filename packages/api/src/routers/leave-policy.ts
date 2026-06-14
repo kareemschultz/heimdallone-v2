@@ -45,6 +45,7 @@ import { z } from "zod";
 import { authorizedProcedure } from "../index";
 import { createAuditEvent } from "../utils/audit";
 import { resolveCurrentEmployee } from "../utils/employee-scope";
+import { resolveLeavePolicyAsOf } from "../utils/leave-policy-resolver";
 import {
 	canManageLeavePolicy,
 	canViewLeavePayrollTreatment,
@@ -649,19 +650,15 @@ const NO_POLICY_MESSAGE =
  * review" warnings across the leave + payroll surfaces. Purely informational — it
  * never alters paid/unpaid calculations and never blocks payroll.
  */
-async function getPolicyHealth(orgIdValue: string) {
-	const [active] = await db
-		.select()
-		.from(organizationLeavePolicy)
-		.where(
-			and(
-				eq(organizationLeavePolicy.organizationId, orgIdValue),
-				eq(organizationLeavePolicy.status, "active"),
-				isNull(organizationLeavePolicy.deletedAt)
-			)
-		)
-		.orderBy(desc(organizationLeavePolicy.activatedAt))
-		.limit(1);
+async function getPolicyHealth(orgIdValue: string, asOf: Date = new Date()) {
+	// Resolve the policy in force on `asOf` (default: today) by date — not by the
+	// `status = 'active'` flag alone (21G-D). Default today returns the current
+	// active policy in normal data; passing a historical date resolves the policy
+	// that governed then, preserving historical behaviour.
+	const active = await resolveLeavePolicyAsOf({
+		organizationId: orgIdValue,
+		asOf,
+	});
 
 	if (!active) {
 		return {

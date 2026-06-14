@@ -1,0 +1,59 @@
+---
+title: Leave rules & day counting
+description: How leave policies resolve by request date, and how leave days are computed on the server from your workweek and holidays.
+icon: CalendarCheck
+---
+
+<Tags>
+  <Tag>HR</Tag>
+  <Tag>Employee</Tag>
+  <Tag>Manager</Tag>
+  <Tag>Tenant Configurable</Tag>
+  <Tag>Effective Dated</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+## Leave policies resolve by date
+
+A leave request is governed by the leave policy that was **in force on the
+request's start date** — not simply "the policy currently marked active". When a
+policy is superseded, the previous one is **archived, not deleted**, so a
+backdated request still resolves the rules that applied at the time.
+
+- The policy in force on a date is the **published** policy (active or archived)
+  with the most recent start date on or before that date.
+- A **draft** policy is not yet published and is never used for resolution.
+- This preserves historical behaviour: changing today's policy does not rewrite
+  how past requests were judged.
+
+## Leave days are counted on the server
+
+When you submit a leave request, Heimdallone computes the number of leave days
+**on the server** — the value shown in the form is only a preview and is never
+trusted for balance math.
+
+The count is derived from:
+
+- the **date range** and any **half-day** start/end,
+- your organization's **workweek** (`Tenant Configurable` — which weekdays are
+  worked; non-working days don't count), and
+- the **public-holiday calendar**, when the leave type **excludes holidays**.
+
+<Steps>
+<Step>Pick the dates and (optionally) half-day start/end.</Step>
+<Step>The server counts the working days in range, skipping weekends and — for holiday-excluding leave types — public holidays.</Step>
+<Step>The balance check uses that server count; a range with no working days is rejected.</Step>
+<Step>The request stores the server-computed day count.</Step>
+</Steps>
+
+<Callout type="info" title="Why this matters">
+  Two tenants with different workweeks (for example, a Sunday–Thursday week) get
+  the correct leave-day count automatically, and the leave balance can't be
+  bypassed by a wrong day count from the client.
+</Callout>
+
+<Callout title="Status">
+  Leave resolve-by-date and server-side day counting are <Tag>Live</Tag>
+  (Phase 21G-D). Explicit start/end validity windows for policies and per-day
+  resolution across a policy boundary mid-request are future refinements.
+</Callout>

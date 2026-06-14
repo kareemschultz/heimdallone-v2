@@ -1,5 +1,5 @@
 {
   "title": "Time",
   "icon": "Clock",
-  "pages": ["index"]
+  "pages": ["index", "leave-effective-dating"]
 }
