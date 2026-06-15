@@ -28,7 +28,8 @@ Resolve these before scheduling the freeze window:
 
 | Decision | Options | Owner |
 | --- | --- | --- |
-| No-login employees | Keep no-login, **or** assign a real email/login | Owner / HR |
+| Logins & access | **Preserve logins wherever possible.** Resolve missing real emails before cutover for employees who need access; use true no-login **only** when explicitly intended. On first v2 login, a migration/update modal is shown and acknowledgement is required. Never fabricate placeholder emails. | Owner / HR |
+| Google sign-in scope | The reused v1 OAuth client covers existing Google logins; confirm whether non-owner Google users keep Google sign-in or move to a secure credential reset/invite | Owner / HR |
 | Statutory completeness | Confirm TIN/NIS/dependents are captured for employees who need them for payroll correctness | Owner / Payroll |
 | Excluded v1 journals | Exclude permanently, **or** enter a corrected opening-balance journal post-cutover | Accountant |
 | Work-schedule richness | Confirm the mapped `shift_rule` values are sufficient, or stage deeper night/split-shift rules | Owner / Payroll |
@@ -44,8 +45,9 @@ Resolve these before scheduling the freeze window:
 <Step>**Final reconciliation.** Run reconciliation against frozen v1; it must report **READY** (payslip statutory parity holds) before proceeding.</Step>
 <Step>**Final ETL into production v2.** Run the write-ETL with the production v2 target and the explicit write confirmation. Load tenants in the agreed cutover order.</Step>
 <Step>**Post-load reconciliation.** Re-verify tenant isolation, GL balance per tenant, statutory rows, no-login employees, contracts/pay frequencies, roster, shift rules, notifications, and source-JSON staging.</Step>
+<Step>**Login preservation check.** Confirm migrated tenant roles are intact (owners are `tenant_owner`, admins are `tenant_admin`, not flattened to employee) and the platform owner can switch between tenants. Verify a migrated **credential** login and a migrated **Google** login both authenticate.</Step>
 <Step>**Admin smoke test.** Sign in as an admin: org loads, employees list, payroll run visible, GL trial balance balances, reports render.</Step>
-<Step>**Employee smoke test.** Sign in as a migrated employee with a login: profile, payslips (historical, read-only), leave balance, and roster are correct.</Step>
+<Step>**Employee smoke test.** Sign in as a migrated employee with a login: the **first-login migration modal** appears and requires acknowledgement; then profile, payslips (historical, read-only), leave balance, and roster are correct.</Step>
 <Step>**Payroll smoke test.** Open a historical payslip (immutable) and run a draft payroll for the current period; confirm statutory amounts match the reconciliation.</Step>
 <Step>**DNS switch.** Only after all smoke tests pass and the owner approves, switch DNS to v2. Monitor propagation.</Step>
 </Steps>

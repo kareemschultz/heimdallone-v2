@@ -31,9 +31,20 @@ These need owner / accountant ground-truth — they are **not** completable by t
 ETL alone. Each is preserved losslessly today so the decision can be applied
 later without data loss.
 
+> **Update (2026-06-15, owner):** decision #1 below is superseded — **preserve
+> logins wherever possible; resolve missing real emails before cutover for
+> employees who need access; use true no-login only when explicitly intended; on
+> first v2 login show a migration/update modal and require acknowledgement.** A
+> grounded review of live v1 also found the ETL would (a) flatten 12 elevated
+> tenant roles (`owner`×8, `admin`×4) to `employee` and (b) drop real
+> credential/Google logins to no-login. Both are fixed in **Phase 21N**
+> ([migration-login-preservation-plan.md](../architecture/migration-login-preservation-plan.md)).
+> The platform owner (`kareemschultz`, v1 `user.role='admin'`) is preserved as a
+> cross-tenant admin-plugin account, **not** a tenant member role.
+
 | # | Decision | Current state (rehearsal) | Options | Owner |
 | --- | --- | --- | --- | --- |
-| 1 | **6 no-login employees** | 6 employees migrated with `email = NULL` → no `user`/`member` row (cannot sign in). 0 fake `@migrated.invalid` placeholders remain. | (a) keep no-login; (b) assign a real email/login per employee | Owner / HR |
+| 1 | **Logins & access (was: 6 no-login employees)** | **Superseded by Phase 21N.** v1 holds `member.role` `owner`×8 / `admin`×4 / `employee`×13 and `account` `credential`×13 (with hashes) / `google`×10. The 21N ETL preserves user + member-role + credential/Google account (Better Auth→Better Auth, hashes carry verbatim — no reset/weakening) and maps `owner`→`tenant_owner`, `admin`→`tenant_admin`. | **Decided:** preserve logins wherever possible; resolve missing real emails before cutover for employees who need access; true no-login only when explicitly intended; first-login modal + acknowledgement. **Still open:** which no-login employees should get a real email; Google scope for 10 v1 Google users (spec §3.1). | Owner / HR |
 | 2 | **Statutory completeness** | 23/23 statutory satellite rows created; **only 3** carry a TIN and **3** an NIS (faithful to v1 — source has exactly 3 each, nothing dropped); 0 have qualifying children > 0. | (a) accept v1 as-is; (b) capture TIN/NIS/dependents for the other employees before cutover for payroll correctness | Owner / Payroll |
 | 3 | **2 excluded v1-bug journals** | 11/13 journals migrated (all balanced); 2 excluded (`imbalanced`, `line not single-sided` — reversal churn). Full v1 GL (13 entries / 53 lines) preserved in `migration_source_journal[_line]`. | (a) exclude permanently; (b) accountant enters a corrected opening-balance journal **post-cutover** via the GL module | Accountant |
 | 4 | **work_schedules richness** | 6/6 v1 work_schedules mapped → `shift_rule` (1 archived → unpublished); residual fields preserved in `migration_source_work_schedule`. | (a) mapped `shift_rule` values sufficient for cutover; (b) stage deeper night/split-shift premium arithmetic first | Owner / Payroll |
