@@ -1,5 +1,5 @@
 {
-  "phase": "21K",
+  "phase": "21N",
   "kind": "write-etl-dry-run",
   "source": "live v1 (read-only) → scratch (no v1/production writes)",
   "tenantsInOrder": ["flas-hxn1", "netsurf"],
@@ -21,9 +21,65 @@
       "reason": "line not single-sided (v1 quirk — excluded)"
     }
   ],
+  "notices": [
+    {
+      "tenantSlug": "flas-hxn1",
+      "kind": "missing_login",
+      "id": "112de0e3-ca78-4f75-9b55-64dce5fff5a7",
+      "reason": "employee has no login (null email / no migrated user)"
+    },
+    {
+      "tenantSlug": "flas-hxn1",
+      "kind": "missing_login",
+      "id": "853f75ae-57ce-4f5b-bdbe-c53fcf64b4bf",
+      "reason": "employee has no login (null email / no migrated user)"
+    },
+    {
+      "tenantSlug": "flas-hxn1",
+      "kind": "missing_login",
+      "id": "da68da58-dc9f-4fa0-96a9-52cef59e759a",
+      "reason": "employee has no login (null email / no migrated user)"
+    },
+    {
+      "tenantSlug": "netsurf",
+      "kind": "platform_admin",
+      "id": "zcmsOXSP55FOxoKGjtmfnW49zuoZiB4Q",
+      "reason": "v1 user.role=admin → cross-tenant platform owner; set PLATFORM_ADMIN_USER_ID"
+    },
+    {
+      "tenantSlug": "netsurf",
+      "kind": "missing_login",
+      "id": "0cb92689-4df6-4059-a3a0-ad26a3a50f2e",
+      "reason": "employee has no login (null email / no migrated user)"
+    },
+    {
+      "tenantSlug": "netsurf",
+      "kind": "missing_login",
+      "id": "HR-EMP-00013",
+      "reason": "employee has no login (null email / no migrated user)"
+    },
+    {
+      "tenantSlug": "netsurf",
+      "kind": "missing_login",
+      "id": "HR-EMP-00012",
+      "reason": "employee has no login (null email / no migrated user)"
+    },
+    {
+      "tenantSlug": "netsurf",
+      "kind": "missing_login",
+      "id": "HR-EMP-00018",
+      "reason": "employee has no login (null email / no migrated user)"
+    },
+    {
+      "tenantSlug": "netsurf",
+      "kind": "missing_login",
+      "id": "HR-EMP-00009",
+      "reason": "employee has no login (null email / no migrated user)"
+    }
+  ],
   "sourceJson": {
     "payslips": 69,
-    "attendancePunches": 891,
+    "attendancePunches": 896,
     "workSchedules": 6,
     "employees": 23,
     "journals": 13,
@@ -34,11 +90,15 @@
       "tenant": "Foreign Links Auto Spares",
       "slug": "flas-hxn1",
       "organizations": 1,
-      "users": 0,
-      "members": 0,
+      "users": 2,
+      "members": 2,
       "employees": 3,
       "statutory": 3,
       "noLogin": 3,
+      "logins": 2,
+      "tenantOwners": 2,
+      "tenantAdmins": 0,
+      "platformAdmins": 0,
       "contracts": 3,
       "fortnightlyContracts": 3,
       "shifts": 0,
@@ -55,11 +115,15 @@
       "tenant": "Netsurf Group of Companies",
       "slug": "netsurf",
       "organizations": 1,
-      "users": 15,
-      "members": 15,
+      "users": 23,
+      "members": 23,
       "employees": 20,
       "statutory": 20,
       "noLogin": 3,
+      "logins": 17,
+      "tenantOwners": 6,
+      "tenantAdmins": 4,
+      "platformAdmins": 1,
       "contracts": 15,
       "fortnightlyContracts": 14,
       "shifts": 6,
@@ -69,7 +133,7 @@
       "accounts": 11,
       "journals": 11,
       "journalLines": 47,
-      "notifications": 6,
+      "notifications": 14,
       "glBalanced": true
     }
   ],
@@ -77,6 +141,12 @@
     "employees": 23,
     "statutory": 23,
     "noLogin": 6,
+    "users": 25,
+    "members": 25,
+    "logins": 19,
+    "tenantOwners": 8,
+    "tenantAdmins": 4,
+    "platformAdmins": 1,
     "contracts": 18,
     "fortnightlyContracts": 17,
     "shiftRules": 6,
@@ -84,6 +154,6 @@
     "accounts": 11,
     "journals": 11,
     "journalLines": 47,
-    "notifications": 6
+    "notifications": 14
   }
 }

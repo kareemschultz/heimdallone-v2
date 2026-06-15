@@ -15,17 +15,31 @@ import type {
 	V1Contract,
 	V1Employee,
 	V1Journal,
+	V1LoginAccount,
+	V1Membership,
 	V1Notification,
 	V1RosterEntry,
 	V1Shift,
 	V1ShiftRule,
 	V1Statutory,
 	V1TenantSource,
+	V1User,
 } from "./transformers";
+import { mapMemberRole } from "./transformers";
 
 export interface MappingFailure {
 	id: string;
 	kind: string;
+	reason: string;
+	tenantSlug: string;
+}
+
+// A non-fatal, PII-safe item the operator/HR/accountant must action at cutover
+// (opaque id + reason only — never names/emails). Distinct from MappingFailure
+// (which is an EXCLUDED row); a notice is preserved data that needs a decision.
+export interface MigrationNotice {
+	id: string;
+	kind: string; // platform_admin | unmapped_role | missing_login
 	reason: string;
 	tenantSlug: string;
 }
@@ -449,15 +463,102 @@ async function loadNotifications(
 		}));
 }
 
+// 21N — preserve login IDENTITIES (user + member + account) per tenant. Loaded
+// from v1 `member` (the tenant roster), NOT derived from employees — so non-
+// employee owners/admins keep their login and elevated role. Both v1 and v2 are
+// Better Auth: user/member/account copy across faithfully (password hashes too).
+async function loadIdentities(
+	c: Client,
+	oid: string,
+	slug: string,
+	notices: MigrationNotice[]
+): Promise<{
+	logins: V1LoginAccount[];
+	memberships: V1Membership[];
+	userIds: Set<string>;
+	users: V1User[];
+}> {
+	const memberRows = await v1Rows<any>(
+		c,
+		`SELECT user_id, role FROM member WHERE organization_id = $1`,
+		[oid]
+	);
+	const userIds = new Set<string>(memberRows.map((m) => m.user_id as string));
+	if (userIds.size === 0) {
+		return { users: [], memberships: [], logins: [], userIds };
+	}
+	const idList = Array.from(userIds);
+	const userRows = await v1Rows<any>(
+		c,
+		`SELECT id, name, email, email_verified, role FROM "user" WHERE id = ANY($1)`,
+		[idList]
+	);
+	const accountRows = await v1Rows<any>(
+		c,
+		`SELECT id, account_id, provider_id, user_id, password, scope,
+		        access_token, refresh_token, id_token
+		 FROM account WHERE user_id = ANY($1)`,
+		[idList]
+	);
+	const users: V1User[] = userRows.map((r) => {
+		const platformRole = (r.role as string) ?? null;
+		if (platformRole === "admin") {
+			notices.push({
+				tenantSlug: slug,
+				kind: "platform_admin",
+				id: r.id as string,
+				reason:
+					"v1 user.role=admin → cross-tenant platform owner; set PLATFORM_ADMIN_USER_ID",
+			});
+		}
+		return {
+			id: r.id as string,
+			name: (r.name as string) ?? (r.email as string),
+			email: r.email as string,
+			emailVerified: Boolean(r.email_verified),
+			platformRole,
+		};
+	});
+	const memberships: V1Membership[] = memberRows.map((m) => {
+		const role = String(m.role ?? "employee");
+		if (!mapMemberRole(role).recognized) {
+			notices.push({
+				tenantSlug: slug,
+				kind: "unmapped_role",
+				id: m.user_id as string,
+				reason: `v1 member.role "${role}" has no v2 equivalent → mapped to employee (review)`,
+			});
+		}
+		return { userId: m.user_id as string, role };
+	});
+	const logins: V1LoginAccount[] = accountRows.map((a) => ({
+		id: a.id as string,
+		accountId: a.account_id as string,
+		providerId: String(a.provider_id ?? "credential"),
+		userId: a.user_id as string,
+		password: (a.password as string) ?? null,
+		scope: (a.scope as string) ?? null,
+		accessToken: (a.access_token as string) ?? null,
+		refreshToken: (a.refresh_token as string) ?? null,
+		idToken: (a.id_token as string) ?? null,
+	}));
+	return { users, memberships, logins, userIds };
+}
+
 /**
  * Load all v1 tenants as V1TenantSource[], Foreign Links pilot FIRST then
  * Netsurf (the cutover order). Read-only; unmappable rows are recorded in
- * `failures` and excluded, never fatal.
+ * `failures` and excluded, never fatal. `notices` carries non-fatal, PII-safe
+ * items for owner/HR/accountant action (platform admins, unmapped roles,
+ * employees missing a login).
  */
-export async function loadV1Tenants(
-	c: Client
-): Promise<{ tenants: V1TenantSource[]; failures: MappingFailure[] }> {
+export async function loadV1Tenants(c: Client): Promise<{
+	failures: MappingFailure[];
+	notices: MigrationNotice[];
+	tenants: V1TenantSource[];
+}> {
 	const failures: MappingFailure[] = [];
+	const notices: MigrationNotice[] = [];
 	// Foreign Links (flas) first, then everything else.
 	const orgs = await v1Rows<any>(
 		c,
@@ -468,8 +569,28 @@ export async function loadV1Tenants(
 	for (const o of orgs) {
 		const oid = o.id as string;
 		const slug = o.slug as string;
-		const { employees, userIds } = await loadEmployees(c, oid);
+		const { employees } = await loadEmployees(c, oid);
 		const empIds = new Set(employees.map((e) => e.id));
+		// Identities (login preservation) — the authoritative user set for this org.
+		const { users, memberships, logins, userIds } = await loadIdentities(
+			c,
+			oid,
+			slug,
+			notices
+		);
+		// PII-safe missing-login report: employees with no usable login that may
+		// need portal access (owner/HR decides before cutover — never fabricated).
+		for (const e of employees) {
+			const linked = e.user?.id;
+			if (!(e.email && linked && userIds.has(linked))) {
+				notices.push({
+					tenantSlug: slug,
+					kind: "missing_login",
+					id: e.id,
+					reason: "employee has no login (null email / no migrated user)",
+				});
+			}
+		}
 		const contracts = await loadContracts(c, oid, slug, empIds, failures);
 		const shifts = await loadShifts(c, oid);
 		const shiftIds = new Set(shifts.map((s) => s.id));
@@ -481,6 +602,9 @@ export async function loadV1Tenants(
 		tenants.push({
 			tenant: { id: oid, name: o.name as string, slug },
 			employees,
+			users,
+			memberships,
+			logins,
 			contracts,
 			shifts,
 			shiftRules,
@@ -490,7 +614,7 @@ export async function loadV1Tenants(
 			notifications,
 		});
 	}
-	return { tenants, failures };
+	return { tenants, failures, notices };
 }
 
 /**

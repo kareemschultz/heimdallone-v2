@@ -48,7 +48,9 @@ import {
 	mapContract,
 	mapEmployee,
 	mapJournal,
+	mapLoginAccount,
 	mapMember,
+	mapMemberRole,
 	mapNotification,
 	mapOrganization,
 	mapRosterEntry,
@@ -61,10 +63,11 @@ import {
 import {
 	loadV1Tenants,
 	type MappingFailure,
+	type MigrationNotice,
 	stageSourceJson,
 } from "./v1-source";
 
-const { organization, user, member } = authSchema;
+const { organization, user, member, account } = authSchema;
 
 type Db = ReturnType<typeof drizzle>;
 type TenantCounts = {
@@ -76,6 +79,10 @@ type TenantCounts = {
 	employees: number;
 	statutory: number;
 	noLogin: number;
+	logins: number;
+	tenantOwners: number;
+	tenantAdmins: number;
+	platformAdmins: number;
 	contracts: number;
 	fortnightlyContracts: number;
 	shifts: number;
@@ -104,11 +111,10 @@ async function resetTenant(db: Db, src: V1TenantSource): Promise<void> {
 		.where(eq(employeeProfile.organizationId, oid));
 	await db.delete(member).where(eq(member.organizationId, oid));
 	await db.delete(organization).where(eq(organization.id, oid));
-	for (const u of src.employees) {
-		if (u.user) {
-			await db.delete(user).where(eq(user.id, u.user.id));
-		}
-	}
+	// NB: users + accounts are GLOBAL, not tenant-owned — a user can be a member
+	// of more than one tenant (e.g. the platform owner). We must NOT delete them
+	// here: deleting a shared user would cascade-wipe their membership in the
+	// OTHER tenant. Re-inserts use onConflictDoNothing instead (see loadTenant).
 }
 
 async function loadTenant(db: Db, src: V1TenantSource): Promise<TenantCounts> {
@@ -118,21 +124,45 @@ async function loadTenant(db: Db, src: V1TenantSource): Promise<TenantCounts> {
 	// 1. organization
 	await db.insert(organization).values(mapOrganization(src.tenant));
 
-	// 2. users + members (only employees that have a login)
-	const userRows = src.employees
-		.filter((e) => e.user)
-		.map((e) => mapUser(e.user as { id: string; name: string; email: string }));
-	if (userRows.length > 0) {
-		await db.insert(user).values(userRows);
+	// 2. users + members + accounts (21N — login preservation). Users come from
+	// the v1 member roster (not employees), so non-employee owners/admins keep
+	// their login + elevated tenant role. Accounts (credential hash / Google link)
+	// are copied verbatim — no reset, no weakening.
+	const validUserIds = new Set(src.users.map((u) => u.id));
+	// Users/accounts are global — onConflictDoNothing so a user shared across
+	// tenants (the platform owner) is inserted once but keeps a member row in EACH.
+	if (src.users.length > 0) {
+		await db
+			.insert(user)
+			.values(src.users.map((u) => mapUser(u)))
+			.onConflictDoNothing();
+	}
+	if (src.memberships.length > 0) {
 		await db
 			.insert(member)
-			.values(userRows.map((u) => mapMember(oid, u.id, "employee")));
+			.values(src.memberships.map((m) => mapMember(oid, m)));
 	}
+	if (src.logins.length > 0) {
+		await db
+			.insert(account)
+			.values(src.logins.map((a) => mapLoginAccount(a)))
+			.onConflictDoNothing();
+	}
+	const tenantOwners = src.memberships.filter(
+		(m) => mapMemberRole(m.role).role === "tenant_owner"
+	).length;
+	const tenantAdmins = src.memberships.filter(
+		(m) => mapMemberRole(m.role).role === "tenant_admin"
+	).length;
+	const platformAdmins = src.users.filter(
+		(u) => u.platformRole === "admin"
+	).length;
 
-	// 3. employees (+ statutory satellite where present)
+	// 3. employees (+ statutory satellite where present). The employee→user link
+	// is guarded against the loaded user set (no dangling FK).
 	await db
 		.insert(employeeProfile)
-		.values(src.employees.map((e) => mapEmployee(e, oid)));
+		.values(src.employees.map((e) => mapEmployee(e, oid, validUserIds)));
 	const statutoryRows = src.employees
 		.filter((e) => e.statutory)
 		.map((e) =>
@@ -208,11 +238,15 @@ async function loadTenant(db: Db, src: V1TenantSource): Promise<TenantCounts> {
 		tenant: src.tenant.name,
 		slug: src.tenant.slug,
 		organizations: 1,
-		users: userRows.length,
-		members: userRows.length,
+		users: src.users.length,
+		members: src.memberships.length,
 		employees: src.employees.length,
 		statutory: statutoryRows.length,
 		noLogin: noLoginEmployees,
+		logins: src.logins.length,
+		tenantOwners,
+		tenantAdmins,
+		platformAdmins,
 		contracts: contractRows.length,
 		fortnightlyContracts: fortnightly,
 		shifts: src.shifts.length,
@@ -268,6 +302,7 @@ async function main() {
 	const useV1 = process.env.USE_V1_SOURCE === "1";
 	let tenants = SYNTHETIC_TENANTS;
 	let failures: MappingFailure[] = [];
+	let notices: MigrationNotice[] = [];
 	let sourceJson:
 		| {
 				payslips: number;
@@ -287,6 +322,7 @@ async function main() {
 			const loaded = await loadV1Tenants(v1Client);
 			tenants = loaded.tenants;
 			failures = loaded.failures;
+			notices = loaded.notices;
 			source = "live v1 (read-only) → scratch (no v1/production writes)";
 			process.stdout.write(
 				`[write-etl] LIVE v1 source: ${tenants.length} tenants, ${failures.length} excluded mappings\n`
@@ -316,7 +352,7 @@ async function main() {
 		writeEtlReport(
 			results,
 			{ isolated, allBalanced },
-			{ phase: useV1 ? "21K" : "21E", source, failures, sourceJson }
+			{ phase: useV1 ? "21N" : "21E", source, failures, notices, sourceJson }
 		);
 		process.stdout.write(
 			`\n[write-etl] DONE — ${results.length} tenants, GL balanced=${allBalanced}, isolation=${isolated}\n`

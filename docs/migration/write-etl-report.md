@@ -1,4 +1,4 @@
-# Phase 21K — Write-ETL report
+# Phase 21N — Write-ETL report
 
 **Source:** live v1 (read-only) → scratch (no v1/production writes)
 **Tenant order:** flas-hxn1 → netsurf
@@ -9,14 +9,15 @@
 | Tenant | Emp | Contracts (fortnightly) | Roster (approved) | Accounts | Journals/Lines | Notifs | GL balanced |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | flas-hxn1 | 3 | 3 (3) | 0 (0) | 0 | 0/0 | 0 | ✅ |
-| netsurf | 20 | 15 (14) | 175 (175) | 11 | 11/47 | 6 | ✅ |
+| netsurf | 20 | 15 (14) | 175 (175) | 11 | 11/47 | 14 | ✅ |
 
 ## Totals
 - Employees 23 (statutory rows 23 · no-login 6) · Contracts 18 (fortnightly 17) · Shift rules 6 · Roster 175
-- GL accounts 11 · Journals 11 / lines 47 · Notifications 6
+- Logins preserved: users 25 · members 25 · accounts 19 · tenant_owner 8 · tenant_admin 4 · platform admin 1
+- GL accounts 11 · Journals 11 / lines 47 · Notifications 14
 
 ## Source-JSON staging (fields with no v2 app-table home)
-- Historical payslips 69 · Attendance punches 891 · Work schedules 6 · Employees (full row, incl. statutory fields) 23
+- Historical payslips 69 · Attendance punches 896 · Work schedules 6 · Employees (full row, incl. statutory fields) 23
 - Complete v1 GL preserved for accountant review (21L-C): journal entries 13 · journal lines 53
 
 ## Failed / excluded mappings (2)
@@ -25,10 +26,27 @@
 | netsurf | journal | b2efdd1b-09d4-4ece-a0bd-5796110ae6a2 | imbalanced (v1 bug — excluded) |
 | netsurf | journal | f8f42e15-d9dc-4090-a65a-dc1aec88c946 | line not single-sided (v1 quirk — excluded) |
 
+## Operator notices — login & access (9)
+> Non-fatal, PII-safe (opaque id + reason only). Preserved data needing an owner/HR/accountant decision before cutover — NOT exclusions.
+- Summary: missing_login 8 · platform_admin 1
+
+| Tenant | Kind | Id | Reason |
+| --- | --- | --- | --- |
+| flas-hxn1 | missing_login | 112de0e3-ca78-4f75-9b55-64dce5fff5a7 | employee has no login (null email / no migrated user) |
+| flas-hxn1 | missing_login | 853f75ae-57ce-4f5b-bdbe-c53fcf64b4bf | employee has no login (null email / no migrated user) |
+| flas-hxn1 | missing_login | da68da58-dc9f-4fa0-96a9-52cef59e759a | employee has no login (null email / no migrated user) |
+| netsurf | platform_admin | zcmsOXSP55FOxoKGjtmfnW49zuoZiB4Q | v1 user.role=admin → cross-tenant platform owner; set PLATFORM_ADMIN_USER_ID |
+| netsurf | missing_login | 0cb92689-4df6-4059-a3a0-ad26a3a50f2e | employee has no login (null email / no migrated user) |
+| netsurf | missing_login | HR-EMP-00013 | employee has no login (null email / no migrated user) |
+| netsurf | missing_login | HR-EMP-00012 | employee has no login (null email / no migrated user) |
+| netsurf | missing_login | HR-EMP-00018 | employee has no login (null email / no migrated user) |
+| netsurf | missing_login | HR-EMP-00009 | employee has no login (null email / no migrated user) |
+
 ## What this proves
 - The transform + load path writes valid v2-schema rows (org → user → member → employeeProfile → contract → shift → roster_entry → gl_account → gl_journal_entry/line → notification) with all FK constraints satisfied.
 - Pay frequency is normalised v1-free-text → canonical v2 enum (e.g. "Fortnightly"/"Bi-Weekly" → `fortnightly`).
 - Every migrated GL journal balances (Σ debits == Σ credits).
+- Logins are PRESERVED (21N): user + member-role + account copied from v1; v1 owner→tenant_owner, admin→tenant_admin (not flattened); credential hashes carried verbatim (no reset); platform owner (user.role=admin) kept as a cross-tenant account.
 - Tenants load in cutover order (Foreign Links pilot first) and are independently addressable by org id.
 
 ## Live run (operator)

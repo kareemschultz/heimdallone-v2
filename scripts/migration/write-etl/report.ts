@@ -15,10 +15,12 @@ interface TenantCounts {
 	glBalanced: boolean;
 	journalLines: number;
 	journals: number;
+	logins: number;
 	members: number;
 	noLogin: number;
 	notifications: number;
 	organizations: number;
+	platformAdmins: number;
 	rosterApproved: number;
 	rosterEntries: number;
 	shiftRules: number;
@@ -26,6 +28,8 @@ interface TenantCounts {
 	slug: string;
 	statutory: number;
 	tenant: string;
+	tenantAdmins: number;
+	tenantOwners: number;
 	users: number;
 }
 
@@ -33,6 +37,12 @@ const OUT_DIR = join(process.cwd(), "docs", "migration");
 
 interface ReportMeta {
 	failures?: Array<{
+		tenantSlug: string;
+		kind: string;
+		id: string;
+		reason: string;
+	}>;
+	notices?: Array<{
 		tenantSlug: string;
 		kind: string;
 		id: string;
@@ -62,6 +72,13 @@ export function writeEtlReport(
 		id: f.id,
 		reason: f.reason,
 	}));
+	// PII-safe: notices carry kind + opaque id + reason only (no row content).
+	const notices = (meta.notices ?? []).map((n) => ({
+		tenantSlug: n.tenantSlug,
+		kind: n.kind,
+		id: n.id,
+		reason: n.reason,
+	}));
 	const json = {
 		phase: meta.phase ?? "21E",
 		kind: "write-etl-dry-run",
@@ -69,6 +86,7 @@ export function writeEtlReport(
 		tenantsInOrder: results.map((r) => r.slug),
 		summary,
 		failures,
+		notices,
 		sourceJson: meta.sourceJson ?? null,
 		tenants: results,
 		totals: results.reduce(
@@ -76,6 +94,12 @@ export function writeEtlReport(
 				acc.employees += r.employees;
 				acc.statutory += r.statutory;
 				acc.noLogin += r.noLogin;
+				acc.users += r.users;
+				acc.members += r.members;
+				acc.logins += r.logins;
+				acc.tenantOwners += r.tenantOwners;
+				acc.tenantAdmins += r.tenantAdmins;
+				acc.platformAdmins += r.platformAdmins;
 				acc.contracts += r.contracts;
 				acc.fortnightlyContracts += r.fortnightlyContracts;
 				acc.shiftRules += r.shiftRules;
@@ -90,6 +114,12 @@ export function writeEtlReport(
 				employees: 0,
 				statutory: 0,
 				noLogin: 0,
+				users: 0,
+				members: 0,
+				logins: 0,
+				tenantOwners: 0,
+				tenantAdmins: 0,
+				platformAdmins: 0,
 				contracts: 0,
 				fortnightlyContracts: 0,
 				shiftRules: 0,
@@ -135,6 +165,9 @@ export function writeEtlReport(
 		`- Employees ${t.employees} (statutory rows ${t.statutory} · no-login ${t.noLogin}) · Contracts ${t.contracts} (fortnightly ${t.fortnightlyContracts}) · Shift rules ${t.shiftRules} · Roster ${t.rosterEntries}`
 	);
 	lines.push(
+		`- Logins preserved: users ${t.users} · members ${t.members} · accounts ${t.logins} · tenant_owner ${t.tenantOwners} · tenant_admin ${t.tenantAdmins} · platform admin ${t.platformAdmins}`
+	);
+	lines.push(
 		`- GL accounts ${t.accounts} · Journals ${t.journals} / lines ${t.journalLines} · Notifications ${t.notifications}`
 	);
 	lines.push("");
@@ -159,6 +192,30 @@ export function writeEtlReport(
 		}
 	}
 	lines.push("");
+	lines.push(`## Operator notices — login & access (${notices.length})`);
+	lines.push(
+		"> Non-fatal, PII-safe (opaque id + reason only). Preserved data needing an owner/HR/accountant decision before cutover — NOT exclusions."
+	);
+	if (notices.length === 0) {
+		lines.push("- None.");
+	} else {
+		const byKind = notices.reduce<Record<string, number>>((acc, n) => {
+			acc[n.kind] = (acc[n.kind] ?? 0) + 1;
+			return acc;
+		}, {});
+		lines.push(
+			`- Summary: ${Object.entries(byKind)
+				.map(([k, v]) => `${k} ${v}`)
+				.join(" · ")}`
+		);
+		lines.push("");
+		lines.push("| Tenant | Kind | Id | Reason |");
+		lines.push("| --- | --- | --- | --- |");
+		for (const n of notices) {
+			lines.push(`| ${n.tenantSlug} | ${n.kind} | ${n.id} | ${n.reason} |`);
+		}
+	}
+	lines.push("");
 	lines.push("## What this proves");
 	lines.push(
 		"- The transform + load path writes valid v2-schema rows (org → user → member → employeeProfile → contract → shift → roster_entry → gl_account → gl_journal_entry/line → notification) with all FK constraints satisfied."
@@ -167,6 +224,9 @@ export function writeEtlReport(
 		'- Pay frequency is normalised v1-free-text → canonical v2 enum (e.g. "Fortnightly"/"Bi-Weekly" → `fortnightly`).'
 	);
 	lines.push("- Every migrated GL journal balances (Σ debits == Σ credits).");
+	lines.push(
+		"- Logins are PRESERVED (21N): user + member-role + account copied from v1; v1 owner→tenant_owner, admin→tenant_admin (not flattened); credential hashes carried verbatim (no reset); platform owner (user.role=admin) kept as a cross-tenant account."
+	);
 	lines.push(
 		"- Tenants load in cutover order (Foreign Links pilot first) and are independently addressable by org id."
 	);

@@ -23,6 +23,14 @@ export const user = pgTable("user", {
 	banned: boolean("banned").default(false),
 	banReason: text("ban_reason"),
 	banExpires: timestamp("ban_expires"),
+	// Migration-aware state (Phase 21N). Written by the v1→v2 ETL and the user's
+	// own `migration.me.*` procedures; plain audit/state fields (not Better Auth
+	// additionalFields). `migratedFromV1` flags accounts created by the migration;
+	// the timestamps drive the required first-login onboarding modal.
+	migratedFromV1: boolean("migrated_from_v1").default(false).notNull(),
+	firstLoginAfterMigrationAt: timestamp("first_login_after_migration_at"),
+	migrationNoticeAcknowledgedAt: timestamp("migration_notice_acknowledged_at"),
+	profileReviewCompletedAt: timestamp("profile_review_completed_at"),
 });
 
 export const session = pgTable(

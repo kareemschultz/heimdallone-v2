@@ -95,6 +95,72 @@ export const foreignLinksSource: V1TenantSource = {
 			isRead: false,
 		},
 	],
+	// 21N — login identities. usr_fl_owner is a tenant owner (no employee record);
+	// usr_fl_plat is the platform owner (user.role=admin → cross-tenant). emp_fl_2
+	// has no login user → a missing_login notice.
+	users: [
+		{
+			id: "usr_fl_1",
+			name: "Ada Pilot",
+			email: "ada.pilot@example.test",
+			emailVerified: true,
+			platformRole: null,
+		},
+		{
+			id: "usr_fl_owner",
+			name: "Olivia Owner",
+			email: "olivia.owner@example.test",
+			emailVerified: true,
+			platformRole: null,
+		},
+		{
+			id: "usr_fl_plat",
+			name: "Percy Platform",
+			email: "percy.platform@example.test",
+			emailVerified: true,
+			platformRole: "admin",
+		},
+	],
+	memberships: [
+		{ userId: "usr_fl_1", role: "employee" },
+		{ userId: "usr_fl_owner", role: "owner" },
+		{ userId: "usr_fl_plat", role: "admin" },
+	],
+	logins: [
+		{
+			id: "acct_fl_1",
+			accountId: "usr_fl_1",
+			providerId: "credential",
+			userId: "usr_fl_1",
+			password: "scrypt$synthetic$hash_fl_1",
+			scope: null,
+			accessToken: null,
+			refreshToken: null,
+			idToken: null,
+		},
+		{
+			id: "acct_fl_owner",
+			accountId: "usr_fl_owner",
+			providerId: "credential",
+			userId: "usr_fl_owner",
+			password: "scrypt$synthetic$hash_fl_owner",
+			scope: null,
+			accessToken: null,
+			refreshToken: null,
+			idToken: null,
+		},
+		{
+			id: "acct_fl_plat",
+			accountId: "google-sub-synthetic-plat",
+			providerId: "google",
+			userId: "usr_fl_plat",
+			password: null,
+			scope: "openid email profile",
+			accessToken: null,
+			refreshToken: null,
+			idToken: null,
+		},
+	],
 };
 
 // 2026-06-01 is a Monday — these fortnightly contracts exercise the 21D-B fix.
@@ -238,6 +304,71 @@ export const netsurfSource: V1TenantSource = {
 			type: "roster.published",
 			title: "Your roster was updated",
 			isRead: true,
+		},
+	],
+	// 21N — login identities. usr_ns_mgr carries a v1 role with no v2 equivalent
+	// ("manager") → mapped to employee + an unmapped_role notice (never elevated).
+	users: [
+		{
+			id: "usr_ns_1",
+			name: "Cara Fortnight",
+			email: "cara.fortnight@example.test",
+			emailVerified: true,
+			platformRole: null,
+		},
+		{
+			id: "usr_ns_2",
+			name: "Dale Shiftwork",
+			email: "dale.shiftwork@example.test",
+			emailVerified: false,
+			platformRole: null,
+		},
+		{
+			id: "usr_ns_mgr",
+			name: "Morgan Manager",
+			email: "morgan.manager@example.test",
+			emailVerified: true,
+			platformRole: null,
+		},
+	],
+	memberships: [
+		{ userId: "usr_ns_1", role: "employee" },
+		{ userId: "usr_ns_2", role: "employee" },
+		{ userId: "usr_ns_mgr", role: "manager" },
+	],
+	logins: [
+		{
+			id: "acct_ns_1",
+			accountId: "usr_ns_1",
+			providerId: "credential",
+			userId: "usr_ns_1",
+			password: "scrypt$synthetic$hash_ns_1",
+			scope: null,
+			accessToken: null,
+			refreshToken: null,
+			idToken: null,
+		},
+		{
+			id: "acct_ns_2",
+			accountId: "usr_ns_2",
+			providerId: "credential",
+			userId: "usr_ns_2",
+			password: "scrypt$synthetic$hash_ns_2",
+			scope: null,
+			accessToken: null,
+			refreshToken: null,
+			idToken: null,
+		},
+		{
+			id: "acct_ns_mgr",
+			accountId: "usr_ns_mgr",
+			providerId: "credential",
+			userId: "usr_ns_mgr",
+			password: "scrypt$synthetic$hash_ns_mgr",
+			scope: null,
+			accessToken: null,
+			refreshToken: null,
+			idToken: null,
 		},
 	],
 };

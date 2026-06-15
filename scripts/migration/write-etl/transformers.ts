@@ -16,6 +16,39 @@ export interface V1Tenant {
 	name: string;
 	slug: string;
 }
+// ── v1 auth identity (21N): both v1 and v2 are Better Auth, so login preservation
+// is a faithful copy of user/member/account, NOT a rebuild. user.role is the
+// admin-plugin PLATFORM role ("admin" => the cross-tenant platform owner);
+// member.role is the per-tenant role (owner/admin/employee). ──
+export interface V1User {
+	// v2 user.email is NOT NULL UNIQUE — every v1 user carries an email.
+	email: string;
+	emailVerified: boolean;
+	id: string;
+	name: string;
+	// v1 user.role (admin-plugin platform role). null/"user" for normal users;
+	// "admin" marks the platform owner (preserved → cross-tenant access in v2).
+	platformRole: string | null;
+}
+export interface V1Membership {
+	// v1 member.role (owner/admin/employee/…) — mapped to a v2 tenant role.
+	role: string;
+	userId: string;
+}
+// A v1 Better Auth account row (the sign-in method). credential => email/password
+// (password is a Better Auth scrypt hash, carried verbatim — same verifier in v2,
+// so NO reset/weakening); google => OAuth link (accountId = Google sub).
+export interface V1LoginAccount {
+	accessToken: string | null;
+	accountId: string;
+	id: string;
+	idToken: string | null;
+	password: string | null;
+	providerId: string;
+	refreshToken: string | null;
+	scope: string | null;
+	userId: string;
+}
 export interface V1Employee {
 	// null => no email on file (no-login employee, 21L-B). employee_profile.email
 	// is now nullable; we no longer synthesize a fake placeholder address.
@@ -135,12 +168,16 @@ export interface V1TenantSource {
 	contracts: V1Contract[];
 	employees: V1Employee[];
 	journals: V1Journal[];
+	// 21N — preserved login identities for this tenant's members.
+	logins: V1LoginAccount[];
+	memberships: V1Membership[];
 	notifications: V1Notification[];
 	rosters: V1RosterEntry[];
 	// Optional (21J): work-schedule pay rules. Absent on the synthetic source.
 	shiftRules?: V1ShiftRule[];
 	shifts: V1Shift[];
 	tenant: V1Tenant;
+	users: V1User[];
 }
 
 function toDate(s: string): Date {
@@ -157,33 +194,87 @@ export function mapOrganization(t: V1Tenant) {
 	};
 }
 
-export function mapUser(u: { id: string; name: string; email: string }) {
+export function mapUser(u: V1User) {
 	return {
 		id: u.id,
 		name: u.name,
 		email: u.email,
-		emailVerified: true,
+		emailVerified: u.emailVerified,
+		// Preserve the admin-plugin platform role verbatim (e.g. "admin" → the
+		// cross-tenant platform owner). Better Auth recognises platform admins by
+		// adminRoles (default ["admin"]) OR adminUserIds — both faithful.
+		role: u.platformRole,
+		migratedFromV1: true,
 		createdAt: new Date(),
 		updatedAt: new Date(),
 	};
 }
 
-export function mapMember(orgId: string, userId: string, role: string) {
+// v1 member.role → v2 tenant role. v1 uses owner/admin/employee today; anything
+// else is mapped to the least-privilege "employee" and reported (never silently
+// elevated). The platform owner's cross-tenant power comes from user.role, not
+// from a tenant role — so it is NOT in this map.
+export const V1_TO_V2_MEMBER_ROLE: Record<string, string> = {
+	owner: "tenant_owner",
+	admin: "tenant_admin",
+	employee: "employee",
+};
+export function mapMemberRole(v1Role: string): {
+	recognized: boolean;
+	role: string;
+} {
+	const role = V1_TO_V2_MEMBER_ROLE[v1Role];
+	return role
+		? { role, recognized: true }
+		: { role: "employee", recognized: false };
+}
+
+export function mapMember(orgId: string, m: V1Membership) {
 	return {
 		id: createId(),
 		organizationId: orgId,
-		userId,
-		role,
+		userId: m.userId,
+		role: mapMemberRole(m.role).role,
 		createdAt: new Date(),
 	};
 }
 
+// ── account (the sign-in method — copied verbatim; NB: mapAccount = GL account) ──
+export function mapLoginAccount(a: V1LoginAccount) {
+	return {
+		id: a.id,
+		accountId: a.accountId,
+		providerId: a.providerId,
+		userId: a.userId,
+		// Password hash carried verbatim (Better Auth scrypt → same verifier in v2).
+		password: a.password ?? null,
+		accessToken: a.accessToken ?? null,
+		refreshToken: a.refreshToken ?? null,
+		idToken: a.idToken ?? null,
+		scope: a.scope ?? null,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	};
+}
+
 // ── employeeProfile ──
-export function mapEmployee(e: V1Employee, orgId: string) {
+// `validUserIds`, when provided, guards the employee→user FK: an employee whose
+// linked user was not migrated (e.g. not a tenant member) gets a null link rather
+// than a dangling reference.
+export function mapEmployee(
+	e: V1Employee,
+	orgId: string,
+	validUserIds?: Set<string>
+) {
+	const linkedUserId = e.user?.id ?? null;
+	const userId =
+		linkedUserId && (!validUserIds || validUserIds.has(linkedUserId))
+			? linkedUserId
+			: null;
 	return {
 		id: e.id,
 		organizationId: orgId,
-		userId: e.user?.id ?? null,
+		userId,
 		firstName: e.firstName,
 		lastName: e.lastName ?? null,
 		email: e.email, // may be null (no-login employee, 21L-B)

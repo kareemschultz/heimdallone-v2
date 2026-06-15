@@ -4,16 +4,22 @@ import {
 	mapContract,
 	mapEmployee,
 	mapJournal,
+	mapLoginAccount,
+	mapMember,
+	mapMemberRole,
 	mapNotification,
 	mapOrganization,
 	mapRosterEntry,
 	mapShiftRule,
 	mapStatutory,
+	mapUser,
 	type V1Contract,
 	type V1Journal,
+	type V1LoginAccount,
 	type V1RosterEntry,
 	type V1ShiftRule,
 	type V1Statutory,
+	type V1User,
 } from "./transformers";
 
 const ORG = "org_test";
@@ -244,6 +250,116 @@ describe("mapOrganization / mapEmployee / mapAccount — tenant scoping", () => 
 		);
 		expect(row.email).toBeNull();
 		expect(row.userId).toBeNull();
+	});
+});
+
+describe("mapUser / mapMemberRole / mapMember / mapLoginAccount — login preservation (21N)", () => {
+	const baseUser: V1User = {
+		id: "usr_1",
+		name: "Sample User",
+		email: "sample@example.test",
+		emailVerified: true,
+		platformRole: null,
+	};
+
+	test("mapUser flags migratedFromV1 and preserves email-verified + platform role", () => {
+		const row = mapUser({ ...baseUser, emailVerified: false });
+		expect(row.migratedFromV1).toBe(true);
+		expect(row.emailVerified).toBe(false);
+		expect(row.email).toBe("sample@example.test");
+		expect(row.role).toBeNull();
+	});
+
+	test("mapUser preserves the admin-plugin platform role verbatim (cross-tenant owner)", () => {
+		expect(mapUser({ ...baseUser, platformRole: "admin" }).role).toBe("admin");
+	});
+
+	test("mapMemberRole maps owner→tenant_owner, admin→tenant_admin, employee→employee", () => {
+		expect(mapMemberRole("owner")).toEqual({
+			role: "tenant_owner",
+			recognized: true,
+		});
+		expect(mapMemberRole("admin")).toEqual({
+			role: "tenant_admin",
+			recognized: true,
+		});
+		expect(mapMemberRole("employee")).toEqual({
+			role: "employee",
+			recognized: true,
+		});
+	});
+
+	test("mapMemberRole sends an unknown v1 role to employee (least privilege, flagged)", () => {
+		const r = mapMemberRole("regional_manager");
+		expect(r.role).toBe("employee");
+		expect(r.recognized).toBe(false);
+	});
+
+	test("mapMember applies the role map + scopes to the org", () => {
+		const row = mapMember(ORG, { userId: "usr_1", role: "owner" });
+		expect(row.role).toBe("tenant_owner");
+		expect(row.organizationId).toBe(ORG);
+		expect(row.userId).toBe("usr_1");
+	});
+
+	test("mapLoginAccount carries a credential password hash verbatim (no reset)", () => {
+		const a: V1LoginAccount = {
+			id: "acct_1",
+			accountId: "usr_1",
+			providerId: "credential",
+			userId: "usr_1",
+			password: "scrypt$real$hash",
+			scope: null,
+			accessToken: null,
+			refreshToken: null,
+			idToken: null,
+		};
+		const row = mapLoginAccount(a);
+		expect(row.providerId).toBe("credential");
+		expect(row.password).toBe("scrypt$real$hash");
+	});
+
+	test("mapLoginAccount preserves a google link with no password", () => {
+		const a: V1LoginAccount = {
+			id: "acct_2",
+			accountId: "google-sub-xyz",
+			providerId: "google",
+			userId: "usr_1",
+			password: null,
+			scope: "openid email",
+			accessToken: null,
+			refreshToken: null,
+			idToken: null,
+		};
+		const row = mapLoginAccount(a);
+		expect(row.providerId).toBe("google");
+		expect(row.accountId).toBe("google-sub-xyz");
+		expect(row.password).toBeNull();
+	});
+
+	test("mapEmployee nulls a link to a user that was not migrated (no dangling FK)", () => {
+		const linked = mapEmployee(
+			{
+				id: "emp_1",
+				firstName: "A",
+				email: "a@b.test",
+				user: { id: "usr_1", name: "A", email: "a@b.test" },
+			},
+			ORG,
+			new Set(["usr_1"])
+		);
+		expect(linked.userId).toBe("usr_1");
+		const dangling = mapEmployee(
+			{
+				id: "emp_2",
+				firstName: "B",
+				email: "b@b.test",
+				user: { id: "usr_missing", name: "B", email: "b@b.test" },
+			},
+			ORG,
+			new Set(["usr_1"])
+		);
+		expect(dangling.userId).toBeNull();
 	});
 });
 
