@@ -116,12 +116,20 @@ agent, we don't build an in-server ZK driver.
   `migration_source_*` table, mirroring 21L's GL/payslip staging).
 
 ## 4. Employee matching
-Primary: v1 `attendance_device_users (device_id, slot_index, employee_id)` →
-seed v2 map `(deviceId, deviceUserId=slot/enrollment-id, employeeId)`. The live
-agent sends the device user-id; v2 resolves via the map. **No name guessing.**
-Unmatched punches → `attendance_exception` (unmapped_punch) for HR to link, then
-reprocess. Mirrors v1's "no employee mapped" rejection but as a review queue, not a
-silent drop.
+**Grounded correction (build):** v1 `attendance_device_users` has 19 slots but **0
+linked to employees** — v1 never used it for mapping. The real slot→employee link
+lives on **`employees.attendance_device_id`** (the enrolment slot per employee, how
+v1's ingest resolved punches). So the bridge seeds the v2 map from
+`employees.attendance_device_id` → `(deviceId, deviceUserId=slot, employeeId)` for
+each device in the org. Historical punches already carry v1's resolved `employee_id`
+(preserved; **no name guessing**); the slot is attached as `deviceUserId` so the
+idempotency key matches a future live re-send. Unmatched punches → `attendance_
+exception` (unmapped_punch) review queue, never a silent drop.
+
+> Key correctness note: attaching the real `deviceUserId` (slot) — not a "nouser"
+> placeholder — is essential. Two different employees punching in the **same second**
+> produce the same `dev|device|nouser|epoch` key and would **falsely dedupe**;
+> per-slot keys preserve both (verified: 861→**897** punches once slots were used).
 
 ## 5. Timezone (explicit)
 Org timezone `America/Guyana` (UTC-4, no DST). Device clock treated as UTC by the
@@ -148,19 +156,22 @@ errors, clock drift). Surface "last successful sync" + backfill range.
 
 ## 9. Phase sequence
 - **21O-A** — this spec. ✅
-- **21O-B** — device + mapping pre-seed mappers (v1 `attendance_devices` /
-  `attendance_device_users` → v2 `attendance_device` / `attendance_device_employee_
-  map`); transformer tests; scratch.
-- **21O-C** — historical punch backfill mapper (v1 `attendance_punches` → v2
-  `attendance_punch`) + stage raw into `migration_source_attendance_punch`; run the
-  processor on scratch; verify counts, idempotent rerun, unmatched report,
-  recalc, **`migration:reconcile` stays READY 46/46**.
-- **21O-D** — live agent re-point: device registration flow + the Pi agent config/
-  script update to v2 ingest (carry clock-drift fix); no prod writes.
-- **21O-E** — Fumadocs (Time → Biometric devices / Attendance sync; Admin → Device
-  setup; cutover + freeze-checklist smoke tests; timezone warning; troubleshooting).
-- **21O-F** — QA + scratch dress rehearsal; refresh the freeze go/no-go (device
-  sync becomes a freeze-readiness item).
+- **21O-B** — pure mappers ✅ (`scripts/migration/attendance-bridge/transformers-
+  attendance.ts`: `mapAttendanceDevice`/`mapDeviceEmployeeMap`/`mapAttendancePunch`
+  + `directionFor`/`punchIdempotencyKey`; 15 unit tests).
+- **21O-C** — backfill runner ✅ (`run-attendance-bridge.ts`, guarded scratch-only):
+  loads v1 device/slots/punches read-only, stages into v2 `attendance_device` /
+  `attendance_device_employee_map` / `attendance_punch`, then runs the REAL
+  `processPendingPunches`. Live rehearsal: device 1, **mappings 19**, **897 punches**
+  staged (dup-on-rerun **0** = idempotent, unmatched **0**), processed 897/0,
+  **events 499 → records 358 all day-typed** (weekday 319/sat 32/sun 7), raw
+  preserved (`source=import`, v1 id in `rawPayload`); `migration:reconcile` stays
+  **READY 46/46**.
+- **21O-E** — Fumadocs ✅ (`time/biometric-devices.mdx` + cutover/freeze-checklist).
+- **21O-D** — live agent re-point (operator, needs the on-site Pi): register the
+  device in v2, point the agent at the v2 ingest endpoint (carry the clock-drift
+  fix). NOT done here (no prod writes / needs the Pi).
+- **21O-F** — final QA + freeze go/no-go refresh (device sync = freeze-readiness item).
 
 ## 10. Gates each phase
 check-types · build · audit (reuses `attendance_device`/`attendance_punch` AC →

@@ -34,6 +34,7 @@ Resolve these before scheduling the freeze window:
 | Statutory completeness | Confirm TIN/NIS/dependents are captured for employees who need them for payroll correctness | Owner / Payroll |
 | Excluded v1 journals | Exclude permanently, **or** enter a corrected opening-balance journal post-cutover | Accountant |
 | Work-schedule richness | Confirm the mapped `shift_rule` values are sufficient, or stage deeper night/split-shift rules | Owner / Payroll |
+| Time-attendance device | Backfill historical punches + re-point the on-site agent at the v2 ingest endpoint (new device registration + API key); confirm employee slot-map and device clock. See [Biometric devices](/docs/time/biometric-devices) | Owner / Payroll |
 | Cutover order | Pilot tenant first, then the rest, **or** all tenants in one freeze window | Owner |
 
 ## Freeze & cutover steps
@@ -46,6 +47,7 @@ Resolve these before scheduling the freeze window:
 <Step>**Final reconciliation.** Run reconciliation against frozen v1; it must report **READY** (payslip statutory parity holds) before proceeding.</Step>
 <Step>**Final ETL into production v2.** Run the write-ETL with the production v2 target and the explicit write confirmation. Load tenants in the agreed cutover order.</Step>
 <Step>**Post-load reconciliation.** Re-verify tenant isolation, GL balance per tenant, statutory rows, no-login employees, contracts/pay frequencies, roster, shift rules, notifications, and source-JSON staging.</Step>
+<Step>**Time-attendance backfill + agent.** Backfill historical punches (raw preserved, idempotent), confirm no unmatched punches remain and attendance records are day-typed, then re-point the on-site device agent at the v2 ingest endpoint and confirm its first successful sync.</Step>
 <Step>**Login preservation check.** Confirm migrated tenant roles are intact (owners are `tenant_owner`, admins are `tenant_admin`, not flattened to employee) and the platform owner can switch between tenants. Verify a migrated **credential** login and a migrated **Google** login both authenticate.</Step>
 <Step>**Admin smoke test.** Sign in as an admin: org loads, employees list, payroll run visible, GL trial balance balances, reports render.</Step>
 <Step>**Employee smoke test.** Sign in as a migrated employee with a login: the **first-login migration modal** appears and requires acknowledgement; then profile, payslips (historical, read-only), leave balance, and roster are correct.</Step>

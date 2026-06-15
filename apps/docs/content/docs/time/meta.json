@@ -1,5 +1,10 @@
 {
   "title": "Time",
   "icon": "Clock",
-  "pages": ["index", "work-schedules", "leave-effective-dating"]
+  "pages": [
+    "index",
+    "work-schedules",
+    "biometric-devices",
+    "leave-effective-dating"
+  ]
 }

@@ -1,0 +1,76 @@
+---
+title: Biometric devices & attendance sync
+description: How time-attendance terminals (e.g. ZKTeco) feed punches into Heimdallone v2, how punches become attendance, and how the v1 device is migrated safely.
+icon: Fingerprint
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>Payroll</Tag>
+  <Tag>Migration</Tag>
+  <Tag>Requires Setup</Tag>
+</Tags>
+
+Heimdallone v2 ingests biometric/time-attendance punches into a **raw staging
+table first**, then derives attendance from them. Payroll only ever reads the
+**derived** attendance records — never the device directly.
+
+## The flow
+
+<Steps>
+<Step>**Device** — a terminal (e.g. a ZKTeco fingerprint/face unit) records punches with a per-employee device user-id (the enrolment slot).</Step>
+<Step>**Agent** — a small on-site agent (Raspberry Pi) polls the device and POSTs new punches to the v2 ingest endpoint, authenticated by a hashed device API key.</Step>
+<Step>**Raw staging** — each punch lands in `attendance_punch` with its raw timestamp and payload preserved, deduped by an idempotency key.</Step>
+<Step>**Processor** — maps each punch to an employee, builds attendance events (clock-in/out), and recalculates the daily attendance record (applying the workweek/weekend classifier and shift rules).</Step>
+<Step>**Payroll** — reads only the derived, approved attendance records.</Step>
+</Steps>
+
+<Callout type="warn" title="Raw is never overwritten; payroll is never written by the device">
+  Raw punches are preserved for audit. Attendance is *derived* from them. The
+  device sync never writes payroll directly.
+</Callout>
+
+## Employee matching
+
+Punches are matched to employees by **device user-id (the enrolment slot)** via the
+device→employee map, never by name. A punch that can't be matched is **not dropped**
+— it goes to the **unmatched review queue** (an attendance exception) for HR to link,
+after which it reprocesses.
+
+<Callout title="Stable id, not the slot index">
+  The map keys on the stable enrolment id, not the volatile device serial that
+  resets on re-enrolment.
+</Callout>
+
+## Timezone
+
+Device clocks are treated as **UTC**; the raw device timestamp is preserved and the
+normalized punch time is stored in UTC. The daily attendance date and weekend/holiday
+classification use the org timezone (default **America/Guyana**, UTC-4). If a terminal
+loses its clock after a power cut it can report local time — agents should correct that
+offset before submitting.
+
+## Idempotency
+
+Re-running a sync is safe: each punch has a unique key (`device | device-id |
+device-user | second`), so re-sending the same punch is a no-op. This is also what
+makes a brief dual-write window at cutover safe.
+
+## Migrating the existing (v1) device
+
+The v1 terminal is brought across as a **backfill + re-point**, reusing this same
+pipeline:
+
+- **Backfill** — historical v1 punches are loaded into `attendance_punch` (raw
+  preserved, `source = import`, v1 punch id kept in the payload), the device and its
+  employee slot-map are pre-seeded, and the processor derives the historical
+  attendance records. Run read-only against v1, into a disposable scratch DB only.
+- **Re-point** — the on-site agent is pointed at the v2 ingest endpoint (a new device
+  registration + API key). The device's actual model is detected over the protocol —
+  the stored label is cosmetic; the vendor (e.g. ZKTeco) selects the adapter.
+
+<Callout title="What to verify after cutover">
+  Punch counts match, no unmatched punches remain, attendance records are day-typed
+  (weekday/Saturday/Sunday/holiday) correctly, and payroll reconciliation stays
+  green. Confirm the agent's last successful sync and that the device clock is on time.
+</Callout>

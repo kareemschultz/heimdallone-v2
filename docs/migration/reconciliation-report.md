@@ -1,6 +1,6 @@
 # v1 → v2 Payroll/Attendance Reconciliation Report
 
-**Generated:** 2026-06-15T20:04:14.993Z
+**Generated:** 2026-06-15T20:38:11.820Z
 **v1 source (read-only):** `postgresql://migration_reader:***@localhost:5432/karetech_erp`
 **Scratch DB:** `heimdallone_v2_migration_scratch`
 

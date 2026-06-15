@@ -37,6 +37,7 @@ full tenant isolation:
 | Roster | `roster_entry` | Per-date entries with overrides and approval |
 | General Ledger | `gl_account`, `gl_journal_entry`, `gl_journal_line` | Only balanced journals migrate; v1-bug journals are preserved as source for accountant review |
 | Notifications | `notification` | Scoped to migrated users |
+| Time-attendance / devices | `attendance_device`, `attendance_device_employee_map`, `attendance_punch` | Biometric terminal + raw punches backfilled into the v2 pipeline; attendance is **derived**, payroll never written directly. See [Biometric devices](/docs/time/biometric-devices) |
 
 Data with no destination app table yet (historical payslips, attendance punches,
 the full v1 GL, the full employee row) is **preserved losslessly** in
