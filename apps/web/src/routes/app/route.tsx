@@ -46,6 +46,7 @@ import {
 	useEffect,
 	useState,
 } from "react";
+import { FirstLoginModal } from "@/features/migration/first-login-modal";
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
 import { canViewPayroll } from "@/lib/rbac";
@@ -1147,6 +1148,7 @@ function AppLayout() {
 				<AppSidebar />
 				<main>
 					<AppTopbar onToggleSidebar={toggleCollapsed} />
+					<FirstLoginModal />
 					<Outlet />
 				</main>
 			</div>
