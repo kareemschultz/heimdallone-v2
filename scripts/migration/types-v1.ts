@@ -123,10 +123,12 @@ export const IGNORE_TABLES = new Set<string>([
  * Authoritative plan for every v1 table. Tables with a dedicated Mapper get
  * field-level inspection; the rest are classified here (count-only).
  *
- * Decisions baked in (owner-approved, Phase 21A/21B):
- *  - GL  -> requires_new_v2_feature (minimal v2 payroll-GL; do NOT clone bug churn)
- *  - roster -> requires_new_v2_feature (per-date roster table, 21D)
- *  - notifications -> requires_new_v2_feature (build subsystem; history optional)
+ * Decisions baked in (owner-approved, Phase 21A/21B; homes built 21D-D/E/F, so
+ * GL/roster/notifications are now transform_map — re-synced Phase 21M):
+ *  - GL  -> transform_map -> gl_account/gl_journal_entry/gl_journal_line (21D-E;
+ *    minimal v2 GL; v1-bug reversal churn excluded by the balance invariant)
+ *  - roster -> transform_map -> roster_entry (per-date roster API, 21D-D)
+ *  - notifications -> transform_map -> notification store (21D-F; history optional)
  *  - edge-sync columns -> dropped
  *  - empty scaffold modules -> ignore_defer (no data contract)
  */
@@ -195,10 +197,10 @@ export const V1_TABLE_PLAN: Record<
 		reason: "employee->shift link",
 	},
 	shift_roster_entries: {
-		v2Target: null,
-		classification: "requires_new_v2_feature",
+		v2Target: "roster_entry",
+		classification: "transform_map",
 		reason:
-			"per-date roster w/ override+approval — v2 has weekly patterns only (21D)",
+			"per-date roster w/ override+approval -> roster_entry (21D-D roster API)",
 	},
 
 	// --- attendance ---
@@ -289,21 +291,23 @@ export const V1_TABLE_PLAN: Record<
 		reason: "per-tenant config",
 	},
 
-	// --- GL (decision pending: minimal v2 build) ---
+	// --- GL (v2 home built in 21D-E; revenue->income; v1-bug churn excluded) ---
 	accounts: {
-		v2Target: null,
-		classification: "requires_new_v2_feature",
-		reason: "GL chart of accounts — v2 GL deferred (21D minimal build)",
+		v2Target: "gl_account",
+		classification: "transform_map",
+		reason:
+			"chart of accounts -> gl_account (21D-E GL API; v1 revenue->income)",
 	},
 	journal_entries: {
-		v2Target: null,
-		classification: "requires_new_v2_feature",
-		reason: "GL journals — minimal v2 GL; do NOT clone bug-reversal churn",
+		v2Target: "gl_journal_entry",
+		classification: "transform_map",
+		reason:
+			"GL journals -> gl_journal_entry (21D-E); balance-invariant excludes v1-bug churn",
 	},
 	journal_lines: {
-		v2Target: null,
-		classification: "requires_new_v2_feature",
-		reason: "GL journal lines — depends on GL build",
+		v2Target: "gl_journal_line",
+		classification: "transform_map",
+		reason: "GL journal lines -> gl_journal_line (21D-E)",
 	},
 
 	// --- offboarding ---
@@ -313,11 +317,12 @@ export const V1_TABLE_PLAN: Record<
 		reason: "resignation -> offboarding",
 	},
 
-	// --- notifications (build subsystem) ---
+	// --- notifications (v2 home built in 21D-F notifications API) ---
 	notifications: {
-		v2Target: null,
-		classification: "requires_new_v2_feature",
-		reason: "in-app notifications — v2 has no store (21D); history optional",
+		v2Target: "notification",
+		classification: "transform_map",
+		reason:
+			"in-app notifications -> notification store (21D-F); scoped to migrated users",
 	},
 
 	// --- audit ---

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-06-15T00:17:32.384Z",
+  "generatedAt": "2026-06-15T11:08:06.137Z",
   "v1Url": "postgresql://migration_reader:***@localhost:5432/karetech_erp",
-  "v2Staging": null,
+  "v2Staging": "postgresql://migration_reader:***@localhost:5432/heimdallone_v2_migration_scratch",
   "totals": {
     "tenants": 2,
     "users": 29,
@@ -26,9 +26,9 @@
     },
     {
       "v1Table": "accounts",
-      "v2Target": null,
-      "classification": "requires_new_v2_feature",
-      "reason": "GL chart of accounts — v2 GL deferred (21D minimal build)",
+      "v2Target": "gl_account",
+      "classification": "transform_map",
+      "reason": "chart of accounts -> gl_account (21D-E GL API; v1 revenue->income)",
       "rowCount": 11,
       "fields": [],
       "unmappable": [],
@@ -1061,9 +1061,9 @@
     },
     {
       "v1Table": "journal_entries",
-      "v2Target": null,
-      "classification": "requires_new_v2_feature",
-      "reason": "GL journals — minimal v2 GL; do NOT clone bug-reversal churn",
+      "v2Target": "gl_journal_entry",
+      "classification": "transform_map",
+      "reason": "GL journals -> gl_journal_entry (21D-E); balance-invariant excludes v1-bug churn",
       "rowCount": 13,
       "fields": [],
       "unmappable": [],
@@ -1071,9 +1071,9 @@
     },
     {
       "v1Table": "journal_lines",
-      "v2Target": null,
-      "classification": "requires_new_v2_feature",
-      "reason": "GL journal lines — depends on GL build",
+      "v2Target": "gl_journal_line",
+      "classification": "transform_map",
+      "reason": "GL journal lines -> gl_journal_line (21D-E)",
       "rowCount": 53,
       "fields": [],
       "unmappable": [],
@@ -1191,9 +1191,9 @@
     },
     {
       "v1Table": "notifications",
-      "v2Target": null,
-      "classification": "requires_new_v2_feature",
-      "reason": "in-app notifications — v2 has no store (21D); history optional",
+      "v2Target": "notification",
+      "classification": "transform_map",
+      "reason": "in-app notifications -> notification store (21D-F); scoped to migrated users",
       "rowCount": 14,
       "fields": [],
       "unmappable": [],
@@ -2117,9 +2117,9 @@
     },
     {
       "v1Table": "shift_roster_entries",
-      "v2Target": null,
-      "classification": "requires_new_v2_feature",
-      "reason": "PER-DATE roster with override + custom times + approval — v2 has weekly patterns only",
+      "v2Target": "roster_entry",
+      "classification": "transform_map",
+      "reason": "PER-DATE roster with override + custom times + approval -> roster_entry (21D-D)",
       "rowCount": 175,
       "fields": [
         {
@@ -3323,13 +3323,7 @@
       "ready": true
     }
   ],
-  "featureGaps": [
-    "accounts (11 rows) — GL chart of accounts — v2 GL deferred (21D minimal build)",
-    "journal_entries (13 rows) — GL journals — minimal v2 GL; do NOT clone bug-reversal churn",
-    "journal_lines (53 rows) — GL journal lines — depends on GL build",
-    "notifications (14 rows) — in-app notifications — v2 has no store (21D); history optional",
-    "shift_roster_entries (175 rows) — PER-DATE roster with override + custom times + approval — v2 has weekly patterns only"
-  ],
+  "featureGaps": [],
   "statutoryReview": [
     "employees.company_id — v2 has no company sub-entity yet — confirm",
     "employees.kiosk_pin_hash — biometric/kiosk PIN — confirm v2 home"

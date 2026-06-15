@@ -1,0 +1,81 @@
+---
+title: Freeze & cutover checklist
+description: The operator runbook for freezing v1 and cutting over to Heimdallone v2 — backups, downtime, final load, reconciliation, smoke tests, DNS switch, and rollback.
+icon: ListChecks
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>Migration</Tag>
+  <Tag>Security</Tag>
+  <Tag>Requires Setup</Tag>
+</Tags>
+
+This is the operator runbook for going live. It assumes a successful full-data
+**dress rehearsal** on a disposable scratch database and **explicit owner
+approval** to freeze. See [Migration & cutover](/docs/administration/migration-cutover)
+for what migrates and the safety guarantees.
+
+<Callout type="warn" title="Nothing here runs automatically">
+  Every production write, the freeze, and the DNS switch require explicit owner
+  sign-off. Until then, all runs are read-only against v1 and write only to a
+  disposable scratch database.
+</Callout>
+
+## Pre-freeze operator decisions
+
+Resolve these before scheduling the freeze window:
+
+| Decision | Options | Owner |
+| --- | --- | --- |
+| No-login employees | Keep no-login, **or** assign a real email/login | Owner / HR |
+| Statutory completeness | Confirm TIN/NIS/dependents are captured for employees who need them for payroll correctness | Owner / Payroll |
+| Excluded v1 journals | Exclude permanently, **or** enter a corrected opening-balance journal post-cutover | Accountant |
+| Work-schedule richness | Confirm the mapped `shift_rule` values are sufficient, or stage deeper night/split-shift rules | Owner / Payroll |
+| Cutover order | Pilot tenant first, then the rest, **or** all tenants in one freeze window | Owner |
+
+## Freeze & cutover steps
+
+<Steps>
+<Step>**Pre-freeze backups.** Take a full backup of v1 and a fresh backup/snapshot of the empty (or current) production v2 database. Record backup IDs and restore commands.</Step>
+<Step>**Announce downtime.** Notify all tenants of the maintenance window. Disable inbound writes to v1 at the application layer.</Step>
+<Step>**Freeze v1 to read-only.** Put v1 into read-only mode (application freeze + database read-only role). Confirm no new writes are arriving.</Step>
+<Step>**Final delta dry-run.** Run the dry-run against frozen v1 to confirm row counts and that there are **zero feature gaps** blocking the write-migration.</Step>
+<Step>**Final reconciliation.** Run reconciliation against frozen v1; it must report **READY** (payslip statutory parity holds) before proceeding.</Step>
+<Step>**Final ETL into production v2.** Run the write-ETL with the production v2 target and the explicit write confirmation. Load tenants in the agreed cutover order.</Step>
+<Step>**Post-load reconciliation.** Re-verify tenant isolation, GL balance per tenant, statutory rows, no-login employees, contracts/pay frequencies, roster, shift rules, notifications, and source-JSON staging.</Step>
+<Step>**Admin smoke test.** Sign in as an admin: org loads, employees list, payroll run visible, GL trial balance balances, reports render.</Step>
+<Step>**Employee smoke test.** Sign in as a migrated employee with a login: profile, payslips (historical, read-only), leave balance, and roster are correct.</Step>
+<Step>**Payroll smoke test.** Open a historical payslip (immutable) and run a draft payroll for the current period; confirm statutory amounts match the reconciliation.</Step>
+<Step>**DNS switch.** Only after all smoke tests pass and the owner approves, switch DNS to v2. Monitor propagation.</Step>
+</Steps>
+
+## Rollback
+
+<Callout type="warn" title="Rollback criteria">
+  Roll back immediately if any of these occur: post-load reconciliation is not
+  READY, a tenant-isolation or GL-balance check fails, an admin/employee/payroll
+  smoke test fails, or unexpected production writes are detected.
+</Callout>
+
+<Steps>
+<Step>Switch DNS back to v1 (or keep it on v1 if not yet switched).</Step>
+<Step>Lift the v1 read-only freeze so the business can resume on v1.</Step>
+<Step>Restore the production v2 database from the pre-freeze snapshot (discard the partial load).</Step>
+<Step>Capture the failure evidence (PII-safe report + logs), fix, and re-rehearse on scratch before re-attempting.</Step>
+</Steps>
+
+## Post-cutover monitoring
+
+For the first business cycle after cutover, watch:
+
+- Error rates and latency (application + database).
+- The first live payroll run end-to-end vs. the reconciliation baseline.
+- GL trial balance after the first journal postings.
+- Authentication for migrated logins; surface any no-login employees that need access.
+- Backup/restore jobs succeeding on the production v2 database.
+
+<Callout title="Keep v1 recoverable">
+  Retain the frozen v1 database read-only for an agreed retention period after
+  cutover as the ultimate fallback and historical reference.
+</Callout>

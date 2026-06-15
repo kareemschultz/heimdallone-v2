@@ -1,11 +1,11 @@
 // biome-ignore-all lint: one-shot roster/schedule mappers (Phase 21B).
 //
-// TWO structural gaps surface here:
+// Both former gaps now have v2 homes (re-synced Phase 21M):
 //  1. shift_roster_entries (175 rows) — PER-DATE roster with override + approval.
-//     v2 has weekly patterns only -> requires_new_v2_feature (21D roster table).
-//  2. work_schedules — far richer than v2 `shift` (night differential, split
-//     shift, Saturday rates, OT thresholds, grace minutes, day overrides). Those
-//     feed payroll and have NO v2 home -> heavy manual_review.
+//     -> transform_map -> roster_entry (21D-D per-date roster API).
+//  2. work_schedules — richer than v2 `shift` (night differential, split shift,
+//     Saturday rates, OT thresholds, grace minutes, day overrides). -> shift_rule
+//     pay-policy satellite (21J); residual fields preserved in source JSON.
 
 import { coverFields, type Mapper } from "./types-v1";
 
@@ -154,10 +154,10 @@ const shiftAssignmentMapper: Mapper = {
 
 const rosterMapper: Mapper = {
 	v1Table: "shift_roster_entries",
-	v2Target: null,
-	classification: "requires_new_v2_feature",
+	v2Target: "roster_entry",
+	classification: "transform_map",
 	reason:
-		"PER-DATE roster with override + custom times + approval — v2 has weekly patterns only",
+		"PER-DATE roster with override + custom times + approval -> roster_entry (21D-D)",
 	selectSql: 'SELECT * FROM "shift_roster_entries"',
 	inspect(rows) {
 		const known: Record<string, any> = {

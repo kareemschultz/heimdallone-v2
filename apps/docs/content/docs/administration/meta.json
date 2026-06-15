@@ -1,5 +1,5 @@
 {
   "title": "Administration",
   "icon": "Settings",
-  "pages": ["index"]
+  "pages": ["index", "migration-cutover", "freeze-checklist"]
 }

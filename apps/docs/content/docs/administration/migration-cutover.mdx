@@ -1,0 +1,99 @@
+---
+title: Migration & cutover
+description: How legacy (v1) data is brought into Heimdallone v2 safely — what migrates, the guarantees, and the freeze/cutover process.
+icon: DatabaseBackup
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>Migration</Tag>
+  <Tag>Security</Tag>
+  <Tag>Requires Setup</Tag>
+</Tags>
+
+Heimdallone v2 can import data from a legacy v1 system before you go live. This
+page explains **what migrates**, the **safety guarantees**, and the **freeze and
+cutover process** an operator follows.
+
+<Callout title="Migration principle">
+  Legacy v1 data is a migration **source** and an **intent** source — not
+  automatic truth. Historical records are preserved exactly; known v1 bugs are
+  corrected against official rules (for Guyana payroll, the GRA is the source of
+  truth); nothing is cloned blindly.
+</Callout>
+
+## What migrates
+
+The migration brings each tenant across independently, in cutover order, with
+full tenant isolation:
+
+| Area | v2 home | Notes |
+| --- | --- | --- |
+| Organizations & users | `organization`, `user`, `member` | One org per tenant; users only for employees that have a login |
+| Employees | `employee_profile` | No-login employees are supported (see below) |
+| Statutory fields | `employee_statutory` | TIN/NIS/dependent children/second job/medical — masked for non-payroll roles |
+| Contracts | `contract` | Pay frequency normalised (e.g. v1 "Bi-Weekly" → `fortnightly`) |
+| Shifts & pay policy | `shift`, `shift_rule` | v1 work-schedule richness (night/split/Saturday/OT) → effective-dated `shift_rule` |
+| Roster | `roster_entry` | Per-date entries with overrides and approval |
+| General Ledger | `gl_account`, `gl_journal_entry`, `gl_journal_line` | Only balanced journals migrate; v1-bug journals are preserved as source for accountant review |
+| Notifications | `notification` | Scoped to migrated users |
+
+Data with no destination app table yet (historical payslips, attendance punches,
+the full v1 GL, the full employee row) is **preserved losslessly** in
+`migration_source_*` staging tables, so nothing is dropped.
+
+<Callout type="warn" title="Historical payslips are computed forward, not overwritten">
+  v2's payroll engine resolves statutory rules **by pay date** (effective
+  dating). Historical issued payslips stay immutable; corrections are a
+  first-class, audited workflow — never a silent recompute. See
+  [Payroll effective dating](/docs/payroll/effective-dating).
+</Callout>
+
+## Safety guarantees
+
+These hold for every migration run, rehearsal or live:
+
+<Steps>
+<Step>**v1 is read-only.** The loader connects with a SELECT-only role and sets the session read-only; it never writes to v1.</Step>
+<Step>**Rehearsals never touch production.** Dry-runs and scratch rehearsals write only to a disposable database whose name must contain `scratch`/`staging`/`test`/`migrat`; writes require an explicit confirmation flag.</Step>
+<Step>**No secrets in the repo.** Credentials live only in a gitignored env file, sourced into the shell.</Step>
+<Step>**Reports are PII-safe.** Migration reports contain counts, slugs, classifications, and opaque IDs only — no names, emails, salaries, bank, TIN, or NIS values.</Step>
+<Step>**Reconciliation gates cutover.** Each v1 payslip is recomputed through v2's engine; the run must reconcile (e.g. personal allowance, NIS, child allowance, net) before freeze.</Step>
+</Steps>
+
+## No-login employees
+
+Not every worker needs a system login. Employees migrated **without an email
+address** are created as **no-login employees**: they have an `employee_profile`
+(and statutory record) but no `user`/`member` row, so they cannot sign in.
+
+- In the UI their login appears as **`— (no login)`**.
+- They still appear in HR, payroll, roster, and reports.
+- To grant access later, an admin sets a real email and invites them.
+
+<Callout title="Operator decision">
+  No-login is a deliberate policy, not a placeholder. Before cutover, confirm
+  which no-login employees (if any) should instead receive a real login.
+</Callout>
+
+## Excluded v1 journals
+
+The GL load enforces a balance invariant: only journals whose debits equal
+credits migrate. Genuinely defective v1 journals (imbalanced or non-single-sided
+lines — typically reversal churn from a known v1 bug) are **excluded by design**
+and listed in the migration report. The migration **never fabricates a balancing
+entry**. The complete v1 GL — including the excluded journals — is preserved in
+source staging so an accountant can decide the correct opening-balance treatment
+and enter it post-cutover via the GL module.
+
+## Freeze & cutover
+
+Cutover is an operator-run, owner-approved process. The full step-by-step runbook
+— pre-freeze backups, downtime window, final delta load, post-load reconciliation,
+smoke tests, DNS switch, rollback criteria, and monitoring — lives in the
+[Freeze & cutover checklist](/docs/administration/freeze-checklist).
+
+<Callout type="warn" title="Freeze requires explicit owner approval">
+  No production write, freeze, or DNS cutover happens automatically. Each requires
+  explicit owner sign-off after a successful full-data dress rehearsal.
+</Callout>

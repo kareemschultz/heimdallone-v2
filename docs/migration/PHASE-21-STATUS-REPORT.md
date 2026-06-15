@@ -270,8 +270,42 @@ Doc: `phase-21j-work-schedule-richness.md`. **audit STAYS 161/21** (reuses the
 - **Deferred:** deeper split-shift/night-premium attendance arithmetic + engine per-shift
   multiplier consumption (seams exist) + shift-rule admin UI.
 
-### Immediate next step (supersedes §9 / §11)
-Operator sign-off on the residual items — real emails for any of the 6 no-login employees intended to have
-logins, accountant treatment of the 2 excluded journals, and the Phase 21J work_schedules richness build if those
-pay rules are needed at cutover — then freeze + DNS cutover. **Code is not blocking; the remaining gaps are
-operational/data decisions.**
+## 14. Phase 21M — Freeze readiness & final dress rehearsal ✅ (2026-06-15)
+
+Doc: `phase-21m-freeze-readiness.md`. **audit STAYS 161/21** (no AC/schema change).
+
+- **Operator decision checklist** produced (5 items): 6 no-login employees; statutory
+  completeness (only 3/23 carry TIN/NIS — faithful to v1, no drops); 2 excluded v1-bug
+  journals (full v1 GL preserved for accountant); work_schedules sufficiency; cutover order.
+- **Dry-run classification re-synced** (`types-v1.ts` + `map-rosters.ts`): GL/roster/
+  notifications were still `requires_new_v2_feature` though their homes shipped in
+  21D-D/E/F → reclassified `transform_map` with concrete `v2Target`s → **dry-run feature
+  gaps 5→0** (lesson #95).
+- **Fresh full-data dress rehearsal** (live v1 READ-ONLY → dropped-and-recreated scratch):
+  26/26 migrations / **133 tables**; live dry-run **0 gaps**, statutory-review **2**
+  (company_id/kiosk_pin_hash); live reconcile **READY, personal_allowance+NIS+child+net
+  46/46 EXACT (NO regression)**.
+- **Loaded:** 2 orgs / 15 users / 23 employees / **6 no-login (null email, 0 placeholders)**
+  / **23 statutory (3 TIN + 3 NIS == source, no drops)** / 18 contracts (17 fortnightly) /
+  6 shifts / **6 shift_rules (1 unpublished)** / 175 roster / **11 GL accounts** / **11
+  journals / 47 lines (balanced; Netsurf debit==credit==1,204,726.65)** / 6 notifications.
+  Staged: 69 payslips / 891 punches / 6 work_schedules / 23 employees / 13 journals / 53 lines.
+- **Verification:** isolation PASS (flas 3 + netsurf 20, 0 cross-tenant leaks); PII scan PASS;
+  **NO production writes** proven (scratch has 8 `migration_source_*` tables, dev `Heimdallone`
+  = 0, v1 `karetech_erp` = 0 v2 tables).
+- **Fumadocs:** new `administration/migration-cutover.mdx` (what migrates + guarantees +
+  no-login + excluded journals) + `administration/freeze-checklist.mdx` (full operator
+  runbook: backups → downtime → freeze → delta dry-run → reconcile → ETL → post-load verify
+  → admin/employee/payroll smoke tests → DNS switch → rollback → monitoring).
+- **Gates:** check-types 3/3, build 3/3, audit 161/21, verify:core green, transformers 30/30,
+  lint 193 (≤212 baseline), docs build/lint 0.
+- **Hard rules held:** no v1 writes, no production v2 writes, no freeze, no DNS cutover, no
+  secrets committed.
+
+### Immediate next step (supersedes §9 / §11 / §13)
+Operator sign-off on the §1 decision checklist — real emails for any of the 6 no-login
+employees intended to have logins, statutory completeness for payroll-affected employees,
+accountant treatment of the 2 excluded journals, work_schedules sufficiency, and cutover
+order — then freeze + DNS cutover per the published freeze checklist. **Code is not blocking;
+the remaining gaps are operational/data decisions. Dress rehearsal GO; freeze NO-GO; DNS
+cutover NO-GO (none performed).**
