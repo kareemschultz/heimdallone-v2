@@ -1,0 +1,80 @@
+---
+title: Logins, roles & access (migration)
+description: How logins, tenant roles, and sign-in methods are preserved during migration — plus the admin checklist for missing emails and the migration-status report.
+icon: KeyRound
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>HR</Tag>
+  <Tag>Migration</Tag>
+  <Tag>Security</Tag>
+</Tags>
+
+Logins are **preserved wherever possible** during migration. This page is for
+administrators and HR: what carries over, how to handle employees without a login,
+and how to track readiness with the migration-status report.
+
+## What is preserved
+
+Because the previous (v1) system and Heimdallone v2 share the same authentication
+foundation, identities carry across faithfully:
+
+<Steps>
+<Step>**User accounts** — name, email, and verified status.</Step>
+<Step>**Tenant roles** — a v1 *owner* becomes a `tenant_owner`, a v1 *admin* becomes a `tenant_admin`, employees stay employees. Elevated roles are **never** flattened. A v1 role with no v2 equivalent is mapped to *employee* (least privilege) and flagged for review.</Step>
+<Step>**Sign-in methods** — email/password and Google logins both carry over. Existing passwords keep working; they are never reset, weakened, or stored in plain text.</Step>
+</Steps>
+
+<Callout title="Platform owner vs. tenant owner">
+  A **tenant owner** runs one organization (`tenant_owner`). The **platform
+  owner** is a separate, cross-tenant account that can switch between tenants — it
+  is preserved as a platform-admin account, **not** as a tenant role.
+</Callout>
+
+## No-login & missing-email policy
+
+No-login is a deliberate choice, **not** a placeholder, and is no longer the
+default. Rules:
+
+- If v1 has a login for the person, it is preserved.
+- If an email is missing but the person **should** have access, collect or assign
+  a **real** email before cutover, then invite them. **Never** fabricate a
+  placeholder address.
+- Keep an employee no-login **only** when they genuinely should not have system
+  access.
+
+<Callout type="warn" title="Resolve before cutover">
+  Review the migration-status report (below) and the PII-safe missing-login list
+  in the migration report, and decide which no-login employees need a real login
+  **before** the freeze.
+</Callout>
+
+## Migration-status report
+
+Admins and HR get a live report at **Govern → Migration status**
+(`/app/migration-status`).
+
+| Column | Meaning |
+| --- | --- |
+| Employee | Name (visible to HR/admins in-app only) |
+| Email | The login email, or `— (no login)` |
+| Login | Whether the employee has a sign-in |
+| Status | Login active · awaiting acknowledgement · profile review pending · no login (has email) · no login (email needed) |
+| Acknowledged | Whether they've acknowledged the [first-login notice](/docs/administration/first-login) |
+| Reviewed | Whether they've marked their profile reviewed |
+
+The stat tiles summarise: employees, logins preserved, pending acknowledgement,
+and **no-email accounts that need a decision**.
+
+<Callout title="Who can see it">
+  The report and its action are restricted to owner, admin, and HR admin roles.
+  Payroll and auditors do not see the entry.
+</Callout>
+
+## Google sign-in
+
+The existing Google OAuth client is reused; the v2 redirect URI must be added to
+it. Confirm before cutover whether non-owner Google users keep Google sign-in or
+move to a secure credential reset/invite — see the
+[freeze checklist](/docs/administration/freeze-checklist).

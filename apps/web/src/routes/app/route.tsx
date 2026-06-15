@@ -14,6 +14,7 @@ import {
 	ChevronDown,
 	Clock,
 	Command,
+	DatabaseBackup,
 	ExternalLink,
 	FileText,
 	FolderKanban,
@@ -49,7 +50,7 @@ import {
 import { FirstLoginModal } from "@/features/migration/first-login-modal";
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
-import { canViewPayroll } from "@/lib/rbac";
+import { canManageHR, canViewPayroll } from "@/lib/rbac";
 import { client, orpc } from "@/utils/orpc";
 
 interface OrgContext {
@@ -258,6 +259,12 @@ const NAV = [
 		group: "Govern",
 		items: [
 			{
+				key: "migration-status",
+				label: "Migration status",
+				icon: DatabaseBackup,
+				href: "/app/migration-status",
+			},
+			{
 				key: "countries",
 				label: "Countries & Tax",
 				icon: Globe,
@@ -354,6 +361,12 @@ function useCurrentNavKey(): string {
 }
 
 function isNavItemVisible(key: string, role: string): boolean {
+	// Migration status is an HR/admin cutover tool — restrict it to canManageHR
+	// (owner/admin/hr_admin) BEFORE the canViewPayroll see-all branch, so payroll
+	// and auditor don't see an entry that would only 403.
+	if (key === "migration-status") {
+		return canManageHR(role);
+	}
 	if (canViewPayroll(role)) {
 		return true;
 	}
