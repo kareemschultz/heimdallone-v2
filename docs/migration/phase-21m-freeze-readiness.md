@@ -140,6 +140,12 @@ pre-existing warnings/infos in generated CSS).
 
 ## 6. Go / No-Go
 
+- **Login preservation (Phase 21N): COMPLETE ✅** — the ETL now preserves v1
+  logins, tenant roles (`owner→tenant_owner`, `admin→tenant_admin`), credential/
+  Google accounts, and the cross-tenant platform owner; first-login modal +
+  migration-status report shipped. Live scratch rehearsal: roles 8/4/13=25, no
+  flattening; reconcile still 46/46. See
+  [phase-21n-login-preservation.md](./phase-21n-login-preservation.md).
 - **Live write-ETL rehearsal: GO ✅** — proven end-to-end against real v1 data
   into a fresh disposable scratch DB with all guards held.
 - **Freeze: NO-GO** — pending explicit owner sign-off on the §1 operator
