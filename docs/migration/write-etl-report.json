@@ -75,11 +75,47 @@
       "kind": "missing_login",
       "id": "HR-EMP-00009",
       "reason": "employee has no login (null email / no migrated user)"
+    },
+    {
+      "tenantSlug": "flas-hxn1+netsurf",
+      "kind": "platform_owner_candidate",
+      "id": "9ESRu2iMGiEmLJ7t6Vwf8kpcFfJlJL6D",
+      "reason": "elevated member of 2 tenants → PLATFORM_ADMIN_USER_ID candidate (super admin via admin plugin, not a tenant role)"
+    },
+    {
+      "tenantSlug": "(no tenant)",
+      "kind": "orphan_user",
+      "id": "pgjoZKSci7Y8ySA9Qq2ytGsQHPnIRBFF",
+      "reason": "v1 user with no tenant membership — not migrated"
+    },
+    {
+      "tenantSlug": "(no tenant)",
+      "kind": "orphan_user",
+      "id": "4lrQ87dgxsw96NQW7o7Ivz67wkKp8zu1",
+      "reason": "v1 user with no tenant membership (has a Google login) — not migrated; assign a membership if access is needed"
+    },
+    {
+      "tenantSlug": "(no tenant)",
+      "kind": "orphan_user",
+      "id": "gjRSdbQKfD9QgEIwWYW3TCCB4b7ntiiU",
+      "reason": "v1 user with no tenant membership — not migrated"
+    },
+    {
+      "tenantSlug": "(no tenant)",
+      "kind": "orphan_user",
+      "id": "fyNPVzfNa5Ai4YJ9qaPKEnsJDllKfEL9",
+      "reason": "v1 user with no tenant membership — not migrated"
+    },
+    {
+      "tenantSlug": "(no tenant)",
+      "kind": "orphan_user",
+      "id": "wInrd4TBhXTlu5VGAUjuOmRpqsgmYUUl",
+      "reason": "v1 user with no tenant membership (has a Google login) — not migrated; assign a membership if access is needed"
     }
   ],
   "sourceJson": {
     "payslips": 69,
-    "attendancePunches": 896,
+    "attendancePunches": 899,
     "workSchedules": 6,
     "employees": 23,
     "journals": 13,

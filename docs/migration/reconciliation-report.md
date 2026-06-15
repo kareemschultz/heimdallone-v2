@@ -1,6 +1,6 @@
 # v1 → v2 Payroll/Attendance Reconciliation Report
 
-**Generated:** 2026-06-15T14:21:15.500Z
+**Generated:** 2026-06-15T20:04:14.993Z
 **v1 source (read-only):** `postgresql://migration_reader:***@localhost:5432/karetech_erp`
 **Scratch DB:** `heimdallone_v2_migration_scratch`
 
@@ -41,18 +41,18 @@ _None — all reconciled statutory components match (exact or within rounding)._
 
 ## 5. Attendance mapping audit
 
-Total punches: **896**
+Total punches: **899**
 
 | Field | Present / Total | Note |
 | --- | --- | --- |
-| employee | 896/896 |  |
-| timestamp | 896/896 |  |
-| punch_type | 896/896 |  |
-| source | 896/896 |  |
-| device | 688/896 | device binding |
-| logical_shift_date | 896/896 | v1 derives this; confirm v2 derivation |
-| device_timestamp | 896/896 |  |
-| gps_latitude | 60/896 | geo — confirm v2 punch geo home |
+| employee | 899/899 |  |
+| timestamp | 899/899 |  |
+| punch_type | 899/899 |  |
+| source | 899/899 |  |
+| device | 688/899 | device binding |
+| logical_shift_date | 899/899 | v1 derives this; confirm v2 derivation |
+| device_timestamp | 899/899 |  |
+| gps_latitude | 62/899 | geo — confirm v2 punch geo home |
 
 **Roster/work-schedule blocker:** 175 roster entries + 6 work schedules. Per-date roster + rich work-schedule rules (night diff / split shift / Saturday / OT thresholds) are required to reconstruct earnings (gross/overtime/Saturday/Sunday pay) from punches. v2 has no home for these yet — blocks EARNINGS reconstruction until 21D. The STATUTORY layer (NIS/PAYE/allowances/net) reconciles independently because v1 stored the gross.
 

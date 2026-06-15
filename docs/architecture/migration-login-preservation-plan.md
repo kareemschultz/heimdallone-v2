@@ -39,14 +39,30 @@ copy the identity rows, scoped per tenant, instead of reconstructing them.
 
 These are two different concepts and must never be conflated:
 
-| Concept | v1 storage | v2 storage | Who |
-| --- | --- | --- | --- |
-| **Platform owner** (cross-tenant; switches Foreign Links ↔ Netsurf) | `user.role = 'admin'` (Better Auth **admin plugin**); v1 has **exactly 1** | `PLATFORM_ADMIN_USER_ID` env → admin plugin `adminUserIds` (`packages/auth/src/index.ts:73`) | `kareemschultz` only |
-| **Tenant owner** (full control of ONE org) | `member.role = 'owner'` (×8) | `member.role = 'tenant_owner'` (`packages/auth/src/permissions.ts:244`) | per-tenant business owners |
+| Concept | v2 storage | Who |
+| --- | --- | --- |
+| **Super admin / platform owner** (cross-tenant; switches Foreign Links ↔ Netsurf; platform-wide powers) | `PLATFORM_ADMIN_USER_ID` env → admin plugin `adminUserIds` (`packages/auth/src/index.ts:73`) | **`kareemschultz46@gmail.com`** (owner-decided) |
+| **Tenant owner** (full control of ONE org) | `member.role = 'tenant_owner'` (`packages/auth/src/permissions.ts:244`) | per-tenant business owners (v1 `member.role='owner'` ×8) |
 
-The ETL must map tenant roles into `member.role`, and must **not** turn the
-platform owner into a tenant member with elevated rights. The platform owner's
-cross-tenant power comes from the admin plugin, set by user id, outside tenancy.
+**Grounded correction (verified against live v1, 2026-06-15):** v1's single
+`user.role='admin'` is **NOT** `kareemschultz` — it's a separate **credential**
+account (owner of netsurf only). `kareemschultz46@gmail.com` has `user.role=null`
+but is an **owner member of BOTH tenants** via a **Google** account — i.e. the
+cross-tenant tenant-owner. So:
+
+- The **super admin** is set by the operator: `PLATFORM_ADMIN_USER_ID` = the v2
+  user id of `kareemschultz` (preserved from v1; surfaced as a
+  `platform_owner_candidate` notice — the only elevated member of >1 tenant). Org
+  switching already works via their dual `tenant_owner` membership; the admin-plugin
+  grant adds platform-wide powers.
+- The v1 `user.role='admin'` credential account's platform role must be **reviewed**
+  — the owner wants **only their account** as super admin. The ETL preserves
+  `user.role` verbatim (faithful), so at cutover either demote that account's role
+  or configure the admin plugin's `adminUserIds` as the sole super-admin source.
+
+The ETL maps tenant roles into `member.role` and must **not** turn the platform
+owner into an extra tenant role beyond what v1 already has. Platform power comes
+from the admin plugin (by user id), outside tenancy.
 
 ---
 
@@ -85,19 +101,26 @@ is migrated **without** a usable credential and flagged for a Better Auth
 **reset/invite** flow at first contact. We never downgrade the verifier or
 fabricate a password.
 
-### 3.1 Open decision — Google scope vs. existing Google users
+### 3.1 Google policy (owner-decided 2026-06-15) — allowed like v1
 
-The owner decided v2 Google sign-in is **owner-only (`kareemschultz`)**. But v1
-has **10 Google-linked logins**. Options to resolve before cutover:
+**Superseded the earlier "owner-only" idea.** Google sign-in is allowed **like v1,
+not owner-only**:
 
-- **(a)** Keep owner-only Google; non-owner Google users get a credential
-  reset/invite (works only if they also need a login — see §4 no-login policy).
-- **(b)** Enable Google for all migrated users (broaden the v2 provider scope).
-- **(c)** Per-tenant Google toggle (SaaS-aligned; larger build).
-
-Recommendation: **(a)** for the first cutover (smallest surface, matches the
-owner-only decision), with the missing-login report listing the affected users so
-HR can decide who actually needs portal access.
+- **Preserve ALL v1 Google `account` rows** for migrated (tenant-member) users —
+  the ETL copies every member's `account` rows verbatim (8 of v1's 10 Google
+  accounts belong to tenant members and migrate; 2 belong to orphan users with no
+  membership → orphan report, not migrated).
+- **Do not delete or disable non-owner Google logins.** Other employees who used
+  Google in v1 keep Google in v2.
+- Reuse the **existing v1 Google OAuth client**; add the v2 redirect/callback URL
+  to it before cutover. The client secret is **Infisical/config, never ETL data,
+  never committed/printed**.
+- **Account linking:** preserve existing links by provider + account id; do **not**
+  auto-link arbitrary accounts by email. New post-cutover Google sign-ups follow
+  the product's tenant invitation / approval rules (no uncontrolled public tenant
+  access).
+- **`kareemschultz46@gmail.com` is the super admin / platform owner** — see §5
+  (set via `PLATFORM_ADMIN_USER_ID`, not by Google-scope restriction).
 
 ---
 
@@ -245,10 +268,17 @@ Regression guards every phase: `check-types` 3/3 · `build` 3/3 · `audit` 161/2
 
 ## 11. Decisions captured / still open
 
-- ✅ Reuse v1's Google OAuth client; v2 redirect URI added to it (owner).
-- ✅ Google sign-in restricted to `kareemschultz` in v2 (owner) — but see §3.1
-  (10 existing v1 Google users need a path; recommend credential reset/invite).
+- ✅ Reuse v1's Google OAuth client; add the v2 redirect URI to it before cutover
+  (owner). Secret stays in Infisical/config — never ETL data, never committed.
+- ✅ **Google sign-in allowed LIKE v1 (NOT owner-only)** — preserve all v1 Google
+  `account` rows for tenant members; don't disable non-owner Google logins (§3.1).
+- ✅ **Super admin / platform owner = `kareemschultz46@gmail.com`** (the
+  cross-tenant Google owner; NOT v1's credential `user.role='admin'`). Set
+  `PLATFORM_ADMIN_USER_ID` to their v2 user id (§1.1, §5).
 - ✅ Google login is **not** a freeze blocker; bootstrap email/password +
   `PLATFORM_ADMIN_USER_ID` first.
+- ⏳ Demote v1's credential `user.role='admin'` so ONLY the owner's account is
+  super admin (operator, at cutover — §1.1).
 - ⏳ Which no-login employees should get a real email/login before cutover (HR).
-- ⏳ §3.1 Google-scope resolution for non-owner v1 Google users (owner/HR).
+- ⏳ Whether the 2 orphan Google users (no tenant membership) should get a
+  membership or stay unmigrated (orphan report; owner/HR).

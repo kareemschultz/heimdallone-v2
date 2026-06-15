@@ -29,7 +29,8 @@ Resolve these before scheduling the freeze window:
 | Decision | Options | Owner |
 | --- | --- | --- |
 | Logins & access | **Preserve logins wherever possible.** Resolve missing real emails before cutover for employees who need access; use true no-login **only** when explicitly intended. On first v2 login, a migration/update modal is shown and acknowledgement is required. Never fabricate placeholder emails. | Owner / HR |
-| Google sign-in scope | The reused v1 OAuth client covers existing Google logins; confirm whether non-owner Google users keep Google sign-in or move to a secure credential reset/invite | Owner / HR |
+| Super admin | Set `PLATFORM_ADMIN_USER_ID` to the **owner's** user id (the cross-tenant platform-owner candidate from the migration report); review/demote any other account that carried platform-admin in v1 | Owner |
+| Google sign-in | **Preserved like v1 (not owner-only):** add the v2 redirect URL to the existing Google OAuth client (secret in Infisical, not committed); confirm all migrated members' Google logins carry over | Owner / HR |
 | Statutory completeness | Confirm TIN/NIS/dependents are captured for employees who need them for payroll correctness | Owner / Payroll |
 | Excluded v1 journals | Exclude permanently, **or** enter a corrected opening-balance journal post-cutover | Accountant |
 | Work-schedule richness | Confirm the mapped `shift_rule` values are sufficient, or stage deeper night/split-shift rules | Owner / Payroll |

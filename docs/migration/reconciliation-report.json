@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-06-15T14:21:15.500Z",
+  "generatedAt": "2026-06-15T20:04:14.993Z",
   "v1Url": "postgresql://migration_reader:***@localhost:5432/karetech_erp",
   "scratchDb": "heimdallone_v2_migration_scratch",
   "scratchCounts": {
     "migration_source_organization": 2,
     "migration_source_employee": 23,
     "migration_source_payslip": 69,
-    "migration_source_attendance_punch": 896,
+    "migration_source_attendance_punch": 899,
     "migration_source_roster": 175,
     "migration_source_work_schedule": 6
   },
@@ -112,55 +112,55 @@
     }
   ],
   "attendance": {
-    "totalPunches": 896,
+    "totalPunches": 899,
     "byTenant": [
       {
         "tenantId": "netsurf-group-tenant-001",
-        "punches": 896
+        "punches": 899
       }
     ],
     "fieldCoverage": [
       {
         "field": "employee",
-        "present": 896,
-        "total": 896
+        "present": 899,
+        "total": 899
       },
       {
         "field": "timestamp",
-        "present": 896,
-        "total": 896
+        "present": 899,
+        "total": 899
       },
       {
         "field": "punch_type",
-        "present": 896,
-        "total": 896
+        "present": 899,
+        "total": 899
       },
       {
         "field": "source",
-        "present": 896,
-        "total": 896
+        "present": 899,
+        "total": 899
       },
       {
         "field": "device",
         "present": 688,
-        "total": 896,
+        "total": 899,
         "note": "device binding"
       },
       {
         "field": "logical_shift_date",
-        "present": 896,
-        "total": 896,
+        "present": 899,
+        "total": 899,
         "note": "v1 derives this; confirm v2 derivation"
       },
       {
         "field": "device_timestamp",
-        "present": 896,
-        "total": 896
+        "present": 899,
+        "total": 899
       },
       {
         "field": "gps_latitude",
-        "present": 60,
-        "total": 896,
+        "present": 62,
+        "total": 899,
         "note": "geo — confirm v2 punch geo home"
       }
     ],

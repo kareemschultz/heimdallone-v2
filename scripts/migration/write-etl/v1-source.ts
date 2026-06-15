@@ -559,6 +559,13 @@ export async function loadV1Tenants(c: Client): Promise<{
 }> {
 	const failures: MappingFailure[] = [];
 	const notices: MigrationNotice[] = [];
+	// Track cross-tenant owners (platform-owner candidates): a user who is an
+	// ELEVATED member of more than one tenant (e.g. the owner who switches between
+	// Foreign Links and Netsurf). Detected by membership, NOT a hardcoded email.
+	const memberOrgs = new Map<
+		string,
+		{ elevated: boolean; slugs: Set<string> }
+	>();
 	// Foreign Links (flas) first, then everything else.
 	const orgs = await v1Rows<any>(
 		c,
@@ -578,6 +585,18 @@ export async function loadV1Tenants(c: Client): Promise<{
 			slug,
 			notices
 		);
+		for (const m of memberships) {
+			const entry = memberOrgs.get(m.userId) ?? {
+				elevated: false,
+				slugs: new Set<string>(),
+			};
+			entry.slugs.add(slug);
+			const mapped = mapMemberRole(m.role).role;
+			if (mapped === "tenant_owner" || mapped === "tenant_admin") {
+				entry.elevated = true;
+			}
+			memberOrgs.set(m.userId, entry);
+		}
 		// PII-safe missing-login report: employees with no usable login that may
 		// need portal access (owner/HR decides before cutover — never fabricated).
 		for (const e of employees) {
@@ -612,6 +631,41 @@ export async function loadV1Tenants(c: Client): Promise<{
 			accounts,
 			journals,
 			notifications,
+		});
+	}
+	// Platform-owner candidates: elevated members of >1 tenant. The operator sets
+	// PLATFORM_ADMIN_USER_ID to the chosen candidate's user id (super admin via the
+	// Better Auth admin plugin) — this is NOT a tenant role. (The owner's
+	// cross-tenant Google account surfaces here without any hardcoded email.)
+	for (const [userId, info] of memberOrgs) {
+		if (info.elevated && info.slugs.size > 1) {
+			notices.push({
+				tenantSlug: Array.from(info.slugs).sort().join("+"),
+				kind: "platform_owner_candidate",
+				id: userId,
+				reason: `elevated member of ${info.slugs.size} tenants → PLATFORM_ADMIN_USER_ID candidate (super admin via admin plugin, not a tenant role)`,
+			});
+		}
+	}
+	// Orphan users: a v1 user with NO tenant membership cannot be migrated into a
+	// tenant (the loader is membership-scoped). Reported so the operator decides
+	// whether they need a membership; account rows (incl. Google) for orphans are
+	// NOT migrated since they belong to no org.
+	const orphanRows = await v1Rows<any>(
+		c,
+		`SELECT u.id,
+		        EXISTS(SELECT 1 FROM account a WHERE a.user_id = u.id AND a.provider_id = 'google') AS has_google
+		 FROM "user" u
+		 WHERE NOT EXISTS (SELECT 1 FROM member m WHERE m.user_id = u.id)`
+	);
+	for (const r of orphanRows) {
+		notices.push({
+			tenantSlug: "(no tenant)",
+			kind: "orphan_user",
+			id: r.id as string,
+			reason: r.has_google
+				? "v1 user with no tenant membership (has a Google login) — not migrated; assign a membership if access is needed"
+				: "v1 user with no tenant membership — not migrated",
 		});
 	}
 	return { tenants, failures, notices };

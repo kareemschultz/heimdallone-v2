@@ -26,11 +26,30 @@ foundation, identities carry across faithfully:
 <Step>**Sign-in methods** — email/password and Google logins both carry over. Existing passwords keep working; they are never reset, weakened, or stored in plain text.</Step>
 </Steps>
 
-<Callout title="Platform owner vs. tenant owner">
-  A **tenant owner** runs one organization (`tenant_owner`). The **platform
-  owner** is a separate, cross-tenant account that can switch between tenants — it
-  is preserved as a platform-admin account, **not** as a tenant role.
+<Callout title="Platform owner (super admin) vs. tenant owner">
+  A **tenant owner** runs one organization (`tenant_owner`). The **platform owner
+  / super admin** is a separate, cross-tenant account with platform-wide powers,
+  granted by setting `PLATFORM_ADMIN_USER_ID` to that user's id (Better Auth admin
+  plugin) — **not** by giving them a tenant role. The super admin can switch
+  between tenants and administer the platform.
 </Callout>
+
+<Callout type="warn" title="Set the super admin explicitly">
+  The migration reports a **platform-owner candidate** (any account that owns more
+  than one tenant). Set `PLATFORM_ADMIN_USER_ID` to the **owner-designated**
+  account. If a different account carried a platform-admin role in the old system,
+  review and demote it so only the intended account is super admin.
+</Callout>
+
+## Google sign-in
+
+Google sign-in is **preserved as it worked before** — it is **not** restricted to
+the owner. Every migrated member's Google `account` link carries over, so employees
+who used Google keep using Google. The existing Google OAuth client is reused; the
+**v2 redirect/callback URL must be added to it before cutover**, and the client
+secret lives in Infisical/config (never in the migration data). Existing links are
+preserved by provider + account id; accounts are **not** auto-linked by email. New
+post-cutover Google sign-ups follow the normal tenant invitation / approval rules.
 
 ## No-login & missing-email policy
 

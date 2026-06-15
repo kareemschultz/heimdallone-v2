@@ -17,7 +17,7 @@
 - GL accounts 11 · Journals 11 / lines 47 · Notifications 14
 
 ## Source-JSON staging (fields with no v2 app-table home)
-- Historical payslips 69 · Attendance punches 896 · Work schedules 6 · Employees (full row, incl. statutory fields) 23
+- Historical payslips 69 · Attendance punches 899 · Work schedules 6 · Employees (full row, incl. statutory fields) 23
 - Complete v1 GL preserved for accountant review (21L-C): journal entries 13 · journal lines 53
 
 ## Failed / excluded mappings (2)
@@ -26,9 +26,9 @@
 | netsurf | journal | b2efdd1b-09d4-4ece-a0bd-5796110ae6a2 | imbalanced (v1 bug — excluded) |
 | netsurf | journal | f8f42e15-d9dc-4090-a65a-dc1aec88c946 | line not single-sided (v1 quirk — excluded) |
 
-## Operator notices — login & access (9)
+## Operator notices — login & access (15)
 > Non-fatal, PII-safe (opaque id + reason only). Preserved data needing an owner/HR/accountant decision before cutover — NOT exclusions.
-- Summary: missing_login 8 · platform_admin 1
+- Summary: missing_login 8 · platform_admin 1 · platform_owner_candidate 1 · orphan_user 5
 
 | Tenant | Kind | Id | Reason |
 | --- | --- | --- | --- |
@@ -41,6 +41,12 @@
 | netsurf | missing_login | HR-EMP-00012 | employee has no login (null email / no migrated user) |
 | netsurf | missing_login | HR-EMP-00018 | employee has no login (null email / no migrated user) |
 | netsurf | missing_login | HR-EMP-00009 | employee has no login (null email / no migrated user) |
+| flas-hxn1+netsurf | platform_owner_candidate | 9ESRu2iMGiEmLJ7t6Vwf8kpcFfJlJL6D | elevated member of 2 tenants → PLATFORM_ADMIN_USER_ID candidate (super admin via admin plugin, not a tenant role) |
+| (no tenant) | orphan_user | pgjoZKSci7Y8ySA9Qq2ytGsQHPnIRBFF | v1 user with no tenant membership — not migrated |
+| (no tenant) | orphan_user | 4lrQ87dgxsw96NQW7o7Ivz67wkKp8zu1 | v1 user with no tenant membership (has a Google login) — not migrated; assign a membership if access is needed |
+| (no tenant) | orphan_user | gjRSdbQKfD9QgEIwWYW3TCCB4b7ntiiU | v1 user with no tenant membership — not migrated |
+| (no tenant) | orphan_user | fyNPVzfNa5Ai4YJ9qaPKEnsJDllKfEL9 | v1 user with no tenant membership — not migrated |
+| (no tenant) | orphan_user | wInrd4TBhXTlu5VGAUjuOmRpqsgmYUUl | v1 user with no tenant membership (has a Google login) — not migrated; assign a membership if access is needed |
 
 ## What this proves
 - The transform + load path writes valid v2-schema rows (org → user → member → employeeProfile → contract → shift → roster_entry → gl_account → gl_journal_entry/line → notification) with all FK constraints satisfied.
