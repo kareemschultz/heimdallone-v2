@@ -1,6 +1,6 @@
 # v1 → v2 Migration Dry-Run Report
 
-**Generated:** 2026-06-14T23:24:13.560Z
+**Generated:** 2026-06-15T00:17:32.384Z
 **v1 source (read-only):** `postgresql://migration_reader:***@localhost:5432/karetech_erp`
 **v2 staging target:** _none configured (schema-from-code mode)_
 
@@ -211,7 +211,6 @@
 - journal_lines (53 rows) — GL journal lines — depends on GL build
 - notifications (14 rows) — in-app notifications — v2 has no store (21D); history optional
 - shift_roster_entries (175 rows) — PER-DATE roster with override + custom times + approval — v2 has weekly patterns only
-- work_schedules — v1 scheduling (night differential / split shift / Saturday rates / OT thresholds) exceeds v2 `shift`; affects pay (decision needed)
 
 ## 6. Payroll / statutory fields needing manual review
 

@@ -1,0 +1,117 @@
+---
+title: Work schedules & shift rules
+description: Tenant-configurable, effective-dated work-schedule pay policy — split shifts, night differential, Saturday/Sunday/holiday rules, overtime thresholds, grace minutes — and how it flows into attendance and payroll.
+icon: CalendarClock
+---
+
+<Tags>
+  <Tag>Time</Tag>
+  <Tag>Payroll</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Manager</Tag>
+  <Tag>Tenant Configurable</Tag>
+  <Tag>Effective Dated</Tag>
+  <Tag>Requires Setup</Tag>
+</Tags>
+
+<Callout type="info" title="Status">
+  Schema, API, resolver, and the attendance + payroll seams ship in Phase 21J.
+  A dedicated admin screen for editing rules is part of a later UI rollout — today
+  rules are managed through the roster API and populated by the v1→v2 migration.
+</Callout>
+
+## What a shift rule is
+
+A **shift rule** is the pay-affecting policy for a work schedule: how overtime is
+triggered, how lateness grace works, whether a break is auto-deducted, and the
+premiums for night, Saturday, Sunday, and public-holiday work. Rules are a
+reusable product capability — **not** a single company's shift pattern. Every
+field is tenant-configurable; nothing about one tenant's schedule is hardcoded.
+
+A rule can carry: standard daily/weekly minutes · overtime daily/weekly
+thresholds · grace minutes (late / early-out) · auto break deduction · split-shift
+break window · night differential window + multiplier · Saturday-specific window ·
+Saturday / Sunday / public-holiday / weekday-overtime multipliers · flexi-time ·
+a daily paid-minutes cap.
+
+## Effective-dated — resolved by work date
+
+<Callout type="info">
+  Rules carry a validity window <code>[effectiveFrom, effectiveTo)</code> and are
+  resolved by the **work date**, exactly like payroll and leave rules. Changing a
+  rule next quarter never re-rates last quarter's attendance or pay — historical
+  work resolves the rule that was in force then.
+</Callout>
+
+A rule is only used when it is **published**. Unpublishing a rule ("archive")
+removes it from resolution while preserving the row for history.
+
+## Resolution precedence (and safe defaults)
+
+When attendance or payroll needs a rule for an employee's shift on a date, the
+system resolves in this order:
+
+<Steps>
+<Step>**Shift-specific rule** for that shift, whose window contains the work date.</Step>
+<Step>**Organization-default rule** (a rule with no shift), whose window contains the date.</Step>
+<Step>**Existing organization settings** — `payroll_setting` multipliers / workweek and `attendance_setting` grace / break.</Step>
+<Step>**Built-in defaults** when nothing is configured.</Step>
+</Steps>
+
+<Callout type="warn" title="Default / fallback behavior">
+  A tenant with **no shift rules configured** resolves to its current organization
+  settings — so attendance and payroll behave **exactly as before**. Shift rules
+  are strictly opt-in; configuring one overrides only the fields it sets and
+  inherits the rest from the organization fallback.
+</Callout>
+
+## How it flows into attendance and payroll
+
+- **Attendance** uses the resolved rule for grace minutes, standard (expected)
+  minutes, auto break deduction, and a daily paid-minutes cap when set. With no
+  rule, the existing shift-schedule minimum and organization settings are used
+  unchanged.
+- **Payroll** reads the resolved rule through a clear seam on the payroll input
+  (resolved by the pay date, preserving the historical rule). Roster and schedule
+  rules **never write payroll** — schedule policy influences pay only through the
+  attendance record's worked / payable / overtime minutes.
+
+## Rosters
+
+Rosters assign a shift to an employee on a date (with optional per-day overrides
+and approval). The shift's **rule** supplies the pay policy for those rostered
+days. Rosters and rules are separate concerns: rosters say *who works when*; rules
+say *how that work is paid*.
+
+## Roles & permissions
+
+| Action | Who |
+| --- | --- |
+| Read schedule rules / resolve a rule | Admin · HR · Payroll · Manager · Employee (own) · Auditor (read-only) |
+| Create / edit / archive a rule | **Admin · HR · Payroll only** |
+
+<Callout type="warn" title="Least privilege">
+  Managers can manage roster **assignments** but **not** pay policy — editing a
+  shift rule is restricted to HR and payroll administrators, because it changes how
+  people are paid. This is enforced server-side (two-layer authz), not in the UI.
+</Callout>
+
+## Admin setup
+
+1. Decide whether a policy applies to **one shift** or as an **organization
+   default** (leave the shift unset for a default).
+2. Set the `effectiveFrom` date; leave `effectiveTo` open for a current rule.
+3. Configure only the fields that differ from your organization settings — the
+   rest are inherited.
+4. Publish the rule. To retire it later, archive (unpublish) it — history is kept.
+
+## Migration notes
+
+<Callout type="info">
+  The v1 `work_schedules` richness (night differential, split shift, Saturday
+  rules, overtime thresholds, grace, daily cap) is migrated into shift rules.
+  Night-differential fractions (numerator/denominator) become a single decimal
+  multiplier; archived v1 schedules import as unpublished rules; fields with no
+  clean target (raw shift windows, day overrides) are preserved in migration
+  source data. Migrated rules open early enough to cover all historical work dates.
+</Callout>

@@ -213,13 +213,10 @@ function computeFeatureGaps(tables: TableInspection[]): string[] {
 			gaps.push(`${t.v1Table} (${t.rowCount} rows) — ${t.reason}`);
 		}
 	}
-	// schedule richness gap surfaced via notes on work_schedules
-	const ws = tables.find((t) => t.v1Table === "work_schedules");
-	if (ws && ws.rowCount > 0) {
-		gaps.push(
-			"work_schedules — v1 scheduling (night differential / split shift / Saturday rates / OT thresholds) exceeds v2 `shift`; affects pay (decision needed)"
-		);
-	}
+	// Phase 21J CLOSED the work_schedules richness gap: v1 scheduling (night
+	// differential / split shift / Saturday rates / OT thresholds / grace / daily
+	// cap) now maps to the effective-dated `shift_rule` table via mapShiftRule.
+	// No longer a feature gap.
 	return gaps;
 }
 

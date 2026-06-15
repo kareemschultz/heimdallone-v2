@@ -474,6 +474,12 @@ export function seesAllRoster(role: MemberRole): boolean {
 	return canViewPayroll(role);
 }
 
+// Schedule rules (Phase 21J) — pay-affecting work-schedule policy. Management is
+// admin/HR + payroll only (NOT managers). Mirror of role-helpers.ts.
+export function canManageScheduleRules(role: MemberRole): boolean {
+	return canManageHR(role) || canManagePayroll(role);
+}
+
 // General Ledger (Phase 21D-E). Mirror of packages/api/src/utils/role-helpers.ts
 // (keep byte-aligned). read: owner/admin/hr_admin/payroll_admin/auditor; manage +
 // reverse: owner/admin/payroll_admin only. Gates UI affordances; server re-checks.

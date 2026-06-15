@@ -497,6 +497,15 @@ export function seesAllRoster(role: MemberRole): boolean {
 	return canViewPayroll(role);
 }
 
+// Schedule rules (Phase 21J) — tenant-configurable, effective-dated work-schedule
+// pay policy (split shift, night-diff, OT thresholds, multipliers). These AFFECT
+// PAY, so management is least-privilege: admin/HR + payroll only — NOT managers
+// (who manage roster assignments but not pay policy). Reading reuses the roster
+// read grant. Gated at the AC layer by `roster:manage`, then narrowed here.
+export function canManageScheduleRules(role: MemberRole): boolean {
+	return canManageHR(role) || canManagePayroll(role);
+}
+
 // General Ledger (Phase 21D-E) — minimal payroll-GL. Mirror of
 // apps/web/src/lib/rbac.ts; aligned BYTE-FOR-BYTE to the `journal`/`account` AC
 // grants in permissions.ts. read (journal:read ∪ account:read): owner/admin/

@@ -9,7 +9,6 @@ import { db } from "@Heimdallone/db";
 import {
 	attendanceEvent,
 	attendanceRecord,
-	attendanceSetting,
 	employeeWorkInfo,
 	holiday,
 	payrollSetting,
@@ -17,10 +16,10 @@ import {
 } from "@Heimdallone/db/schema/index";
 import { and, eq } from "drizzle-orm";
 import { type HolidayWindow, isHolidayOn } from "./leave-days";
+import { resolveScheduleConfig } from "./shift-rule-resolver";
 
 const DEFAULT_MIN_MINUTES = 495;
 const DEFAULT_WEEKEND_DAYS = [6, 7]; // ISO: Sat, Sun
-const DEFAULT_GRACE_MINUTES = 15;
 const DEFAULT_SHIFT_START_HOUR = 8;
 
 export async function getEmployeeShiftInfo(
@@ -191,28 +190,37 @@ export async function recalculateRecord(
 
 	const { totalWorked, firstIn, lastOut } = aggregateEvents(events);
 
-	const [settings] = await db
-		.select()
-		.from(attendanceSetting)
-		.where(eq(attendanceSetting.organizationId, organizationId))
-		.limit(1);
-
-	const breakDed =
-		settings && totalWorked > settings.breakDeductionThresholdMinutes
-			? settings.breakDeductionMinutes
-			: 0;
-	const netWorked = Math.max(0, totalWorked - breakDed);
-
 	const empInfo = await getEmployeeShiftInfo(employeeId);
 	const schedule = empInfo?.shiftId
 		? await getShiftScheduleForDay(empInfo.shiftId, eventDate.getDay())
 		: null;
-	const minMinutes = schedule?.minimumWorkMinutes ?? DEFAULT_MIN_MINUTES;
-	const lateMin = computeLateMinutes(
-		schedule,
-		firstIn,
-		settings?.graceTimeMinutes ?? DEFAULT_GRACE_MINUTES
+
+	// Phase 21J: resolve the effective schedule rule for this shift + work date.
+	// With NO shift_rule rows the resolver returns the org settings fallback, so
+	// grace/break are byte-identical to the previous behaviour; a configured rule
+	// overrides per-shift. standardDailyMinutes is rule-only (null otherwise) so the
+	// shift_schedule minimum stays the source when no rule sets it.
+	const rule = await resolveScheduleConfig(
+		organizationId,
+		empInfo?.shiftId ?? null,
+		eventDate
 	);
+
+	const breakDed =
+		rule.autoDeductBreak && totalWorked > rule.minBreakDeductionMinutes
+			? rule.breakMinutes
+			: 0;
+	let netWorked = Math.max(0, totalWorked - breakDed);
+	// A daily paid-minutes cap (rule-only) bounds the recorded worked minutes.
+	if (rule.capDailyPaidMinutes !== null) {
+		netWorked = Math.min(netWorked, rule.capDailyPaidMinutes);
+	}
+
+	const minMinutes =
+		rule.standardDailyMinutes ??
+		schedule?.minimumWorkMinutes ??
+		DEFAULT_MIN_MINUTES;
+	const lateMin = computeLateMinutes(schedule, firstIn, rule.graceMinutesLate);
 
 	await db
 		.update(attendanceRecord)

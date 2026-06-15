@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-14T23:24:13.560Z",
+  "generatedAt": "2026-06-15T00:17:32.384Z",
   "v1Url": "postgresql://migration_reader:***@localhost:5432/karetech_erp",
   "v2Staging": null,
   "totals": {
@@ -3328,8 +3328,7 @@
     "journal_entries (13 rows) — GL journals — minimal v2 GL; do NOT clone bug-reversal churn",
     "journal_lines (53 rows) — GL journal lines — depends on GL build",
     "notifications (14 rows) — in-app notifications — v2 has no store (21D); history optional",
-    "shift_roster_entries (175 rows) — PER-DATE roster with override + custom times + approval — v2 has weekly patterns only",
-    "work_schedules — v1 scheduling (night differential / split shift / Saturday rates / OT thresholds) exceeds v2 `shift`; affects pay (decision needed)"
+    "shift_roster_entries (175 rows) — PER-DATE roster with override + custom times + approval — v2 has weekly patterns only"
   ],
   "statutoryReview": [
     "employees.company_id — v2 has no company sub-entity yet — confirm",

@@ -176,6 +176,13 @@
       "when": 1781477990216,
       "tag": "0024_steady_chameleon",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1781481218316,
+      "tag": "0025_many_warstar",
+      "breakpoints": true
     }
   ]
 }

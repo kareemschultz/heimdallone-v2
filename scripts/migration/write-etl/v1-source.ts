@@ -18,6 +18,7 @@ import type {
 	V1Notification,
 	V1RosterEntry,
 	V1Shift,
+	V1ShiftRule,
 	V1Statutory,
 	V1TenantSource,
 } from "./transformers";
@@ -207,6 +208,63 @@ async function loadShifts(c: Client, oid: string): Promise<V1Shift[]> {
 	return rows.map((r) => ({
 		id: r.id as string,
 		name: (r.name as string) ?? "Schedule",
+	}));
+}
+
+// 21J: the pay-affecting richness of a v1 work_schedule → a v2 shift_rule.
+function intOrNull(v: unknown): number | null {
+	if (v === null || v === undefined) {
+		return null;
+	}
+	const n = Number(v);
+	return Number.isFinite(n) ? n : null;
+}
+
+async function loadShiftRules(c: Client, oid: string): Promise<V1ShiftRule[]> {
+	const rows = await v1Rows<any>(
+		c,
+		`SELECT id, name, standard_daily_minutes, standard_weekly_minutes, work_days,
+		        overtime_threshold_daily_minutes, overtime_threshold_weekly_minutes,
+		        grace_minutes_late, grace_minutes_early_out,
+		        auto_deduct_break, break_minutes, minimum_minutes_for_break_deduction,
+		        is_split_shift, split_break_start_minutes, split_break_end_minutes,
+		        has_night_differential, night_diff_start_minutes, night_diff_end_minutes,
+		        night_diff_multiplier_num, night_diff_multiplier_den,
+		        saturday_shift_start_minutes, saturday_shift_end_minutes,
+		        is_flexi_time, cap_daily_paid_minutes, is_archived
+		 FROM work_schedules WHERE tenant_id = $1`,
+		[oid]
+	);
+	return rows.map((r) => ({
+		id: r.id as string,
+		name: (r.name as string) ?? "Schedule",
+		standardDailyMinutes: intOrNull(r.standard_daily_minutes),
+		standardWeeklyMinutes: intOrNull(r.standard_weekly_minutes),
+		workDays: r.work_days ?? null,
+		overtimeThresholdDailyMinutes: intOrNull(
+			r.overtime_threshold_daily_minutes
+		),
+		overtimeThresholdWeeklyMinutes: intOrNull(
+			r.overtime_threshold_weekly_minutes
+		),
+		graceMinutesLate: intOrNull(r.grace_minutes_late),
+		graceMinutesEarlyOut: intOrNull(r.grace_minutes_early_out),
+		autoDeductBreak: Boolean(r.auto_deduct_break),
+		breakMinutes: intOrNull(r.break_minutes),
+		minBreakDeductionMinutes: intOrNull(r.minimum_minutes_for_break_deduction),
+		isSplitShift: Boolean(r.is_split_shift),
+		splitBreakStartMinutes: intOrNull(r.split_break_start_minutes),
+		splitBreakEndMinutes: intOrNull(r.split_break_end_minutes),
+		hasNightDifferential: Boolean(r.has_night_differential),
+		nightDiffStartMinutes: intOrNull(r.night_diff_start_minutes),
+		nightDiffEndMinutes: intOrNull(r.night_diff_end_minutes),
+		nightDiffMultiplierNum: intOrNull(r.night_diff_multiplier_num),
+		nightDiffMultiplierDen: intOrNull(r.night_diff_multiplier_den),
+		saturdayShiftStartMinutes: intOrNull(r.saturday_shift_start_minutes),
+		saturdayShiftEndMinutes: intOrNull(r.saturday_shift_end_minutes),
+		isFlexiTime: Boolean(r.is_flexi_time),
+		capDailyPaidMinutes: intOrNull(r.cap_daily_paid_minutes),
+		isArchived: Boolean(r.is_archived),
 	}));
 }
 
@@ -415,6 +473,7 @@ export async function loadV1Tenants(
 		const contracts = await loadContracts(c, oid, slug, empIds, failures);
 		const shifts = await loadShifts(c, oid);
 		const shiftIds = new Set(shifts.map((s) => s.id));
+		const shiftRules = await loadShiftRules(c, oid);
 		const rosters = await loadRosters(c, oid, empIds, shiftIds);
 		const { accounts, codeById } = await loadAccounts(c, oid, slug, failures);
 		const journals = await loadJournals(c, oid, slug, codeById, failures);
@@ -424,6 +483,7 @@ export async function loadV1Tenants(
 			employees,
 			contracts,
 			shifts,
+			shiftRules,
 			rosters,
 			accounts,
 			journals,

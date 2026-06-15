@@ -12,7 +12,32 @@ export interface PayrollInput {
 	payItems: PayItemsInput;
 	period: PeriodInput;
 	reimbursements: ReimbursementsInput;
+	// Phase 21J: the effective work-schedule rule resolved for this employee's
+	// shift + pay date (split shift / night-diff / OT thresholds / per-shift
+	// multipliers). OPTIONAL and carried as the clean READ seam — schedule rules
+	// already influence pay via the attendance record's worked/payable/overtime
+	// minutes; this surfaces the pay-policy itself for engine consumption without
+	// changing any current calculation (absent = today's behaviour).
+	scheduleRule?: ScheduleRuleInput;
 	settings: PayrollSettingInput;
+}
+
+/** Effective work-schedule pay policy for a (shift, pay date). All optional. */
+export interface ScheduleRuleInput {
+	capDailyPaidMinutes: number | null;
+	hasNightDifferential: boolean;
+	isSplitShift: boolean;
+	nightDiffMultiplier: number;
+	overtimeThresholdDailyMinutes: number | null;
+	overtimeThresholdWeeklyMinutes: number | null;
+	publicHolidayMultiplier: number;
+	ruleId: string | null;
+	saturdayMultiplier: number;
+	source: string;
+	standardDailyMinutes: number | null;
+	standardWeeklyMinutes: number | null;
+	sundayMultiplier: number;
+	weekdayOvertimeMultiplier: number;
 }
 
 export interface EmployeeInput {

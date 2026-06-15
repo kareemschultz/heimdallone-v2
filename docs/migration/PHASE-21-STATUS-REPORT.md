@@ -243,6 +243,33 @@ Closes the four §11 manual-review items + a full-data dress rehearsal. Doc:
 - **Gates:** check-types 3/3 · build 3/3 · audit 161/21 · transformers 23/23 · engine 59/59 · changed files lint-clean.
 - **Hard rules held:** no v1 writes · no prod v2 writes · no freeze · no DNS cutover · no secrets committed.
 
+## 13. Phase 21J — Work-schedule richness build ✅ COMPLETE (2026-06-14)
+
+Tenant-configurable, effective-dated v2 home for v1 `work_schedules` pay policy.
+Doc: `phase-21j-work-schedule-richness.md`. **audit STAYS 161/21** (reuses the
+`roster` AC resource).
+
+- **Schema (0025_many_warstar):** `shift_rule` (org + optional shift; null shiftId =
+  org-default; `[effectiveFrom,effectiveTo)` + isPublished; partial-unique indexes).
+  Carries split shift, night-diff window+multiplier, Saturday/Sunday/holiday +
+  weekday-OT multipliers, OT daily/weekly thresholds, grace late/early, auto-break,
+  standard daily/weekly minutes, flexi, daily cap, per-shift workDays. Most columns
+  nullable → inherit org fallback (no-rule tenant byte-compatible).
+- **Resolver:** `resolveScheduleConfig` — shift-specific → org-default → org settings
+  → built-in defaults, by work date. `verify:shift-rule-resolver` 29/29.
+- **API:** `roster.scheduleRules.{list,getById,resolve,create,update,archive}`; manage
+  narrowed to admin/HR/payroll (managers do assignments, not pay policy).
+  `verify:shift-rule-api` 32/32.
+- **Seams:** attendance recalc consumes grace/standard/auto-break/cap (byte-compatible);
+  payroll builder resolves by pay date + carries `ScheduleRuleInput` (engine ignores →
+  reconcile exact); roster never writes payroll.
+- **ETL:** `mapShiftRule` (night num/den→decimal, archived→unpublished, no-target fields
+  preserved in source JSON). Live rehearsal: **6/6 work_schedules mapped, 0 orphans**,
+  dry-run gaps **6→5** (work_schedules CLEARED), reconcile **READY 46/46 (no regression)**.
+- **Docs:** Fumadocs `time/work-schedules.mdx`.
+- **Deferred:** deeper split-shift/night-premium attendance arithmetic + engine per-shift
+  multiplier consumption (seams exist) + shift-rule admin UI.
+
 ### Immediate next step (supersedes §9 / §11)
 Operator sign-off on the residual items — real emails for any of the 6 no-login employees intended to have
 logins, accountant treatment of the 2 excluded journals, and the Phase 21J work_schedules richness build if those

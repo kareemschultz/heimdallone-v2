@@ -55,6 +55,37 @@ export interface V1Shift {
 	id: string;
 	name: string;
 }
+// v1 work_schedules pay-affecting richness → v2 shift_rule (21J). The shift_rule
+// links to the migrated shift by the SAME id (a v1 work_schedule maps to one shift
+// + one shift-specific rule). Fields with no clean target (shift window, day
+// overrides) stay in the migration_source_work_schedule JSONB.
+export interface V1ShiftRule {
+	autoDeductBreak: boolean;
+	breakMinutes: number | null;
+	capDailyPaidMinutes: number | null;
+	graceMinutesEarlyOut: number | null;
+	graceMinutesLate: number | null;
+	hasNightDifferential: boolean;
+	id: string; // == migrated shift id
+	isArchived: boolean;
+	isFlexiTime: boolean;
+	isSplitShift: boolean;
+	minBreakDeductionMinutes: number | null;
+	name: string;
+	nightDiffEndMinutes: number | null;
+	nightDiffMultiplierDen: number | null;
+	nightDiffMultiplierNum: number | null;
+	nightDiffStartMinutes: number | null;
+	overtimeThresholdDailyMinutes: number | null;
+	overtimeThresholdWeeklyMinutes: number | null;
+	saturdayShiftEndMinutes: number | null;
+	saturdayShiftStartMinutes: number | null;
+	splitBreakEndMinutes: number | null;
+	splitBreakStartMinutes: number | null;
+	standardDailyMinutes: number | null;
+	standardWeeklyMinutes: number | null;
+	workDays: unknown;
+}
 export interface V1RosterEntry {
 	customEndMinutes?: number | null;
 	customStartMinutes?: number | null;
@@ -106,6 +137,8 @@ export interface V1TenantSource {
 	journals: V1Journal[];
 	notifications: V1Notification[];
 	rosters: V1RosterEntry[];
+	// Optional (21J): work-schedule pay rules. Absent on the synthetic source.
+	shiftRules?: V1ShiftRule[];
 	shifts: V1Shift[];
 	tenant: V1Tenant;
 }
@@ -204,6 +237,60 @@ export function mapContract(c: V1Contract, orgId: string) {
 // ── shift ──
 export function mapShift(s: V1Shift, orgId: string) {
 	return { id: s.id, organizationId: orgId, name: s.name, isActive: true };
+}
+
+// ── shift_rule (21J): v1 work_schedules richness → effective-dated shift rule ──
+// Only ISO weekday-number arrays are mapped to workDays; any other v1 shape is
+// left null and preserved verbatim in migration_source_work_schedule.
+function isoWorkDays(v: unknown): number[] | null {
+	if (
+		Array.isArray(v) &&
+		v.every((n) => typeof n === "number" && n >= 1 && n <= 7)
+	) {
+		return v as number[];
+	}
+	return null;
+}
+
+// Migration anchor: v1 work_schedules carry no effective dates, so the migrated
+// rule opens early enough to cover all historical work dates (resolve-by-date).
+const SHIFT_RULE_EFFECTIVE_FROM = "2000-01-01";
+
+export function mapShiftRule(s: V1ShiftRule, orgId: string) {
+	// Night differential num/den (v1 stored a fraction) → a single decimal rate.
+	const den = s.nightDiffMultiplierDen ?? 0;
+	const num = s.nightDiffMultiplierNum ?? 0;
+	const nightDiffMultiplier = den > 0 ? (num / den).toFixed(2) : null;
+	return {
+		id: createId(),
+		organizationId: orgId,
+		shiftId: s.id, // links to the shift migrated from the same work_schedule
+		name: s.name,
+		effectiveFrom: toDate(SHIFT_RULE_EFFECTIVE_FROM),
+		effectiveTo: null,
+		isPublished: !s.isArchived,
+		standardDailyMinutes: s.standardDailyMinutes,
+		standardWeeklyMinutes: s.standardWeeklyMinutes,
+		workDays: isoWorkDays(s.workDays),
+		overtimeThresholdDailyMinutes: s.overtimeThresholdDailyMinutes,
+		overtimeThresholdWeeklyMinutes: s.overtimeThresholdWeeklyMinutes,
+		graceMinutesLate: s.graceMinutesLate,
+		graceMinutesEarlyOut: s.graceMinutesEarlyOut,
+		autoDeductBreak: s.autoDeductBreak,
+		breakMinutes: s.breakMinutes,
+		minBreakDeductionMinutes: s.minBreakDeductionMinutes,
+		isSplitShift: s.isSplitShift,
+		splitBreakStartMinutes: s.splitBreakStartMinutes,
+		splitBreakEndMinutes: s.splitBreakEndMinutes,
+		hasNightDifferential: s.hasNightDifferential,
+		nightDiffStartMinutes: s.nightDiffStartMinutes,
+		nightDiffEndMinutes: s.nightDiffEndMinutes,
+		nightDiffMultiplier,
+		saturdayShiftStartMinutes: s.saturdayShiftStartMinutes,
+		saturdayShiftEndMinutes: s.saturdayShiftEndMinutes,
+		isFlexiTime: s.isFlexiTime,
+		capDailyPaidMinutes: s.capDailyPaidMinutes,
+	};
 }
 
 // ── roster_entry ──

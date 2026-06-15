@@ -36,6 +36,7 @@ import type {
 	PayItemInput,
 	PayrollInput,
 	PayrollSettingInput,
+	ScheduleRuleInput,
 } from "@Heimdallone/payroll-engine/types";
 import { and, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 import {
@@ -44,6 +45,31 @@ import {
 	resolveProfileById,
 	resolvePublishedProfileForOrgAsOf,
 } from "./payroll-profile-resolver";
+import {
+	type ResolvedScheduleRule,
+	resolveScheduleConfig,
+} from "./shift-rule-resolver";
+
+// Map a resolved schedule rule → the engine's optional ScheduleRuleInput (the
+// read seam). Pure projection; no calculation.
+function buildScheduleRuleInput(r: ResolvedScheduleRule): ScheduleRuleInput {
+	return {
+		ruleId: r.ruleId,
+		source: r.source,
+		standardDailyMinutes: r.standardDailyMinutes,
+		standardWeeklyMinutes: r.standardWeeklyMinutes,
+		overtimeThresholdDailyMinutes: r.overtimeThresholdDailyMinutes,
+		overtimeThresholdWeeklyMinutes: r.overtimeThresholdWeeklyMinutes,
+		isSplitShift: r.isSplitShift,
+		hasNightDifferential: r.hasNightDifferential,
+		nightDiffMultiplier: r.nightDiffMultiplier,
+		weekdayOvertimeMultiplier: r.weekdayOvertimeMultiplier,
+		saturdayMultiplier: r.saturdayMultiplier,
+		sundayMultiplier: r.sundayMultiplier,
+		publicHolidayMultiplier: r.publicHolidayMultiplier,
+		capDailyPaidMinutes: r.capDailyPaidMinutes,
+	};
+}
 
 // Short, plain-language labels for the exception-summary message (Phase 11G CP2).
 const EXCEPTION_SHORT_LABEL: Record<string, string> = {
@@ -129,6 +155,20 @@ export async function buildPayrollInput(
 	);
 	const contractInput = buildContractInput(activeContract);
 	const periodInput = buildPeriodInput(period);
+	// Phase 21J: resolve the effective schedule rule for this employee's shift on
+	// the PAY DATE (period end) — effective-dating keeps historical runs on the
+	// rule that was in force. Read-only: roster/schedule rules NEVER mutate payroll.
+	// With no shift_rule configured the resolver returns the org fallback and the
+	// engine ignores this field, so output is byte-identical (reconcile stays 46/46).
+	const scheduleRule = period
+		? buildScheduleRuleInput(
+				await resolveScheduleConfig(
+					organizationId,
+					workInfo?.shiftId ?? null,
+					period.endDate
+				)
+			)
+		: undefined;
 	const attendance = period
 		? await buildAttendanceInput(
 				organizationId,
@@ -181,6 +221,7 @@ export async function buildPayrollInput(
 		reimbursements,
 		countryProfile: countryProfileInput,
 		settings: settingsInput,
+		scheduleRule,
 		flags: { blockPayrollOnOpenExceptions: attSetting?.block ?? true },
 	};
 }

@@ -19,11 +19,15 @@
  */
 
 import { db } from "@Heimdallone/db";
-import { employeeProfile, shift } from "@Heimdallone/db/schema/hr-core";
-import { rosterEntry } from "@Heimdallone/db/schema/roster";
+import {
+	employeeProfile,
+	employeeWorkInfo,
+	shift,
+} from "@Heimdallone/db/schema/hr-core";
+import { rosterEntry, shiftRule } from "@Heimdallone/db/schema/roster";
 import { ORPCError } from "@orpc/server";
 import { createId } from "@paralleldrive/cuid2";
-import { and, asc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, lte } from "drizzle-orm";
 import { z } from "zod";
 
 import { authorizedProcedure } from "../index";
@@ -32,12 +36,13 @@ import {
 	getDirectReportIds,
 	resolveCurrentEmployee,
 } from "../utils/employee-scope";
-import { seesAllRoster } from "../utils/role-helpers";
+import { canManageScheduleRules, seesAllRoster } from "../utils/role-helpers";
 import {
 	enumerateRosterDates,
 	MINUTES_IN_DAY,
 	validateOverride,
 } from "../utils/roster-logic";
+import { resolveScheduleConfig } from "../utils/shift-rule-resolver";
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -532,6 +537,256 @@ const rosterApproveRange = authorizedProcedure("roster", "approve")
 		return { approved: updated.length };
 	});
 
+// ─── Schedule rules (Phase 21J) — tenant-configurable, effective-dated pay policy ───
+//
+// Reuses the `roster` AC resource (read/manage) so audit stays 161/21. Two-layer
+// authz: AC gate + a handler narrowing for mutations (admin/HR/payroll only — NOT
+// managers; pay policy is least-privilege). All reads/writes are org-scoped.
+
+// Mutation guard: managers hold roster:manage (for assignments) but may not edit
+// pay policy. Throw for anyone outside admin/HR/payroll.
+function assertCanManageScheduleRules(context: unknown): void {
+	if (!canManageScheduleRules(role(context))) {
+		throw new ORPCError("FORBIDDEN", {
+			message:
+				"Only HR and payroll administrators can manage work-schedule rules.",
+		});
+	}
+}
+
+const minutesInDay = z.number().int().min(0).max(MINUTES_IN_DAY);
+const isoWeekdays = z.array(z.number().int().min(1).max(7));
+const multiplier = z
+	.number()
+	.min(0)
+	.max(99.99)
+	.transform((n) => n.toFixed(2));
+
+const scheduleRuleWrite = z.object({
+	name: z.string().min(1).max(200),
+	shiftId: z.string().nullable().optional(),
+	effectiveFrom: dateStr,
+	effectiveTo: dateStr.nullable().optional(),
+	isPublished: z.boolean().optional(),
+	standardDailyMinutes: minutesInDay.nullable().optional(),
+	standardWeeklyMinutes: z.number().int().min(0).nullable().optional(),
+	workDays: isoWeekdays.nullable().optional(),
+	overtimeThresholdDailyMinutes: minutesInDay.nullable().optional(),
+	overtimeThresholdWeeklyMinutes: z.number().int().min(0).nullable().optional(),
+	graceMinutesLate: z.number().int().min(0).nullable().optional(),
+	graceMinutesEarlyOut: z.number().int().min(0).nullable().optional(),
+	autoDeductBreak: z.boolean().optional(),
+	breakMinutes: z.number().int().min(0).nullable().optional(),
+	minBreakDeductionMinutes: z.number().int().min(0).nullable().optional(),
+	isSplitShift: z.boolean().optional(),
+	splitBreakStartMinutes: minutesInDay.nullable().optional(),
+	splitBreakEndMinutes: minutesInDay.nullable().optional(),
+	hasNightDifferential: z.boolean().optional(),
+	nightDiffStartMinutes: minutesInDay.nullable().optional(),
+	nightDiffEndMinutes: minutesInDay.nullable().optional(),
+	nightDiffMultiplier: multiplier.nullable().optional(),
+	weekdayOvertimeMultiplier: multiplier.nullable().optional(),
+	saturdayMultiplier: multiplier.nullable().optional(),
+	sundayMultiplier: multiplier.nullable().optional(),
+	publicHolidayMultiplier: multiplier.nullable().optional(),
+	saturdayShiftStartMinutes: minutesInDay.nullable().optional(),
+	saturdayShiftEndMinutes: minutesInDay.nullable().optional(),
+	isFlexiTime: z.boolean().optional(),
+	capDailyPaidMinutes: z.number().int().min(0).nullable().optional(),
+});
+
+// Load a shift_rule row, tenant-checked.
+async function loadScheduleRule(oid: string, id: string) {
+	const [row] = await db
+		.select()
+		.from(shiftRule)
+		.where(and(eq(shiftRule.id, id), eq(shiftRule.organizationId, oid)))
+		.limit(1);
+	if (!row) {
+		throw new ORPCError("NOT_FOUND", { message: "Schedule rule not found." });
+	}
+	return row;
+}
+
+// ── read: list schedule rules (org-scoped; published-only unless a payroll/HR/
+//    auditor caller asks to include unpublished drafts) ──
+const scheduleRulesList = authorizedProcedure("roster", "read")
+	.input(
+		z.object({
+			shiftId: z.string().nullable().optional(),
+			includeUnpublished: z.boolean().optional().default(false),
+		})
+	)
+	.handler(async ({ context, input }) => {
+		const oid = orgId(context);
+		const conditions = [eq(shiftRule.organizationId, oid)];
+		// Only org-wide roster viewers may see unpublished drafts.
+		if (!(input.includeUnpublished && seesAllRoster(role(context)))) {
+			conditions.push(eq(shiftRule.isPublished, true));
+		}
+		if (input.shiftId === null) {
+			conditions.push(isNull(shiftRule.shiftId));
+		} else if (input.shiftId) {
+			conditions.push(eq(shiftRule.shiftId, input.shiftId));
+		}
+		return await db
+			.select()
+			.from(shiftRule)
+			.where(and(...conditions))
+			.orderBy(asc(shiftRule.shiftId), desc(shiftRule.effectiveFrom));
+	});
+
+const scheduleRulesGetById = authorizedProcedure("roster", "read")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) =>
+		loadScheduleRule(orgId(context), input.id)
+	);
+
+// ── read: resolve the effective rule for a (shift|employee, date) ──
+// Employees resolve their OWN shift; managers their reports'; org-wide viewers any.
+const scheduleRulesResolve = authorizedProcedure("roster", "read")
+	.input(
+		z.object({
+			date: dateStr,
+			shiftId: z.string().nullable().optional(),
+			employeeId: z.string().optional(),
+		})
+	)
+	.handler(async ({ context, input }) => {
+		const oid = orgId(context);
+		const scope = await rosterEmployeeScope(context);
+		let targetShiftId: string | null = null;
+		if (input.shiftId === undefined) {
+			// Resolve via an employee's assigned shift. Default to the caller.
+			let employeeId = input.employeeId;
+			if (!employeeId) {
+				const me = await resolveCurrentEmployee(oid, actorId(context));
+				employeeId = me?.id;
+			}
+			if (employeeId) {
+				assertEmployeeInScope(scope, employeeId);
+				const [wi] = await db
+					.select({ shiftId: employeeWorkInfo.shiftId })
+					.from(employeeWorkInfo)
+					.innerJoin(
+						employeeProfile,
+						eq(employeeWorkInfo.employeeId, employeeProfile.id)
+					)
+					.where(
+						and(
+							eq(employeeWorkInfo.employeeId, employeeId),
+							eq(employeeProfile.organizationId, oid)
+						)
+					)
+					.limit(1);
+				targetShiftId = wi?.shiftId ?? null;
+			}
+		} else {
+			if (input.shiftId) {
+				await assertShiftInOrg(oid, input.shiftId);
+			}
+			targetShiftId = input.shiftId;
+		}
+		const resolved = await resolveScheduleConfig(
+			oid,
+			targetShiftId,
+			toDate(input.date)
+		);
+		return { shiftId: targetShiftId, date: input.date, ...resolved };
+	});
+
+// ── manage: create / update / archive (admin/HR/payroll only) ──
+const scheduleRulesCreate = authorizedProcedure("roster", "manage")
+	.input(scheduleRuleWrite)
+	.handler(async ({ context, input }) => {
+		assertCanManageScheduleRules(context);
+		const oid = orgId(context);
+		if (input.shiftId) {
+			await assertShiftInOrg(oid, input.shiftId);
+		}
+		const id = createId();
+		// The Zod input keys match the column names 1:1; absent optional fields are
+		// undefined → Drizzle uses NULL / the column default. Only the dates and
+		// shiftId need transforming. (Spread keeps this flat — no per-field `??`.)
+		const { effectiveFrom, effectiveTo, ...rest } = input;
+		const [row] = await db
+			.insert(shiftRule)
+			.values({
+				...rest,
+				id,
+				organizationId: oid,
+				shiftId: input.shiftId ?? null,
+				effectiveFrom: toDate(effectiveFrom),
+				effectiveTo: effectiveTo ? toDate(effectiveTo) : null,
+			})
+			.returning();
+		await createAuditEvent(db as never, {
+			organizationId: oid,
+			entityType: "shift_rule",
+			entityId: id,
+			action: "create",
+			actorId: actorId(context),
+		});
+		return row;
+	});
+
+const scheduleRulesUpdate = authorizedProcedure("roster", "manage")
+	.input(scheduleRuleWrite.partial().extend({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		assertCanManageScheduleRules(context);
+		const oid = orgId(context);
+		await loadScheduleRule(oid, input.id); // tenant check
+		const { id, shiftId, effectiveFrom, effectiveTo, ...rest } = input;
+		if (shiftId) {
+			await assertShiftInOrg(oid, shiftId);
+		}
+		const updates: Record<string, unknown> = { ...rest };
+		if (shiftId !== undefined) {
+			updates.shiftId = shiftId ?? null;
+		}
+		if (effectiveFrom !== undefined) {
+			updates.effectiveFrom = toDate(effectiveFrom);
+		}
+		if (effectiveTo !== undefined) {
+			updates.effectiveTo = effectiveTo ? toDate(effectiveTo) : null;
+		}
+		const [row] = await db
+			.update(shiftRule)
+			.set(updates)
+			.where(and(eq(shiftRule.id, id), eq(shiftRule.organizationId, oid)))
+			.returning();
+		await createAuditEvent(db as never, {
+			organizationId: oid,
+			entityType: "shift_rule",
+			entityId: id,
+			action: "update",
+			actorId: actorId(context),
+		});
+		return row;
+	});
+
+// Archive = unpublish (removes from resolution but preserves the row for history).
+const scheduleRulesArchive = authorizedProcedure("roster", "manage")
+	.input(z.object({ id: z.string() }))
+	.handler(async ({ context, input }) => {
+		assertCanManageScheduleRules(context);
+		const oid = orgId(context);
+		await loadScheduleRule(oid, input.id);
+		const [row] = await db
+			.update(shiftRule)
+			.set({ isPublished: false })
+			.where(and(eq(shiftRule.id, input.id), eq(shiftRule.organizationId, oid)))
+			.returning();
+		await createAuditEvent(db as never, {
+			organizationId: oid,
+			entityType: "shift_rule",
+			entityId: input.id,
+			action: "archive",
+			actorId: actorId(context),
+		});
+		return row;
+	});
+
 export const rosterRouter = {
 	list: rosterList,
 	listMine: rosterListMine,
@@ -543,4 +798,12 @@ export const rosterRouter = {
 	bulkAssign: rosterBulkAssign,
 	setApproval: rosterSetApproval,
 	approveRange: rosterApproveRange,
+	scheduleRules: {
+		list: scheduleRulesList,
+		getById: scheduleRulesGetById,
+		resolve: scheduleRulesResolve,
+		create: scheduleRulesCreate,
+		update: scheduleRulesUpdate,
+		archive: scheduleRulesArchive,
+	},
 };

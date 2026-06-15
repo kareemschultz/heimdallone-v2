@@ -7,10 +7,12 @@ import {
 	mapNotification,
 	mapOrganization,
 	mapRosterEntry,
+	mapShiftRule,
 	mapStatutory,
 	type V1Contract,
 	type V1Journal,
 	type V1RosterEntry,
+	type V1ShiftRule,
 	type V1Statutory,
 } from "./transformers";
 
@@ -280,5 +282,83 @@ describe("mapStatutory — TIN/NIS + payroll attributes (21L-A)", () => {
 		);
 		expect(row.taxIdentificationNumber).toBeNull();
 		expect(row.socialSecurityNumber).toBeNull();
+	});
+});
+
+describe("mapShiftRule — v1 work_schedules richness → shift_rule (21J)", () => {
+	const base: V1ShiftRule = {
+		id: "ws_1",
+		name: "Night crew",
+		standardDailyMinutes: 480,
+		standardWeeklyMinutes: 2400,
+		workDays: [1, 2, 3, 4, 5, 6],
+		overtimeThresholdDailyMinutes: 480,
+		overtimeThresholdWeeklyMinutes: 2400,
+		graceMinutesLate: 10,
+		graceMinutesEarlyOut: 5,
+		autoDeductBreak: true,
+		breakMinutes: 45,
+		minBreakDeductionMinutes: 360,
+		isSplitShift: true,
+		splitBreakStartMinutes: 720,
+		splitBreakEndMinutes: 780,
+		hasNightDifferential: true,
+		nightDiffStartMinutes: 1320,
+		nightDiffEndMinutes: 360,
+		nightDiffMultiplierNum: 3,
+		nightDiffMultiplierDen: 2,
+		saturdayShiftStartMinutes: 480,
+		saturdayShiftEndMinutes: 720,
+		isFlexiTime: false,
+		capDailyPaidMinutes: 600,
+		isArchived: false,
+	};
+
+	test("links to the migrated shift by the same work_schedule id", () => {
+		const row = mapShiftRule(base, ORG);
+		expect(row.shiftId).toBe("ws_1");
+		expect(row.organizationId).toBe(ORG);
+	});
+
+	test("night differential num/den → a single decimal multiplier", () => {
+		expect(mapShiftRule(base, ORG).nightDiffMultiplier).toBe("1.50");
+	});
+
+	test("zero denominator → null multiplier (no divide-by-zero)", () => {
+		const row = mapShiftRule(
+			{ ...base, nightDiffMultiplierNum: 3, nightDiffMultiplierDen: 0 },
+			ORG
+		);
+		expect(row.nightDiffMultiplier).toBeNull();
+	});
+
+	test("is_archived → unpublished (history preserved, removed from resolution)", () => {
+		expect(mapShiftRule(base, ORG).isPublished).toBe(true);
+		expect(mapShiftRule({ ...base, isArchived: true }, ORG).isPublished).toBe(
+			false
+		);
+	});
+
+	test("carries split-shift + OT thresholds + cap + standard minutes", () => {
+		const row = mapShiftRule(base, ORG);
+		expect(row.isSplitShift).toBe(true);
+		expect(row.overtimeThresholdDailyMinutes).toBe(480);
+		expect(row.capDailyPaidMinutes).toBe(600);
+		expect(row.standardWeeklyMinutes).toBe(2400);
+	});
+
+	test("ISO weekday arrays map; other shapes preserved as null (source JSON keeps them)", () => {
+		expect(mapShiftRule(base, ORG).workDays).toEqual([1, 2, 3, 4, 5, 6]);
+		expect(
+			mapShiftRule({ ...base, workDays: { mon: true } }, ORG).workDays
+		).toBeNull();
+		expect(
+			mapShiftRule({ ...base, workDays: ["Mon", "Tue"] }, ORG).workDays
+		).toBeNull();
+	});
+
+	test("opens early enough to cover historical work dates", () => {
+		expect(mapShiftRule(base, ORG).effectiveFrom.getUTCFullYear()).toBe(2000);
+		expect(mapShiftRule(base, ORG).effectiveTo).toBeNull();
 	});
 });

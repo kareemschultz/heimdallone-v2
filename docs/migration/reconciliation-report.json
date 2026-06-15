@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-14T23:22:37.061Z",
+  "generatedAt": "2026-06-15T00:16:48.531Z",
   "v1Url": "postgresql://migration_reader:***@localhost:5432/karetech_erp",
   "scratchDb": null,
   "scratchCounts": null,

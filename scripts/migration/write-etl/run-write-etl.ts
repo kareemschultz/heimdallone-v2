@@ -34,7 +34,7 @@ import {
 	shift,
 } from "../../../packages/db/src/schema/hr-core";
 import { notification } from "../../../packages/db/src/schema/notification";
-import { rosterEntry } from "../../../packages/db/src/schema/roster";
+import { rosterEntry, shiftRule } from "../../../packages/db/src/schema/roster";
 import {
 	assertScratchTarget,
 	assertWriteConfirmed,
@@ -53,6 +53,7 @@ import {
 	mapOrganization,
 	mapRosterEntry,
 	mapShift,
+	mapShiftRule,
 	mapStatutory,
 	mapUser,
 	type V1TenantSource,
@@ -78,6 +79,7 @@ type TenantCounts = {
 	contracts: number;
 	fortnightlyContracts: number;
 	shifts: number;
+	shiftRules: number;
 	rosterEntries: number;
 	rosterApproved: number;
 	accounts: number;
@@ -150,9 +152,13 @@ async function loadTenant(db: Db, src: V1TenantSource): Promise<TenantCounts> {
 		(c) => c.payFrequency === "fortnightly"
 	).length;
 
-	// 5. shifts
+	// 5. shifts (+ 21J shift_rule pay policy, one per work_schedule)
 	if (src.shifts.length > 0) {
 		await db.insert(shift).values(src.shifts.map((s) => mapShift(s, oid)));
+	}
+	const shiftRuleRows = (src.shiftRules ?? []).map((r) => mapShiftRule(r, oid));
+	if (shiftRuleRows.length > 0) {
+		await db.insert(shiftRule).values(shiftRuleRows);
 	}
 
 	// 6. roster entries
@@ -210,6 +216,7 @@ async function loadTenant(db: Db, src: V1TenantSource): Promise<TenantCounts> {
 		contracts: contractRows.length,
 		fortnightlyContracts: fortnightly,
 		shifts: src.shifts.length,
+		shiftRules: shiftRuleRows.length,
 		rosterEntries: rosterRows.length,
 		rosterApproved,
 		accounts: src.accounts.length,

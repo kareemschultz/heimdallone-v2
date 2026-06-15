@@ -21,6 +21,7 @@ interface TenantCounts {
 	organizations: number;
 	rosterApproved: number;
 	rosterEntries: number;
+	shiftRules: number;
 	shifts: number;
 	slug: string;
 	statutory: number;
@@ -77,6 +78,7 @@ export function writeEtlReport(
 				acc.noLogin += r.noLogin;
 				acc.contracts += r.contracts;
 				acc.fortnightlyContracts += r.fortnightlyContracts;
+				acc.shiftRules += r.shiftRules;
 				acc.rosterEntries += r.rosterEntries;
 				acc.accounts += r.accounts;
 				acc.journals += r.journals;
@@ -90,6 +92,7 @@ export function writeEtlReport(
 				noLogin: 0,
 				contracts: 0,
 				fortnightlyContracts: 0,
+				shiftRules: 0,
 				rosterEntries: 0,
 				accounts: 0,
 				journals: 0,
@@ -129,7 +132,7 @@ export function writeEtlReport(
 	lines.push("## Totals");
 	const t = json.totals;
 	lines.push(
-		`- Employees ${t.employees} (statutory rows ${t.statutory} · no-login ${t.noLogin}) · Contracts ${t.contracts} (fortnightly ${t.fortnightlyContracts}) · Roster ${t.rosterEntries}`
+		`- Employees ${t.employees} (statutory rows ${t.statutory} · no-login ${t.noLogin}) · Contracts ${t.contracts} (fortnightly ${t.fortnightlyContracts}) · Shift rules ${t.shiftRules} · Roster ${t.rosterEntries}`
 	);
 	lines.push(
 		`- GL accounts ${t.accounts} · Journals ${t.journals} / lines ${t.journalLines} · Notifications ${t.notifications}`

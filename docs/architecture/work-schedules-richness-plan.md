@@ -1,9 +1,19 @@
-# Work-Schedules Richness Plan (21L-D / Phase 21J build)
+# Work-Schedules Richness Plan (21L-D plan → Phase 21J build)
 
-**Status:** Plan (docs-only). No build in 21L. This scopes the future Phase 21J
-roster/payroll-richness build. **All v1 `work_schedules` richness is already
-preserved losslessly** in the scratch `migration_source_work_schedule` JSONB
-(21K), so nothing is lost while this remains unbuilt.
+**Status: ✅ IMPLEMENTED (Phase 21J, 2026-06-14).** Shipped as `shift_rule`
+(migration `0025_many_warstar`), the `resolveScheduleConfig` resolver, the
+`roster.scheduleRules` API, the attendance + payroll seams, and the `mapShiftRule`
+ETL. The original plan text is kept below as the design record. Implementation
+detail: `docs/migration/phase-21j-work-schedule-richness.md`. Deltas from this
+plan: the rule satellite is `shift_rule` (org + optional shift, null shiftId =
+org-default) rather than a strictly one-per-shift table; multiplier overrides and
+the night-diff window live on the same table; the deeper recalc arithmetic for
+split-shift break subtraction and night-minute premium is surfaced via the
+resolver/API and consumed where byte-compatible (grace/standard/break/cap), with
+split/night-premium arithmetic staged for a follow-up.
+
+**Original plan (design record):** All v1 `work_schedules` richness is preserved
+losslessly in the scratch `migration_source_work_schedule` JSONB (21K).
 
 > **SaaS Architecture Rule.** This is a tenant-configurable, country-neutral,
 > effective-dated capability — NOT a Netsurf shift-pattern clone. v1 proves the
