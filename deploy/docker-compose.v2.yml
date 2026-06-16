@@ -32,7 +32,9 @@ services:
       PLATFORM_ADMIN_USER_ID: ${PLATFORM_ADMIN_USER_ID:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-    networks: [heimdallone-v2]
+    # Joins the DB network so it can reach postgres-central (host: postgres-central),
+    # plus the internal v2 net for web↔server. NOT on the pangolin network.
+    networks: [heimdallone-v2, db]
     deploy:
       resources:
         limits:
@@ -76,3 +78,8 @@ networks:
   # not receive public traffic until the deliberate cutover flip.
   heimdallone-v2:
     name: heimdallone-v2
+  # Existing DB-internal network where postgres-central lives (reach the DB
+  # without touching pangolin). External — created/owned by postgres-central.
+  db:
+    name: postgres-central_db-internal
+    external: true
