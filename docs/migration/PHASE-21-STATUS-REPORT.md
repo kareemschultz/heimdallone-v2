@@ -377,3 +377,25 @@ Owner completes browser QA + stages production config, then sends **"Approve Pha
 **21X** (monitoring) → **21Y** (archive v1). **NO-GO on freeze/flip until the
 approval phrase.** No v1 writes, no production write-ETL rerun, no freeze, no
 Pangolin/DNS change, v1 not stopped, no device registration, no Gist replacement.
+
+---
+
+## Closeout — Production stabilization morning-ready (2026-06-16)
+
+**Live:** `sha-72ca623` (web/server/docs coherent) · **pushed:** `4e1be74` · v1
+rollback (`sha-d03e5b4`) still up.
+
+**Morning-ready.** P0 QA closed (fake data removed from app pages; error routes
+fixed; mobile clean 390/430/768/desktop; real operational dashboard; Setup
+Center). Data migrated + GRA-reconciled (leave / departments / profile /
+allowances / payslips; `migration:reconcile` READY 46/46). Recurring allowances
+apply to future runs (engine 60/60). Countries & Tax = real GY-2026 GRA profile.
+
+**Not yet active:** live attendance sync — on-site Pi still posts to v1; operator
+packet at `phase-21v-pi-attendance-sync-operator-packet.md`.
+
+**Owner morning QA:** `morning-owner-qa-checklist.md`.
+**Remaining non-blocking:** `phase-21x-remaining-roadmap.md`.
+
+**Safety:** no v1/`karetech_erp` writes; prod backed up before every write
+(`backups/`); no secrets committed; rollback preserved; no dirty/mixed deploys.
