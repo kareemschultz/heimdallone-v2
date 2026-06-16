@@ -447,7 +447,11 @@ function EmployeesPage() {
 											>
 												<ExternalLink size={12} />
 											</Link>
-											<button title="More" type="button">
+											<button
+												aria-label="More actions"
+												title="More"
+												type="button"
+											>
 												<MoreHorizontal size={12} />
 											</button>
 										</div>
@@ -535,7 +539,12 @@ function EmployeesPage() {
 							</div>
 						</div>
 					</div>
-					<button className="icon-btn" onClick={closeDrawer} type="button">
+					<button
+						aria-label="Close"
+						className="icon-btn"
+						onClick={closeDrawer}
+						type="button"
+					>
 						<X size={14} />
 					</button>
 				</div>
