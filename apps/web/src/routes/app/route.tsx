@@ -14,6 +14,7 @@ import {
 	ChevronDown,
 	Clock,
 	Command,
+	Cpu,
 	DatabaseBackup,
 	FileText,
 	FolderKanban,
@@ -47,7 +48,7 @@ import {
 import { FirstLoginModal } from "@/features/migration/first-login-modal";
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
-import { canManageHR, canViewPayroll } from "@/lib/rbac";
+import { canManageHR, canViewBiometrics, canViewPayroll } from "@/lib/rbac";
 import { client, orpc } from "@/utils/orpc";
 
 interface OrgContext {
@@ -170,6 +171,12 @@ export const NAV = [
 				label: "Attendance",
 				icon: Clock,
 				href: "/app/attendance",
+			},
+			{
+				key: "biometrics",
+				label: "Time clocks",
+				icon: Cpu,
+				href: "/app/biometrics",
 			},
 			{
 				key: "leave",
@@ -379,6 +386,10 @@ export function isNavItemVisible(key: string, role: string): boolean {
 	// Preview/scaffold modules: admin-only (QA), hidden from everyone else.
 	if (PREVIEW_KEYS.has(key)) {
 		return canManageHR(role);
+	}
+	// Time clocks / biometric devices: HR/admin/manager/auditor/payroll only.
+	if (key === "biometrics") {
+		return canViewBiometrics(role);
 	}
 	if (canViewPayroll(role)) {
 		return true;
