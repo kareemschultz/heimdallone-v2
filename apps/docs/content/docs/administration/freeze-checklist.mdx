@@ -16,10 +16,18 @@ This is the operator runbook for going live. It assumes a successful full-data
 approval** to freeze. See [Migration & cutover](/docs/administration/migration-cutover)
 for what migrates and the safety guarantees.
 
-<Callout type="warn" title="Nothing here runs automatically">
-  Every production write, the freeze, and the DNS switch require explicit owner
-  sign-off. Until then, all runs are read-only against v1 and write only to a
-  disposable scratch database.
+<Callout type="warn" title="Pending owner approval — nothing here runs automatically">
+  The **freeze is pending owner approval**. Until the owner signs off:
+
+  - the **production write-ETL must not be run**;
+  - the **DNS must not be changed**;
+  - **device registration and Gist script replacement happen during the cutover
+    window only** — not before;
+  - **secrets stay in Infisical and the Pi `.env`** — never in the Gist or the repo.
+
+  Until approval, all runs are read-only against v1 and write only to a disposable
+  scratch database. The single sign-off packet is the **Phase 21P Cutover
+  Authorization** record (decision checklist + freeze checklist + GO/NO-GO).
 </Callout>
 
 ## Pre-freeze operator decisions

@@ -1,7 +1,10 @@
 # Phase 21 — v1 → v2 Migration & Cutover Plan
 
-**Date:** 2026-06-11 (status updated 2026-06-14 after 21K)
-**Status:** 21B–21G + 21K complete — live write-ETL rehearsal **PASSED** (freeze/DNS cutover NO-GO). See §9.
+**Date:** 2026-06-11 (status updated 2026-06-15 after 21M/21O/21P)
+**Status:** 21B–21P complete — dress rehearsals PASSED; **production cutover authorization packet
+PREPARED** ([`phase-21p-cutover-authorization.md`](./phase-21p-cutover-authorization.md) +
+[`v1-to-v2-cutover-runbook.md`](./v1-to-v2-cutover-runbook.md)). Freeze / production write-ETL /
+DNS cutover **NO-GO** pending owner sign-off. See §9.
 **Predecessor:** [v1→v2 Gap Analysis](./v1-to-v2-gap-analysis.md)
 **Guiding principle (owner's directive):** *Capture v1's **intent**, map it onto what v2 already
 has, and port the data. Do NOT faithfully clone v1's implementation — v1 has known bugs/quirks

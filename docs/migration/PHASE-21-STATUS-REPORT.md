@@ -302,10 +302,28 @@ Doc: `phase-21m-freeze-readiness.md`. **audit STAYS 161/21** (no AC/schema chang
 - **Hard rules held:** no v1 writes, no production v2 writes, no freeze, no DNS cutover, no
   secrets committed.
 
-### Immediate next step (supersedes §9 / §11 / §13)
-Operator sign-off on the §1 decision checklist — real emails for any of the 6 no-login
-employees intended to have logins, statutory completeness for payroll-affected employees,
-accountant treatment of the 2 excluded journals, work_schedules sufficiency, and cutover
-order — then freeze + DNS cutover per the published freeze checklist. **Code is not blocking;
-the remaining gaps are operational/data decisions. Dress rehearsal GO; freeze NO-GO; DNS
-cutover NO-GO (none performed).**
+## 15. Phase 21P — Production cutover authorization packet ✅ PREPARED (2026-06-15)
+
+Docs: **[`phase-21p-cutover-authorization.md`](./phase-21p-cutover-authorization.md)**
+(the single owner sign-off packet: decision checklist + freeze checklist + GO/NO-GO)
+and **[`v1-to-v2-cutover-runbook.md`](./v1-to-v2-cutover-runbook.md)** (exact commands;
+every production-write / device / DNS command labelled **DO NOT RUN UNTIL OWNER
+APPROVES CUTOVER**). **audit STAYS 161/21** (docs-only).
+
+- **Gates re-run green (2026-06-15):** check-types 3/3, build 3/3, audit 161/21,
+  lint 191 (≤212), verify:core all pass, transformers 38/38, attendance-bridge 15/15.
+- **Live read-only re-proven:** dry-run **0 feature gaps** (2 tenants / 23 emp / 69
+  payslips / 903 punches / 175 roster); reconcile **READY 46/46 exact**.
+- **Key safety property documented:** the write-ETL is **hard-guarded to scratch-only**
+  (`assertScratchTarget` refuses any non-scratch / `karetech_erp` / prod-v2 name), so a
+  production write is **impossible with current tooling without a deliberate,
+  owner-approved enablement** — by design.
+- **Hard rules held:** no v1 writes · no production v2 writes · no freeze · no DNS
+  cutover · no production device registration · no Gist replacement · no secrets committed.
+
+### Immediate next step (supersedes §9 / §11 / §13 / §14)
+**Owner signs the [21P authorization packet](./phase-21p-cutover-authorization.md) §1
+decision checklist.** Once every row is confirmed: schedule the freeze window and
+execute §2 via the runbook. **Code is not blocking; the remaining gaps are
+operational/data decisions. Technical readiness GREEN; live rehearsal GO; freeze
+NO-GO; production write-ETL NO-GO; DNS cutover NO-GO (none performed).**

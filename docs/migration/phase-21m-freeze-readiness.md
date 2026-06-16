@@ -3,6 +3,11 @@
 **Date:** 2026-06-15 · **Outcome:** ✅ dress rehearsal PASSED · **Freeze:** NO-GO
 (pending owner sign-off) · **DNS cutover:** NO-GO (none performed)
 
+> **Superseded for sign-off by [Phase 21P — Cutover Authorization Packet](./phase-21p-cutover-authorization.md)**
+> (the §1 decision checklist + freeze checklist are finalized there) and the exact
+> [cutover runbook](./v1-to-v2-cutover-runbook.md). This doc remains the 21M
+> dress-rehearsal evidence record.
+
 PII-safe: counts, slugs, classifications, and opaque ids only. No names, emails,
 salaries, bank/TIN/NIS, or row content.
 

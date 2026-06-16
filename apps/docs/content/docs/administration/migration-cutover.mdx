@@ -15,6 +15,14 @@ Heimdallone v2 can import data from a legacy v1 system before you go live. This
 page explains **what migrates**, the **safety guarantees**, and the **freeze and
 cutover process** an operator follows.
 
+<Callout type="warn" title="Cutover is pending owner approval">
+  No production load has been performed. The **freeze is pending owner approval**;
+  the **production write-ETL must not be run** and the **DNS must not be changed**
+  until then. **Device registration and Gist script replacement happen during the
+  cutover window only.** Secrets stay in Infisical and the Pi `.env` — never in the
+  Gist or the repo.
+</Callout>
+
 <Callout title="Migration principle">
   Legacy v1 data is a migration **source** and an **intent** source — not
   automatic truth. Historical records are preserved exactly; known v1 bugs are
