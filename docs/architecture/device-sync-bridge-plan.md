@@ -168,9 +168,22 @@ errors, clock drift). Surface "last successful sync" + backfill range.
   preserved (`source=import`, v1 id in `rawPayload`); `migration:reconcile` stays
   **READY 46/46**.
 - **21O-E** — Fumadocs ✅ (`time/biometric-devices.mdx` + cutover/freeze-checklist).
-- **21O-D** — live agent re-point (operator, needs the on-site Pi): register the
-  device in v2, point the agent at the v2 ingest endpoint (carry the clock-drift
-  fix). NOT done here (no prod writes / needs the Pi).
+- **21O-D** — live agent re-point. **Agent artifact BUILT** (`scripts/device-bridge/`:
+  clean v2-native `heimdallone_sync.py` + `.env.example` + `requirements.txt` +
+  `bridge-autoupdate.sh` + `heimdallone-bridge.service` + README). **No on-site
+  visit needed to swap code:** the Pi's `bridge-autoupdate.sh` cron pulls
+  `heimdallone_sync.py` from a public Gist every 5 min, syntax-validates, hot-swaps,
+  restarts — so publishing the v2 script to the Gist retargets every Pi within 5
+  minutes. The v2 agent targets `POST /rpc/biometric/ingest/submit`, auth via
+  `deviceId`+`apiKey` in the body, sends `{deviceUserId,timestamp,direction,verifyMode}`,
+  maps ZK state→3-state direction (overtime→in/out, break→unknown — matches the
+  backfill `directionFor`), **keeps the clock-drift fix**, and **drops v1's
+  heartbeat + user-list push** (no v2 endpoint; v2 owns the slot→employee map).
+  **Irreducible operator residual** (still owner-gated, NOT code): (1) register the
+  terminal in **production** v2 (vendor `zkteco`/mode `api_ingest`) → one-time
+  ingest key — a prod write; (2) set 3 Pi `.env` values (`HEIMDALL_API_URL`/
+  `HEIMDALL_DEVICE_ID`/`HEIMDALL_API_KEY`) — secrets can't go in a public Gist.
+  No prod writes performed here.
 - **21O-F** — final QA + freeze go/no-go refresh (device sync = freeze-readiness item).
 
 ## 10. Gates each phase

@@ -1,0 +1,24 @@
+[Unit]
+Description=Heimdallone v2 Biometric Sync (ZKTeco terminal -> v2 ingest)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=admin
+Group=admin
+WorkingDirectory=/home/admin/heimdallone-bridge
+EnvironmentFile=/home/admin/heimdallone-bridge/.env
+ExecStart=/home/admin/heimdallone-bridge/venv/bin/python /home/admin/heimdallone-bridge/heimdallone_sync.py
+Restart=always
+RestartSec=10
+# Drop privileges — the bridge needs LAN access (TCP/4370) and outbound HTTPS only.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=/home/admin/heimdallone-bridge
+PrivateTmp=true
+MemoryMax=256M
+
+[Install]
+WantedBy=multi-user.target
