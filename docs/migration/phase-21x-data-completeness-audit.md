@@ -56,13 +56,13 @@ posts; then sync-runs + last-sync populate on the device detail. **Connecting it
 is an operator step on the Pi** (set device id + ingest key + endpoint), keeping
 the v1 Gist script as rollback until verified.
 
-## Recommended next build order
+## Build progress
 
-1. **Leave migration** — policies (6) + balances (36) + requests (2) into the v2
-   effective-dated leave schema (employee-mapped, reconciled).
-2. **Salary-structure assignments (33)** → v2 recurring pay-items so go-forward
-   payroll carries the same allowances (per-payslip history already correct).
-3. **Departments/job positions** — pull names from v1 (read-only) + link.
-4. **Payslip templates** + **preview module build-out** (Countries & Tax first —
-   it can surface the real GY-2026 profile).
-5. **CRUD parity sweep** + a11y label sweep.
+1. ✅ **Leave migration** — 6 leave types / 36 balances / 2 requests (`migrate-leave.ts`), rendering.
+2. ✅ **Recurring allowances** — v1 transport allowance → v2 pay item + 10 assignments (`migrate-allowances.ts`), GRA-taxable. **CONFIG only** — the engine consuming pay-item assignments for FUTURE runs is a deferred GRA-vetted TDD step (history already correct; reconcile stays 46/46).
+3. ✅ **Countries & Tax** — built out with the real GY-2026 GRA profile (PAYE bands, NIS, allowances); removed from Preview.
+4. ✅ **Payslip templates** — functional Classic / Compact / Detailed selector + branded Print/PDF.
+5. ⏳ **Departments / job positions** — pull names from v1 (read-only) + link (not blocking).
+6. ⏳ **Engine: apply pay-item allowances to future runs** — GRA-vetted TDD, reconcile-regression-guarded.
+7. ⏳ **CRUD parity + a11y label sweep**; **Compliance/Documents/Clients** preview build-out.
+8. ⏳ **Operator (Pi)**: publish v2 `heimdallone_sync.py` to the Gist + set the Pi `.env` (v2 URL + device id + ingest key) → live attendance sync.
