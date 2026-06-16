@@ -197,3 +197,22 @@ each payslip's `explanation` jsonb (`migratedFromV1`, v1 id, snapshot).
 ### Also deferred
 - **Departments** — v1 dept *names* aren't staged (only ids); needs a v1
   read-only pull or manual setup. Not blocking payroll.
+
+## Pass 4 — biometric/time-clock discoverability + registration UI (2026-06-16)
+
+The biometrics module (devices/sync-runs/exceptions/punches) existed but was
+**not in the nav** and the devices page had **no registration flow** — so "where
+do I register a time clock?" had no answer. Fixed (web-only, `sha-3753f5d`):
+- `route.tsx`: new **"Time clocks"** nav entry (Operate group, gated
+  `canViewBiometrics` = HR/admin/manager/auditor/payroll).
+- `biometrics/devices`: **"Register device"** panel (gated `canManageBiometrics`)
+  wired to `biometric.devices.create` — name/vendor/model/serial/mode; on
+  `api_ingest` it surfaces the **one-time ingest key + the v2 ingest endpoint +
+  on-site poller (Pi) setup note**, with copy buttons. Breadcrumb de-hardcoded.
+- Verified in UI (Netsurf): nav entry present, form renders with ZKTeco/ZLM60_TFT
+  hints; an existing ZKTeco terminal already shows. Evidence:
+  `verify-device-register.png`.
+
+Operator step (unchanged, needs the physical device + Pi): register the real
+ZLM60_TFT (serial PCY7012600500), capture its ingest key, re-point the Pi's
+script to the v2 endpoint — keep the v1 Gist as rollback until verified.
