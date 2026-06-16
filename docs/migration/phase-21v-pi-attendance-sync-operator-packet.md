@@ -17,6 +17,17 @@ punches into v2. The VPS **cannot reach the Pi** (10.241.1.109) and a public Gis
   **drops the v1 heartbeat** (v2 has no heartbeat route) — so once it runs there
   is no 404 heartbeat noise and no compatibility route is needed.
 
+## Current device (verified 2026-06-16, read-only)
+- **Device id:** `6a632a46-003d-4515-ab0d-220ffbbdf194` (name "Time terminal",
+  ZKTeco, `api_ingest`, org Netsurf) — a UUID, not a secret.
+- **Ingest key: NOT generated yet** (`api_key_hash` is null). The operator MUST
+  use **Rotate ingest key** on the device detail to generate one (shown once)
+  before the Pi can authenticate — without it, ingest will reject the device.
+- 19 device↔employee maps + 901 historical punches already loaded; endpoint live.
+- The on-site Pi is currently posting **v1** paths (`/rpc/attendance/devices/
+  heartbeat` + `recordBatchFromDevice`) → 404 on v2 (harmless; confirms the Pi is
+  alive and will flow the moment it's repointed to the v2 script + endpoint).
+
 ## Variables the Pi needs (`/home/admin/heimdallone-bridge/.env`)
 | var | value |
 |-----|-------|
