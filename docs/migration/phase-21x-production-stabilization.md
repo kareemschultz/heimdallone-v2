@@ -119,3 +119,72 @@ per-page overflow + a fake tenant name. Fixed:
 
 Deferred (documented): marketing `/` mobile rebuild (P2); Compliance preview
 demo name (admin-gated); per-employee fake activity timeline.
+
+## Pass 3 — production rate-limiter fix + payroll delta load (2026-06-16)
+
+### Rate limiter (was throttling the whole app)
+
+The `/rpc/*` limiter was 300/min and, behind Pangolin/Traefik without
+`TRUST_PROXY`, **all** users + SSR shared one bucket (the proxy IP) → "Too Many
+Requests" 500s under light load (hit while QA-browsing settings). Fixed
+(`apps/server/src/rate-limit.ts`, `index.ts`, compose):
+- Behind a trusted proxy, key on the **real client IP** (left-most XFF) → per-user.
+- When XFF is absent, exempt ONLY a verified internal TCP peer
+  (loopback/RFC1918/RFC4193 via `getConnInfo`) — NOT on the missing header alone
+  (that fail-open was caught by automated security review and corrected); other
+  no-XFF callers are limited by peer IP.
+- `AUTH_RATE_MAX` (60) / `RPC_RATE_MAX` (600) env-overridable; rpc raised 300→600.
+- `TRUST_PROXY=true` set in `deploy/.env.v2` + passed through compose.
+
+### Production data audit (`scripts/prod-data-audit.ts`, read-only)
+
+| Data | Foreign Links | Netsurf |
+|------|---------------|---------|
+| employees / contracts | 3 / 3 | 20 / 15 |
+| shifts / roster / shift_rules | 0/0/0 | 6/175/6 |
+| **departments** | 0 | 0 |
+| **country_payroll_profile / payroll_setting** | 0→**1** / 0→**1** | 0→**1** / 0→**1** |
+| **payroll_run / payslip** | 0 | 0 |
+
+The original prod load (21R) brought people/contracts/roster but never loaded the
+payroll country profile, payroll settings, departments, or historical payslips.
+
+### Delta load shipped (`scripts/migration/complete-prod-delta.ts`)
+
+Owner approved "full delta load now". Prod backed up first
+(`backups/heimdallone_v2_prod-*.sql.gz`, via `pg_dump` in `postgres-central`).
+Guarded by the reviewed prod-write opt-in
+(`CONFIRM_PRODUCTION_WRITE=1 PRODUCTION_WRITE_TARGET=heimdallone_v2_prod`, refuses
+v1). Created, idempotently, for BOTH tenants:
+- **GRA Guyana 2026 country payroll profile** (effective-dated, published; PAYE
+  25/35 bands, NIS 5.6/8.4, personal allowance $140k/mo, child $10k — GRA values,
+  mirrors `seed-payroll.ts`).
+- **Payroll settings** (fortnightly default — both tenants run fortnightly; GY
+  workweek + OT multipliers).
+
+**Verified:** payroll page now shows "Guyana 2026 · Active · PAYE + NIS
+configured", readiness 75%, Country-profile + Payroll-settings + Contracts ✅ in
+the setup checklist. Evidence: `docs/reviews/phase-21x-mobile-qa/verify-payroll-desktop.png`.
+
+### BLOCKED — historical payslips (must NOT be pushed blind)
+
+69 v1 payslips are staged as JSONB in `migration_source_payslip`, but **cannot be
+safely materialized into the live `payslip` table yet**:
+- v2 `employee_profile` has **no v1 source-id** (migrated employees got fresh
+  cuid2 IDs with no stored link to v1 `HR-EMP-xxxxx`).
+- The only candidate join key is **email — matches just 17 of 23 employees**
+  (the 6 no-login employees have no email); `badge_id` is null.
+- `payslip` is a NOT-NULL financial record requiring `payroll_run_id` +
+  `contract_id` + per-employee attribution.
+
+Materializing on a partial key would **misattribute financial records**. The
+reconciliation (`migration:reconcile`) already proved the numbers are correct in
+aggregate, but per-row materialization needs a **verified 1:1 employee mapping
+first**. Recommended next step: add/restore a v1 source-id on the migrated
+employees (or build a verified mapping table from `migration_source_employee`),
+then a reconciled materialization run that aborts on any unmapped row or
+net-pay-sum mismatch. NOT done overnight — financial-record safety over speed.
+
+### Also deferred
+- **Departments** — v1 dept *names* aren't staged (only ids); needs a v1
+  read-only pull or manual setup. Not blocking payroll.
