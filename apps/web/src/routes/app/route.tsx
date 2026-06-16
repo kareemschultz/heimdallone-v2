@@ -38,6 +38,7 @@ import {
 	User,
 	Users,
 	Wallet,
+	Wrench,
 } from "lucide-react";
 import {
 	createContext,
@@ -272,6 +273,12 @@ export const NAV = [
 		group: "Govern",
 		items: [
 			{
+				key: "setup",
+				label: "Setup center",
+				icon: Wrench,
+				href: "/app/setup",
+			},
+			{
 				key: "migration-status",
 				label: "Migration status",
 				icon: DatabaseBackup,
@@ -401,6 +408,10 @@ export function isNavItemVisible(key: string, role: string): boolean {
 	// Geofencing: managers/HR who manage work sites, plus employees who check in.
 	if (key === "geofencing") {
 		return canViewGeofencing(role) || canUseGeofenceCheckIn(role);
+	}
+	// Setup center: admins (HR) and payroll managers who configure the tenant.
+	if (key === "setup") {
+		return canManageHR(role) || canViewPayroll(role);
 	}
 	if (canViewPayroll(role)) {
 		return true;
