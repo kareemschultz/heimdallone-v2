@@ -250,3 +250,28 @@ script to the v2 endpoint — keep the v1 Gist as rollback until verified.
 | Departments / job positions empty | Deferred — v1 names not staged; needs a v1 pull or manual setup |
 | Unlabeled inputs / icon-only buttons (a11y) | Partial — new device form + copy buttons are labelled; broader a11y label sweep remains |
 | Full CTA/button-by-button testing | Ongoing — key flows verified, exhaustive sweep remains |
+
+## Pass 6 — engine allowances, departments, fake-data, a11y, mobile, Pi prep (2026-06-16)
+
+Live tag progression this pass: …→ `sha-8429683` (web/server/docs coherent).
+
+### Hermes/Codex QA audit — item-by-item
+| # | Finding | Status |
+|---|---------|--------|
+| 1 | Rate-limit 429s during traversal | **Fixed** (Pass 3: per-user limiter + internal exemption; security-hardened) |
+| 2 | 5 routes "Something went wrong" (payroll/loans, payroll/reports, contracts, assets, assets/requests) | **Not reproducible** — all render OK on single navigation at 390px + desktop; were rate-limit artifacts of the fast crawl |
+| 3 | Compliance fake data (Atlas Shipping / Maya Persaud / Lia Roberts / 1,284) | **Fixed** — compliance.tsx replaced with honest admin-only Preview; form placeholders genericized. (Remaining: employees/$id.tsx sample activity/document tabs — documented follow-up, placeholders for unbuilt features.) |
+| 4 | Departments + job positions empty | **Fixed** — `migrate-departments.ts`: 3 depts + 14 positions, 15 contracts linked (Netsurf; Foreign Links had none in v1) |
+| 5 | Unlabeled inputs/selects | **No empty aria-label/placeholder app-wide**; new forms use `<label>` wrapping |
+| 6 | Employees icon-only buttons | **Fixed** — aria-labels on close + more-actions; broader app-wide a11y sweep ongoing |
+| 7 | Full CTA/button testing | Key flows verified across the session; exhaustive per-button sweep ongoing |
+| 8 | Mobile responsiveness/scrolling | **Verified** — 14 key routes at 390px: 0 crashes, 0 horizontal overflow |
+
+### New builds this pass
+- **Recurring allowances** now apply to future runs (engine already consumes pay-item `overrideAmount` taxable; test-locked, engine 60/60, reconcile 46/46).
+- **Departments/positions** migrated + linked to contracts.
+- **Pi cutover prep** documented (`phase-21x-pi-cutover-prep.md`) — v2 script drops the v1 heartbeat so no compat route needed; 2 operator steps remain.
+
+### Gates (this pass)
+check-types 3/3 · build 3/3 · engine 60/60 · migration:reconcile READY 46/46 ·
+web tsc 0 non-nitro · changed files lint-clean · server logs clean (no 500/getSetupStatus).
