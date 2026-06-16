@@ -28,6 +28,11 @@ const identifyUser = createAuthMiddleware(auth as BetterAuthInstance, {
 
 const app = new Hono<EvlogVariables>();
 
+// Liveness probe — unauthenticated and placed before all middleware so container
+// healthchecks and the cutover ingress get a fast, dependency-free 200 while the
+// process is up. Does not touch the database.
+app.get("/health", (c) => c.json({ status: "ok" }));
+
 app.use(evlog());
 app.use("*", async (c, next) => {
 	await identifyUser(c.get("log"), c.req.raw.headers, c.req.path);

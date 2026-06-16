@@ -1,0 +1,58 @@
+# Version control / agent / editor
+.git
+.gitignore
+.github
+.claude
+.vscode
+.idea
+
+# Reference code + internal (non-workspace) docs — not needed to build images
+.references
+/docs
+design_handoff_heimdallone
+
+# Dependencies + build outputs (reinstalled / rebuilt inside the image)
+**/node_modules
+**/dist
+**/.output
+**/.vercel
+**/.nitro
+**/.turbo
+**/.tanstack
+**/.vinxi
+**/build
+**/.cache
+
+# Secrets — never copied into an image
+.env
+.env.*
+**/.env
+**/.env.*
+*.pem
+*.key
+
+# Migration / DB dumps & backups (may contain PII)
+backups
+**/*.dump
+**/*.sql.gz
+docs/migration/*-report.json
+docs/migration/*-report.md
+
+# Local scratch / reports / screenshots / coverage
+# (NB: do not blanket-exclude images — apps/web ships its own asset PNGs.)
+coverage
+**/coverage
+docs/reviews
+design_handoff_heimdallone
+*.log
+**/*.log
+
+# Python caches (migration tooling references)
+**/__pycache__
+**/*.pyc
+.venv
+venv
+
+# OS
+.DS_Store
+Thumbs.db

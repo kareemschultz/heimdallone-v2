@@ -58,6 +58,10 @@ the [cutover runbook](./v1-to-v2-cutover-runbook.md). Decisions are locked in
 - [ ] ✅ GL balance per tenant (debit == credit); tenant isolation; 23 statutory rows; **6 no-login** (null email, no placeholders); contracts/pay-frequency; roster; shift rules; notifications; source-JSON staging.
 - [ ] ✅ Roles intact — owners are owners, admins are admins (not flattened); platform owner can switch tenants; **old v1 admin retained** per the lock.
 
+### T+1:10 — Deploy v2 app side-by-side ⛔ STOP — owner confirm (no routing change)
+- [ ] 🛑 Start the v2 containers against `heimdallone_v2_prod` (Pangolin stays on v1): `docker compose -f deploy/docker-compose.v2.yml --env-file deploy/.env.v2 up -d`. See [docker-deployment](../operations/docker-deployment.md).
+- [ ] ✅ `curl /health` (server) + `/docs` (docs) return 200. **NB: web `/` SSR has an open app-level bug (Route.update) — fix before web cutover; server + docs images are ready.**
+
 ### T+1:15 — Smoke tests ✅
 - [ ] ✅ Platform-owner login (cross-tenant switch).
 - [ ] ✅ Tenant owner/admin login.

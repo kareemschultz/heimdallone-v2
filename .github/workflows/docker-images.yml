@@ -1,0 +1,98 @@
+name: Docker Images (v2)
+
+# Builds the v2 container images (server / web / docs) and pushes them to GHCR.
+# - push to master / PR / manual: BUILD (validates the Dockerfiles + cache warm).
+# - manual dispatch with push=true: also PUSH to GHCR.
+# Pushing is gated to a manual run on purpose so images are only published after
+# local smoke tests pass — there is NO automatic deploy here (no SSH, no compose
+# up, no Pangolin change).
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+    inputs:
+      push:
+        description: "Push images to GHCR"
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: ghcr.io
+  OWNER: ${{ github.repository_owner }}
+
+jobs:
+  # Gates must pass before any image is built.
+  verify:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    env:
+      # Dummy, non-secret values so the env schema parses in CI (pure checks only;
+      # no real database / secrets are used or printed).
+      DATABASE_URL: "postgres://verify:verify@localhost:5432/verify"
+      BETTER_AUTH_SECRET: "0123456789abcdef0123456789abcdef0123456789ab"
+      BETTER_AUTH_URL: "http://localhost:3000"
+      CORS_ORIGIN: "http://localhost:3001"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.12
+      - run: bun install --frozen-lockfile --ignore-scripts
+        env:
+          HUSKY: 0
+      - run: bun run check-types
+      - run: bun run build
+      - run: bun run audit:permissions
+
+  build:
+    needs: verify
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        app:
+          - { name: server, dockerfile: Dockerfile.server }
+          - { name: web, dockerfile: Dockerfile.web }
+          - { name: docs, dockerfile: Dockerfile.docs }
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OWNER }}/heimdallone-v2-${{ matrix.app.name }}
+          tags: |
+            type=sha,format=short,prefix=sha-
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build (and push on manual dispatch)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.app.dockerfile }}
+          platforms: linux/amd64
+          push: ${{ github.event_name == 'workflow_dispatch' && inputs.push }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=v2-${{ matrix.app.name }}
+          cache-to: type=gha,mode=max,scope=v2-${{ matrix.app.name }}

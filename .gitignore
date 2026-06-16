@@ -67,3 +67,7 @@ temp
 screenshots-review/
 .env.migration
 backups/
+
+# v2 side-by-side deploy secrets (never commit; .example is the template)
+deploy/.env.v2
+.env.v2

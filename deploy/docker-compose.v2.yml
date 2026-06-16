@@ -1,0 +1,78 @@
+# Heimdallone v2 — side-by-side stack (does NOT replace or stop v1).
+#
+# Runs the v2 server/web/docs containers against the already-loaded
+# heimdallone_v2_prod database, on host ports that do not collide with v1.
+# Pangolin still routes app.heimdallone.com to v1 — this stack is for smoke
+# testing v2 until the manual cutover flip.
+#
+# Usage (on the host):
+#   cp deploy/.env.v2.example deploy/.env.v2   # fill in real values (gitignored)
+#   export TAG=sha-<short>                      # the image tag built by CI
+#   docker compose -f deploy/docker-compose.v2.yml --env-file deploy/.env.v2 up -d
+#
+# Secrets live ONLY in deploy/.env.v2 (gitignored) — never in this file.
+
+name: heimdallone-v2
+
+services:
+  server:
+    image: ghcr.io/${GHCR_OWNER:-kareemschultz}/heimdallone-v2-server:${TAG:-latest}
+    container_name: heimdallone-v2-server
+    restart: unless-stopped
+    # Host 3100 → container 3000 (v1 publishes no host ports; 3100 avoids any clash).
+    ports:
+      - "127.0.0.1:3100:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: ${DATABASE_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      PLATFORM_ADMIN_USER_ID: ${PLATFORM_ADMIN_USER_ID:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+    networks: [heimdallone-v2]
+    deploy:
+      resources:
+        limits:
+          cpus: "1.00"
+          memory: 512M
+
+  web:
+    image: ghcr.io/${GHCR_OWNER:-kareemschultz}/heimdallone-v2-web:${TAG:-latest}
+    container_name: heimdallone-v2-web
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3101:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+    networks: [heimdallone-v2]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+
+  docs:
+    image: ghcr.io/${GHCR_OWNER:-kareemschultz}/heimdallone-v2-docs:${TAG:-latest}
+    container_name: heimdallone-v2-docs
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3102:3000"
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+    networks: [heimdallone-v2]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 256M
+
+networks:
+  # Dedicated network — NOT joined to the pangolin network, so this stack does
+  # not receive public traffic until the deliberate cutover flip.
+  heimdallone-v2:
+    name: heimdallone-v2

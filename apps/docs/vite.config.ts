@@ -18,9 +18,11 @@ export default defineConfig({
       },
     }),
     react(),
-    // please see https://tanstack.com/start/latest/docs/framework/react/guide/hosting#nitro for guides on hosting
+    // Hosting preset is overridable so the same app can target Vercel (default)
+    // or a self-hosted Node/Bun container (NITRO_PRESET=node-server → .output/).
+    // https://tanstack.com/start/latest/docs/framework/react/guide/hosting#nitro
     nitro({
-      preset: "vercel",
+      preset: process.env.NITRO_PRESET ?? "vercel",
     }),
   ],
   resolve: {

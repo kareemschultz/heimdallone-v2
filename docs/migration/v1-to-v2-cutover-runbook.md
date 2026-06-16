@@ -126,6 +126,23 @@ bun run migration:write-etl
 DATABASE_URL="${V2_STAGING_DATABASE_URL}" bun run migration:attendance-bridge
 ```
 
+## 7b. Deploy the v2 app (containers)  ⛔ DO NOT FLIP ROUTING UNTIL OWNER APPROVES
+
+The v2 app runs side-by-side with v1 (v1 stays live). Images are built/pushed by
+the `Docker Images (v2)` workflow; full detail in
+[docs/operations/docker-deployment.md](../operations/docker-deployment.md).
+
+```bash
+# ⛔ Pangolin stays on v1. This only starts the v2 containers on localhost ports.
+cp deploy/.env.v2.example deploy/.env.v2        # fill REAL values (gitignored)
+export TAG=sha-<short>
+docker compose -f deploy/docker-compose.v2.yml --env-file deploy/.env.v2 up -d
+curl -fsS http://127.0.0.1:3100/health          # server → {"status":"ok"}
+curl -fsS http://127.0.0.1:3102/docs            # docs → 200
+# NOTE: web SSR of / currently 500s (app-level Route.update bug) — must be fixed
+# before the web container is cutover-ready. server + docs are ready.
+```
+
 ## 8. Post-load checks  — RUN AFTER PRODUCTION LOAD (read-only queries)
 
 ```bash
