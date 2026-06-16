@@ -1,0 +1,87 @@
+---
+title: Payslips
+description: Finding payslips, what they show, statuses, and how historical payslips are preserved.
+icon: ReceiptText
+---
+
+<Tags>
+  <Tag>Payroll</Tag>
+  <Tag>HR</Tag>
+  <Tag>Employee</Tag>
+  <Tag>Auditor</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+A payslip is the per-employee earnings record for one pay period. Heimdallone preserves every payslip exactly as it was issued. Historical payslips -- including those migrated from the previous system -- are immutable.
+
+## Who can see payslips
+
+| Role | Access |
+|---|---|
+| **Employee** | Own payslips only. |
+| **HR Admin** | All payslips across the organisation. |
+| **Payroll Admin** | All payslips. Can confirm and reverse runs. |
+| **Manager** | Payslips for direct reports (where scoped). |
+| **Auditor** | Read-only access to all payslips. |
+
+## Finding payslips
+
+Go to **Payroll**, then open the **Payslips** tab. You can filter by employee, pay period, run, and status.
+
+Employees can access their own payslips from the same Payroll section -- only their records appear.
+
+## What a payslip shows
+
+| Field | Description |
+|---|---|
+| **Basic pay** | Base salary or hours × rate for the period. |
+| **Gross pay** | Basic pay plus overtime and any additions. |
+| **Overtime** | Hours worked beyond the standard threshold, at the applicable rate. |
+| **Worked days / hours** | From the approved attendance record. |
+| **Paid leave** | Leave days taken and paid in the period. |
+| **Unpaid leave** | Leave days that reduced pay. |
+| **Holiday days** | Public holidays falling in the period. |
+| **PAYE** | Income tax deducted, computed under the GRA rule in force on the pay date. |
+| **NIS (employee)** | National Insurance Scheme employee contribution. |
+| **Other deductions** | Loans, reimbursement adjustments, or statutory deductions. |
+| **Net pay** | Amount due to the employee after all deductions. |
+
+The payslip also records the **statutory rule version** used (for example, `GY 2026`) and the pay frequency the period was computed under.
+
+## Payslip statuses
+
+| Status | Meaning |
+|---|---|
+| **Draft** | The run is in preview. Figures may still change. |
+| **Confirmed** | The run has been confirmed. This payslip is immutable. |
+| **Paid** | Payment instruction has been sent for this run. |
+
+Once a payslip reaches **Confirmed** status, its figures are frozen. No in-place edit is possible. See [Corrections](/docs/payroll/corrections) if a confirmed payslip contains an error.
+
+## Historical and migrated payslips
+
+Payslips migrated from the previous system are preserved exactly as they were originally issued. They carry the original figures, the pay period, and the statutory breakdown from the old system. They are immutable in the same way as any confirmed payslip.
+
+<Callout type="info" title="Historical payslips are audit records">
+  These records exist to give you a complete, accurate history. They are never recalculated as a background process. If a historical payslip needs a correction, that is an explicit, admin-approved action that creates a linked correction record and leaves the original intact. See [Corrections](/docs/payroll/corrections).
+</Callout>
+
+## What to check
+
+- If a payslip shows zero net pay, verify the employee's contract rate and that their attendance was approved for the period.
+- If deductions look higher than expected, check whether any loan repayments are scheduled for this period.
+- If the PAYE or NIS amounts look wrong, check the rule version label on the payslip and compare it to the [effective-dated rules](/docs/payroll/effective-dating) in your payroll settings.
+
+## Troubleshooting
+
+**I can't find an employee's payslip.**
+The payslip is created when a run is generated for that employee's pay period. If no run exists for that period, no payslip will appear. Check the Run Payroll tab to see whether a run was created.
+
+**A payslip shows "Draft" but the period has already passed.**
+The run for that period hasn't been confirmed yet. A Payroll Admin needs to complete the run.
+
+**A historical payslip looks wrong.**
+Historical payslips are immutable -- they can't be edited. If the figures were computed incorrectly (for example, under the wrong statutory rule), a Payroll Admin can raise a correction. The correction creates a linked record showing the original, the corrected figures, and the per-component differences. The original payslip is never changed. See [Corrections](/docs/payroll/corrections).
+
+**An employee says they didn't receive their payslip.**
+Payslips are viewable in the Payroll section once the run is confirmed. If the run is still in Draft or Preview, the employee won't see confirmed figures yet.

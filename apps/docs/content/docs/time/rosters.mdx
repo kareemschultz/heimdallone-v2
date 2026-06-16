@@ -1,0 +1,98 @@
+---
+title: Rosters
+description: How per-date shift assignments work, what roster overrides mean, the approval step, and how rosters drive attendance and payroll.
+icon: CalendarDays
+---
+
+<Tags>
+  <Tag>Manager</Tag>
+  <Tag>HR</Tag>
+  <Tag>Requires Setup</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+<Callout type="info" title="Administrator-managed">
+  There's no end-user roster screen yet. Roster data is set up by your
+  administrator and, for migrated organisations, was loaded during the initial
+  data migration. Contact HR or your admin if a roster assignment is missing or
+  incorrect.
+</Callout>
+
+## What a roster does
+
+A **roster** is a per-date assignment: it records which employee is working which
+shift on a specific date. That assignment is the starting point for attendance
+calculation — the shift tells the system what scheduled start, end, and minimum
+minutes to expect, and the shift's pay rules determine how overtime, lateness, and
+premiums are classified.
+
+Rosters and shifts are separate. Shifts are the reusable schedule templates
+(defined in **App → Settings → Shifts**). Rosters are the per-date application
+of those templates to specific employees.
+
+## Override types
+
+A roster entry can carry an **override** that replaces or modifies the default
+shift for that specific date:
+
+| Override | What it means |
+| --- | --- |
+| None | The employee works their assigned shift as configured. |
+| Custom hours | A different start or end time applies for this date only. The shift's pay rules still apply unless a specific shift rule overrides them. |
+| Day off | The employee is not working on this date, even if the shift schedule would normally require it. |
+| Swap | The employee has swapped this date's shift with another employee or another date. |
+
+## Approval
+
+Roster changes go through an approval step before they take effect. A manager or
+HR reviews and approves (or rejects) the proposed change. Until it's approved, the
+original assignment remains in force.
+
+## How it feeds attendance and payroll
+
+<Steps>
+<Step>**Roster assignment** — the system knows which shift an employee is expected to work on a given date.</Step>
+<Step>**Shift definition** — the shift provides scheduled start, end, and minimum required minutes (set in **App → Settings → Shifts**).</Step>
+<Step>**Shift rules** — pay-affecting rules (overtime thresholds, grace, night differential, weekend multipliers) are resolved from the shift rule effective on that date. See [Work schedules & shift rules](/docs/time/work-schedules).</Step>
+<Step>**Attendance** — punches are compared against the roster. Worked, payable, overtime, late, and early-leave minutes are derived from the rostered shift and the applied rules.</Step>
+<Step>**Payroll** — approved attendance records (informed by the roster) feed the payroll engine. Roster and rules never write payroll directly — they influence it through the attendance record.</Step>
+</Steps>
+
+<Callout type="warn">
+  An employee without a roster assignment on a given date falls back to the
+  organisation's default schedule settings. If an employee's hours are
+  consistently misclassified, check whether a roster assignment exists for the
+  relevant dates.
+</Callout>
+
+## Shifts live in Settings
+
+The shift templates themselves — scheduled start and end times, minimum daily
+minutes, and the link to a shift rule — are configured in **App → Settings →
+Shifts**, not in the roster itself. The roster references a shift by name; the
+shift carries the detail.
+
+Pay-affecting rules for each shift (overtime thresholds, grace windows, break
+deductions, night differential, Saturday/Sunday/holiday multipliers) are
+effective-dated. Changing a rule going forward doesn't affect how past dates were
+calculated. See [Work schedules & shift rules](/docs/time/work-schedules) for
+how those rules work.
+
+## Role notes
+
+| Who | What they can do |
+| --- | --- |
+| HR Admin | Full access — create, edit, approve, and archive roster entries and shift assignments. |
+| Manager | Can manage roster **assignments** for direct reports but cannot edit shift pay rules (those are HR/payroll only). |
+| Employee | No roster management access. Roster data informs your attendance records, which you can view under **App → Attendance**. |
+
+## What to check
+
+- **Attendance record shows wrong shift** — the roster assignment for that date may
+  point to the wrong shift, or no assignment exists and the system fell back to the
+  default. Contact HR to review the roster entry.
+- **An override isn't reflected in attendance** — check whether the override was
+  approved. An unapproved override doesn't take effect.
+- **A day-off roster entry still shows an "absent" attendance record** — attendance
+  records are updated when punches are processed. If the day-off override was
+  approved after attendance was already calculated, ask HR to recalculate the record.

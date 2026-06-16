@@ -1,5 +1,12 @@
 {
   "title": "Payroll",
   "icon": "Banknote",
-  "pages": ["index", "effective-dating"]
+  "pages": [
+    "index",
+    "payroll-runs",
+    "payslips",
+    "corrections",
+    "reconciliation",
+    "effective-dating"
+  ]
 }

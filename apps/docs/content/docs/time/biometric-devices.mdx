@@ -1,104 +1,108 @@
 ---
-title: Biometric devices & attendance sync
-description: How time-attendance terminals (e.g. ZKTeco) feed punches into Heimdallone v2, how punches become attendance, and how the v1 device is migrated safely.
+title: Biometric devices
+description: How to register and manage time-attendance terminals in Heimdallone, map device users to employees, review punches, and resolve unmatched punches.
 icon: Fingerprint
 ---
 
 <Tags>
   <Tag>Admin</Tag>
+  <Tag>HR</Tag>
   <Tag>Payroll</Tag>
-  <Tag>Migration</Tag>
   <Tag>Requires Setup</Tag>
 </Tags>
 
-Heimdallone v2 ingests biometric/time-attendance punches into a **raw staging
-table first**, then derives attendance from them. Payroll only ever reads the
-**derived** attendance records — never the device directly.
+Biometric terminals (fingerprint / face / PIN clocks) send punches into
+Heimdallone, which turns them into attendance records. This page explains how to
+find the device screens, register a device, map device users to employees, and
+keep punches flowing cleanly.
 
-## The flow
+<Callout title="Who manages devices">
+  Device setup and punch review are for **HR Admin**, **Payroll Admin**, and
+  **Tenant Owner / Admin**. Employees never see these screens — they just clock in.
+</Callout>
+
+## Where to find it
+
+Go to **App → Attendance → Biometrics & Time Clocks**. You'll see tabs:
+
+- **Overview** — recent sync health and totals.
+- **Devices** — the registry of terminals and import sources.
+- **Sync runs** — a log of each sync batch (fetched / created / duplicate / unmapped / errors).
+- **Punch review** — raw punches as they arrived.
+- **Unmatched punches / Exceptions** — punches that couldn't be matched to an employee, for triage.
+
+## Register a device
 
 <Steps>
-<Step>**Device** — a terminal (e.g. a ZKTeco fingerprint/face unit) records punches with a per-employee device user-id (the enrolment slot).</Step>
-<Step>**Agent** — a small on-site agent (Raspberry Pi) polls the device and POSTs new punches to the v2 ingest endpoint, authenticated by a hashed device API key.</Step>
-<Step>**Raw staging** — each punch lands in `attendance_punch` with its raw timestamp and payload preserved, deduped by an idempotency key.</Step>
-<Step>**Processor** — maps each punch to an employee, builds attendance events (clock-in/out), and recalculates the daily attendance record (applying the workweek/weekend classifier and shift rules).</Step>
-<Step>**Payroll** — reads only the derived, approved attendance records.</Step>
+<Step>Open **Devices** and click **Register device**.</Step>
+<Step>Give it a **name** and pick the **vendor** (e.g. ZKTeco) and **mode** — most network terminals use **API ingest**, where an on-site agent sends punches to Heimdallone.</Step>
+<Step>Set the **time zone** (e.g. America/Guyana) so punch times are interpreted correctly.</Step>
+<Step>Save. Heimdallone shows a **one-time ingest key**. Copy the **device ID** and the **ingest key** now — the key is shown **once** and is stored only as a secure hash; it is never displayed again.</Step>
 </Steps>
 
-<Callout type="warn" title="Raw is never overwritten; payroll is never written by the device">
-  Raw punches are preserved for audit. Attendance is *derived* from them. The
-  device sync never writes payroll directly.
+<Callout type="warn" title="Keep the key safe">
+  The ingest key is a secret. It goes into the on-site agent's local configuration
+  only — never share it, screenshot it into a ticket, or post it anywhere public.
+  If it's lost, rotate it from the device screen to get a new one.
 </Callout>
 
-## Employee matching
+## Field reference
 
-Punches are matched to employees by **device user-id (the enrolment slot)** via the
-device→employee map, never by name. A punch that can't be matched is **not dropped**
-— it goes to the **unmatched review queue** (an attendance exception) for HR to link,
-after which it reprocesses.
+- **Name** — how the terminal appears in lists and reports.
+- **Vendor / model** — selects how punches are interpreted; the model line is
+  cosmetic, the vendor (e.g. ZKTeco) chooses the adapter.
+- **Mode** — how punches arrive (API ingest, CSV import, and others).
+- **Time zone** — the zone the device clock is read in.
+- **Device ID** — the identifier the on-site agent uses to send punches.
+- **Ingest key** — the secret the agent authenticates with (shown once).
+- **Status** — only an **active** device accepts punches; deactivate to stop ingest.
+- **Last sync** — when punches last arrived successfully.
 
-<Callout title="Stable id, not the slot index">
-  The map keys on the stable enrolment id, not the volatile device serial that
-  resets on re-enrolment.
+## Map device users to employees
+
+A terminal identifies each person by a **device user ID** (their enrolment slot on
+the device). Heimdallone matches punches to employees through that ID.
+
+<Steps>
+<Step>Open **Unmatched punches** to see device user IDs that have no employee yet.</Step>
+<Step>For each one, **choose an employee** to link it to. From then on, that person's punches are matched automatically.</Step>
+</Steps>
+
+<Callout type="info" title="Why mapping matters">
+  Unmatched punches are never guessed by name and never silently dropped — they
+  wait in the queue until you map them, so nobody's hours are lost or attributed to
+  the wrong person.
 </Callout>
 
-## Timezone
+## Check last sync and review punches
 
-Device clocks are treated as **UTC**; the raw device timestamp is preserved and the
-normalized punch time is stored in UTC. The daily attendance date and weekend/holiday
-classification use the org timezone (default **America/Guyana**, UTC-4). If a terminal
-loses its clock after a power cut it can report local time — agents should correct that
-offset before submitting.
+- **Sync runs** shows each batch and whether it succeeded; use it to confirm the
+  terminal is still talking to Heimdallone.
+- **Punch review** shows the raw punches; **Overview** summarises health.
+- Resolved punches flow into **Attendance** records, which are then validated and
+  (once approved) used by payroll.
 
-## Idempotency
+## What to check
 
-Re-running a sync is safe: each punch has a unique key (`device | device-id |
-device-user | second`), so re-sending the same punch is a no-op. This is also what
-makes a brief dual-write window at cutover safe.
+- The device shows a recent **Last sync** and **active** status.
+- The **Unmatched punches** queue is empty (or every entry is expected and pending a new hire's enrolment).
+- New employees who clock in have a **device-user mapping**.
+- Attendance records for clocked days are present and day-typed.
 
-## Migrating the existing (v1) device
+## Troubleshooting
 
-The v1 terminal is brought across as a **backfill + re-point**, reusing this same
-pipeline:
+| Symptom | Likely cause / fix |
+| --- | --- |
+| No punches arriving | Device not **active**, or the on-site agent isn't running / can't reach Heimdallone. Check **Sync runs**. |
+| Punches show as unmatched | The person's **device user ID** isn't mapped yet — map it in **Unmatched punches**. |
+| Duplicate-looking punches | Safe — re-sent punches are de-duplicated automatically; the count appears under **Sync runs**. |
+| Lost the ingest key | **Rotate** the key on the device screen and update the on-site agent. |
+| Times look shifted by hours | Check the device **time zone** setting. |
 
-- **Backfill** — historical v1 punches are loaded into `attendance_punch` (raw
-  preserved, `source = import`, v1 punch id kept in the payload), the device and its
-  employee slot-map are pre-seeded, and the processor derives the historical
-  attendance records. Run read-only against v1, into a disposable scratch DB only.
-- **Re-point** — the on-site agent is pointed at the v2 ingest endpoint (a new device
-  registration + API key). The device's actual model is detected over the protocol —
-  the stored label is cosmetic; the vendor (e.g. ZKTeco) selects the adapter.
-
-The existing Gist auto-update mechanism is reused. The on-site agent already pulls
-its sync script from a public GitHub Gist every few minutes (syntax-check →
-hot-swap → restart), so no on-site visit is needed to re-point it. **The Gist
-carries code only. Secrets stay in the agent's local `.env`.** At cutover, replace
-the Gist script with the v2-native script and update the agent's `.env` with the v2
-device ID and ingest key — never put the API key or any device secret in the Gist
-or the repo.
-
-<Callout type="warn" title="Cutover steps (operator)">
-  Pending owner approval — perform these only during the approved cutover window;
-  do not register the production device or replace the Gist script before then.
-
-  1. Log in to Heimdallone v2 as platform owner.
-  2. Register the ZKTeco terminal in v2 (vendor `zkteco`, mode `api_ingest`).
-  3. Copy the generated v2 device ID.
-  4. Copy the one-time ingest API key.
-  5. Update the agent `.env`: API URL, device ID, ingest key.
-  6. Replace the Gist sync-script content with the v2-native script.
-  7. Wait up to 5 minutes (auto-update) or restart the bridge service.
-  8. Confirm punches arrive in v2.
-  9. Check the unmatched-punch / exception report.
-  10. Confirm attendance recalculation and payroll reconciliation stay clean.
-
-  Rollback: keep a copy of the v1 script before replacing the Gist; if v2 sync
-  fails, restore the v1 script in the Gist and restart the bridge. If multiple
-  unrelated agents share the Gist, publish a new one and point the agent at it.
-</Callout>
-
-<Callout title="What to verify after cutover">
-  Punch counts match, no unmatched punches remain, attendance records are day-typed
-  (weekday/Saturday/Sunday/holiday) correctly, and payroll reconciliation stays
-  green. Confirm the agent's last successful sync and that the device clock is on time.
+<Callout title="On-site agent setup">
+  Connecting the physical terminal involves an on-site agent and its local
+  configuration. Its secrets (the ingest key) live in that agent's local
+  configuration only — never in shared docs. Your administrator handles that setup
+  as part of go-live; see the [device setup](/docs/administration/device-setup)
+  admin note.
 </Callout>

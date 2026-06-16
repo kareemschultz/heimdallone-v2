@@ -1,0 +1,121 @@
+---
+title: Payslip corrections
+description: How to correct a historical payslip without destroying the original record.
+icon: FileCheck
+---
+
+<Tags>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Security</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+<Callout type="info" title="Who can apply corrections">
+  Only Payroll Admin and Tenant Owner-Admin can preview and apply payslip corrections. HR Admin and Auditors can view the correction history.
+</Callout>
+
+## Why corrections, not edits
+
+Confirmed payslips are immutable. This isn't a limitation -- it's a guarantee. Every issued payslip is a permanent record of what was computed, under which rule, at the time. Allowing in-place edits would make the audit trail untrustworthy.
+
+When a payslip was computed incorrectly -- for example, because a statutory rule was missing, the wrong proration was applied, or a data error existed at the time of the run -- a **correction** is the right tool. It recomputes the payslip under the historically correct rule and records exactly what changed and why. The original payslip is preserved alongside it.
+
+## What triggers a correction
+
+Common reasons to raise a correction:
+
+- The run used the wrong statutory rule (e.g. a 2024 profile instead of 2025).
+- A personal allowance or NIS ceiling was missing from the rule at the time.
+- An employee's dependent children count was not recorded yet, affecting child allowance.
+- The engine itself had a calculation error that has since been fixed.
+- A source data error (contract rate, worked hours, leave days) was corrected after confirmation.
+
+## How corrections work
+
+<Steps>
+<Step>
+**Identify the payslip.**
+
+Open the payslip from the **Payslips** tab. Payroll Admins can search by employee and period.
+</Step>
+<Step>
+**Initiate a correction.**
+
+Use the **Correct** action on the payslip. Heimdallone asks you to select a reason:
+
+- Wrong rule applied
+- Missing effective rule
+- Wrong proration
+- Engine fix
+- Data fix
+- Other (with a free-text note)
+</Step>
+<Step>
+**Review the preview.**
+
+Heimdallone recomputes the payslip using the statutory rule that was in force on the **original pay date** (not today's rule). You'll see a component-by-component breakdown:
+
+| Component | Original | Corrected | Delta |
+|---|---|---|---|
+| Gross pay | | | |
+| PAYE | | | |
+| NIS (employee) | | | |
+| NIS (employer) | | | |
+| Net pay | | | |
+
+Review each delta before proceeding. If the figures look correct, move to apply.
+</Step>
+<Step>
+**Apply the correction.**
+
+Applying is a single, all-or-nothing transaction. The correction record is created, linked to the original payslip, and the original gains a back-pointer to the correction. The original payslip figures are never overwritten.
+</Step>
+</Steps>
+
+## The GL adjustment obligation
+
+If a correction changes money figures, Heimdallone records a **GL adjustment obligation**. There are three states:
+
+| State | Meaning |
+|---|---|
+| **Not required** | The correction produced no monetary change. |
+| **Pending** | A ledger adjustment is needed. Not yet posted. |
+| **Posted** | The Finance/GL team has posted the corresponding journal entry. |
+
+<Callout type="warn" title="Payroll does not edit the ledger">
+  Heimdallone records the obligation but never writes to the general ledger on your behalf. The actual journal entry is created and posted in the Finance module by someone with the appropriate finance access. Until it's posted, the correction shows as "Pending".
+</Callout>
+
+## What the record shows
+
+After a correction is applied, the payslip detail shows:
+
+- The **original issued figures** -- preserved exactly.
+- The **corrected figures**.
+- The **per-component deltas** (gross, PAYE, NIS, net).
+- The **reason** and any free-text note.
+- The **actor** who applied the correction and when.
+- The **statutory rule** that was resolved by the original pay date.
+- The **GL adjustment status**.
+
+Auditors can see the full correction history in read-only mode.
+
+## Role access summary
+
+| Action | Payroll Admin | Tenant Owner-Admin | HR Admin | Auditor | Employee |
+|---|---|---|---|---|---|
+| Initiate and apply correction | Yes | Yes | No | No | No |
+| Preview correction | Yes | Yes | No | No | No |
+| View correction history | Yes | Yes | Yes | Yes | Own only |
+
+## Troubleshooting
+
+**The correction preview shows no change.**
+The recomputed figures match the original exactly under the historical rule. If you believe there's still an error, check whether the underlying data (contract rate, worked hours, dependent children count) has been corrected in the source module. The correction engine uses whatever is recorded there.
+
+**The GL adjustment shows "Pending" for a long time.**
+Payroll records the obligation; the Finance/GL team posts the journal. Follow up with whoever manages your general ledger to post the corresponding entry in the Finance module.
+
+**I can't find the Correct action on a payslip.**
+Only confirmed or paid payslips can be corrected. Draft payslips can be corrected by reversing the run. Also confirm you're signed in as a Payroll Admin or Tenant Owner-Admin.

@@ -1,143 +1,71 @@
 ---
 title: Migration & cutover
-description: How legacy (v1) data is brought into Heimdallone v2 safely — what migrates, the guarantees, and the freeze/cutover process.
+description: What data comes across from a legacy system, what users should expect, and how admins verify migrated employees, payslips, attendance, finance, and devices inside Heimdallone.
 icon: DatabaseBackup
 ---
 
 <Tags>
   <Tag>Admin</Tag>
+  <Tag>HR Admin</Tag>
+  <Tag>Payroll Admin</Tag>
   <Tag>Migration</Tag>
-  <Tag>Security</Tag>
-  <Tag>Requires Setup</Tag>
 </Tags>
 
-Heimdallone v2 can import data from a legacy v1 system before you go live. This
-page explains **what migrates**, the **safety guarantees**, and the **freeze and
-cutover process** an operator follows.
-
-<Callout type="warn" title="Cutover is pending owner approval">
-  No production load has been performed. The **freeze is pending owner approval**;
-  the **production write-ETL must not be run** and the **DNS must not be changed**
-  until then. **Device registration and Gist script replacement happen during the
-  cutover window only.** Secrets stay in Infisical and the Pi `.env` — never in the
-  Gist or the repo.
-</Callout>
+If your organization is moving from a previous system, its data is brought into
+Heimdallone before you go live. This page explains **what comes across**, **what to
+expect**, and **how to check it in the app**.
 
 <Callout title="Migration principle">
-  Legacy v1 data is a migration **source** and an **intent** source — not
-  automatic truth. Historical records are preserved exactly; known v1 bugs are
-  corrected against official rules (for Guyana payroll, the GRA is the source of
-  truth); nothing is cloned blindly.
+  Legacy data is a **source** and an **intent** — not automatic truth. Historical
+  records are preserved exactly; known legacy mistakes are corrected against the
+  official rules (for Guyana payroll, the GRA is the source of truth); nothing is
+  copied blindly.
 </Callout>
 
-## What migrates
+## What gets migrated
 
-The migration brings each tenant across independently, in cutover order, with
-full tenant isolation:
-
-| Area | v2 home | Notes |
+| Area | What comes across | Where to find it |
 | --- | --- | --- |
-| Organizations & users | `organization`, `user`, `member`, `account` | One org per tenant; **logins are preserved** — user, tenant role (`owner`→`tenant_owner`, `admin`→`tenant_admin`), and credential/Google account all carry over (see below) |
-| Employees | `employee_profile` | Logins preserved wherever possible; true no-login only when intended (see below) |
-| Statutory fields | `employee_statutory` | TIN/NIS/dependent children/second job/medical — masked for non-payroll roles |
-| Contracts | `contract` | Pay frequency normalised (e.g. v1 "Bi-Weekly" → `fortnightly`) |
-| Shifts & pay policy | `shift`, `shift_rule` | v1 work-schedule richness (night/split/Saturday/OT) → effective-dated `shift_rule` |
-| Roster | `roster_entry` | Per-date entries with overrides and approval |
-| General Ledger | `gl_account`, `gl_journal_entry`, `gl_journal_line` | Only balanced journals migrate; v1-bug journals are preserved as source for accountant review |
-| Notifications | `notification` | Scoped to migrated users |
-| Time-attendance / devices | `attendance_device`, `attendance_device_employee_map`, `attendance_punch` | Biometric terminal + raw punches backfilled into the v2 pipeline; attendance is **derived**, payroll never written directly. See [Biometric devices](/docs/time/biometric-devices) |
+| People & logins | Employees, their roles, and their sign-in accounts (passwords are never reset or weakened; Google sign-in carries over where used) | [Employees](/docs/hr/employees), [Migrated logins](/docs/administration/migration-logins) |
+| Pay & history | Historical payslips (kept **immutable**) and the pay setup behind them | [Payslips](/docs/payroll/payslips) |
+| Time | Attendance history, shifts, and rosters | [Attendance](/docs/time/attendance) |
+| Finance | Chart of accounts, journals, and opening balances | [General ledger](/docs/finance/general-ledger) |
+| Devices | The biometric terminal and its punch history | [Biometric devices](/docs/time/biometric-devices) |
 
-Data with no destination app table yet (historical payslips, attendance punches,
-the full v1 GL, the full employee row) is **preserved losslessly** in
-`migration_source_*` staging tables, so nothing is dropped.
+## What users should expect
 
-<Callout type="warn" title="Historical payslips are computed forward, not overwritten">
-  v2's payroll engine resolves statutory rules **by pay date** (effective
-  dating). Historical issued payslips stay immutable; corrections are a
-  first-class, audited workflow — never a silent recompute. See
-  [Payroll effective dating](/docs/payroll/effective-dating).
-</Callout>
+- Migrated employees see a one-time **welcome notice** at first sign-in asking them
+  to review their details — see [Your first sign-in](/docs/administration/first-login).
+- The **same password** continues to work where sign-in could be carried over
+  safely; otherwise the user is guided through a secure reset/invite. **No
+  placeholder emails are ever created** — someone with no email simply has no login
+  until HR adds one.
+- **Historical payslips look exactly as they did** and cannot be edited.
 
-## Safety guarantees
-
-These hold for every migration run, rehearsal or live:
+## What admins should verify in the app
 
 <Steps>
-<Step>**v1 is read-only.** The loader connects with a SELECT-only role and sets the session read-only; it never writes to v1.</Step>
-<Step>**Rehearsals never touch production.** Dry-runs and scratch rehearsals write only to a disposable database whose name must contain `scratch`/`staging`/`test`/`migrat`; writes require an explicit confirmation flag.</Step>
-<Step>**No secrets in the repo.** Credentials live only in a gitignored env file, sourced into the shell.</Step>
-<Step>**Reports are PII-safe.** Migration reports contain counts, slugs, classifications, and opaque IDs only — no names, emails, salaries, bank, TIN, or NIS values.</Step>
-<Step>**Reconciliation gates cutover.** Each v1 payslip is recomputed through v2's engine; the run must reconcile (e.g. personal allowance, NIS, child allowance, net) before freeze.</Step>
+<Step>**Employees** — everyone is present, in the right department, with the right manager, and statutory details (TIN/NIS/dependents) where needed. Open **App → Employees**.</Step>
+<Step>**Payslips** — historical payslips are present and unchanged. Open **App → Payroll → Payslips**.</Step>
+<Step>**Attendance** — recent attendance looks right and the biometric device shows a recent successful sync. Open **App → Attendance**.</Step>
+<Step>**Finance** — opening balances and the trial balance look sensible. See [General ledger](/docs/finance/general-ledger).</Step>
+<Step>**Logins** — check who has access and who is intentionally no-login. Open **App → Migration status** (HR/admin) — see [Migrated logins](/docs/administration/migration-logins).</Step>
 </Steps>
 
-## Logins, roles & access
+## If something looks wrong
 
-Logins are **preserved wherever possible**. Because both v1 and v2 are built on
-the same authentication system, migration carries identity across faithfully:
+- **Don't edit history directly.** Historical payslips are immutable; fixes go
+  through an audited [correction](/docs/payroll/corrections) that records the
+  reason and the exact differences.
+- **No-login employee who should have access?** Add a real email and invite them —
+  never invent a placeholder address.
+- **Finance opening balance looks off?** Some legacy entries that didn't balance
+  are intentionally left out; your accountant enters a corrected opening entry
+  rather than Heimdallone fabricating one.
+- For anything that doesn't reconcile, raise it with your administrator before the
+  organization is finalized.
 
-- **The user account** — name, email, and verified status.
-- **The tenant role** — a v1 `owner` becomes a `tenant_owner`, a v1 `admin`
-  becomes a `tenant_admin`, and employees stay employees. Elevated roles are
-  **not** flattened.
-- **The sign-in method** — credential (email + password) and Google logins both
-  carry over. Existing passwords keep working; they are **never** reset, weakened,
-  or stored in plain text. If a credential cannot be safely carried, the user is
-  moved to a secure password-reset/invite flow instead.
-
-<Callout title="Platform owner vs. tenant owner">
-  A **tenant owner** runs one organization. The **platform owner** is a separate,
-  cross-tenant account that can switch between tenants — it is preserved as a
-  platform-admin account, not as a tenant role.
-</Callout>
-
-### No-login employees
-
-No-login is a deliberate choice, **not** a placeholder, and is no longer the
-preferred default. An employee is migrated **without** a login only when they
-genuinely should not have system access. The migration **never fabricates a
-placeholder email**.
-
-- If v1 has a login for the person, it is preserved.
-- If an email is missing but the person should have access, collect or assign a
-  **real** email before cutover (admins can then invite them).
-- A no-login employee shows as **`— (no login)`** in the UI but still appears in
-  HR, payroll, roster, and reports.
-
-<Callout title="Operator decision">
-  Before cutover, confirm which (if any) no-login employees should receive a real
-  login, and review the PII-safe missing-login report.
-</Callout>
-
-### First-login welcome
-
-On their first sign-in to v2, a migrated user is shown a required **welcome &
-profile-review** notice: it explains the move to Heimdallone v2, asks them to
-confirm their contact, emergency, address, and (where permitted) statutory
-details, points out new features, and asks them to report any incorrect payroll,
-leave, or attendance data to HR. It must be acknowledged before continuing.
-
-See [Your first sign-in](/docs/administration/first-login) for the employee view,
-and [Logins, roles & access](/docs/administration/migration-logins) for how logins
-and tenant roles are preserved plus the migration-status report.
-
-## Excluded v1 journals
-
-The GL load enforces a balance invariant: only journals whose debits equal
-credits migrate. Genuinely defective v1 journals (imbalanced or non-single-sided
-lines — typically reversal churn from a known v1 bug) are **excluded by design**
-and listed in the migration report. The migration **never fabricates a balancing
-entry**. The complete v1 GL — including the excluded journals — is preserved in
-source staging so an accountant can decide the correct opening-balance treatment
-and enter it post-cutover via the GL module.
-
-## Freeze & cutover
-
-Cutover is an operator-run, owner-approved process. The full step-by-step runbook
-— pre-freeze backups, downtime window, final delta load, post-load reconciliation,
-smoke tests, DNS switch, rollback criteria, and monitoring — lives in the
-[Freeze & cutover checklist](/docs/administration/freeze-checklist).
-
-<Callout type="warn" title="Freeze requires explicit owner approval">
-  No production write, freeze, or DNS cutover happens automatically. Each requires
-  explicit owner sign-off after a successful full-data dress rehearsal.
+<Callout title="Going live">
+  For what happens during the switch-over and what to confirm afterwards, see
+  [Go-live readiness](/docs/administration/freeze-checklist).
 </Callout>

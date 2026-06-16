@@ -1,5 +1,5 @@
 {
   "title": "Finance",
   "icon": "Landmark",
-  "pages": ["index"]
+  "pages": ["index", "cost-reports", "budgets", "general-ledger"]
 }

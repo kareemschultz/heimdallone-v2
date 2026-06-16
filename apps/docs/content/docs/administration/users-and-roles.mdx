@@ -1,0 +1,57 @@
+---
+title: Users & roles
+description: How admins manage who can sign in and what they can do — members, roles, and the difference between job roles and access roles.
+icon: UserCog
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>Tenant Owner</Tag>
+  <Tag>Security</Tag>
+</Tags>
+
+This page is for owners and admins managing **who can sign in** and **what they can
+do**.
+
+## Members
+
+The people who can sign in to an organization are its **members**. Manage members
+from the **workspace switcher → Workspace settings**: invite a new member, see
+existing members and their access role, and remove access.
+
+<Callout type="warn" title="Only owners/admins change access">
+  Changing someone's access role is limited to **Tenant Owner** and **Tenant
+  Admin**. Other roles can view but not reassign.
+</Callout>
+
+## Two kinds of "role"
+
+These are easy to confuse:
+
+- **Access role** (what someone can *do*) — e.g. HR Admin, Payroll Admin, Manager,
+  Employee, Auditor. Managed in Workspace settings. See the full list and
+  permissions on [Roles & access](/docs/getting-started/roles).
+- **Job role** (a *title*, e.g. "Technician") — managed in **App → Settings →
+  Roles**. This is descriptive HR data and does **not** grant any access.
+
+## Give someone access
+
+<Steps>
+<Step>For a brand-new person, add them in **App → Employees** with a real email, then invite them — see [Migrated logins & access](/docs/administration/migration-logins).</Step>
+<Step>To change what an existing member can do, open **Workspace settings** and set their **access role**.</Step>
+<Step>Confirm the change by checking which sidebar areas they can now see (access is least-privilege — people only see what their role allows).</Step>
+</Steps>
+
+## What to check
+
+- Owners are owners, admins are admins — access roles weren't accidentally reduced
+  during migration (use **App → Migration status** to confirm).
+- Auditors have read-only access; no one has more than they need.
+
+## Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| "I can't see a module" | Their access role doesn't include it — adjust in Workspace settings |
+| "I can't change a role" | Only Tenant Owner / Admin can |
+| "New hire has no login" | Add a real email and invite — never use a placeholder |

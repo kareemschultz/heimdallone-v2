@@ -14,7 +14,7 @@ icon: Banknote
 
 Heimdallone payroll is a **country-rule-driven, effective-dated, multi-frequency**
 engine. It supports weekly, fortnightly, semi-monthly, monthly, and annual cycles,
-and statutory rules are resolved by the **pay date** of each run — so historical
+and statutory rules are resolved by the **pay date** of each run -- so historical
 runs always compute on the rules that were in force at the time.
 
 <Callout title="Guyana / GRA">
@@ -25,13 +25,43 @@ runs always compute on the rules that were in force at the time.
 
 ## Key concepts
 
-- **Country profile** — the statutory rule set (tax bands, NIS, allowances) for a
+- **Country profile** -- the statutory rule set (tax bands, NIS, allowances) for a
   country, valid over a date window.
-- **Pay frequency** — weekly / fortnightly / semi-monthly / monthly / annual;
+- **Pay frequency** -- weekly / fortnightly / semi-monthly / monthly / annual;
   period statutory amounts are derived from annual figures.
-- **Payslip** — the issued record for an employee in a period; preserved immutably.
+- **Payslip** -- the issued record for an employee in a period; preserved immutably.
 
-## Pages
+## Payroll section
 
-- [Effective-dated rules](/docs/payroll/effective-dating) — how rules resolve by date,
-  and how historical payslips are corrected.
+<Cards>
+  <Card
+    title="Running payroll"
+    description="Create a run, generate a preview, resolve blockers and warnings, confirm, and reverse if needed."
+    href="/docs/payroll/payroll-runs"
+    icon="Play"
+  />
+  <Card
+    title="Payslips"
+    description="Find payslips, understand what each field means, and work with historical and migrated records."
+    href="/docs/payroll/payslips"
+    icon="ReceiptText"
+  />
+  <Card
+    title="Corrections"
+    description="Correct a confirmed payslip without losing the original. Preview deltas, apply, and track the GL obligation."
+    href="/docs/payroll/corrections"
+    icon="FileCheck"
+  />
+  <Card
+    title="Reconciliation"
+    description="How Heimdallone verifies payroll figures against GRA rules, component by component, with effective-dated rates."
+    href="/docs/payroll/reconciliation"
+    icon="ShieldCheck"
+  />
+  <Card
+    title="Effective-dated rules"
+    description="How statutory rules resolve by pay date, and how historical payslips are corrected without losing the original record."
+    href="/docs/payroll/effective-dating"
+    icon="CalendarClock"
+  />
+</Cards>

@@ -1,0 +1,97 @@
+---
+title: Your profile
+description: How to find and update your personal details, what you can change yourself, and which fields are managed by HR or Payroll.
+icon: UserCog
+---
+
+<Tags>
+  <Tag>Employee</Tag>
+  <Tag>Self-Service</Tag>
+</Tags>
+
+Your profile holds your personal details, work information, and statutory/banking
+data. Some fields you can update yourself; others are managed by HR or Payroll.
+
+## Finding your profile
+
+Go to **App → Employees**, then open your own record. The URL looks like
+`/app/employees/$id` where `$id` is your employee record number.
+
+Alternatively, if you were just prompted to review your profile after migrating,
+the first-login notice takes you there directly.
+
+## What you can edit yourself
+
+Employees can review and update the following basics on their own profile:
+
+- **Personal details** — date of birth, gender, marital status
+- **Address** — home address
+- **Emergency contact** — name, relationship, and phone number
+- **Contact details** — personal phone number (where editable by employee)
+
+Make your changes and save. Changes take effect immediately.
+
+<Callout type="info" title="Contact details">
+  Your primary work email is managed by HR or an admin — you can't change it
+  yourself. If it's wrong, let HR know.
+</Callout>
+
+## Fields managed by HR or Payroll
+
+Some fields affect payroll calculations or require verification. They are
+**restricted or masked** for your own protection:
+
+| Field | Who can edit | Notes |
+| --- | --- | --- |
+| TIN (Tax Identification Number) | HR Admin / Payroll Admin | Affects statutory deductions |
+| NIS / Social Security Number | HR Admin / Payroll Admin | Masked for non-payroll roles |
+| Dependent children | HR Admin / Payroll Admin | Affects child allowance in payroll |
+| Bank account details | HR Admin / Payroll Admin | Masked at API level; encrypted at rest roadmap |
+| Employment status | HR Admin | Hire date, job title, department |
+| Contract and salary | HR Admin / Payroll Admin | Governs pay calculations |
+
+You can **see** that these fields exist on your profile, but their values are
+masked or hidden unless you hold an HR or Payroll Admin role.
+
+<Callout type="warn" title="Statutory data and pay">
+  Fields like TIN, NIS, and dependent children directly affect what's deducted
+  from your pay. If any of these look wrong (where you can see them), or if
+  a colleague on the right role tells you there's an issue, report it to HR
+  immediately so it can be corrected before the next payroll run.
+</Callout>
+
+## Reporting incorrect data
+
+If something on your profile is wrong and you can't edit it yourself:
+
+<Steps>
+<Step>Note the field name and the incorrect value (or what's missing).</Step>
+<Step>Contact HR directly. Give them your employee name or record number so they can locate you quickly.</Step>
+<Step>HR will update the field and confirm the change. Payroll-affecting corrections go through a proper, audited process.</Step>
+</Steps>
+
+<Callout type="info" title="Historical records">
+  If data carried over from the previous system looks wrong — payroll history,
+  leave balances, or attendance records — report it to HR. Historical records
+  are preserved as-is for audit, and corrections are applied going forward
+  through the corrections workflow.
+</Callout>
+
+## Role notes
+
+**Employee view**
+
+You see your personal details, address, emergency contact, and your own payslips
+and leave records. Statutory and banking fields are masked or hidden.
+
+**HR Admin view**
+
+HR Admins can view and edit all employee profile fields, including contact
+details, employment info, and statutory data. They can also see the fields
+employees cannot.
+
+**Payroll Admin view**
+
+Payroll Admins can view and edit statutory fields (TIN, NIS, dependent children)
+and banking details. They have full access to the data needed to run payroll
+correctly.

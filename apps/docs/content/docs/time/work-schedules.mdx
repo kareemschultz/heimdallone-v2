@@ -1,117 +1,136 @@
 ---
 title: Work schedules & shift rules
-description: Tenant-configurable, effective-dated work-schedule pay policy — split shifts, night differential, Saturday/Sunday/holiday rules, overtime thresholds, grace minutes — and how it flows into attendance and payroll.
+description: What a shift is, where shifts are defined, how pay-affecting rules work, and what each setting means for attendance and pay.
 icon: CalendarClock
 ---
 
 <Tags>
-  <Tag>Time</Tag>
   <Tag>Payroll</Tag>
+  <Tag>HR</Tag>
   <Tag>Admin</Tag>
-  <Tag>Manager</Tag>
-  <Tag>Tenant Configurable</Tag>
   <Tag>Effective Dated</Tag>
   <Tag>Requires Setup</Tag>
+  <Tag>Live</Tag>
 </Tags>
 
-<Callout type="info" title="Status">
-  Schema, API, resolver, and the attendance + payroll seams ship in Phase 21J.
-  A dedicated admin screen for editing rules is part of a later UI rollout — today
-  rules are managed through the roster API and populated by the v1→v2 migration.
+<Callout type="info" title="Administrator-configured">
+  Pay-affecting shift rules don't have a self-serve editor yet. They're set up
+  by your administrator (and were loaded during the initial data migration for
+  migrated organisations). This page explains what each setting means for your
+  attendance records and pay.
 </Callout>
 
-## What a shift rule is
+## What a shift is
 
-A **shift rule** is the pay-affecting policy for a work schedule: how overtime is
-triggered, how lateness grace works, whether a break is auto-deducted, and the
-premiums for night, Saturday, Sunday, and public-holiday work. Rules are a
-reusable product capability — **not** a single company's shift pattern. Every
-field is tenant-configurable; nothing about one tenant's schedule is hardcoded.
+A **shift** is a reusable work-schedule template. It defines:
 
-A rule can carry: standard daily/weekly minutes · overtime daily/weekly
-thresholds · grace minutes (late / early-out) · auto break deduction · split-shift
-break window · night differential window + multiplier · Saturday-specific window ·
-Saturday / Sunday / public-holiday / weekday-overtime multipliers · flexi-time ·
-a daily paid-minutes cap.
+- the scheduled start and end time for a working day, and
+- the minimum minutes an employee must be present to count as a full day's attendance.
 
-## Effective-dated — resolved by work date
+Shifts are created and managed in **App → Settings → Shifts**. A roster then
+assigns a specific shift to an employee on a specific date. See
+[Rosters](/docs/time/rosters) for how that assignment works.
 
-<Callout type="info">
-  Rules carry a validity window <code>[effectiveFrom, effectiveTo)</code> and are
-  resolved by the **work date**, exactly like payroll and leave rules. Changing a
-  rule next quarter never re-rates last quarter's attendance or pay — historical
-  work resolves the rule that was in force then.
-</Callout>
+## Shift rules and how they affect pay
 
-A rule is only used when it is **published**. Unpublishing a rule ("archive")
-removes it from resolution while preserving the row for history.
+A **shift rule** is the pay policy attached to a shift. It defines how the system
+treats time beyond (or short of) normal working hours. Most of the fields are
+optional — if a field isn't set, the system inherits the organisation's default
+setting.
 
-## Resolution precedence (and safe defaults)
-
-When attendance or payroll needs a rule for an employee's shift on a date, the
-system resolves in this order:
-
-<Steps>
-<Step>**Shift-specific rule** for that shift, whose window contains the work date.</Step>
-<Step>**Organization-default rule** (a rule with no shift), whose window contains the date.</Step>
-<Step>**Existing organization settings** — `payroll_setting` multipliers / workweek and `attendance_setting` grace / break.</Step>
-<Step>**Built-in defaults** when nothing is configured.</Step>
-</Steps>
-
-<Callout type="warn" title="Default / fallback behavior">
-  A tenant with **no shift rules configured** resolves to its current organization
-  settings — so attendance and payroll behave **exactly as before**. Shift rules
-  are strictly opt-in; configuring one overrides only the fields it sets and
-  inherits the rest from the organization fallback.
-</Callout>
-
-## How it flows into attendance and payroll
-
-- **Attendance** uses the resolved rule for grace minutes, standard (expected)
-  minutes, auto break deduction, and a daily paid-minutes cap when set. With no
-  rule, the existing shift-schedule minimum and organization settings are used
-  unchanged.
-- **Payroll** reads the resolved rule through a clear seam on the payroll input
-  (resolved by the pay date, preserving the historical rule). Roster and schedule
-  rules **never write payroll** — schedule policy influences pay only through the
-  attendance record's worked / payable / overtime minutes.
-
-## Rosters
-
-Rosters assign a shift to an employee on a date (with optional per-day overrides
-and approval). The shift's **rule** supplies the pay policy for those rostered
-days. Rosters and rules are separate concerns: rosters say *who works when*; rules
-say *how that work is paid*.
-
-## Roles & permissions
-
-| Action | Who |
+| Setting | What it controls |
 | --- | --- |
-| Read schedule rules / resolve a rule | Admin · HR · Payroll · Manager · Employee (own) · Auditor (read-only) |
-| Create / edit / archive a rule | **Admin · HR · Payroll only** |
-
-<Callout type="warn" title="Least privilege">
-  Managers can manage roster **assignments** but **not** pay policy — editing a
-  shift rule is restricted to HR and payroll administrators, because it changes how
-  people are paid. This is enforced server-side (two-layer authz), not in the UI.
-</Callout>
-
-## Admin setup
-
-1. Decide whether a policy applies to **one shift** or as an **organization
-   default** (leave the shift unset for a default).
-2. Set the `effectiveFrom` date; leave `effectiveTo` open for a current rule.
-3. Configure only the fields that differ from your organization settings — the
-   rest are inherited.
-4. Publish the rule. To retire it later, archive (unpublish) it — history is kept.
-
-## Migration notes
+| Standard daily minutes | The expected daily working time. Worked minutes above this count toward overtime. |
+| Standard weekly minutes | Same concept applied over a week. |
+| Overtime daily threshold | The point (in minutes above standard) at which overtime starts being counted. |
+| Overtime weekly threshold | Same applied weekly. |
+| Grace — late | How many minutes after the scheduled start the employee can arrive before lateness is recorded. |
+| Grace — early out | How many minutes before the scheduled end the employee can leave before early-leave is recorded. |
+| Auto break deduction | A fixed break duration subtracted automatically from worked minutes, even if not punched separately. |
+| Split-shift break window | The minimum gap that defines two separate working periods as a split shift (rather than one long shift). |
+| Daily paid-minutes cap | A ceiling on payable minutes per day, regardless of how long the employee actually worked. |
+| Night differential window | The time-of-day window that carries a higher pay rate for hours worked within it. |
+| Night differential multiplier | The rate applied to time worked in the night window (for example, 1.25 = 125% of normal pay). |
+| Saturday multiplier | The rate applied to Saturday hours (when Saturday is a configured working day or an employee works on their rest day). |
+| Sunday multiplier | The rate applied to Sunday hours. |
+| Public-holiday multiplier | The rate applied to hours worked on a public holiday. |
+| Weekday overtime multiplier | The rate applied to overtime hours on a normal working day. |
 
 <Callout type="info">
-  The v1 `work_schedules` richness (night differential, split shift, Saturday
-  rules, overtime thresholds, grace, daily cap) is migrated into shift rules.
-  Night-differential fractions (numerator/denominator) become a single decimal
-  multiplier; archived v1 schedules import as unpublished rules; fields with no
-  clean target (raw shift windows, day overrides) are preserved in migration
-  source data. Migrated rules open early enough to cover all historical work dates.
+  Multipliers affect how attendance minutes translate into payable amounts in the
+  payroll engine. A multiplier of 1.5 means 60 overtime minutes are paid as 90.
+  The exact pay calculation also depends on the employee's contract rate.
 </Callout>
+
+## Effective dating
+
+Shift rules are **effective-dated**: each rule has a validity window, and the
+system resolves the rule that was in force on the **work date**, not today's rule.
+Changing a rule going forward doesn't recalculate past attendance or pay.
+
+This matters in practice: if your organisation updates its overtime threshold in
+April, attendance from March is still governed by the March rule. Historical
+payslips stay correct without any manual adjustment.
+
+See [Effective-dated rules](/docs/payroll/effective-dating) for the underlying
+model, and [Leave rules & day counting](/docs/time/leave-effective-dating) for
+how the same principle applies to leave.
+
+## How a rule is selected
+
+When the system calculates attendance for a date, it looks for a rule in this
+order:
+
+1. A rule configured specifically for the employee's assigned shift, whose
+   validity window covers the work date.
+2. An organisation-default rule (not tied to a specific shift), whose window covers
+   the date.
+3. The organisation's general settings (overtime multipliers, grace periods, break
+   settings).
+4. Built-in defaults, when nothing is configured at all.
+
+An organisation with no shift rules configured at all behaves exactly as before —
+rules are strictly opt-in and only override the fields they set.
+
+## What employees see
+
+You don't configure or manage shift rules. They're set up by HR or payroll admin
+and applied automatically when attendance is calculated. What you see as an
+employee is the outcome:
+
+- your **payable minutes** on each attendance record (which reflects grace periods,
+  break deductions, and any daily cap),
+- your **overtime minutes** (driven by the applicable threshold), and
+- your night-differential, Saturday, Sunday, or holiday classification (driven by
+  the day type and multiplier).
+
+If the minutes or classification on a record look wrong, contact HR to review
+which rule is applied to your shift.
+
+## Role notes
+
+| Role | Access |
+| --- | --- |
+| Admin / HR Admin / Payroll Admin | Can view and manage shift rules. Create, edit, and archive rules in Settings. |
+| Manager | Can view shift details and manage roster **assignments** but cannot edit pay rules. |
+| Employee | Sees the effect of rules in attendance records and payslips. No access to the rules themselves. |
+| Auditor | Read-only view of rules and their effective dates. |
+
+<Callout type="warn" title="Why managers can't edit pay rules">
+  Shift rules directly affect how people are paid. Editing them is restricted to
+  HR and payroll administrators. This is enforced by the system, not just the UI.
+</Callout>
+
+## What to check
+
+- **Overtime isn't appearing when expected** — the shift rule may have no daily or
+  weekly threshold configured, or the threshold is set higher than the hours
+  worked. Contact HR to confirm the rule applied to your shift and date.
+- **Night differential isn't showing on your payslip** — check that the shift rule
+  for your shift includes a night-differential window and that your punches fall
+  within it. Contact HR if the window looks wrong.
+- **Break deductions seem too large** — the rule may include an auto break
+  deduction. HR can confirm the exact deduction for your shift.
+- **Grace period doesn't match what you expect** — different shifts can carry
+  different grace windows. The grace on your attendance record is determined by the
+  rule for the specific shift you were rostered to on that date.

@@ -1,0 +1,114 @@
+---
+title: Budgets
+description: Setting labour budgets by organization, department, or project — and comparing them against actual cost with variance tracking.
+icon: PiggyBank
+---
+
+<Tags>
+  <Tag>Finance</Tag>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Manager</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Budgets let you define a planned labour cost for a scope (organization, department, or project) over a period, then compare that plan against actual cost from payroll. Budgets are a planning tool; they do not affect payroll calculations.
+
+Go to **App → Finance → Budgets** to see the list, or **App → Finance → Budget vs actual** to see variance.
+
+## Who can see and edit budgets
+
+| Action | Who |
+| --- | --- |
+| View all budgets | Payroll Admin · HR Admin · Tenant Owner/Admin · Auditor |
+| View department budgets (own departments only) | Manager |
+| Create a budget | Payroll Admin · Tenant Owner/Admin |
+| Edit a budget | Payroll Admin · Tenant Owner/Admin |
+| Remove a budget | Payroll Admin · Tenant Owner/Admin |
+
+<Callout type="info">
+  Managers can view the budget vs actual figures for their own departments but
+  cannot create or edit budgets. If a budget needs to be added or adjusted for
+  your department, contact a Payroll Admin.
+</Callout>
+
+## Creating a budget
+
+<Steps>
+<Step>Go to **App → Finance → Budgets**.</Step>
+<Step>Click **New budget** (top-right). This button is only visible to Payroll Admin and Tenant Owner/Admin.</Step>
+<Step>Choose the **scope**: Organization, Department, or Project.</Step>
+<Step>If you chose Department or Project, select the specific department or project from the list that appears.</Step>
+<Step>Set the **category** — currently Labour (covering all wage and employer-contribution cost).</Step>
+<Step>Set the **period** — a start date and end date for this budget.</Step>
+<Step>Enter the **budgeted amount** in your organization's currency.</Step>
+<Step>Save. The budget appears in the list immediately.</Step>
+</Steps>
+
+<Callout type="warn">
+  Each scope, category, and period combination must be unique. If you try to create
+  a budget that overlaps an existing one on the same scope and category, the system
+  will reject it. Adjust the period or remove the conflicting budget first.
+</Callout>
+
+## Editing a budget
+
+Open the budget from the list and click **Edit**. You can change the period, amount, or scope. The same uniqueness rule applies.
+
+## Removing a budget
+
+Click **Remove** on the budget row. Removal is immediate. There's no confirmation dialog — make sure you've selected the right row. Past variance calculations for that budget are no longer available once it's removed.
+
+## Budget vs actual
+
+**App → Finance → Budget vs actual**
+
+This view compares each budget's planned amount against the actual generated payroll cost for the same period and scope.
+
+| Column | What it shows |
+| --- | --- |
+| Scope | Organization, department name, or project name |
+| Period | Budget start and end dates |
+| Budgeted | The planned amount you entered |
+| Actual | Generated payroll cost in the same period and scope |
+| Variance | Budgeted minus actual (positive = under budget, negative = over) |
+| % used | Actual as a percentage of budgeted |
+| Status | On budget / Under budget / Over budget |
+
+<Callout type="info">
+  "Actual" cost uses the same calculation as the Cost by department report: gross
+  pay plus employer contributions from generated payslips in the period. This is
+  generated payroll cost, not cash disbursed. See [Cost reports](/docs/finance/cost-reports)
+  for the distinction.
+</Callout>
+
+### Reading the status indicators
+
+- **On budget** — actual cost is at or near the budgeted amount (within a small tolerance).
+- **Under budget** — actual is below the budgeted amount. The variance is positive.
+- **Over budget** — actual has exceeded the budgeted amount. The variance is negative.
+
+A visual progress bar shows % used at a glance.
+
+### Manager view
+
+Managers see budget vs actual for their own departments only. Organization-wide and project-level budgets outside their department scope are not shown.
+
+## What to check
+
+**A budget shows no actual cost** — check that payroll runs covering the budget period have been generated. If no payroll has been generated for that period, actual will show zero.
+
+**Variance looks wrong** — confirm the period on the budget matches the payroll period you expected. A budget for January 1 to January 31 will only include payslips whose pay period falls inside those dates.
+
+**I can't see my department's budget in Budget vs actual** — it may not have been created yet. Ask a Payroll Admin to add a department budget for your department.
+
+**A department budget I created is no longer visible** — check that you're looking at the right scope filter. If it was removed, it can't be recovered — you'll need to re-create it.
+
+## Troubleshooting
+
+**New budget button isn't visible.** Budget creation is restricted to Payroll Admin and Tenant Owner/Admin. If you need a budget set up, contact your payroll administrator.
+
+**I get an error saving a new budget.** The most common cause is a period overlap with an existing budget on the same scope and category. Review the budget list for the same scope and adjust periods so they don't overlap.
+
+**Budget vs actual figures differ from what I calculated manually.** The actual cost is based on generated payslips. Drafts are included; payslips outside the date range are not. If the payroll period dates don't align cleanly with your budget period, some payslips may fall partially in or out. Check the payslip pay-period dates in the Payroll area.
+
+**Manager can see budgets but can't edit them.** That's by design. Managers have read-only access to their department budgets. Budget management is restricted to Payroll Admin and Tenant Owner/Admin to prevent accidental changes to financial plans.

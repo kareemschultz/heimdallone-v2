@@ -1,5 +1,5 @@
 {
   "title": "Getting Started",
   "icon": "Rocket",
-  "pages": ["index", "roles", "navigation"]
+  "pages": ["index", "signing-in", "profile-basics", "navigation", "roles"]
 }

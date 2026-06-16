@@ -1,61 +1,90 @@
 ---
-title: Statutory & no-login employees
-description: The employee statutory record (tax/NIS identifiers, dependents, second job, medical) and the no-login employee policy.
+title: Statutory info
+description: The statutory record on an employee profile — tax and social-security identifiers, dependent children, second-job declaration, and medical insurance fields. Who can view and edit them, and how they affect payroll.
 icon: IdCard
 ---
 
 <Tags>
   <Tag>HR</Tag>
   <Tag>Payroll</Tag>
-  <Tag>Admin</Tag>
   <Tag>Security</Tag>
-  <Tag>Country Rule</Tag>
-  <Tag>Migration</Tag>
-  <Tag>Beta</Tag>
 </Tags>
 
-<Callout type="warn" title="Status">
-  The statutory record and the no-login policy ship as schema + API (Phase 21L).
-  A dedicated statutory-editing screen is part of a later UI rollout; today the data
-  is read/written through the HR employee API and is populated by the v1→v2
-  migration. This page will be marked <Tag>Live</Tag> when the editing UI ships.
+Every employee profile has a **Statutory info** tab that holds the tax and payroll-affecting data the payroll engine needs. The fields are country-neutral — the country payroll rules (Guyana: GRA) interpret them.
+
+## Where to find statutory info
+
+Go to **App → Employees**, click the employee, then open the **Statutory info** tab.
+
+<Callout type="warn">
+  This tab is only visible to HR Admin, Payroll Admin, Tenant Owner, and Tenant Admin.
+  Managers and employees don't see it.
 </Callout>
 
-## Employee statutory record
+## Fields
 
-Each employee can have a one-to-one **statutory record** holding the tax and
-payroll-affecting attributes that the country payroll rules need. Column names are
-country-neutral — the country rule engine, not the schema, interprets them.
-
-| Field | Purpose |
+| Field | What it holds |
 | --- | --- |
-| Tax identification number | Statutory tax ID (Guyana: TIN). Sensitive — masked for non-payroll roles. |
-| Social security number | Statutory social-security ID (Guyana: NIS). Sensitive — masked for non-payroll roles. |
-| Dependent children | Drives the country rule's **child allowance**. |
-| Has second job (+ pay) | Affects tax treatment of a second income. |
-| Medical: on file / payroll deduction / external premium | Medical scheme attributes. |
-| Other deductions | Miscellaneous recurring deduction amount. |
+| Tax identification number | The employee's statutory tax ID. In Guyana this is the TIN. |
+| Social security number | The statutory social-security ID. In Guyana this is the NIS number. |
+| Dependent children | The number of dependent children. Directly affects the payroll child allowance calculation. |
+| Has second job | Whether the employee has a declared second income, and the second-job pay amount. Affects tax treatment. |
+| Medical: on file | Whether a medical certificate is on file. |
+| Medical: payroll deduction | Whether a medical premium is deducted through payroll. |
+| Medical: external premium | Whether the employee pays their medical premium outside payroll. |
+| Other deductions | A recurring deduction amount not covered by the other fields. |
 
-<Callout type="info" title="Who sees what">
-  The tax and social-security identifiers are **masked for non-payroll roles**
-  (only HR/payroll administrators see the full value), mirroring the bank
-  account-number policy. Editing the statutory record is restricted to HR/payroll
-  administrators, and every record is scoped to the caller's organization.
+## How it affects payroll
+
+**Dependent children** is the most significant field for payroll calculations. Each dependent child may qualify the employee for a child allowance under the country's tax rules. If this number is wrong, the employee's net pay may be too high or too low.
+
+The second-job declaration and medical deduction fields feed into tax and deduction computations for the relevant pay period.
+
+If any statutory field is missing when a payroll run is processed, the engine applies the statutory default (usually zero). Correct the value before the next run to ensure accuracy.
+
+## Who can see and edit statutory info
+
+Statutory identifiers (TIN, NIS/social security number) and bank account numbers are **masked by default** for most roles. Only Payroll Admin, Tenant Owner, and Tenant Admin see the full unmasked values.
+
+| Action | Who |
+| --- | --- |
+| View the Statutory info tab | HR Admin · Payroll Admin · Tenant Owner · Tenant Admin |
+| See full TIN / NIS (unmasked) | Payroll Admin · Tenant Owner · Tenant Admin |
+| Edit any statutory field | HR Admin · Payroll Admin · Tenant Owner · Tenant Admin |
+
+<Callout type="info">
+  Masking is enforced on the server. The masked value is sent to the browser — the
+  full identifier never reaches non-payroll sessions.
 </Callout>
 
-## No-login employees
+## Correcting a wrong value
 
-Some staff exist for **HR and payroll purposes only** and never sign in — they have
-no system account and no email on file. Heimdallone supports these as **no-login
-employees**:
+<Steps>
+<Step>Go to **App → Employees** and open the employee's profile.</Step>
+<Step>Click the **Statutory info** tab.</Step>
+<Step>Click **Edit** and update the field.</Step>
+<Step>Save. The corrected value takes effect on the next payroll run.</Step>
+</Steps>
 
-- An employee's email is **optional**. A no-login employee has no email and no
-  linked user account.
-- Email uniqueness still applies to employees that *do* have an email.
-- In the employee profile, a missing email is shown as **"— (no login)"**.
-
-<Callout type="info" title="Migration note">
-  When live v1 data is migrated, employees without an email are imported as no-login
-  employees (no fake placeholder address is invented). If such an employee should in
-  fact have a login, an administrator adds a real email afterwards.
+<Callout type="warn">
+  Changing the **Dependent children** count mid-cycle affects payroll from the next run
+  onward. It doesn't retroactively recalculate issued payslips. If a past payslip was
+  calculated with the wrong count, use the payslip correction workflow to issue a
+  corrected payslip with the right values. See [Effective-dated rules](/docs/payroll/effective-dating).
 </Callout>
+
+## No-login employees and statutory data
+
+No-login employees (those without an email or system account) have statutory records just like any other employee. Their payroll is calculated, their TIN/NIS is stored and masked by role, and their dependent children count feeds into the allowance calculation. The absence of a login doesn't affect any of this.
+
+See [Employees — no-login employees](/docs/hr/employees#no-login-employees) for how to give a no-login employee system access when needed.
+
+## Troubleshooting
+
+**The Statutory info tab isn't visible.** Your role doesn't have permission to view it. Only HR Admin, Payroll Admin, Tenant Owner, and Tenant Admin can see this tab.
+
+**TIN or NIS shows as masked.** You're seeing the masked value because your role is not Payroll Admin or above. If you need the full value to verify it with a government authority, ask a Payroll Admin to confirm it.
+
+**Dependent children count is wrong and it affected a past payslip.** Correct the count on the profile first so future runs are right. Then raise a payslip correction for any issued payslip that used the wrong value.
+
+**The employee has no statutory record at all.** Open the Statutory info tab — if no values are set, click **Edit** and enter the relevant fields before the next payroll run.

@@ -1,0 +1,118 @@
+---
+title: Cost reports
+description: How to read labour cost by department, project costing from approved time, and how to export cost data for payroll review and audit.
+icon: ChartBar
+---
+
+<Tags>
+  <Tag>Finance</Tag>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Manager</Tag>
+  <Tag>Auditor</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Cost reports are **read-only**: they pull from payroll actuals and approved project time. Nothing in the Finance cost views writes to payroll or projects.
+
+Go to **App → Finance** and choose **Cost by department** or **Project costing** from the tabs.
+
+<Callout type="info">
+  Managers see only the departments they manage. Payroll Admin, HR Admin, Tenant Owner/Admin, and Auditors see the full organization.
+</Callout>
+
+## Cost by department
+
+**App → Finance → Cost by department**
+
+This view shows labour cost broken down by department for a date range you choose.
+
+| Column | What it shows |
+| --- | --- |
+| Department | Department name |
+| Gross pay | Sum of gross wages for confirmed/generated payslips in the period |
+| Employer contributions | Employer-side NIS and any statutory contributions |
+| Total cost | Gross pay + employer contributions |
+
+Adjust the **date range** at the top of the page to change the period. The report re-fetches when you change the range.
+
+### What "generated payroll cost" means
+
+<Callout type="warn" title="This is not cash paid">
+  Figures shown are the cost of **generated payslips** (draft, confirmed, or paid
+  status) in the selected period. This is not the same as cash disbursed — a draft
+  payslip is included even if the payment batch has not been sent. The heading on
+  the report reads "generated payroll cost" to make this distinction clear.
+</Callout>
+
+If you need cash-disbursed figures, use the Payroll payment-batches area, which tracks confirmed payment runs.
+
+### Cost by type
+
+Below the department table, a **by cost type** breakdown shows gross pay vs employer contributions across the whole organization (or your department, if scoped). This is useful for seeing what portion of your labour budget is statutory employer overhead.
+
+### Exporting cost data
+
+Payroll Admin and Auditors see an **Export CSV** button. The export contains the same figures as the on-screen report for the selected date range: department, gross, employer contributions, total, and the period.
+
+<Callout type="info">
+  Managers do not have export access. If you need a copy of your department's cost
+  data, ask a Payroll Admin or Auditor to export and share it.
+</Callout>
+
+## Project costing
+
+**App → Finance → Project costing**
+
+Project costing shows the estimated cost of approved time entries logged against each project. It uses the employee's contract rate to convert approved hours into a cost figure.
+
+<Callout type="warn" title="Estimates, not actuals">
+  Project cost figures are labelled **estimate**. The calculation is approved hours
+  × contract hourly rate. This is an indicative cost, not an invoiced or
+  disbursed amount. Accuracy depends on contract rates being up to date.
+</Callout>
+
+Each row shows:
+
+| Column | What it shows |
+| --- | --- |
+| Project | Project name with a link to the project detail |
+| Approved hours | Total approved time entries on the project |
+| Estimated cost | Approved hours × derived hourly rate from the employee's contract |
+| Method note | Describes how the rate was derived |
+
+Project costing is visible to Payroll Admin, Tenant Owner/Admin, and Auditors. Managers see their department scope for time entries but the project-costing view is restricted to full-org roles.
+
+<Callout type="info">
+  A deep link to the project detail is available for full-org roles. If you see a
+  project listed but can't open the link, your role has read access to the finance
+  view but not to the Projects module.
+</Callout>
+
+## Roles & access
+
+| Action | Who |
+| --- | --- |
+| View cost by department (own departments only) | Manager |
+| View cost by department (full organization) | Payroll Admin · HR Admin · Tenant Owner/Admin · Auditor |
+| View project costing | Payroll Admin · HR Admin · Tenant Owner/Admin · Auditor |
+| Export CSV | Payroll Admin · Auditor |
+
+## What to check
+
+**Figures look lower than expected** — check the date range. The default view may not span your intended period. Also check whether payroll runs for the period have been generated; unreached pay periods show no cost.
+
+**Employer contributions column seems high** — this is the full statutory employer-side cost (NIS and any applicable contributions). If a run is a draft with a corrected payslip, both the original and corrected figures may appear. Check payroll for any draft or corrected payslips in the range.
+
+**Project cost is showing zero** — the project may have no approved time entries. Time entries must be in **approved** status to be included. Submitted or draft entries are not counted.
+
+**My department is missing** — if you're a Manager and don't see your department, check that you have direct reports assigned in the employee directory. Department scoping is based on your direct-report chain, not on your department membership alone.
+
+## Troubleshooting
+
+**I don't see the Finance tab at all.** Finance is visible to Payroll Admin, HR Admin, Tenant Owner/Admin, Auditor, and Managers. If you hold one of these roles and still don't see it, contact your tenant admin to confirm your role assignment.
+
+**Export CSV is greyed out or missing.** Export is restricted to Payroll Admin and Auditor roles. Managers do not have export access by design.
+
+**The date range picker doesn't change the figures.** The report should re-fetch on range change. Try refreshing the page and re-selecting the range. If the issue persists, contact support.
+
+**Project costing shows a rate I don't recognise.** The rate is derived from the employee's active contract. If a contract was recently updated, the new rate applies to future approved entries. Past entries use the rate at the time they were approved.

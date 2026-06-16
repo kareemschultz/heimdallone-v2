@@ -6,25 +6,36 @@ icon: Landmark
 
 <Tags>
   <Tag>Finance</Tag>
-  <Tag>Payroll</Tag>
+  <Tag>Payroll Admin</Tag>
   <Tag>Admin</Tag>
   <Tag>Auditor</Tag>
+  <Tag>Manager</Tag>
 </Tags>
 
-Finance is a **coordination layer**: it reads payroll actuals, approved project
-time, and contract rates to produce cost reports and budgets, and owns the general
-ledger. It links to other modules but never mutates them.
+Finance is a **coordination layer**: it reads payroll actuals and approved project time to produce cost reports and budgets, and owns the general ledger. It links to other modules but never writes to them.
 
-## Modules
+Go to **App → Finance**. The Finance area is visible to Payroll Admin, HR Admin, Tenant Owner/Admin, Auditor, and Managers (scoped to their departments).
 
 <Cards>
-  <Card title="General Ledger" href="/docs/finance" description="Chart of accounts, journals, posting, reversals." />
-  <Card title="Journal entries" href="/docs/finance" description="Balanced entries, post-immutability." />
-  <Card title="Payroll posting" href="/docs/finance" description="Payroll cost into the ledger (read-only of payroll)." />
-  <Card title="Currency" href="/docs/finance" description="Per-tenant currency handling." />
+  <Card
+    title="Cost reports"
+    href="/docs/finance/cost-reports"
+    description="Labour cost by department, project costing from approved time, and CSV export."
+  />
+  <Card
+    title="Budgets"
+    href="/docs/finance/budgets"
+    description="Set labour budgets by scope, then track budget vs actual variance."
+  />
+  <Card
+    title="General ledger"
+    href="/docs/finance/general-ledger"
+    description="Double-entry accounts, journal entries, reversals, payroll posting, and opening balances. Requires Setup — no end-user screen yet."
+  />
 </Cards>
 
-<Callout title="Guardrail">
-  The ledger links to payroll via soft references and never writes payroll records.
-  Cost reports are read models built from payroll and project actuals.
+<Callout type="info" title="Guardrail">
+  Finance reads payroll and project records. It never writes to them. Cost reports
+  are read models; budget entries don't affect payroll calculations; GL payroll
+  postings are derived from confirmed payslips, not the other way round.
 </Callout>

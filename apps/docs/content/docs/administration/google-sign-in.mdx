@@ -1,0 +1,47 @@
+---
+title: Google sign-in
+description: How Google sign-in works in Heimdallone, who it's available to, and how it carries over from a previous system.
+icon: LogIn
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>Tenant Owner</Tag>
+  <Tag>Self-Service</Tag>
+  <Tag>Security</Tag>
+</Tags>
+
+Heimdallone supports signing in with **Google Workspace** alongside email/password
+and passkeys.
+
+## For users
+
+On the sign-in screen, choose **Google Workspace** and continue with your Google
+account. If you used Google to sign in to the previous system, the same Google
+sign-in continues to work after migration.
+
+## For admins
+
+- Google sign-in is enabled by an administrator at the platform level. The Google
+  connection's credentials live in **secure configuration only** — never in the app
+  and never in documentation.
+- Google sign-in is available like before — it isn't restricted to owners.
+- Each person still maps to one member with one access role; signing in with Google
+  doesn't change what they can do.
+
+<Callout type="warn" title="Secrets stay out of the app">
+  Google client credentials are never shown in the app, stored with employee data,
+  or written into help content. They are managed in protected configuration by the
+  administrator.
+</Callout>
+
+## What to check
+
+- Users who relied on Google before can still sign in with it after go-live.
+- The expected redirect for Heimdallone is configured on the Google side (your
+  administrator handles this during setup).
+
+<Callout title="Related">
+  [Signing in](/docs/getting-started/signing-in) ·
+  [Migrated logins & access](/docs/administration/migration-logins)
+</Callout>

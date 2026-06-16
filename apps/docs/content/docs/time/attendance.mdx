@@ -1,0 +1,191 @@
+---
+title: Attendance
+description: How daily attendance records work, how to clock in and out, what the statuses mean, and how exceptions surface for review.
+icon: Clock
+---
+
+<Tags>
+  <Tag>Employee</Tag>
+  <Tag>Manager</Tag>
+  <Tag>HR</Tag>
+  <Tag>Payroll</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Go to **App → Attendance** to see daily records. Each row is one employee on one
+date: when they clocked in and out, how many minutes were worked, payable,
+overtime, late, or early-leave, and what the current payroll status is.
+
+## Clocking in and out
+
+Employees can clock themselves in and out directly in the app. Biometric terminals
+and mobile/GPS check-ins also create punches — they all arrive in the same place.
+
+<Steps>
+<Step>Navigate to **App → Attendance**.</Step>
+<Step>Select **Clock in** at the start of your shift. The system records the timestamp.</Step>
+<Step>Select **Clock out** when your shift ends.</Step>
+<Step>Your daily record updates automatically. Minutes worked, payable time, and any overtime or lateness are derived from your punches and your shift rules.</Step>
+</Steps>
+
+<Callout type="info" title="Biometric and mobile punches">
+  Punches from a ZKTeco terminal or a geofenced mobile check-in follow the same
+  flow. See [Biometric devices & attendance sync](/docs/time/biometric-devices)
+  for how those devices feed into this view.
+</Callout>
+
+## Reading a record
+
+| Column | What it shows |
+| --- | --- |
+| Date | The calendar date of the record. |
+| Day type | How the date is classified: weekday, saturday, sunday, or holiday. This drives the overtime multiplier. |
+| Status | Whether attendance requirements were met for the day. |
+| Payroll status | Whether this record has been validated and is safe for payroll. |
+| Clock in / Clock out | First in and last out punches for the day. |
+| Worked minutes | Total time between first punch in and last punch out, less any auto-deducted break. |
+| Payable minutes | The minutes that count toward pay, after grace periods, caps, and break deductions are applied. |
+| Overtime minutes | Minutes beyond the daily or weekly overtime threshold. |
+| Late minutes | Minutes after the grace window before the scheduled start. |
+| Early-leave minutes | Minutes the employee left before the scheduled end (within the grace window). |
+| Notes | Any HR or manager note attached to the record. |
+
+## Day types
+
+The day type determines which overtime multiplier applies.
+
+| Day type | When it applies |
+| --- | --- |
+| Weekday | A normal configured working day. |
+| Saturday | A Saturday, which may carry a different overtime rate. |
+| Sunday | A Sunday, typically with a higher premium. |
+| Holiday | A date on the public-holiday calendar — takes precedence over the weekday bucket. |
+
+<Callout type="info">
+  The working week is tenant-configurable. If your organisation has a Sunday-Thursday
+  week, Saturday and Sunday are assigned to the correct buckets for your calendar.
+</Callout>
+
+## Record status
+
+| Status | Meaning |
+| --- | --- |
+| present | The employee was present and met the minimum required minutes. |
+| half_day | The employee worked, but only met the threshold for a half day. |
+| absent | No valid punches for the day; or the employee was expected but didn't attend. |
+| holiday | The date falls on a public holiday. Attendance rules may still apply if the employee worked. |
+| conflict | Two or more punch pairs overlap or can't be resolved cleanly. Needs HR review. |
+
+## Payroll status
+
+| Status | Meaning |
+| --- | --- |
+| pending | The record exists but hasn't been validated yet. It won't feed payroll until it's approved. |
+| approved | HR or payroll has reviewed and approved the record. It's ready to be picked up by a payroll run. |
+| payroll_locked | The record was included in a confirmed payroll run. It's immutable: no further edits are possible until the run is reversed. |
+
+<Callout type="warn" title="Locked records">
+  A record with status **payroll_locked** can't be edited. If there's an error,
+  the payroll run must be reversed by payroll admin before any correction can be
+  made to the attendance record.
+</Callout>
+
+## Lens filters
+
+Use the filters at the top of the Attendance list to narrow to records that need
+attention.
+
+| Lens | What it shows |
+| --- | --- |
+| All | Every record in your scope (all employees for HR/managers; your own for employees). |
+| Today | Records for the current date only. |
+| Pending validation | Records with payroll status **pending** — awaiting HR or payroll review. |
+| Pending OT | Records with unreviewed overtime minutes. |
+| Payroll approved | Records confirmed ready for payroll. |
+| Exceptions | Records flagged for review: conflicts, unmatched punches, or anomalies the system couldn't resolve. |
+
+## Role notes
+
+<Tabs items={["Employee", "Manager", "HR / Payroll"]}>
+<Tab value="Employee">
+You see only your own records. You can clock in and out. You can't edit the
+validated or locked rows.
+</Tab>
+<Tab value="Manager">
+You see records for your direct reports. You can review records and escalate
+exceptions to HR but can't approve records for payroll — that's HR or payroll admin.
+</Tab>
+<Tab value="HR / Payroll">
+You see all records in the organisation. You can approve records (moving them from
+pending to approved), add notes, and triage exceptions. Only a payroll admin can
+unlock a payroll_locked record (by reversing the run).
+</Tab>
+</Tabs>
+
+## Exceptions and biometric mismatches
+
+An **exception** appears when the system can't resolve a punch cleanly. Common
+causes:
+
+- A biometric punch arrived with a device user-id that isn't mapped to any employee.
+- Two punch pairs overlap on the same day.
+- Only a clock-in punch was received with no corresponding clock-out.
+
+Unmatched punches (a device user-id with no employee mapping) go to
+**Attendance → Biometrics & Time Clocks → Exceptions** and **Punch review** for
+HR to link. Once linked, the punch reprocesses and updates the attendance record
+automatically.
+
+See [Biometric devices & attendance sync](/docs/time/biometric-devices) for the
+full punch-review workflow.
+
+## How rosters connect
+
+Your roster tells the system which shift you're assigned to on each date. The
+shift defines your scheduled start, end, and minimum minutes; shift rules define
+overtime thresholds and grace periods. Without a roster assignment, the system
+falls back to your organisation's default schedule settings.
+
+See [Rosters](/docs/time/rosters) for how roster assignments are managed.
+
+## What to check
+
+- **Record is missing** — Check that a punch was registered. Biometric punches may
+  be in the raw staging queue if the device had a connectivity gap; they process
+  once the queue catches up.
+- **Minutes look wrong** — Compare the clock-in and clock-out times to your shift
+  schedule. Grace minutes, auto break deductions, and daily caps all affect payable
+  minutes. Ask HR to review the shift rules if the numbers are consistently off.
+- **Overtime isn't showing** — Overtime triggers when worked minutes exceed your
+  shift's daily or weekly threshold. If the threshold isn't configured for your
+  shift, no overtime is classified. Raise it with HR.
+- **Record is locked** — The payroll run for that period has been confirmed. HR or
+  payroll admin must reverse the run before the record can be edited.
+
+## Troubleshooting
+
+**My hours look wrong**
+
+Check the clock-in and clock-out times on the record. If the times are right but
+the worked or payable minutes don't match, the discrepancy is likely a grace
+period deduction, an auto break deduction, or a daily paid-minutes cap set in your
+shift rule. Contact HR to review which shift rule is applied to your record.
+
+**My record shows "conflict"**
+
+A conflict means the system received overlapping or inconsistent punches and can't
+determine the correct worked period. This can happen if a biometric terminal
+re-sends old punches, or if there are two clock-in events with no clock-out between
+them. HR or payroll admin can review the raw punches under Exceptions and correct
+the record.
+
+**My request is stuck at "pending"**
+
+HR or a payroll admin needs to approve the record. Check with your HR team if a
+record is pending for an extended period.
+
+**I can't clock in or out**
+
+If the button isn't available, you may already have an open punch (clocked in with
+no clock-out) or a closed one for the day. Check your record for today and contact
+HR if the status looks incorrect.

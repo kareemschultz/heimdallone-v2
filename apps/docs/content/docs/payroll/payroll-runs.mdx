@@ -1,0 +1,107 @@
+---
+title: Running payroll
+description: How to create, preview, validate, confirm, and reverse a payroll run in Heimdallone.
+icon: Play
+---
+
+<Tags>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+A payroll run is the complete cycle for one pay period: generate a preview, resolve any issues, confirm, and mark as paid. Confirmed runs lock the attendance records they used.
+
+<Callout type="info" title="Who can run payroll">
+  Payroll Admin and Tenant Owner-Admin can create, confirm, and reverse runs. HR Admin can view runs. Auditors have read-only access.
+</Callout>
+
+## Run statuses
+
+| Status | Meaning |
+|---|---|
+| **Draft** | Run is being configured. Editable. |
+| **Preview** | Generated for review. Shows blockers and warnings. Not yet locked. |
+| **Confirmed** | Locked. Attendance is frozen. Payslips are immutable. |
+| **Paid** | Payment instruction has been sent. |
+| **Reversed** | The entire run was reversed. Original payslips are preserved. |
+
+## Creating a run
+
+Navigate to **Payroll** and open the **Run Payroll** tab.
+
+<Steps>
+<Step>
+**Set the pay period.**
+
+Choose the period start and end dates and the pay frequency. Heimdallone resolves the statutory rule (PAYE, NIS, allowances) whose validity window contains the period's pay date and pins it to the run. You'll see the rule version label — for example, `GY 2026 (from 2026-01-01)`.
+</Step>
+<Step>
+**Generate the preview.**
+
+Click **Generate**. Heimdallone builds a preview payslip for every employee in the run. Status moves to **Preview**.
+</Step>
+<Step>
+**Review blockers and warnings.**
+
+The preview screen separates issues into two categories:
+
+- **Blockers** — must be resolved before you can confirm. Examples: missing contract, missing pay frequency, attendance not yet approved for one or more employees.
+- **Warnings** — informational. You can proceed and override, but review each one. Examples: employee has no worked hours in the period, an override rule is in effect.
+
+Fix blockers in the relevant module (Contracts, Attendance, etc.) and regenerate, or override where the system allows.
+</Step>
+<Step>
+**Confirm the run.**
+
+Once there are no unresolved blockers, click **Confirm**. The run status moves to **Confirmed**, all payslips become immutable, and the attendance records consumed by this run are locked.
+</Step>
+<Step>
+**Mark as paid.**
+
+After payment is processed externally, return to the run and mark it as **Paid**. This moves every payslip in the run to paid status and records the payment instruction.
+</Step>
+</Steps>
+
+## Attendance locking
+
+When a run is confirmed, every attendance record it used is locked. This preserves the exact inputs that produced each payslip. If an attendance record needs to be corrected after confirmation, you must first reverse the run.
+
+<Callout type="warn" title="Confirming is a meaningful action">
+  Confirming a run locks attendance and freezes payslips. You can reverse a confirmed run, but the reversal itself is a permanent audit event. Don't confirm until the preview is clean.
+</Callout>
+
+## Reversing a run
+
+To reverse a confirmed or paid run, open the run and use the **Reverse** action. The run moves to **Reversed** status.
+
+- The original payslips remain in the record as immutable history.
+- Attendance records are unlocked so they can be corrected if needed.
+- A new run for the same period can be created after reversal.
+
+Reversals are audited: the actor, timestamp, and reason are recorded.
+
+## What to check before confirming
+
+- All employees who should be in the run have active contracts with a pay frequency set.
+- Attendance for the period has been approved and submitted.
+- The rule version label matches the expected statutory year for the period.
+- No blockers remain in the preview.
+- Review warnings for any employee with zero hours or unexpected figures.
+
+## Troubleshooting
+
+**"Missing contract" blocker**
+The employee doesn't have an active contract for this pay period. Open the employee's Contracts tab, verify the contract dates and status, then regenerate.
+
+**"Attendance not approved" blocker**
+One or more employees have unapproved attendance records for the period. An Attendance Manager or Admin needs to approve those records before the run can be confirmed.
+
+**Preview shows zero net pay for an employee**
+Check whether the employee has a base salary or hourly rate on their contract, and whether their attendance records show worked time for the period.
+
+**Run is in Draft but I can't find it**
+Runs are scoped to your organisation. If you have multiple organisations, confirm you're viewing the correct one in the top navigation.
+
+**I confirmed by mistake**
+Use **Reverse** to undo the confirmation. The original payslips remain as history and attendance unlocks. Create a corrected run after fixing the underlying issue.

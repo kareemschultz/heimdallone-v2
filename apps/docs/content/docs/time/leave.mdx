@@ -1,0 +1,139 @@
+---
+title: Leave
+description: How to request leave, check your balance, understand half-days, and what happens at each step of the approval flow.
+icon: CalendarCheck
+---
+
+<Tags>
+  <Tag>Employee</Tag>
+  <Tag>Manager</Tag>
+  <Tag>HR</Tag>
+  <Tag>Self-Service</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Go to **App → Leave** to submit a leave request, track its status, or view your
+leave balance. Employees submit requests directly; managers and HR approve them.
+
+## Requesting leave
+
+<Steps>
+<Step>Navigate to **App → Leave** and select **Request leave**.</Step>
+<Step>Choose the **leave type** (annual, sick, casual, or others configured for your organisation).</Step>
+<Step>Set the **start date** and **end date**.</Step>
+<Step>If the first or last day is a partial day, select whether it's a **first-half** or **second-half** day. You can set this independently for the start and end dates.</Step>
+<Step>Add a **description** if required. Some leave types may make this mandatory.</Step>
+<Step>Attach a supporting document if relevant (for example, a medical certificate for extended sick leave). Attachments are optional unless your HR policy requires them.</Step>
+<Step>Submit the request. It moves to **requested** status and your manager or HR is notified.</Step>
+</Steps>
+
+<Callout type="info" title="Day count is calculated on the server">
+  The number of leave days is computed by Heimdallone based on your working
+  calendar — non-working days and public holidays are excluded automatically. The
+  preview in the form is for guidance; the server's count is what's deducted from
+  your balance. See [Leave rules & day counting](/docs/time/leave-effective-dating)
+  for how this works.
+</Callout>
+
+## Half-days
+
+Select **first half** or **second half** on the start or end date of your request
+to take only part of a day. You can combine these — for example, a request from
+Monday afternoon to Wednesday morning counts as two full days and two half-days,
+with the total calculated against your working schedule.
+
+## Checking your balance
+
+Go to **App → Leave → Balance** to see:
+
+- **Available** — the days remaining for each leave type in the current period.
+- **Used** — days taken so far this period (approved leave only).
+- **Carry-forward** — any days carried over from the previous period.
+- **Next reset** — when the balance resets for the new period.
+
+Pending (not yet approved) requests are shown separately and don't reduce your
+available balance until the request is approved.
+
+## Leave statuses
+
+| Status | Meaning |
+| --- | --- |
+| requested | The request has been submitted and is waiting for a decision. |
+| approved | A manager or HR has approved the request. The days are deducted from your balance. |
+| rejected | The request was declined. The days are returned to your balance. The rejection may include a reason. |
+| cancelled | The request was cancelled, either by you before approval or by HR after approval. The days are returned to your balance. |
+
+## Approval flow
+
+<Tabs items={["Employee", "Manager", "HR"]}>
+<Tab value="Employee">
+Submit the request from **App → Leave → Request leave**. You can cancel a request
+while it's still in **requested** status. If it's already **approved**, contact HR
+to cancel it.
+
+Track the status of your requests from the leave list view. You'll receive a
+notification when the decision is made.
+</Tab>
+<Tab value="Manager">
+Pending requests from your direct reports appear in your Leave queue. Select a
+request to review the dates, day count, and any note or attachment. Approve or
+reject from the request detail. If you reject, you can include a reason.
+
+You can't approve your own leave requests — those go to HR.
+</Tab>
+<Tab value="HR">
+You can approve or reject any request across the organisation. You can also cancel
+approved leave when circumstances change. Leave policies (types, entitlements,
+carry-forward rules, and accrual) are configured in **App → Settings → Leave
+policies**. Changing a policy applies from its effective date only — past approved
+requests are governed by the policy that was in force at the time of the request.
+</Tab>
+</Tabs>
+
+## Leave policies
+
+Leave policies control what leave types exist, how many days employees are
+entitled to, whether carry-forward is allowed and capped, and how days accrue.
+Policies are configured by HR and are **effective-dated** — a policy change doesn't
+rewrite how previous requests were governed.
+
+See [Leave rules & day counting](/docs/time/leave-effective-dating) for details
+on how policies resolve by date and how day counts are computed.
+
+## What to check
+
+- **Balance looks wrong** — check the Used column against your approved requests.
+  If a recently approved or cancelled request hasn't updated the balance, wait a
+  moment and refresh. If the discrepancy persists, contact HR.
+- **Request is stuck in "requested"** — the request is waiting for your manager or
+  HR to review it. If it's been pending for longer than expected, follow up with
+  your manager directly.
+- **Can't request a leave type** — your account may not be assigned to a policy
+  that includes that leave type, or the type may not be configured for your
+  organisation. Contact HR.
+
+## Troubleshooting
+
+**I submitted a request for the wrong dates**
+
+Cancel the request from **App → Leave** while it's still in **requested** status,
+then submit a corrected one. If the request is already approved, contact HR to
+cancel and resubmit.
+
+**My available days didn't update after approval**
+
+Approved leave deducts from Available. Refresh the page. If the balance still
+looks wrong, check whether the leave type uses accrual (balance builds up over
+time) — your entitlement may not have accrued enough days yet. Contact HR to
+confirm your current entitlement.
+
+**I was rejected but no reason was given**
+
+The approver may not have included a reason. Contact your manager or HR directly
+for clarification.
+
+**My half-day request shows more or fewer days than expected**
+
+The day count is computed from your working calendar, not calendar days. A
+half-day on a non-working day counts as zero. The leave-day calculation page
+explains the full logic: [Leave rules & day counting](/docs/time/leave-effective-dating).

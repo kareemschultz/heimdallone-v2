@@ -1,0 +1,48 @@
+---
+title: Device setup
+description: How admins bring a time-attendance terminal online in Heimdallone — registering the device, the on-site agent, and where to manage punches.
+icon: HardDrive
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>HR Admin</Tag>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Requires Setup</Tag>
+</Tags>
+
+This page is the admin overview for getting a biometric / time-attendance terminal
+working with Heimdallone. The full how-to lives on
+[Biometric devices](/docs/time/biometric-devices).
+
+## The two parts
+
+<Steps>
+<Step>**Register the device in Heimdallone.** Go to **App → Attendance → Biometrics & Time Clocks → Devices → Register device**. Copy the **device ID** and the **one-time ingest key**.</Step>
+<Step>**Point the on-site agent at Heimdallone.** A small agent on your office network reads the terminal and sends punches in. It is configured with the device ID, the ingest key, and your Heimdallone address.</Step>
+</Steps>
+
+<Callout type="warn" title="Secrets stay on the on-site agent">
+  The ingest key and any device password live in the on-site agent's local
+  configuration only — never in shared documents, tickets, or the app. If a key is
+  lost, rotate it on the device screen and update the agent.
+</Callout>
+
+## After it's connected
+
+- Confirm a recent successful **last sync** on the device.
+- Map any **unmatched punches** to employees so their hours are attributed
+  correctly.
+- Punches flow into [Attendance](/docs/time/attendance), are validated, and (once
+  approved) feed payroll.
+
+## What to check
+
+- The device is **active** and shows a recent sync.
+- Every clocking employee has a **device-user mapping**.
+- The **unmatched punches** queue is clear.
+
+<Callout title="Where this fits at go-live">
+  The device is usually registered during the go-live window — see
+  [Go-live readiness](/docs/administration/freeze-checklist).
+</Callout>

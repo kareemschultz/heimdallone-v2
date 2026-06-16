@@ -26,6 +26,24 @@ This area is for engineers and operators running and extending Heimdallone.
   commit. See the Documentation Rule in `AGENTS.md`.
 </Callout>
 
+## Operator / cutover documents (internal)
+
+These live in the repository under `docs/migration` and `docs/architecture` — they
+are the developer/operator record (plans, exact commands, evidence), **not** product
+help. They are intentionally **not** part of the user-facing docs above:
+
+- `docs/migration/phase-21p-cutover-authorization.md` — owner sign-off packet (decision checklist + freeze checklist + GO/NO-GO).
+- `docs/migration/v1-to-v2-cutover-runbook.md` — exact cutover commands (labelled do-not-run-until-approved).
+- `docs/migration/phase-21m-freeze-readiness.md` — dress-rehearsal evidence.
+- `docs/architecture/device-sync-bridge-plan.md` — biometric device sync design.
+
+<Callout type="warn" title="Audience split">
+  User-facing product help (how to use the app) lives in this Fumadocs site.
+  Migration phase reports, shell-command runbooks, and cutover command packets stay
+  in `docs/migration` / `docs/architecture` and are never presented as normal user
+  help.
+</Callout>
+
 ## This docs site
 
 These docs are built with **Fumadocs** on **TanStack Start** in `apps/docs`, isolated

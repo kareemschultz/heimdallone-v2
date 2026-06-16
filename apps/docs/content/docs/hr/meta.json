@@ -1,5 +1,5 @@
 {
   "title": "HR",
   "icon": "Users",
-  "pages": ["index", "employee-statutory"]
+  "pages": ["index", "employees", "employee-statutory"]
 }

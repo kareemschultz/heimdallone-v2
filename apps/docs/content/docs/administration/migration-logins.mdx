@@ -1,99 +1,79 @@
 ---
-title: Logins, roles & access (migration)
-description: How logins, tenant roles, and sign-in methods are preserved during migration — plus the admin checklist for missing emails and the migration-status report.
+title: Migrated logins & access
+description: How admins check migrated user access, how first-login and Google sign-in work, how no-login employees appear, and how to invite or reset users.
 icon: KeyRound
 ---
 
 <Tags>
   <Tag>Admin</Tag>
-  <Tag>HR</Tag>
-  <Tag>Migration</Tag>
+  <Tag>HR Admin</Tag>
+  <Tag>Tenant Owner</Tag>
   <Tag>Security</Tag>
 </Tags>
 
-Logins are **preserved wherever possible** during migration. This page is for
-administrators and HR: what carries over, how to handle employees without a login,
-and how to track readiness with the migration-status report.
+When an organization moves to Heimdallone, sign-in accounts come across with it.
+This page is for admins checking who has access after a migration and helping
+people get signed in.
 
-## What is preserved
+## Check migrated access
 
-Because the previous (v1) system and Heimdallone v2 share the same authentication
-foundation, identities carry across faithfully:
+Go to **App → Migration status** (visible to HR Admin and Tenant Owner / Admin).
+It groups every migrated person by their login state:
+
+| State | Meaning | Action |
+| --- | --- | --- |
+| Login active | Migrated, signed in, and reviewed their profile | None |
+| Pending acknowledgement | Migrated but hasn't yet seen/acknowledged the welcome notice | None — happens at their first sign-in |
+| Pending review | Acknowledged but hasn't reviewed their profile yet | Gentle nudge if needed |
+| No login (has email) | No account yet, but an email is on file | Invite them if they should have access |
+| No login (missing email) | Intentionally no login (seasonal/contractor/payroll-only) | Add a real email only if they need access |
+
+The summary tiles show totals: how many logins were preserved, how many are pending
+acknowledgement or review, and how many people are no-login.
+
+## How first sign-in works
+
+Migrated users see a one-time **welcome notice** the first time they sign in,
+asking them to review their details. It must be acknowledged once and then never
+appears again. The full employee-facing explanation is on
+[Your first sign-in](/docs/administration/first-login).
+
+## How sign-in carries over
+
+- **Email & password** — the same password keeps working; it is never reset or
+  weakened by the migration.
+- **Google sign-in** — where someone used Google before, Google sign-in continues
+  to work. The Google connection itself is configured by an administrator (see
+  [Google sign-in](/docs/administration/google-sign-in)); credentials live in
+  secure configuration, never in the app or in documentation.
+- **Couldn't carry over safely?** — the person is guided through a secure password
+  reset or invitation instead. Passwords are never fabricated or stored in plain text.
+
+## No-login employees
+
+Some people are migrated **without** a login — for example seasonal staff,
+contractors, or payroll-only records. They appear normally in Employees, are paid,
+and show up in attendance, but they can't sign in. **No placeholder email addresses
+are ever created.** To give someone access, add their **real** email on their
+employee record and invite them.
+
+## Invite or reset a user
 
 <Steps>
-<Step>**User accounts** — name, email, and verified status.</Step>
-<Step>**Tenant roles** — a v1 *owner* becomes a `tenant_owner`, a v1 *admin* becomes a `tenant_admin`, employees stay employees. Elevated roles are **never** flattened. A v1 role with no v2 equivalent is mapped to *employee* (least privilege) and flagged for review.</Step>
-<Step>**Sign-in methods** — email/password and Google logins both carry over. Existing passwords keep working; they are never reset, weakened, or stored in plain text.</Step>
+<Step>To give a no-login employee access, open their record in **App → Employees**, add a real email, and send an invite.</Step>
+<Step>To change what someone can do, adjust their role in **Workspace settings** — see [Users & roles](/docs/administration/users-and-roles). Only Tenant Owner / Admin can change roles.</Step>
+<Step>If a user can't sign in, have them use the password-reset option on the sign-in screen, or re-send the invite.</Step>
 </Steps>
 
-<Callout title="Platform owner (super admin) vs. tenant owner">
-  A **tenant owner** runs one organization (`tenant_owner`). The **platform owner
-  / super admin** is a separate, cross-tenant account with platform-wide powers,
-  granted by setting `PLATFORM_ADMIN_USER_ID` to that user's id (Better Auth admin
-  plugin) — **not** by giving them a tenant role. The super admin can switch
-  between tenants and administer the platform.
+## Platform owner vs tenant owner
+
+- A **Tenant Owner** owns a single organization and has every permission **within
+  that organization**.
+- A **Platform Owner** is a separate, cross-organization account used to administer
+  the platform itself and switch between organizations. Being an owner inside one
+  organization does **not** make someone a platform owner.
+
+<Callout title="Roles in depth">
+  For what each role can do, see [Roles &amp; access](/docs/getting-started/roles)
+  and [Users &amp; roles](/docs/administration/users-and-roles).
 </Callout>
-
-<Callout type="warn" title="Set the super admin explicitly">
-  The migration reports a **platform-owner candidate** (any account that owns more
-  than one tenant). Set `PLATFORM_ADMIN_USER_ID` to the **owner-designated**
-  account. If a different account carried a platform-admin role in the old system,
-  review and demote it so only the intended account is super admin.
-</Callout>
-
-## Google sign-in
-
-Google sign-in is **preserved as it worked before** — it is **not** restricted to
-the owner. Every migrated member's Google `account` link carries over, so employees
-who used Google keep using Google. The existing Google OAuth client is reused; the
-**v2 redirect/callback URL must be added to it before cutover**, and the client
-secret lives in Infisical/config (never in the migration data). Existing links are
-preserved by provider + account id; accounts are **not** auto-linked by email. New
-post-cutover Google sign-ups follow the normal tenant invitation / approval rules.
-
-## No-login & missing-email policy
-
-No-login is a deliberate choice, **not** a placeholder, and is no longer the
-default. Rules:
-
-- If v1 has a login for the person, it is preserved.
-- If an email is missing but the person **should** have access, collect or assign
-  a **real** email before cutover, then invite them. **Never** fabricate a
-  placeholder address.
-- Keep an employee no-login **only** when they genuinely should not have system
-  access.
-
-<Callout type="warn" title="Resolve before cutover">
-  Review the migration-status report (below) and the PII-safe missing-login list
-  in the migration report, and decide which no-login employees need a real login
-  **before** the freeze.
-</Callout>
-
-## Migration-status report
-
-Admins and HR get a live report at **Govern → Migration status**
-(`/app/migration-status`).
-
-| Column | Meaning |
-| --- | --- |
-| Employee | Name (visible to HR/admins in-app only) |
-| Email | The login email, or `— (no login)` |
-| Login | Whether the employee has a sign-in |
-| Status | Login active · awaiting acknowledgement · profile review pending · no login (has email) · no login (email needed) |
-| Acknowledged | Whether they've acknowledged the [first-login notice](/docs/administration/first-login) |
-| Reviewed | Whether they've marked their profile reviewed |
-
-The stat tiles summarise: employees, logins preserved, pending acknowledgement,
-and **no-email accounts that need a decision**.
-
-<Callout title="Who can see it">
-  The report and its action are restricted to owner, admin, and HR admin roles.
-  Payroll and auditors do not see the entry.
-</Callout>
-
-## Google sign-in
-
-The existing Google OAuth client is reused; the v2 redirect URI must be added to
-it. Confirm before cutover whether non-owner Google users keep Google sign-in or
-move to a secure credential reset/invite — see the
-[freeze checklist](/docs/administration/freeze-checklist).

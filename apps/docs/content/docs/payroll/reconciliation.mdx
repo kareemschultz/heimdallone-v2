@@ -1,0 +1,94 @@
+---
+title: Payroll reconciliation
+description: Understanding how Heimdallone checks payroll figures against official statutory rules before and after go-live.
+icon: ShieldCheck
+---
+
+<Tags>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Country Rule</Tag>
+  <Tag>Effective Dated</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Reconciliation is the process of confirming that Heimdallone's payroll calculations match the official statutory rules for your jurisdiction. For Guyana, that means matching the **Guyana Revenue Authority (GRA)** rules for PAYE, NIS, and allowances -- component by component, period by period.
+
+## Why reconciliation matters
+
+A payroll engine can produce plausible-looking numbers that are still wrong. Reconciliation catches the difference between "the numbers add up" and "the numbers match what the law requires."
+
+Heimdallone reconciles at the component level:
+
+| Component checked | What it verifies |
+|---|---|
+| **Personal allowance** | Correct monthly amount, prorated accurately for the pay frequency. |
+| **NIS (employee)** | Correct rate and ceiling applied. |
+| **NIS (employer)** | Correct rate and ceiling applied. |
+| **Child / dependent allowance** | Correct amount per qualifying dependent. |
+| **PAYE brackets** | Correct income bands and rates applied in sequence. |
+| **Net pay** | Final figure follows from the above. |
+
+If every component matches, reconciliation reports **READY**. If any component differs -- even by a rounding error -- the difference is flagged for investigation.
+
+## GRA as the source of truth
+
+For Guyana payroll, the GRA is the source of truth. Heimdallone's statutory constants (tax bands, NIS rates, allowances, ceilings) come from GRA published rules, not from prior system history.
+
+<Callout type="warn" title="Historical figures from the old system may not be correct">
+  Reconciliation sometimes finds that historical payslips computed under the old system didn't match GRA rules exactly. Those payslips are classified and preserved as-is -- they are never silently corrected. If a correction is warranted, it goes through the explicit [corrections workflow](/docs/payroll/corrections).
+</Callout>
+
+## Effective-dated rates
+
+Statutory rates change over time. GRA has adjusted the personal allowance and PAYE bands more than once in recent years. Heimdallone stores each rule set with a validity window and resolves the correct set by the **pay date** of the run.
+
+This means:
+
+- A 2024 payslip uses the rules that were in effect in 2024.
+- A 2026 payslip uses the rules in effect in 2026.
+- Publishing a new rule for a future year does not change how past runs compute.
+
+For more on how the resolution works, see [Effective-dated rules](/docs/payroll/effective-dating).
+
+## Pay frequency proration
+
+Statutory amounts published by the GRA are typically stated as monthly figures. Heimdallone converts them to the correct per-period amount for each pay frequency:
+
+- **Fortnightly** -- 12/26 of the monthly amount per period.
+- **Weekly** -- 12/52 of the monthly amount per period.
+- **Semi-monthly** -- half the monthly amount per period.
+- **Monthly** -- the full stated amount.
+
+This proration applies to the personal allowance, the NIS ceiling, child allowances, and PAYE band thresholds. A flat monthly amount applied to every fortnightly period would overstate the allowance and produce incorrect PAYE.
+
+<Callout type="info" title="Proration is applied automatically">
+  When you run payroll for a fortnightly or weekly pay cycle, Heimdallone prorates all statutory amounts for the period. You don't configure this separately -- it follows the pay frequency on the employee's contract.
+</Callout>
+
+## What "READY" means
+
+When reconciliation reports READY for a set of payslips, it means:
+
+- Every component (personal allowance, NIS, child allowance, PAYE, net) matches the GRA rule resolved for the pay date.
+- The proration method matches the official frequency-adjusted figures.
+- No component differs beyond acceptable rounding.
+
+READY is the signal that Heimdallone's engine is producing correct statutory outputs for the tested periods. It's not a one-time check: reconciliation can be re-run whenever statutory constants change, a new country rule is published, or a correction is applied to historical payslips.
+
+## Checking rule coverage
+
+Payroll Admins can verify which statutory profiles are published and what date windows they cover in **Payroll** > **Settings**. Each profile shows its country, effective date window, and publication status.
+
+If a pay period falls outside any published profile's window, the run preview will report a blocker. Publish the correct profile for that period before confirming the run.
+
+## Troubleshooting
+
+**A payslip's PAYE looks wrong compared to what the GRA calculator shows.**
+Check the rule version label on the payslip. Verify that the profile in Settings covers the correct year and that the personal allowance and band thresholds match the current GRA schedule. If the profile is correct and the figures still differ, the payslip may need a [correction](/docs/payroll/corrections).
+
+**An employee's NIS deduction looks too high or too low.**
+NIS is subject to a ceiling (the maximum insurable earnings). If the employee's gross pay exceeds the ceiling, NIS is capped at the ceiling rate. Check whether the profile has the correct ceiling for the pay year.
+
+**Personal allowance seems too large for a fortnightly employee.**
+This was a known issue in systems that applied the full monthly allowance to every fortnightly period. Heimdallone prorates correctly. If you're comparing against historical payslips from a prior system, the prior system may have over-stated the allowance.

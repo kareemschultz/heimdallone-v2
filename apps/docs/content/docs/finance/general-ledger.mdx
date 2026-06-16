@@ -1,0 +1,144 @@
+---
+title: General ledger
+description: How the double-entry ledger works — accounts, journal entries, posting rules, reversals, payroll posting, and opening balances. Currently administrator-managed with no dedicated end-user screen.
+icon: BookOpen
+---
+
+<Tags>
+  <Tag>Finance</Tag>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Auditor</Tag>
+  <Tag>Requires Setup</Tag>
+</Tags>
+
+<Callout type="warn" title="No end-user GL screen yet">
+  The General Ledger exists as a fully operational double-entry ledger with accounts,
+  journal entries, and a trial balance. It is currently **administrator-managed** —
+  there is no dedicated end-user screen in the Finance area to browse or post
+  journal entries. This page describes the concepts and rules so you understand
+  how the ledger behaves. A user-facing GL interface is planned.
+</Callout>
+
+## What the general ledger is
+
+The General Ledger (GL) is a **double-entry ledger**: every financial event produces a balanced set of debits and credits. No entry can be posted unless debits equal credits. The ledger is a coordination layer — it links to payroll and other modules by reference but never writes back to them.
+
+## GL accounts
+
+Each tenant has a **chart of accounts** — a list of accounts that entries post to.
+
+Account types:
+
+| Type | Represents |
+| --- | --- |
+| Asset | Resources owned (bank, receivables) |
+| Liability | Obligations owed (payables, accruals) |
+| Equity | Ownership interest |
+| Income | Revenue and earnings |
+| Expense | Costs and outgoings |
+
+Accounts are set up at migration or by a Tenant Owner/Admin. Once an account has posted entries, it can be archived but not deleted — its history is preserved.
+
+## Journal entries
+
+A **journal entry** is a balanced set of lines (debits and credits) recorded under a single entry. Each entry carries:
+
+- A **reference number** (auto-generated)
+- A **status**: Draft, Posted, or Reversed
+- A **source**: Payroll, Manual, Opening balance, or Adjustment
+- The **date** the entry applies to
+- One or more **lines**, each with an account, a debit or credit amount, and a description
+
+### Statuses
+
+| Status | Meaning |
+| --- | --- |
+| Draft | Created but not yet posted. Can be edited or removed. |
+| Posted | Finalized and immutable. Cannot be edited. |
+| Reversed | A posted entry that has been countered by a reversal entry. |
+
+<Callout type="warn" title="Posted entries are immutable">
+  Once an entry is posted, it cannot be edited or deleted. If an error is discovered
+  in a posted entry, the correct approach is a **reversal** — a new mirror entry
+  that cancels the original — followed by a corrected entry if needed. This is
+  standard double-entry practice and preserves the full audit trail.
+</Callout>
+
+### Sources
+
+- **Payroll** — posted from confirmed payslips. These are read from payroll and posted as journal entries; the ledger never writes back to payroll records. A payroll entry links to the originating payslip by reference.
+- **Manual** — entered directly by an administrator for adjustments, accruals, or corrections.
+- **Opening balance** — entries that establish the opening state of accounts, typically populated at migration from legacy system data.
+- **Adjustment** — entries made to correct or restate figures, including GL adjustments arising from payslip corrections.
+
+## Reversals
+
+A **reversal** is the correct way to fix a posted entry.
+
+<Steps>
+<Step>Identify the posted entry that contains the error.</Step>
+<Step>Create a reversal — a mirror entry with all debit and credit lines swapped.</Step>
+<Step>Post the reversal. The original entry is now marked Reversed and the two entries net to zero.</Step>
+<Step>If a corrected entry is needed, create and post a new entry with the right figures.</Step>
+</Steps>
+
+<Callout type="info">
+  The reversal-then-correct pattern is what the system enforces. You will never be
+  able to edit the lines of a posted entry — the UI and API both block it. This
+  keeps the ledger's audit trail complete.
+</Callout>
+
+## Payroll posting
+
+When payroll is confirmed, the resulting cost (gross pay and employer contributions) is available as a payroll source entry in the ledger. Key rules:
+
+- Payroll entries are **read from payroll actuals** — the GL reads confirmed payslips, it does not write to them.
+- If a historical payslip is corrected (see [Effective-dated rules](/docs/payroll/effective-dating)), the correction records a **GL adjustment obligation**. That obligation is then resolved by posting an adjustment entry in the GL — payroll records the obligation, the ledger records the adjustment. The two modules stay cleanly separated.
+- Reversed payslips are excluded from cost reporting and GL posting.
+
+## Trial balance
+
+The **trial balance** is a report showing the total debits and total credits for every account over a period. In a correct double-entry ledger, total debits always equal total credits. The trial balance is the standard check for ledger integrity.
+
+The trial balance is available to Payroll Admin and Auditor roles through the GL API. It is not yet accessible through a dedicated Finance screen in the product UI.
+
+## Opening balances
+
+Opening balances represent the financial state at the start of operations in Heimdallone — typically populated from the outgoing system during migration. They appear in the GL as entries with source **Opening balance** and are posted entries (immutable). If an opening balance entry is wrong, it must be corrected via a reversal and adjustment entry, following the same rules as any other posted entry.
+
+<Callout type="info">
+  Excluded journal entries from legacy systems (for example, entries that were
+  themselves bug-correction reversals in the source system) are **not** imported,
+  even if they technically balanced. Each case is documented by the accountant
+  during the migration review, and the corrected opening position is established
+  through the GL adjustment workflow post-cutover.
+</Callout>
+
+## Roles & access
+
+| Action | Who |
+| --- | --- |
+| Read GL accounts and journals | Payroll Admin · Tenant Owner/Admin · Auditor |
+| Create / post journal entries | Payroll Admin · Tenant Owner/Admin |
+| Create reversals | Payroll Admin · Tenant Owner/Admin |
+| View trial balance | Payroll Admin · Auditor |
+
+Managers and employees do not have GL access.
+
+## What to check
+
+**A payroll entry seems wrong** — check the corresponding payslip in the Payroll area. If the payslip was a draft or reversed, it may not have been posted to the ledger yet, or the original entry may have been countered by a reversal. Do not attempt to correct a GL entry by editing it — use the reversal process.
+
+**The opening balance doesn't match expectations** — opening balance entries come from the migration. If a legacy entry was excluded (for example, a v1 system bug entry), the accountant needs to determine the correct opening position and post a manual adjustment entry. Contact your Payroll Admin or tenant administrator.
+
+**An entry is missing from the trial balance** — confirm the entry is in Posted status. Draft entries do not appear in the trial balance. If the entry should have been posted, a Payroll Admin can post it.
+
+## Troubleshooting
+
+**I can't find a GL screen in the Finance area.** There is no end-user GL screen in the current product release. GL accounts and journals are managed through administrator tooling. A user-facing GL interface is planned for a future release.
+
+**I need to fix a posted entry.** Editing posted entries is not allowed. The correct approach is to create a reversal entry (which mirrors the original and nets it to zero) and then post a corrected entry with the right figures. Ask your Payroll Admin to carry this out.
+
+**The trial balance doesn't balance.** This indicates a data integrity issue — posted entries should always balance. Contact support and do not post further entries until the cause is identified.
+
+**A payroll GL posting is missing.** Confirm the payslip is in Confirmed or Paid status in Payroll. Draft payslips are not posted to the GL. If the payslip is confirmed and the entry is still absent, contact your Payroll Admin.

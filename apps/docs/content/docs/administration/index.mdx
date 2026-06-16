@@ -1,33 +1,39 @@
 ---
 title: Administration overview
-description: Tenant settings, RBAC, imports/exports, audit logs, and migration & cutover.
+description: Set up and govern an organization in Heimdallone — settings, users and roles, sign-in, devices, and migration.
 icon: Settings
 ---
 
 <Tags>
   <Tag>Admin</Tag>
+  <Tag>Tenant Owner</Tag>
+  <Tag>HR Admin</Tag>
   <Tag>Security</Tag>
-  <Tag>Migration</Tag>
-  <Tag>Requires Setup</Tag>
 </Tags>
 
-The Administration area is for tenant configuration and governance.
+The Administration area is for owners and admins who set up and govern an
+organization.
 
-## Topics
+## Set up
 
 <Cards>
-  <Card title="RBAC" href="/docs/getting-started/roles" description="Roles, resources, actions, and how access is scoped." />
-  <Card title="Tenant settings" href="/docs/administration" description="Organization-level configuration and policies." />
-  <Card title="Imports / exports" href="/docs/administration" description="Bringing data in and getting it out." />
-  <Card title="Audit logs" href="/docs/administration" description="Who did what, when — the shared audit trail." />
-  <Card title="Migration & cutover" href="/docs/administration/migration-cutover" description="Bringing legacy (v1) data into v2 safely." />
-  <Card title="Logins, roles & access" href="/docs/administration/migration-logins" description="How logins and tenant roles are preserved + the migration-status report." />
+  <Card title="Organizations & settings" href="/docs/administration/organizations" description="Workspace settings and the Settings module (departments, positions, shifts, holidays)." />
+  <Card title="Users & roles" href="/docs/administration/users-and-roles" description="Manage who can sign in and what they can do." />
+  <Card title="Google sign-in" href="/docs/administration/google-sign-in" description="How Google Workspace sign-in works and how it's enabled." />
+  <Card title="Device setup" href="/docs/administration/device-setup" description="Bring a biometric / time-attendance terminal online." />
+</Cards>
+
+## Migration & go-live
+
+<Cards>
+  <Card title="Migration & cutover" href="/docs/administration/migration-cutover" description="What data comes across and how to verify it in the app." />
+  <Card title="Migrated logins & access" href="/docs/administration/migration-logins" description="Check who has access; first-login, Google, no-login employees." />
   <Card title="Your first sign-in" href="/docs/administration/first-login" description="What migrated employees see the first time they sign in." />
-  <Card title="Freeze & cutover checklist" href="/docs/administration/freeze-checklist" description="The operator runbook for going live." />
+  <Card title="Go-live readiness" href="/docs/administration/freeze-checklist" description="What happens at go-live and what to confirm afterwards." />
 </Cards>
 
 <Callout title="Migration principle">
-  Legacy v1 data is a migration source and an intent source — not automatic truth.
-  Historical records are preserved; known v1 bugs are corrected against official
-  rules; nothing is cloned blindly.
+  Legacy data is a migration source and an intent source — not automatic truth.
+  Historical records are preserved; known legacy mistakes are corrected against
+  official rules; nothing is cloned blindly.
 </Callout>

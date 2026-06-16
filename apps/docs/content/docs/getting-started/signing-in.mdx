@@ -1,0 +1,63 @@
+---
+title: Signing in
+description: How to sign in to Heimdallone v2 — email/password, Google Workspace, and Passkey — plus what to do if you can't get in.
+icon: LogIn
+---
+
+<Tags>
+  <Tag>Employee</Tag>
+  <Tag>Self-Service</Tag>
+</Tags>
+
+Go to your organisation's Heimdallone URL. The sign-in page is at `/login`.
+
+## Sign-in methods
+
+Three methods are available. Use whichever your account supports.
+
+### Email and password
+
+Enter the email address linked to your account and your password, then click **Sign in**.
+
+<Callout type="tip" title="Migrated users">
+  If your account was moved from the previous system, your original password still
+  works — it's never reset or changed by the migration. See
+  [Your first sign-in (migrated users)](/docs/administration/first-login) for
+  what to expect after you sign in for the first time.
+</Callout>
+
+### Google Workspace
+
+Click **Sign in with Google** and complete the Google sign-in flow. Your Google account must already be linked to your Heimdallone account. If you used Google to sign in previously, that link carries over.
+
+### Passkey
+
+Click **Sign in with Passkey** and follow your device's passkey prompt (fingerprint, face ID, or hardware key). Passkeys must be registered to your account before you can use this method.
+
+## What to expect after signing in
+
+You'll land on the app overview at `/app`. What you see depends on your role — the sidebar shows only the modules you have access to. See [Navigation](/docs/getting-started/navigation) for how the app is laid out.
+
+If this is your **first sign-in after migration**, a one-time welcome notice will appear before you reach the overview. It must be acknowledged before you continue. See [Your first sign-in (migrated users)](/docs/administration/first-login).
+
+## What to check
+
+- Make sure you're using the correct email address. If your account was migrated, this is the email HR has on file for you.
+- If you registered a passkey on a specific device, you need to be on that device (or have the key present) to use it.
+- Google sign-in requires your Google account email to match your Heimdallone account email.
+
+## Troubleshooting
+
+| Symptom | What to do |
+| --- | --- |
+| "Invalid email or password" | Double-check your email. Try resetting your password via the "Forgot password" link if available. |
+| Google sign-in fails | Confirm you're signing in with the same Google account linked to your Heimdallone account. If you're not sure which one, contact HR. |
+| Passkey prompt doesn't appear | Make sure you're on the device where you registered the passkey, or that your hardware key is inserted. |
+| You don't have an account yet | Contact HR — your account may need to be created or your email added. |
+| Account was migrated but login doesn't work | HR can check your account status using the migration-status report. See [Logins, roles and access (migration)](/docs/administration/migration-logins). |
+
+<Callout type="warn" title="No placeholder accounts">
+  The migration never creates fake email addresses. If you should have a login but
+  don't, ask HR to add your real email and send you an invitation. See
+  [Logins, roles and access (migration)](/docs/administration/migration-logins).
+</Callout>

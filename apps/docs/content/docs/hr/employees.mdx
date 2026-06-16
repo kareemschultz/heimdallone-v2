@@ -1,0 +1,143 @@
+---
+title: Employees
+description: Finding, viewing, and managing employee profiles — work info, personal details, documents, bank details, and access rules by role.
+icon: Users
+---
+
+<Tags>
+  <Tag>HR</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Manager</Tag>
+</Tags>
+
+The employee directory is the starting point for any people record in Heimdallone. Every contract, payslip, leave request, and attendance record links back to an employee profile.
+
+## Finding an employee
+
+Go to **App → Employees**.
+
+The list shows all active employees in your organization with these columns:
+
+| Column | What it shows |
+| --- | --- |
+| Badge ID | Auto-generated identifier for this employee |
+| Name | Full name |
+| Email | Work email (blank if no-login employee) |
+| Department | Current department |
+| Position | Job title |
+| Shift | Assigned shift |
+| Work type | Full-time, part-time, contractor, etc. |
+| Work location | Office, remote, or site name |
+
+Use the search bar to filter by name, email, or badge ID. Click any row to open that employee's profile.
+
+<Callout type="info">
+  Managers see their direct-reports team only. HR, payroll, and admin roles see all
+  employees in the organization. Employees can view their own profile through the
+  self-service area.
+</Callout>
+
+## Employee profile sections
+
+Clicking a row opens the full profile. The tabs and fields visible depend on your role — some sections are redacted for non-payroll roles.
+
+### Personal
+
+Date of birth, gender, marital status, home address, and emergency contact details.
+
+### Work info
+
+Department, position, system role, assigned shift, work type, direct manager, joining date, and work location.
+
+### Documents
+
+Uploaded certificates and licenses with their issue and expiry dates. Each document goes through an approval workflow: **Approval requested → Uploaded → Approved** or **Rejected**. HR and admin roles can approve or reject documents.
+
+### Bank details
+
+Bank account information for payroll payment. Account numbers are **masked** for non-payroll roles — only Payroll Admin and Tenant Owner/Admin see the full number.
+
+### Statutory info
+
+Tax and payroll-affecting identifiers. See [Statutory info](/docs/hr/employee-statutory) for the full breakdown.
+
+## Adding and editing employees
+
+<Steps>
+<Step>Go to **App → Employees**.</Step>
+<Step>Click **Add employee** (top-right). The button is only visible to Tenant Owner, Tenant Admin, and HR Admin roles.</Step>
+<Step>Fill in the employee's details. Email is optional — leave it blank for a no-login employee.</Step>
+<Step>Save. The employee appears in the list immediately.</Step>
+</Steps>
+
+To edit an existing profile, open it and click **Edit** on the relevant section. The same role restriction applies — only Tenant Owner, Tenant Admin, and HR Admin can make changes.
+
+<Callout type="warn">
+  If you don't see an **Add employee** button or the **Edit** option, your role doesn't
+  have permission to create or modify employee records. Contact your HR admin.
+  See [Roles & permissions](/docs/getting-started/roles).
+</Callout>
+
+## Active vs archived employees
+
+Active employees appear in the list and can receive new contracts, assignments, and payroll records.
+
+Archived employees are **soft-removed**: they no longer appear in the active list but their records are fully preserved for historical payroll and audit. An archived employee can't receive new records, but their past payslips, attendance, and leave history remain intact.
+
+To view archived employees, use the status filter in the employee list.
+
+## No-login employees
+
+Not every employee needs a system account.
+
+A **no-login employee** has no email address and no user account in Heimdallone. They can still be paid, appear on rosters, and show up in attendance — they just can't sign in.
+
+Common cases:
+
+- Seasonal or casual workers managed entirely by HR
+- Field staff who are paid through payroll but don't use the system
+- Employees carried over from a previous system where no email was recorded
+
+On the profile, a missing email is shown as **"— (no login)"**.
+
+**To give a no-login employee system access later**, an HR admin or tenant admin edits the profile, adds a real email address, and sends an invitation. No fake or placeholder email is ever created by the system.
+
+<Callout type="info">
+  No-login employees count toward headcount, appear in payroll runs, and are
+  included in all reporting. They don't have access to the employee self-service
+  area (payslips, leave requests, helpdesk) until a real email is added and they
+  accept an invitation.
+</Callout>
+
+## Roles & access
+
+A full description of every role is at [Roles & permissions](/docs/getting-started/roles). For employees specifically:
+
+| What | Who |
+| --- | --- |
+| View the employee list | HR Admin · Payroll Admin · Tenant Admin · Tenant Owner · Auditor · Manager (own team) |
+| View an employee profile | All of the above, plus the employee themselves (own profile only) |
+| Create or edit employees | Tenant Owner · Tenant Admin · HR Admin |
+| Approve/reject documents | HR Admin · Tenant Admin · Tenant Owner |
+| See bank account numbers (unmasked) | Payroll Admin · Tenant Owner · Tenant Admin |
+| See statutory identifiers (unmasked) | Payroll Admin · Tenant Owner · Tenant Admin |
+
+Managers see their direct-reports' profiles but cannot edit them, and they see masked bank and statutory values.
+
+## What to check
+
+**Employee doesn't appear in the list** — check whether they've been archived. Use the status filter to show archived employees.
+
+**Profile section is missing or shows dashes** — your role may not have access to that section (for example, bank details are masked for non-payroll roles, and basic salary is hidden entirely for non-payroll roles).
+
+**Document is stuck in "Approval requested"** — an HR Admin or Tenant Admin needs to review and approve it in the Documents tab.
+
+## Troubleshooting
+
+**I can't edit an employee.** Only Tenant Owner, Tenant Admin, and HR Admin can edit employee records. If you need to make a change, ask your HR admin to do it or to adjust your role.
+
+**An employee has no email.** That's a no-login employee. If they should have system access, an HR admin can add a real email and invite them. Don't add a placeholder email — it will prevent a proper login from being set up later.
+
+**I added an employee but they can't log in.** Check that a real email address is on the profile. The employee also needs to accept the invitation email before they can sign in.
+
+**The employee list is showing fewer people than expected.** If you're a manager, the list is scoped to your direct reports. If you're HR or admin, check whether the missing employees are archived.

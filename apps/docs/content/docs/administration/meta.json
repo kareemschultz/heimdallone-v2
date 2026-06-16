@@ -3,6 +3,10 @@
   "icon": "Settings",
   "pages": [
     "index",
+    "organizations",
+    "users-and-roles",
+    "google-sign-in",
+    "device-setup",
     "migration-cutover",
     "migration-logins",
     "first-login",

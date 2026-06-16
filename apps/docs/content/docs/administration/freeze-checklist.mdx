@@ -1,94 +1,67 @@
 ---
-title: Freeze & cutover checklist
-description: The operator runbook for freezing v1 and cutting over to Heimdallone v2 — backups, downtime, final load, reconciliation, smoke tests, DNS switch, and rollback.
-icon: ListChecks
+title: Go-live readiness
+description: An admin-facing overview of what happens when an organization goes live on Heimdallone — what to expect, what to confirm in the app, and who performs the final steps.
+icon: Rocket
 ---
 
 <Tags>
   <Tag>Admin</Tag>
-  <Tag>Migration</Tag>
-  <Tag>Security</Tag>
-  <Tag>Requires Setup</Tag>
+  <Tag>HR Admin</Tag>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Tenant Owner</Tag>
 </Tags>
 
-This is the operator runbook for going live. It assumes a successful full-data
-**dress rehearsal** on a disposable scratch database and **explicit owner
-approval** to freeze. See [Migration & cutover](/docs/administration/migration-cutover)
-for what migrates and the safety guarantees.
+This page explains, in plain terms, what "going live" means for an organization
+moving onto Heimdallone — what to expect, what to confirm inside the app, and who
+does what. It is **not** a technical runbook.
 
-<Callout type="warn" title="Pending owner approval — nothing here runs automatically">
-  The **freeze is pending owner approval**. Until the owner signs off:
-
-  - the **production write-ETL must not be run**;
-  - the **DNS must not be changed**;
-  - **device registration and Gist script replacement happen during the cutover
-    window only** — not before;
-  - **secrets stay in Infisical and the Pi `.env`** — never in the Gist or the repo.
-
-  Until approval, all runs are read-only against v1 and write only to a disposable
-  scratch database. The single sign-off packet is the **Phase 21P Cutover
-  Authorization** record (decision checklist + freeze checklist + GO/NO-GO).
+<Callout type="info" title="Your administrator runs the final steps">
+  The final data load and the switch to the live system are performed by your
+  administrator during a planned maintenance window. You don't run any commands —
+  this page is so you know what's happening and what to check afterwards.
 </Callout>
 
-## Pre-freeze operator decisions
+## Before go-live
 
-Resolve these before scheduling the freeze window:
+A few decisions are confirmed with the owner and HR/payroll leads first:
 
-| Decision | Options | Owner |
-| --- | --- | --- |
-| Logins & access | **Preserve logins wherever possible.** Resolve missing real emails before cutover for employees who need access; use true no-login **only** when explicitly intended. On first v2 login, a migration/update modal is shown and acknowledgement is required. Never fabricate placeholder emails. | Owner / HR |
-| Super admin | Set `PLATFORM_ADMIN_USER_ID` to the **owner's** user id (the cross-tenant platform-owner candidate from the migration report); review/demote any other account that carried platform-admin in v1 | Owner |
-| Google sign-in | **Preserved like v1 (not owner-only):** add the v2 redirect URL to the existing Google OAuth client (secret in Infisical, not committed); confirm all migrated members' Google logins carry over | Owner / HR |
-| Statutory completeness | Confirm TIN/NIS/dependents are captured for employees who need them for payroll correctness | Owner / Payroll |
-| Excluded v1 journals | Exclude permanently, **or** enter a corrected opening-balance journal post-cutover | Accountant |
-| Work-schedule richness | Confirm the mapped `shift_rule` values are sufficient, or stage deeper night/split-shift rules | Owner / Payroll |
-| Time-attendance device | Backfill historical punches + re-point the on-site agent at the v2 ingest endpoint. **Reuse the existing Gist auto-updater — the Gist carries code only; secrets stay in the Pi `.env`.** At cutover: register the device in v2, copy the device ID + one-time ingest key into the Pi `.env`, replace the Gist script content with the v2-native script, confirm slot-map + device clock. See [Biometric devices](/docs/time/biometric-devices) | Owner / Payroll |
-| Cutover order | Pilot tenant first, then the rest, **or** all tenants in one freeze window | Owner |
+- **Who has a login**, and whether anyone still needs a real email before go-live
+  (no placeholder emails are ever created).
+- **Tax/statutory details** (TIN, NIS, dependents) for people whose pay depends on them.
+- **Pay rules and shifts** are set up and correct.
+- **The biometric device** will be registered during the window (see
+  [Biometric devices](/docs/time/biometric-devices)).
 
-## Freeze & cutover steps
+## What happens during the window
 
 <Steps>
-<Step>**Pre-freeze backups.** Take a full backup of v1 and a fresh backup/snapshot of the empty (or current) production v2 database. Record backup IDs and restore commands.</Step>
-<Step>**Announce downtime.** Notify all tenants of the maintenance window. Disable inbound writes to v1 at the application layer.</Step>
-<Step>**Freeze v1 to read-only.** Put v1 into read-only mode (application freeze + database read-only role). Confirm no new writes are arriving.</Step>
-<Step>**Final delta dry-run.** Run the dry-run against frozen v1 to confirm row counts and that there are **zero feature gaps** blocking the write-migration.</Step>
-<Step>**Final reconciliation.** Run reconciliation against frozen v1; it must report **READY** (payslip statutory parity holds) before proceeding.</Step>
-<Step>**Final ETL into production v2.** Run the write-ETL with the production v2 target and the explicit write confirmation. Load tenants in the agreed cutover order.</Step>
-<Step>**Post-load reconciliation.** Re-verify tenant isolation, GL balance per tenant, statutory rows, no-login employees, contracts/pay frequencies, roster, shift rules, notifications, and source-JSON staging.</Step>
-<Step>**Time-attendance backfill + agent.** Backfill historical punches (raw preserved, idempotent), confirm no unmatched punches remain and attendance records are day-typed, then re-point the on-site device agent at the v2 ingest endpoint and confirm its first successful sync.</Step>
-<Step>**Login preservation check.** Confirm migrated tenant roles are intact (owners are `tenant_owner`, admins are `tenant_admin`, not flattened to employee) and the platform owner can switch between tenants. Verify a migrated **credential** login and a migrated **Google** login both authenticate.</Step>
-<Step>**Admin smoke test.** Sign in as an admin: org loads, employees list, payroll run visible, GL trial balance balances, reports render.</Step>
-<Step>**Employee smoke test.** Sign in as a migrated employee with a login: the **first-login migration modal** appears and requires acknowledgement; then profile, payslips (historical, read-only), leave balance, and roster are correct.</Step>
-<Step>**Payroll smoke test.** Open a historical payslip (immutable) and run a draft payroll for the current period; confirm statutory amounts match the reconciliation.</Step>
-<Step>**DNS switch.** Only after all smoke tests pass and the owner approves, switch DNS to v2. Monitor propagation.</Step>
+<Step>The old system is briefly set to read-only so nothing changes mid-move.</Step>
+<Step>Your administrator loads the organization's data into Heimdallone and verifies it.</Step>
+<Step>Payroll figures are checked against the official rules and the historical record.</Step>
+<Step>Sign-in, payroll, and attendance are smoke-tested before anyone is let in.</Step>
+<Step>Once everything checks out, the organization is switched over to Heimdallone.</Step>
 </Steps>
 
-## Rollback
-
-<Callout type="warn" title="Rollback criteria">
-  Roll back immediately if any of these occur: post-load reconciliation is not
-  READY, a tenant-isolation or GL-balance check fails, an admin/employee/payroll
-  smoke test fails, or unexpected production writes are detected.
-</Callout>
+## What to confirm in the app after go-live
 
 <Steps>
-<Step>Switch DNS back to v1 (or keep it on v1 if not yet switched).</Step>
-<Step>Lift the v1 read-only freeze so the business can resume on v1.</Step>
-<Step>Restore the production v2 database from the pre-freeze snapshot (discard the partial load).</Step>
-<Step>Capture the failure evidence (PII-safe report + logs), fix, and re-rehearse on scratch before re-attempting.</Step>
+<Step>**Sign in** works for you, and (where applicable) Google sign-in works. Migrated users see a one-time [welcome notice](/docs/administration/first-login).</Step>
+<Step>**Employees** are all present, in the right departments, with the right managers — see [Employees](/docs/hr/employees).</Step>
+<Step>**Payslips** — historical payslips are present and unchanged; a current draft run matches expectations — see [Payroll runs](/docs/payroll/payroll-runs) and [Payslips](/docs/payroll/payslips).</Step>
+<Step>**Attendance** records look right and the **biometric device** shows a recent successful sync with no stuck [unmatched punches](/docs/time/biometric-devices).</Step>
+<Step>**Finance** figures (cost reports / trial balance) look sensible — see [Finance](/docs/finance).</Step>
 </Steps>
 
-## Post-cutover monitoring
+## If something looks wrong
 
-For the first business cycle after cutover, watch:
+- Don't edit historical records directly. Historical payslips are immutable;
+  changes go through a proper, audited [correction](/docs/payroll/corrections).
+- Tell your administrator — go-live can be paused or rolled back to the old system
+  if a check doesn't pass.
+- For migrated logins and access questions, see the
+  [migrated logins checklist](/docs/administration/migration-logins).
 
-- Error rates and latency (application + database).
-- The first live payroll run end-to-end vs. the reconciliation baseline.
-- GL trial balance after the first journal postings.
-- Authentication for migrated logins; surface any no-login employees that need access.
-- Backup/restore jobs succeeding on the production v2 database.
-
-<Callout title="Keep v1 recoverable">
-  Retain the frozen v1 database read-only for an agreed retention period after
-  cutover as the ultimate fallback and historical reference.
+<Callout title="What gets migrated">
+  For the full picture of what data comes across and the safety guarantees, see
+  [Migration &amp; cutover](/docs/administration/migration-cutover).
 </Callout>
