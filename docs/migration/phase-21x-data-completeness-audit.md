@@ -59,10 +59,10 @@ the v1 Gist script as rollback until verified.
 ## Build progress
 
 1. ✅ **Leave migration** — 6 leave types / 36 balances / 2 requests (`migrate-leave.ts`), rendering.
-2. ✅ **Recurring allowances** — v1 transport allowance → v2 pay item + 10 assignments (`migrate-allowances.ts`), GRA-taxable. **CONFIG only** — the engine consuming pay-item assignments for FUTURE runs is a deferred GRA-vetted TDD step (history already correct; reconcile stays 46/46).
+2. ✅ **Recurring allowances** — v1 transport allowance → v2 pay item + 10 assignments (`migrate-allowances.ts`), GRA-taxable. **FULLY FUNCTIONAL for future runs**: the input-builder (`utils/payroll-input-builder.ts` `buildPayItemInputs`) already reads pay-item assignments and the engine (`calculate.ts` `computeAllowances`) applies `overrideAmount` as taxable allowance into gross → PAYE/NIS. (An earlier note said the engine "doesn't consume" pay items — that was a wrong-path grep; corrected.) Locked with a new engine unit test for the `overrideAmount`/`isFixed=false` shape; engine 60/60; `migration:reconcile` stays READY 46/46.
 3. ✅ **Countries & Tax** — built out with the real GY-2026 GRA profile (PAYE bands, NIS, allowances); removed from Preview.
 4. ✅ **Payslip templates** — functional Classic / Compact / Detailed selector + branded Print/PDF.
-5. ⏳ **Departments / job positions** — pull names from v1 (read-only) + link (not blocking).
-6. ⏳ **Engine: apply pay-item allowances to future runs** — GRA-vetted TDD, reconcile-regression-guarded.
+5. ✅ **Departments / job positions** — 3 departments + 14 positions migrated, 15 contracts linked (`migrate-departments.ts`).
+6. ✅ **Engine applies pay-item allowances to future runs** — already wired; verified + test-locked (see #2).
 7. ⏳ **CRUD parity + a11y label sweep**; **Compliance/Documents/Clients** preview build-out.
 8. ⏳ **Operator (Pi)**: publish v2 `heimdallone_sync.py` to the Gist + set the Pi `.env` (v2 URL + device id + ingest key) → live attendance sync.

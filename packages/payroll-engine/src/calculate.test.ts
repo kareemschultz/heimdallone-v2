@@ -18,6 +18,7 @@ import {
 	withTaxableAllowance,
 	withUnpaidLeave,
 } from "./fixtures/guyana-2026";
+import type { PayrollInput } from "./types";
 
 describe("calculatePayroll", () => {
 	test("monthly salaried employee — normal period", () => {
@@ -112,6 +113,41 @@ describe("calculatePayroll", () => {
 
 		expect(result.taxableAllowances).toBe(1_500_000);
 		expect(result.grossPay).toBe(normalResult.grossPay + 1_500_000);
+		expect(result.taxableGross).toBeGreaterThan(normalResult.taxableGross);
+	});
+
+	test("per-employee override allowance (isFixed=false, overrideAmount) is applied taxable", () => {
+		// Shape produced by the v1 recurring-allowance migration: an org pay item
+		// with isFixed=false + the amount carried per-employee on the assignment's
+		// overrideAmount. overrideAmount must take precedence and count as taxable.
+		const withOverride: PayrollInput = {
+			...withTaxableAllowance,
+			payItems: {
+				allowances: [
+					{
+						payItemId: "pi-transport",
+						title: "Transport Allowance",
+						isFixed: false,
+						fixedAmount: null,
+						basedOn: null,
+						rate: null,
+						isTaxable: true,
+						isPreTax: false,
+						isTax: false,
+						isStatutory: false,
+						employerRate: null,
+						maxAmount: null,
+						overrideAmount: 9000,
+					},
+				],
+				deductions: [],
+			},
+		};
+		const result = calculatePayroll(withOverride);
+		const normalResult = calculatePayroll(monthlySalariedNormal);
+
+		expect(result.taxableAllowances).toBe(900_000);
+		expect(result.grossPay).toBe(normalResult.grossPay + 900_000);
 		expect(result.taxableGross).toBeGreaterThan(normalResult.taxableGross);
 	});
 
