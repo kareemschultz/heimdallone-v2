@@ -32,9 +32,10 @@ services:
       PLATFORM_ADMIN_USER_ID: ${PLATFORM_ADMIN_USER_ID:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
-    # Joins the DB network so it can reach postgres-central (host: postgres-central),
-    # plus the internal v2 net for web↔server. NOT on the pangolin network.
-    networks: [heimdallone-v2, db]
+    # db → reach postgres-central; heimdallone-v2 → web↔server; pangolin → Traefik
+    # ingress. External pangolin keeps the stack reachable across `compose up`
+    # recreates (a recreate without it drops the network → Traefik 502).
+    networks: [heimdallone-v2, db, pangolin]
     deploy:
       resources:
         limits:
@@ -55,7 +56,7 @@ services:
       # https://api.heimdallone.com. (Browser-side RPC uses same-origin /rpc, which
       # the production ingress routes to the API.)
       VITE_SERVER_URL: ${VITE_SERVER_URL:-http://heimdallone-v2-server:3000}
-    networks: [heimdallone-v2]
+    networks: [heimdallone-v2, pangolin]
     deploy:
       resources:
         limits:
@@ -71,7 +72,7 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
-    networks: [heimdallone-v2]
+    networks: [heimdallone-v2, pangolin]
     deploy:
       resources:
         limits:
@@ -87,4 +88,9 @@ networks:
   # without touching pangolin). External — created/owned by postgres-central.
   db:
     name: postgres-central_db-internal
+    external: true
+  # QA ingress (Traefik routes v2.heimdallone.com here). External — keeps the
+  # stack reachable across `compose up` recreates (else Traefik 502s).
+  pangolin:
+    name: pangolin
     external: true
