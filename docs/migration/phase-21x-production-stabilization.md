@@ -297,3 +297,19 @@ web tsc 0 non-nitro · changed files lint-clean · server logs clean (no 500/get
 
 Live tag end of pass: `sha-c11e45f`. Gates: check-types 3/3 · build 3/3 ·
 engine 60/60 · reconcile 46/46 · web tsc 0 non-nitro · server logs clean.
+
+## Pass 8 — real operational dashboard + fake-data sign-off (2026-06-16)
+
+- **Dashboard is now operational, not a launcher** (`app/index.tsx`): leads with
+  real role-gated StatTiles — Active employees (live `employees.list` total),
+  Pending leave (live, awaiting approval), Unread notifications, and a Setup
+  quick-action — then module quick-access below. UI-verified: Foreign Links shows
+  "Active employees 3". `verify-dashboard.png`.
+- **Fake-data sign-off**: `grep` for Atlas Shipping / Maya Persaud / Lia Roberts /
+  Sasha B / Shanice Powell / 1,284 / 14,820 / 5,612 / 3,604 across
+  `apps/web/src/routes/app` + `packages` → **0 hits**. Compliance verified honest
+  Preview (`verify-compliance.png`). Only the apex marketing page retains mockup
+  copy (separate rebuild; the app subdomain redirects away from it).
+- Mobile re-verified incl. `/app/compliance`; all viewports clean.
+
+Live tag end of pass: `sha-72ca623`.
