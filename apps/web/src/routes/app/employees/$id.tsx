@@ -5,7 +5,6 @@ import {
 	Archive,
 	ArrowRight,
 	ArrowUp,
-	ArrowUpRight,
 	Briefcase,
 	Calendar,
 	Check,
@@ -17,9 +16,7 @@ import {
 	Filter,
 	LayoutDashboard,
 	Plus,
-	TrendingUp,
 	Undo,
-	Users,
 	Wallet,
 	X,
 } from "lucide-react";
@@ -381,11 +378,7 @@ function EmployeeProfilePage() {
 								{
 									key: "documents",
 									icon: <FileText size={13} />,
-									label: (
-										<>
-											Documents <span className="count">4</span>
-										</>
-									),
+									label: "Documents",
 								},
 								{
 									key: "activity",
@@ -962,71 +955,17 @@ function EmployeeProfilePage() {
 									</button>
 								</div>
 								<div className="widget-body">
-									<div className="tl-wrap">
-										<div className="tl-item">
-											<div className="dot accent">
-												<Check size={11} />
-											</div>
-											<div>
-												<div className="desc">OT request · 8h approved</div>
-												<div className="meta">
-													Week 39 · approved by Maya Persaud
-												</div>
-											</div>
-											<div className="time">Tue 14:18</div>
-										</div>
-										<div className="tl-item">
-											<div className="dot success">
-												<FileText size={11} />
-											</div>
-											<div>
-												<div className="desc">
-													Performance review filed · H1 2026
-												</div>
-												<div className="meta">
-													Rated <strong>Exceeds expectations</strong> · reviewed
-													by L. Roberts
-												</div>
-											</div>
-											<div className="time">Jul 10</div>
-										</div>
-										<div className="tl-item">
-											<div className="dot">
-												<TrendingUp size={11} />
-											</div>
-											<div>
-												<div className="desc">Salary adjustment · +8.4%</div>
-												<div className="meta">
-													From 315,500 → 342,000 GYD/mo · effective 2026-07-01
-												</div>
-											</div>
-											<div className="time">Jul 1</div>
-										</div>
-										<div className="tl-item">
-											<div className="dot">
-												<Briefcase size={11} />
-											</div>
-											<div>
-												<div className="desc">
-													Promoted: Software Engineer → Senior Engineer
-												</div>
-												<div className="meta">
-													Engineering · effective 2026-04-01
-												</div>
-											</div>
-											<div className="time">Apr 1</div>
-										</div>
-										<div className="tl-item">
-											<div className="dot">
-												<Users size={11} />
-											</div>
-											<div>
-												<div className="desc">Joined {org.orgName}</div>
-												<div className="meta">
-													Permanent contract · onboarding completed in 9 days
-												</div>
-											</div>
-											<div className="time">Mar 18, '24</div>
+									<div
+										style={{
+											padding: "28px 16px",
+											textAlign: "center",
+											color: "var(--fg-3)",
+											fontSize: 12.5,
+										}}
+									>
+										<Check size={18} style={{ opacity: 0.5 }} />
+										<div style={{ marginTop: 6 }}>
+											No recent activity for this employee yet.
 										</div>
 									</div>
 								</div>
@@ -1664,66 +1603,28 @@ function EmployeeProfilePage() {
 				<div className="tab-panel active">
 					<div className="widget">
 						<div className="widget-head">
-							<span className="ttl">Documents · 4 on file</span>
+							<span className="ttl">Documents</span>
 							<button className="btn btn-primary btn-sm" type="button">
 								<Plus size={12} />
 								Upload
 							</button>
 						</div>
 						<div className="widget-body">
-							<div className="doc-row">
-								<div className="ic">
-									<FileText size={15} />
+							<div
+								style={{
+									padding: "32px 16px",
+									textAlign: "center",
+									color: "var(--fg-3)",
+									fontSize: 13,
+								}}
+							>
+								<FileText size={20} style={{ opacity: 0.5 }} />
+								<div style={{ marginTop: 8, fontWeight: 600 }}>
+									No documents on file
 								</div>
-								<div>
-									<div className="ttl">Contract · Permanent (signed)</div>
-									<div className="sub">
-										PDF · 184 KB · uploaded 2024-03-18 by Lia Roberts
-									</div>
+								<div style={{ marginTop: 4 }}>
+									Upload contracts, ID and other records for this employee.
 								</div>
-								<a>
-									Open <ArrowUpRight size={11} />
-								</a>
-							</div>
-							<div className="doc-row">
-								<div className="ic">
-									<FileText size={15} />
-								</div>
-								<div>
-									<div className="ttl">National ID</div>
-									<div className="sub">
-										PDF · 320 KB · uploaded 2024-03-18 · verified
-									</div>
-								</div>
-								<a>
-									Open <ArrowUpRight size={11} />
-								</a>
-							</div>
-							<div className="doc-row">
-								<div className="ic">
-									<FileText size={15} />
-								</div>
-								<div>
-									<div className="ttl">Bank verification · Republic Bank</div>
-									<div className="sub">PDF · 96 KB · uploaded 2024-04-02</div>
-								</div>
-								<a>
-									Open <ArrowUpRight size={11} />
-								</a>
-							</div>
-							<div className="doc-row">
-								<div className="ic">
-									<FileText size={15} />
-								</div>
-								<div>
-									<div className="ttl">Performance review · H1 2026</div>
-									<div className="sub">
-										PDF · 244 KB · uploaded 2026-07-10 by Lia Roberts
-									</div>
-								</div>
-								<a>
-									Open <ArrowUpRight size={11} />
-								</a>
 							</div>
 						</div>
 					</div>
@@ -1742,74 +1643,21 @@ function EmployeeProfilePage() {
 							</button>
 						</div>
 						<div className="widget-body">
-							<div className="tl-wrap">
-								<div className="tl-item">
-									<div className="dot accent">
-										<Check size={11} />
-									</div>
-									<div>
-										<div className="desc">OT request · 8h approved</div>
-										<div className="meta">Approved by Maya Persaud</div>
-									</div>
-									<div className="time">Tue 14:18</div>
+							<div
+								style={{
+									padding: "32px 16px",
+									textAlign: "center",
+									color: "var(--fg-3)",
+									fontSize: 13,
+								}}
+							>
+								<Check size={20} style={{ opacity: 0.5 }} />
+								<div style={{ marginTop: 8, fontWeight: 600 }}>
+									No activity recorded yet
 								</div>
-								<div className="tl-item">
-									<div className="dot success">
-										<FileText size={11} />
-									</div>
-									<div>
-										<div className="desc">
-											Performance review filed · H1 2026
-										</div>
-										<div className="meta">Rated Exceeds expectations</div>
-									</div>
-									<div className="time">Jul 10</div>
-								</div>
-								<div className="tl-item">
-									<div className="dot">
-										<TrendingUp size={11} />
-									</div>
-									<div>
-										<div className="desc">
-											Salary +8.4% · effective 2026-07-01
-										</div>
-										<div className="meta">From 315,500 → 342,000 GYD</div>
-									</div>
-									<div className="time">Jul 1</div>
-								</div>
-								<div className="tl-item">
-									<div className="dot">
-										<Briefcase size={11} />
-									</div>
-									<div>
-										<div className="desc">
-											Promotion · Software Engineer → Senior Engineer
-										</div>
-										<div className="meta">Engineering</div>
-									</div>
-									<div className="time">Apr 1</div>
-								</div>
-								<div className="tl-item">
-									<div className="dot">
-										<Calendar size={11} />
-									</div>
-									<div>
-										<div className="desc">Annual leave · 3 days · approved</div>
-										<div className="meta">21–23 May 2026</div>
-									</div>
-									<div className="time">May 18</div>
-								</div>
-								<div className="tl-item">
-									<div className="dot">
-										<Users size={11} />
-									</div>
-									<div>
-										<div className="desc">Joined {org.orgName}</div>
-										<div className="meta">
-											Engineering · onboarding completed in 9 days
-										</div>
-									</div>
-									<div className="time">Mar 18, '24</div>
+								<div style={{ marginTop: 4 }}>
+									Approvals, payroll and profile changes for this employee will
+									appear here.
 								</div>
 							</div>
 						</div>
