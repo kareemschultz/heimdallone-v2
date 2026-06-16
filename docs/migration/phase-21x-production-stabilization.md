@@ -166,24 +166,33 @@ v1). Created, idempotently, for BOTH tenants:
 configured", readiness 75%, Country-profile + Payroll-settings + Contracts ✅ in
 the setup checklist. Evidence: `docs/reviews/phase-21x-mobile-qa/verify-payroll-desktop.png`.
 
-### BLOCKED — historical payslips (must NOT be pushed blind)
+### Historical payslips — MATERIALIZED (owner chose "full delta")
 
-69 v1 payslips are staged as JSONB in `migration_source_payslip`, but **cannot be
-safely materialized into the live `payslip` table yet**:
-- v2 `employee_profile` has **no v1 source-id** (migrated employees got fresh
-  cuid2 IDs with no stored link to v1 `HR-EMP-xxxxx`).
-- The only candidate join key is **email — matches just 17 of 23 employees**
-  (the 6 no-login employees have no email); `badge_id` is null.
-- `payslip` is a NOT-NULL financial record requiring `payroll_run_id` +
-  `contract_id` + per-employee attribution.
+`scripts/migration/materialize-payslips.ts` (prod backed up first; same
+prod-write opt-in). Loaded the **46 non-reversal** staged payslips (the 23
+reversals are v1's UTC-bug artifacts — excluded per "capture intent, not bugs").
 
-Materializing on a partial key would **misattribute financial records**. The
-reconciliation (`migration:reconcile`) already proved the numbers are correct in
-aggregate, but per-row materialization needs a **verified 1:1 employee mapping
-first**. Recommended next step: add/restore a v1 source-id on the migrated
-employees (or build a verified mapping table from `migration_source_employee`),
-then a reconciled materialization run that aborts on any unmapped row or
-net-pay-sum mismatch. NOT done overnight — financial-record safety over speed.
+Mapping was the blocker — `employee_profile` has no v1 source-id. Resolved by a
+verified join: **email (14) + name-within-org for the no-login employees (4) =
+all 18 employees mapped, 0 unmapped** (script hard-aborts if any employee is
+unmapped or contract-less, and rolls back the whole transaction). Period dates
+pulled read-only from v1 `payroll_periods`. Synthesized the
+`pay_period → payroll_run → payslip` chain.
+
+**Reconciliation guard (per payslip, in-transaction):** `gross − (PAYE + NIS_emp
++ medical + other) == net` must hold to the cent or the transaction rolls back —
+no partial financials. All 46 passed; total net **1,409,833.96 GYD**.
+
+**Result (verified in UI):**
+- Netsurf: 3 runs / 43 payslips — April 2026 (15 emp, 416,668.02), May Fortnightly
+  1 (15, 620,530.04), May Fortnightly 2 (13, 372,635.90); readiness 75%→**88%
+  "Ready to run payroll"**; payslips render with real employees + GYD amounts.
+- Foreign Links: 1 run / 3 payslips ("May 22" — net 0.00, faithful: that v1
+  period was incomplete/processing).
+- Evidence: `verify-netsurf-payroll.png`, `verify-netsurf-payslips.png`.
+
+Idempotent (skips a period whose run already exists). Provenance preserved in
+each payslip's `explanation` jsonb (`migratedFromV1`, v1 id, snapshot).
 
 ### Also deferred
 - **Departments** — v1 dept *names* aren't staged (only ids); needs a v1
