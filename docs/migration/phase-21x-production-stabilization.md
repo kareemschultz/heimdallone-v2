@@ -275,3 +275,25 @@ Live tag progression this pass: …→ `sha-8429683` (web/server/docs coherent).
 ### Gates (this pass)
 check-types 3/3 · build 3/3 · engine 60/60 · migration:reconcile READY 46/46 ·
 web tsc 0 non-nitro · changed files lint-clean · server logs clean (no 500/getSetupStatus).
+
+## Pass 7 — engine allowance proof, Setup Center, employee fake-data, full mobile QA (2026-06-16)
+
+- **Recurring allowances confirmed applied to future runs** — read-only proof
+  (`scripts/migration/verify-allowance-applied.ts`): real employee, Transport
+  $7,000 → taxable into gross, NIS computed, PAYE $0 (below threshold). Engine
+  60/60; reconcile READY 46/46. (P1 closed — engine already consumed pay items.)
+- **Setup Center** — new `/app/setup` hub + "Setup center" nav (Govern), role-aware
+  cards to org settings / payroll settings / Countries & Tax / pay items / time
+  clocks / geofencing / leave policies / migration status. (P9.)
+- **Employee detail fake data removed** — Overview activity, Activity tab, and
+  Documents tab sample blocks (Maya Persaud / Lia Roberts / fake salary/promotion)
+  replaced with honest empty states; "Documents · 4" count dropped. No fake
+  person/data remains in any /app route (only apex marketing page).
+- **Mobile QA complete** — 390 / 430 / 768 / desktop across all key routes: 0
+  crashes, 0 horizontal overflow.
+- **a11y** — aria-labels on icon-only employee buttons.
+- **Pi cutover** — `phase-21x-pi-cutover-prep.md`; v2 script drops heartbeat (no
+  compat route needed); 2 operator steps remain.
+
+Live tag end of pass: `sha-c11e45f`. Gates: check-types 3/3 · build 3/3 ·
+engine 60/60 · reconcile 46/46 · web tsc 0 non-nitro · server logs clean.
