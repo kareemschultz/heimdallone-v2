@@ -321,9 +321,28 @@ APPROVES CUTOVER**). **audit STAYS 161/21** (docs-only).
 - **Hard rules held:** no v1 writes · no production v2 writes · no freeze · no DNS
   cutover · no production device registration · no Gist replacement · no secrets committed.
 
-### Immediate next step (supersedes §9 / §11 / §13 / §14)
-**Owner signs the [21P authorization packet](./phase-21p-cutover-authorization.md) §1
-decision checklist.** Once every row is confirmed: schedule the freeze window and
-execute §2 via the runbook. **Code is not blocking; the remaining gaps are
-operational/data decisions. Technical readiness GREEN; live rehearsal GO; freeze
-NO-GO; production write-ETL NO-GO; DNS cutover NO-GO (none performed).**
+## 16. Phase 21Q — Final owner decision lock + cutover dry-run walkthrough ✅ (2026-06-15)
+
+Doc: **[`phase-21q-decision-lock-and-dry-run.md`](./phase-21q-decision-lock-and-dry-run.md)**.
+**audit STAYS 161/21** (docs + read-only/scratch only).
+
+- **All 21P §1 decisions LOCKED by the owner:** statutory = accept as-is (collect
+  after go-live) · no-login employees = keep no-login · cutover order = Foreign Links
+  pilot first then Netsurf · platform admin = kareemschultz platform owner, **old v1
+  admin retained** · (already locked earlier: Google allowed like v1; device register
+  at cutover + reuse Gist + keep v1 rollback; excluded v1-bug journals stay excluded;
+  work_schedules sufficient).
+- **Cutover dry-run walkthrough PASSED** (read-only v1 → disposable scratch): dry-run
+  0 gaps; reconcile READY 46/46; fresh scratch (125 tables + 8 staging) → write-ETL
+  pilot-first (Foreign Links then Netsurf, GL balanced, isolation true) →
+  attendance-bridge 901 staged/processed, 0 unmapped, 499 events → 358 records all
+  day-typed (idempotent). Post-load: 23 employees / 6 no-login / 23 statutory (3 TIN,
+  3 NIS) / Netsurf GL balanced 1,204,726.65 / isolation clean. No-writes proven
+  (scratch source-staging=8, dev/v1=0; v1 has 0 v2 tables).
+
+### Immediate next step (supersedes §9 / §11 / §13 / §14 / §15)
+**Decisions are locked and the dry-run passed.** The only remaining gate is the
+owner's explicit "execute" at a scheduled freeze window (plus the reviewed
+production-write enablement, which the scratch guard intentionally blocks today).
+**Technical readiness GREEN; decisions LOCKED; dry-run GO; freeze NO-GO; production
+write-ETL NO-GO; DNS cutover NO-GO (none performed).**

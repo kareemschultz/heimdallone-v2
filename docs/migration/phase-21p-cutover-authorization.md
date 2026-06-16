@@ -32,6 +32,15 @@ GO/NO-GO. The exact commands live in the
 
 ## 1. Owner / operator decision checklist
 
+> ✅ **All §1 decisions are now LOCKED** — see
+> [Phase 21Q — Decision Lock](./phase-21q-decision-lock-and-dry-run.md#part-a--owner-decision-lock).
+> Summary of locked choices: statutory = accept as-is (collect after go-live) ·
+> no-login employees = keep no-login · cutover order = Foreign Links pilot first,
+> then Netsurf · platform admin = kareemschultz is platform owner, old v1 admin
+> retained · Google = allowed like v1 · device = register at cutover, reuse Gist,
+> keep v1 rollback · excluded v1-bug journals = stay excluded (accountant corrects)
+> · work_schedules = sufficient for cutover. A 21Q dry-run walkthrough PASSED.
+
 Each row needs an explicit **CONFIRM** (or an alternative) from the named owner.
 "Recommendation" is the safe default; nothing is auto-applied.
 
