@@ -21,31 +21,56 @@ const MAX_BUCKETS = 50_000;
 const TRUST_PROXY = process.env.TRUST_PROXY === "true";
 const store = new Map<string, { count: number; resetAt: number }>();
 
+const IPV4_MAPPED_PREFIX = /^::ffff:/;
+const PRIVATE_172 = /^172\.(1[6-9]|2\d|3[01])\./;
+
+// Loopback + RFC1918/RFC4193 private ranges. A TCP peer in one of these is our
+// own infra (docker network / localhost) and cannot be forged by an external
+// client, since external traffic can only reach us through the proxy.
+function isInternalPeer(addr: string): boolean {
+	const a = addr.replace(IPV4_MAPPED_PREFIX, ""); // unwrap IPv4-mapped IPv6
+	if (a === "127.0.0.1" || a === "::1" || a === "localhost") {
+		return true;
+	}
+	if (a.startsWith("10.") || a.startsWith("192.168.")) {
+		return true;
+	}
+	if (PRIVATE_172.test(a)) {
+		return true;
+	}
+	// IPv6 unique-local (fc00::/7) and link-local (fe80::/10).
+	return a.startsWith("fc") || a.startsWith("fd") || a.startsWith("fe80");
+}
+
+function peerAddr(c: Context): string {
+	try {
+		return getConnInfo(c).remote.address ?? "unknown";
+	} catch {
+		return "unknown";
+	}
+}
+
 /**
  * Resolve the limiter key for a request, or `null` to EXEMPT it.
  *
  * Behind a trusted reverse proxy (TRUST_PROXY=true, e.g. Pangolin/Traefik) the
  * real end-user IP is the left-most X-Forwarded-For entry, so each browser
- * client gets its own bucket. A request that arrives WITHOUT an XFF header in
- * that mode did not pass through the proxy — it is internal traffic (SSR fetches
- * from the web container, health probes, docker network) and is exempted, so a
- * single SSR origin IP can't throttle the whole tenant. Without TRUST_PROXY the
- * raw TCP peer is used (single-instance, no proxy).
+ * client gets its own bucket. When XFF is ABSENT we do NOT fail open on the
+ * header alone (it is attacker-controllable): we exempt ONLY when the actual TCP
+ * peer is an internal/loopback address (genuine docker/health traffic), and
+ * otherwise key on the peer address so a direct, non-proxied caller is still
+ * limited per source IP. Without TRUST_PROXY the raw TCP peer is always used.
  */
 function clientIp(c: Context): string | null {
 	if (TRUST_PROXY) {
 		const first = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
-		return first ?? null;
-	}
-	try {
-		const addr = getConnInfo(c).remote.address;
-		if (addr) {
-			return addr;
+		if (first) {
+			return first;
 		}
-	} catch {
-		// runtime without connection info — fall through
+		const peer = peerAddr(c);
+		return isInternalPeer(peer) ? null : peer;
 	}
-	return "unknown";
+	return peerAddr(c);
 }
 
 function evict(now: number): void {
