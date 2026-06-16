@@ -1,15 +1,8 @@
 {
-  "generatedAt": "2026-06-15T20:38:11.820Z",
+  "generatedAt": "2026-06-16T00:59:50.160Z",
   "v1Url": "postgresql://migration_reader:***@localhost:5432/karetech_erp",
-  "scratchDb": "heimdallone_v2_migration_scratch",
-  "scratchCounts": {
-    "migration_source_organization": 2,
-    "migration_source_employee": 23,
-    "migration_source_payslip": 69,
-    "migration_source_attendance_punch": 899,
-    "migration_source_roster": 175,
-    "migration_source_work_schedule": 6
-  },
+  "scratchDb": null,
+  "scratchCounts": null,
   "tenants": [
     {
       "tenantId": "netsurf-group-tenant-001",
@@ -112,55 +105,55 @@
     }
   ],
   "attendance": {
-    "totalPunches": 899,
+    "totalPunches": 903,
     "byTenant": [
       {
         "tenantId": "netsurf-group-tenant-001",
-        "punches": 899
+        "punches": 903
       }
     ],
     "fieldCoverage": [
       {
         "field": "employee",
-        "present": 899,
-        "total": 899
+        "present": 903,
+        "total": 903
       },
       {
         "field": "timestamp",
-        "present": 899,
-        "total": 899
+        "present": 903,
+        "total": 903
       },
       {
         "field": "punch_type",
-        "present": 899,
-        "total": 899
+        "present": 903,
+        "total": 903
       },
       {
         "field": "source",
-        "present": 899,
-        "total": 899
+        "present": 903,
+        "total": 903
       },
       {
         "field": "device",
-        "present": 688,
-        "total": 899,
+        "present": 692,
+        "total": 903,
         "note": "device binding"
       },
       {
         "field": "logical_shift_date",
-        "present": 899,
-        "total": 899,
+        "present": 903,
+        "total": 903,
         "note": "v1 derives this; confirm v2 derivation"
       },
       {
         "field": "device_timestamp",
-        "present": 899,
-        "total": 899
+        "present": 903,
+        "total": 903
       },
       {
         "field": "gps_latitude",
         "present": 62,
-        "total": 899,
+        "total": 903,
         "note": "geo — confirm v2 punch geo home"
       }
     ],

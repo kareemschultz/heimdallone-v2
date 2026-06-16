@@ -1,8 +1,8 @@
 # v1 → v2 Payroll/Attendance Reconciliation Report
 
-**Generated:** 2026-06-15T20:38:11.820Z
+**Generated:** 2026-06-16T00:59:50.160Z
 **v1 source (read-only):** `postgresql://migration_reader:***@localhost:5432/karetech_erp`
-**Scratch DB:** `heimdallone_v2_migration_scratch`
+**Scratch DB:** _not run this pass (reconciliation is DB-free; staging is opt-in)_
 
 > Reconciliation runs v1's OWN payslip inputs through v2's statutory rules and compares
 > against v1's computed results. No writes to v1 or production v2. Amounts are shown as
@@ -41,18 +41,18 @@ _None — all reconciled statutory components match (exact or within rounding)._
 
 ## 5. Attendance mapping audit
 
-Total punches: **899**
+Total punches: **903**
 
 | Field | Present / Total | Note |
 | --- | --- | --- |
-| employee | 899/899 |  |
-| timestamp | 899/899 |  |
-| punch_type | 899/899 |  |
-| source | 899/899 |  |
-| device | 688/899 | device binding |
-| logical_shift_date | 899/899 | v1 derives this; confirm v2 derivation |
-| device_timestamp | 899/899 |  |
-| gps_latitude | 62/899 | geo — confirm v2 punch geo home |
+| employee | 903/903 |  |
+| timestamp | 903/903 |  |
+| punch_type | 903/903 |  |
+| source | 903/903 |  |
+| device | 692/903 | device binding |
+| logical_shift_date | 903/903 | v1 derives this; confirm v2 derivation |
+| device_timestamp | 903/903 |  |
+| gps_latitude | 62/903 | geo — confirm v2 punch geo home |
 
 **Roster/work-schedule blocker:** 175 roster entries + 6 work schedules. Per-date roster + rich work-schedule rules (night diff / split shift / Saturday / OT thresholds) are required to reconstruct earnings (gross/overtime/Saturday/Sunday pay) from punches. v2 has no home for these yet — blocks EARNINGS reconstruction until 21D. The STATUTORY layer (NIS/PAYE/allowances/net) reconciles independently because v1 stored the gross.
 

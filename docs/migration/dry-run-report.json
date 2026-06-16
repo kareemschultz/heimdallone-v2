@@ -1,13 +1,13 @@
 {
-  "generatedAt": "2026-06-15T11:08:06.137Z",
+  "generatedAt": "2026-06-16T00:59:42.936Z",
   "v1Url": "postgresql://migration_reader:***@localhost:5432/karetech_erp",
-  "v2Staging": "postgresql://migration_reader:***@localhost:5432/heimdallone_v2_migration_scratch",
+  "v2Staging": null,
   "totals": {
     "tenants": 2,
     "users": 29,
     "employees": 23,
     "payslips": 69,
-    "attendance_punches": 891,
+    "attendance_punches": 903,
     "roster_entries": 175,
     "gl_journal_entries": 13,
     "notifications": 14,
@@ -307,7 +307,7 @@
       "v2Target": "attendance_punch",
       "classification": "direct_map",
       "reason": "raw punches with timestamp/source/device/GPS",
-      "rowCount": 891,
+      "rowCount": 903,
       "fields": [
         {
           "v1": "id",
@@ -424,8 +424,8 @@
       ],
       "unmappable": [],
       "notes": [
-        "891 punches",
-        "59 carry GPS coordinates (confirm v2 punch geo home)"
+        "903 punches",
+        "62 carry GPS coordinates (confirm v2 punch geo home)"
       ]
     },
     {
@@ -433,7 +433,7 @@
       "v2Target": "audit_event",
       "classification": "archive_only",
       "reason": "historical audit trail",
-      "rowCount": 181,
+      "rowCount": 183,
       "fields": [],
       "unmappable": [],
       "notes": []
@@ -3309,7 +3309,7 @@
       "counts": {
         "employees": 20,
         "payslips": 66,
-        "punches": 891,
+        "punches": 903,
         "roster": 175,
         "journals": 13,
         "notifications": 14,

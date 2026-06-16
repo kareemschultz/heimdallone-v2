@@ -191,7 +191,35 @@ check-types · build · audit (reuses `attendance_device`/`attendance_punch` AC 
 **audit stays 161/21**) · verify:core · the biometric verify scripts · transformers
 · live dry-run · live reconcile (READY 46/46) · scratch write-ETL · docs build/lint.
 
-## 11. Open items for the operator
+## 11. 21O-D deployment decision — reuse the existing Gist auto-updater
+
+**The existing Gist auto-update mechanism is reused. The Gist carries code only.
+Secrets stay in the Pi `.env`. At cutover, replace the Gist script with the
+v2-native script and update the Pi `.env` with the v2 device ID and ingest key.**
+
+- Keep `bridge-autoupdate.sh` as-is (every 5 min: pull → syntax-check → hot-swap →
+  restart). Do **not** build a new updater. `GIST_ID` defaults to the existing
+  Gist the Pi already pulls.
+- Replacing the existing Gist's `heimdallone_sync.py` **content** with the
+  v2-native script (`scripts/device-bridge/heimdallone_sync.py`) is allowed at
+  cutover. Never put secrets / `HEIMDALL_API_KEY` / production device secrets in
+  the Gist or the repo.
+
+Operator cutover sequence (also in `scripts/device-bridge/README.md`): 1) log in
+as platform owner; 2) register the ZKTeco terminal in v2; 3) copy the v2
+`deviceId`; 4) copy the one-time ingest `apiKey`; 5) set the Pi `.env`
+(`HEIMDALL_API_URL`/`HEIMDALL_DEVICE_ID`/`HEIMDALL_API_KEY`); 6) replace the Gist
+`heimdallone_sync.py` content with the v2-native script; 7) wait ≤5 min or restart
+`heimdallone-bridge`; 8) confirm punches arrive in v2; 9) check the unmatched /
+exception report; 10) confirm attendance recalculation + payroll reconciliation
+stay clean.
+
+Rollback: if the Gist serves only this bridge, reuse it directly; if multiple
+unrelated Pis share it, create a new v2 Gist and set `HEIMDALL_GIST_ID` on the Pi.
+Keep a copy of the v1 script before replacing the Gist; if v2 sync fails at
+cutover, restore the v1 script in the Gist and restart the bridge.
+
+Other open items:
 - Confirm the v2 ingest URL the Pi will reach at cutover (and that the on-site Pi
   can reach it).
 - Decide cutover timing for attendance: backfill history pre-freeze; flip the live

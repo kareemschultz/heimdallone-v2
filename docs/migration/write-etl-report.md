@@ -17,7 +17,7 @@
 - GL accounts 11 · Journals 11 / lines 47 · Notifications 14
 
 ## Source-JSON staging (fields with no v2 app-table home)
-- Historical payslips 69 · Attendance punches 899 · Work schedules 6 · Employees (full row, incl. statutory fields) 23
+- Historical payslips 69 · Attendance punches 903 · Work schedules 6 · Employees (full row, incl. statutory fields) 23
 - Complete v1 GL preserved for accountant review (21L-C): journal entries 13 · journal lines 53
 
 ## Failed / excluded mappings (2)

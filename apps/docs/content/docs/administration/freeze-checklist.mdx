@@ -34,7 +34,7 @@ Resolve these before scheduling the freeze window:
 | Statutory completeness | Confirm TIN/NIS/dependents are captured for employees who need them for payroll correctness | Owner / Payroll |
 | Excluded v1 journals | Exclude permanently, **or** enter a corrected opening-balance journal post-cutover | Accountant |
 | Work-schedule richness | Confirm the mapped `shift_rule` values are sufficient, or stage deeper night/split-shift rules | Owner / Payroll |
-| Time-attendance device | Backfill historical punches + re-point the on-site agent at the v2 ingest endpoint (new device registration + API key); confirm employee slot-map and device clock. See [Biometric devices](/docs/time/biometric-devices) | Owner / Payroll |
+| Time-attendance device | Backfill historical punches + re-point the on-site agent at the v2 ingest endpoint. **Reuse the existing Gist auto-updater — the Gist carries code only; secrets stay in the Pi `.env`.** At cutover: register the device in v2, copy the device ID + one-time ingest key into the Pi `.env`, replace the Gist script content with the v2-native script, confirm slot-map + device clock. See [Biometric devices](/docs/time/biometric-devices) | Owner / Payroll |
 | Cutover order | Pilot tenant first, then the rest, **or** all tenants in one freeze window | Owner |
 
 ## Freeze & cutover steps

@@ -19,8 +19,11 @@
 set -euo pipefail
 
 BRIDGE_DIR="/home/admin/heimdallone-bridge"
-# v2 Gist — replace with the Gist id you publish heimdallone_sync.py to.
-GIST_ID="${HEIMDALL_GIST_ID:-REPLACE_WITH_V2_GIST_ID}"
+# REUSE the existing Gist the Pi already pulls (the v1 bridge used this same id).
+# At cutover, replace that Gist's heimdallone_sync.py CONTENT with the v2-native
+# script — same mechanism, code only, no secrets. Only create a NEW Gist (and set
+# HEIMDALL_GIST_ID on the Pi) if other unrelated Pis/clients share this one.
+GIST_ID="${HEIMDALL_GIST_ID:-0ed7921feaac8a7c316799171d370826}"
 GIST_OWNER="${HEIMDALL_GIST_OWNER:-kareemschultz}"
 GIST_FILE="heimdallone_sync.py"
 INSTALL_PATH="${BRIDGE_DIR}/heimdallone_sync.py"

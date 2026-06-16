@@ -69,6 +69,31 @@ pipeline:
   registration + API key). The device's actual model is detected over the protocol —
   the stored label is cosmetic; the vendor (e.g. ZKTeco) selects the adapter.
 
+The existing Gist auto-update mechanism is reused. The on-site agent already pulls
+its sync script from a public GitHub Gist every few minutes (syntax-check →
+hot-swap → restart), so no on-site visit is needed to re-point it. **The Gist
+carries code only. Secrets stay in the agent's local `.env`.** At cutover, replace
+the Gist script with the v2-native script and update the agent's `.env` with the v2
+device ID and ingest key — never put the API key or any device secret in the Gist
+or the repo.
+
+<Callout type="warn" title="Cutover steps (operator)">
+  1. Log in to Heimdallone v2 as platform owner.
+  2. Register the ZKTeco terminal in v2 (vendor `zkteco`, mode `api_ingest`).
+  3. Copy the generated v2 device ID.
+  4. Copy the one-time ingest API key.
+  5. Update the agent `.env`: API URL, device ID, ingest key.
+  6. Replace the Gist sync-script content with the v2-native script.
+  7. Wait up to 5 minutes (auto-update) or restart the bridge service.
+  8. Confirm punches arrive in v2.
+  9. Check the unmatched-punch / exception report.
+  10. Confirm attendance recalculation and payroll reconciliation stay clean.
+
+  Rollback: keep a copy of the v1 script before replacing the Gist; if v2 sync
+  fails, restore the v1 script in the Gist and restart the bridge. If multiple
+  unrelated agents share the Gist, publish a new one and point the agent at it.
+</Callout>
+
 <Callout title="What to verify after cutover">
   Punch counts match, no unmatched punches remain, attendance records are day-typed
   (weekday/Saturday/Sunday/holiday) correctly, and payroll reconciliation stays
