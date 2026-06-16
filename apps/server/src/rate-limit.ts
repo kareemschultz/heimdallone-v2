@@ -21,13 +21,21 @@ const MAX_BUCKETS = 50_000;
 const TRUST_PROXY = process.env.TRUST_PROXY === "true";
 const store = new Map<string, { count: number; resetAt: number }>();
 
-function clientIp(c: Context): string {
+/**
+ * Resolve the limiter key for a request, or `null` to EXEMPT it.
+ *
+ * Behind a trusted reverse proxy (TRUST_PROXY=true, e.g. Pangolin/Traefik) the
+ * real end-user IP is the left-most X-Forwarded-For entry, so each browser
+ * client gets its own bucket. A request that arrives WITHOUT an XFF header in
+ * that mode did not pass through the proxy — it is internal traffic (SSR fetches
+ * from the web container, health probes, docker network) and is exempted, so a
+ * single SSR origin IP can't throttle the whole tenant. Without TRUST_PROXY the
+ * raw TCP peer is used (single-instance, no proxy).
+ */
+function clientIp(c: Context): string | null {
 	if (TRUST_PROXY) {
-		// Left-most XFF entry is the original client when behind one trusted hop.
 		const first = c.req.header("x-forwarded-for")?.split(",")[0]?.trim();
-		if (first) {
-			return first;
-		}
+		return first ?? null;
 	}
 	try {
 		const addr = getConnInfo(c).remote.address;
@@ -59,7 +67,13 @@ function evict(now: number): void {
 
 export function rateLimit(opts: { max: number; bucket: string }) {
 	return async (c: Context, next: Next) => {
-		const key = `${opts.bucket}:${clientIp(c)}`;
+		const ip = clientIp(c);
+		// Exempt internal/non-proxied traffic (SSR, health probes, docker net).
+		if (ip === null) {
+			await next();
+			return;
+		}
+		const key = `${opts.bucket}:${ip}`;
 		const now = Date.now();
 		const entry = store.get(key);
 		if (entry && entry.resetAt > now) {

@@ -50,9 +50,14 @@ app.use(
 );
 
 // Rate limiting (first-line brute-force / abuse guard). Auth is the tightest
-// (login brute-force); rpc is looser. In-memory per-instance — see rate-limit.ts.
-app.use("/api/auth/*", rateLimit({ max: 30, bucket: "auth" }));
-app.use("/rpc/*", rateLimit({ max: 300, bucket: "rpc" }));
+// (login brute-force); rpc is per-user and looser since a single page load fans
+// out into many RPC calls. Both per-minute caps are env-overridable. Behind a
+// trusted proxy these key on the real client IP and exempt internal SSR — see
+// rate-limit.ts.
+const AUTH_RATE_MAX = Number(process.env.AUTH_RATE_MAX ?? 60);
+const RPC_RATE_MAX = Number(process.env.RPC_RATE_MAX ?? 600);
+app.use("/api/auth/*", rateLimit({ max: AUTH_RATE_MAX, bucket: "auth" }));
+app.use("/rpc/*", rateLimit({ max: RPC_RATE_MAX, bucket: "rpc" }));
 
 app.on(["POST", "GET"], "/api/auth/*", (c) => auth.handler(c.req.raw));
 

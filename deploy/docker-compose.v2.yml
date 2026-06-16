@@ -33,6 +33,11 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
+      # Behind Pangolin/Traefik: key the rate limiter on the real client IP
+      # (left-most XFF) and exempt internal SSR (no XFF). Per-user caps below.
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      RPC_RATE_MAX: ${RPC_RATE_MAX:-600}
+      AUTH_RATE_MAX: ${AUTH_RATE_MAX:-60}
     # db → reach postgres-central; heimdallone-v2 → web↔server; pangolin → Traefik
     # ingress. External pangolin keeps the stack reachable across `compose up`
     # recreates (a recreate without it drops the network → Traefik 502).
