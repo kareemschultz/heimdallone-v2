@@ -68,6 +68,15 @@ docker compose -f deploy/docker-compose.v2.yml --env-file deploy/.env.v2 up -d
 - Host ports: server `127.0.0.1:3100`, web `3101`, docs `3102` — no collision with
   v1 (which publishes no host ports).
 
+### Required web env: `VITE_SERVER_URL`
+
+The web SSR resolves the API base from `process.env.VITE_SERVER_URL` (runtime, not
+build-time — no rebuild needed). **It must be set**, or authenticated `/app/*`
+routes SSR-500 (the SSR oRPC client falls back to `http://localhost:3000` = the web
+container itself). Side-by-side: `http://heimdallone-v2-server:3000`. Production:
+`https://api.heimdallone.com`. (Browser-side RPC uses same-origin `/rpc`, which the
+production ingress must route to the API.)
+
 ### Verify v2 is talking to heimdallone_v2_prod
 ```
 curl -fsS http://127.0.0.1:3100/health        # {"status":"ok"}

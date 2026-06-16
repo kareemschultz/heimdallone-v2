@@ -50,6 +50,11 @@ services:
     environment:
       PORT: 3000
       NODE_ENV: production
+      # SSR reads VITE_SERVER_URL (runtime process.env) to reach the API. Inside
+      # the side-by-side net that's the server container; in production set it to
+      # https://api.heimdallone.com. (Browser-side RPC uses same-origin /rpc, which
+      # the production ingress routes to the API.)
+      VITE_SERVER_URL: ${VITE_SERVER_URL:-http://heimdallone-v2-server:3000}
     networks: [heimdallone-v2]
     deploy:
       resources:
