@@ -346,3 +346,34 @@ owner's explicit "execute" at a scheduled freeze window (plus the reviewed
 production-write enablement, which the scratch guard intentionally blocks today).
 **Technical readiness GREEN; decisions LOCKED; dry-run GO; freeze NO-GO; production
 write-ETL NO-GO; DNS cutover NO-GO (none performed).**
+
+## 17. Phases 21R–21W — v2 build/deploy + cutover packet ✅ (2026-06-16)
+
+**21R** loaded live v1 → a fresh **`heimdallone_v2_prod`** (reviewed prod-write
+enablement: `CONFIRM_PRODUCTION_WRITE`+`PRODUCTION_WRITE_TARGET`, never
+`karetech_erp`; 2 orgs/25 members/23 emp/6 no-login/358 attendance, reconcile READY
+46/46) + built clean, optimized v2 Docker images (server **179 MB** distroless/cc;
+web/docs **~164 MB** bun:alpine; non-root; no secrets). **Web SSR `Route.update`
+500 root-caused to duplicate TanStack/React lockfile versions → fixed via root
+`overrides` + official vite plugin order.** **21S** published images to GHCR (via
+the workflow, Actions token) and ran the v2 stack side-by-side against
+`heimdallone_v2_prod` (localhost 3100/3101/3102) with v1 fully live + Pangolin
+untouched. **21T** read-only QA; found+fixed the **`VITE_SERVER_URL` runtime
+requirement** (web SSR API base — else `/app/*` 500; now 307→local `/login`).
+**21T.1/21T.2** produced the owner cutover packet: `final-owner-cutover-checklist`,
+`phase-21t-owner-browser-qa`, `phase-21u-production-config-preflight`,
+`phase-21u-freeze-final-delta-plan`, `phase-21u-day-of-command-packet`,
+`phase-21w-pangolin-flip-checklist`.
+
+**Current state:** v2 images published; side-by-side stack healthy; **owner browser
+QA pending**; production config (VITE_SERVER_URL/BETTER_AUTH_URL/CORS_ORIGIN/
+PLATFORM_ADMIN_USER_ID/Google + Pangolin `/rpc` route) pending. **`heimdallone_v2_prod`
+is STALE until the 21U freeze + final delta load.**
+
+### Immediate next step (supersedes §16)
+Owner completes browser QA + stages production config, then sends **"Approve Phase
+21U freeze."** Next gated phases: **21U** (freeze v1 + final delta load + validate)
+→ **21V** (biometric device + Pi/Gist switch) → **21W** (Pangolin flip → v2) →
+**21X** (monitoring) → **21Y** (archive v1). **NO-GO on freeze/flip until the
+approval phrase.** No v1 writes, no production write-ETL rerun, no freeze, no
+Pangolin/DNS change, v1 not stopped, no device registration, no Gist replacement.
