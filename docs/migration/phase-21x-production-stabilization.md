@@ -93,3 +93,29 @@ Current live tag: **`sha-2e65485`** on web, server, docs.
   Rule.
 - Broader mobile QA across every module page + helper tips/empty-state polish is
   an ongoing pass, not a single change.
+
+## Pass 2 — authenticated mobile/desktop QA (2026-06-16, same window)
+
+Logged into the **live** app as an owner-authorized QA superuser
+(`scripts/create-qa-user.ts`; platform admin + tenant_owner of both orgs;
+password gitignored in `.qa-cred`, never printed; remove with
+`REMOVE=1 … create-qa-user.ts`) and inspected the authenticated UI with
+Playwright at 390px and 1440px. Evidence + full findings table in
+`docs/reviews/phase-21x-mobile-qa/`.
+
+Verified the mobile shell/drawer are actually correct; the real pain was
+per-page overflow + a fake tenant name. Fixed:
+
+1. **Fake "Atlas Shipping" tenant name** on Employees list + detail →
+   `{org.orgName}` from `OrgCtx`.
+2. **Shared mobile CSS** in `styles/heimdall.css` (one block, every module page):
+   header action rows wrap; `.segmented` / `.tabs` / `*-tabs` strips scroll
+   horizontally instead of clipping; `.toolbar` stacks; `.page` padding tightened.
+3. **Settings card headers** — 5 inline-flex `space-between` headers → reusable
+   `.card-head-row` class that stacks on mobile (inline styles can't be made
+   responsive by CSS).
+4. **web-tsc cleanup** — exported `NavItem` from `route.tsx`, typed the
+   dashboard `NAV.flatMap` (cleared the `item is unknown` errors).
+
+Deferred (documented): marketing `/` mobile rebuild (P2); Compliance preview
+demo name (admin-gated); per-employee fake activity timeline.

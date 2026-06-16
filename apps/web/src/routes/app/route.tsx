@@ -300,6 +300,11 @@ export const NAV = [
 	},
 ] as const;
 
+// Union of every nav item shape (some carry an optional `preview` flag). Lets
+// consumers flatten NAV across its heterogeneous groups without `item` widening
+// to `unknown`.
+export type NavItem = (typeof NAV)[number]["items"][number];
+
 function ThemeToggle() {
 	const [theme, setTheme] = useState("dark");
 

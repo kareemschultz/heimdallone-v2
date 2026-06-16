@@ -129,7 +129,7 @@ function EmployeesPage() {
 			<div className="page-header">
 				<div>
 					<div className="crumbs">
-						<span>Atlas Shipping</span>
+						<span>{org.orgName}</span>
 						<span className="sep">/</span>
 						<span>Employees</span>
 					</div>

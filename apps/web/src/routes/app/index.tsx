@@ -3,7 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowRight, BarChart3, Bell } from "lucide-react";
 import { useContext } from "react";
 import { orpc } from "@/utils/orpc";
-import { isNavItemVisible, NAV, OrgCtx } from "./route";
+import { isNavItemVisible, NAV, type NavItem, OrgCtx } from "./route";
 
 export const Route = createFileRoute("/app/")({
 	component: DashboardPage,
@@ -37,7 +37,9 @@ function DashboardPage() {
 	// Reuses the sidebar's visibility rules so the overview never advertises a
 	// section the user cannot access. Overview/Settings and preview-only modules
 	// are excluded.
-	const modules = NAV.flatMap((group) => group.items).filter(
+	const modules = NAV.flatMap(
+		(group) => group.items as readonly NavItem[]
+	).filter(
 		(item) =>
 			item.key !== "overview" &&
 			item.key !== "settings" &&

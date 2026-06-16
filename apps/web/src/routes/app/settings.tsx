@@ -360,14 +360,7 @@ function SettingSection({
 
 	return (
 		<div className="card card-pad">
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: 16,
-				}}
-			>
+			<div className="card-head-row">
 				<div>
 					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>{plural}</h4>
 					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
@@ -717,14 +710,7 @@ function PositionSection({
 
 	return (
 		<div className="card card-pad">
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: 16,
-				}}
-			>
+			<div className="card-head-row">
 				<div>
 					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Job Positions</h4>
 					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
@@ -1019,14 +1005,7 @@ function RoleSection({
 
 	return (
 		<div className="card card-pad">
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: 16,
-				}}
-			>
+			<div className="card-head-row">
 				<div>
 					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Job Roles</h4>
 					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
@@ -1297,14 +1276,7 @@ function ShiftSection() {
 
 	return (
 		<div className="card card-pad">
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: 16,
-				}}
-			>
+			<div className="card-head-row">
 				<div>
 					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Shifts</h4>
 					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>
@@ -1594,14 +1566,7 @@ function HolidaySection() {
 
 	return (
 		<div className="card card-pad">
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-					marginBottom: 16,
-				}}
-			>
+			<div className="card-head-row">
 				<div>
 					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Holidays</h4>
 					<p style={{ fontSize: "12.5px", color: "var(--fg-3)", marginTop: 4 }}>

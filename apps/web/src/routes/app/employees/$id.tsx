@@ -1021,9 +1021,7 @@ function EmployeeProfilePage() {
 												<Users size={11} />
 											</div>
 											<div>
-												<div className="desc">
-													Joined Atlas Shipping · Engineering
-												</div>
+												<div className="desc">Joined {org.orgName}</div>
 												<div className="meta">
 													Permanent contract · onboarding completed in 9 days
 												</div>
@@ -1806,7 +1804,7 @@ function EmployeeProfilePage() {
 										<Users size={11} />
 									</div>
 									<div>
-										<div className="desc">Joined Atlas Shipping</div>
+										<div className="desc">Joined {org.orgName}</div>
 										<div className="meta">
 											Engineering · onboarding completed in 9 days
 										</div>
