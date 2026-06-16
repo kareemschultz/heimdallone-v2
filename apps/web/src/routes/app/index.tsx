@@ -1,7 +1,16 @@
+import { StatTile, StatTileGrid } from "@Heimdallone/ui/components/stat-tile";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowRight, BarChart3, Bell } from "lucide-react";
+import {
+	ArrowRight,
+	BarChart3,
+	Bell,
+	CalendarClock,
+	Users,
+	Wrench,
+} from "lucide-react";
 import { useContext } from "react";
+import { canManageHR, canViewPayroll } from "@/lib/rbac";
 import { orpc } from "@/utils/orpc";
 import { isNavItemVisible, NAV, type NavItem, OrgCtx } from "./route";
 
@@ -30,13 +39,30 @@ const MODULE_BLURB: Record<string, string> = {
 
 function DashboardPage() {
 	const org = useContext(OrgCtx);
+	const role = org.memberRole;
+	const isManagement = canManageHR(role) || canViewPayroll(role);
+
 	const unreadQuery = useQuery(orpc.notifications.unreadCount.queryOptions({}));
 	const unread = unreadQuery.data?.count ?? 0;
 
-	// Role-aware module cards: only the modules this user can actually open.
-	// Reuses the sidebar's visibility rules so the overview never advertises a
-	// section the user cannot access. Overview/Settings and preview-only modules
-	// are excluded.
+	// Org-wide operational stats — only for management roles (others can't list).
+	const employeesQuery = useQuery({
+		...orpc.hrCore.employees.list.queryOptions({
+			input: { isActive: true, page: 1, pageSize: 1 },
+		}),
+		enabled: isManagement,
+	});
+	const pendingLeaveQuery = useQuery({
+		...orpc.leave.requests.list.queryOptions({
+			input: { status: "requested", page: 1, pageSize: 1 },
+		}),
+		enabled: isManagement,
+	});
+
+	const activeEmployees = employeesQuery.data?.total ?? 0;
+	const pendingLeave = pendingLeaveQuery.data?.total ?? 0;
+
+	// Role-aware module cards: only modules this user can open.
 	const modules = NAV.flatMap(
 		(group) => group.items as readonly NavItem[]
 	).filter(
@@ -44,10 +70,10 @@ function DashboardPage() {
 			item.key !== "overview" &&
 			item.key !== "settings" &&
 			!("preview" in item && item.preview) &&
-			isNavItemVisible(item.key, org.memberRole)
+			isNavItemVisible(item.key, role)
 	);
 
-	const roleLabel = org.memberRole.replace(/_/g, " ");
+	const roleLabel = role.replace(/_/g, " ");
 
 	return (
 		<div className="dash-wrap">
@@ -59,17 +85,54 @@ function DashboardPage() {
 						{roleLabel ? ` · ${roleLabel}` : ""}
 					</p>
 				</div>
-				{unread > 0 ? (
-					<div className="dash-unread" title="Unread notifications">
-						<Bell size={15} />
-						<span>
-							{unread} unread notification{unread === 1 ? "" : "s"}
-						</span>
-					</div>
-				) : null}
 			</header>
 
-			<section aria-label="Your modules" className="dash-grid">
+			<StatTileGrid>
+				{isManagement ? (
+					<StatTile
+						hint="Currently active"
+						icon={Users}
+						isLoading={employeesQuery.isLoading}
+						label="Active employees"
+						value={activeEmployees}
+					/>
+				) : null}
+				{isManagement ? (
+					<StatTile
+						hint="Awaiting approval"
+						icon={CalendarClock}
+						isLoading={pendingLeaveQuery.isLoading}
+						label="Pending leave"
+						tone={pendingLeave > 0 ? "warning" : undefined}
+						value={pendingLeave}
+					/>
+				) : null}
+				<StatTile
+					hint={unread === 0 ? "All caught up" : "In your inbox"}
+					icon={Bell}
+					isLoading={unreadQuery.isLoading}
+					label="Unread notifications"
+					tone={unread > 0 ? "primary" : undefined}
+					value={unread}
+				/>
+				{isManagement ? (
+					<StatTile
+						hint="Configure org, payroll, devices"
+						icon={Wrench}
+						label="Setup"
+						onClick={() => {
+							window.location.assign("/app/setup");
+						}}
+						value="Open"
+					/>
+				) : null}
+			</StatTileGrid>
+
+			<section
+				aria-label="Your modules"
+				className="dash-grid"
+				style={{ marginTop: 22 }}
+			>
 				{modules.map((item) => (
 					<Link className="dash-card card" key={item.key} to={item.href}>
 						<span className="dash-card-icon">
@@ -86,7 +149,7 @@ function DashboardPage() {
 				))}
 			</section>
 
-			{isNavItemVisible("analytics", org.memberRole) ? (
+			{isNavItemVisible("analytics", role) ? (
 				<Link className="dash-analytics" to="/app/analytics">
 					<BarChart3 size={16} />
 					<span>View full analytics &amp; reporting</span>
