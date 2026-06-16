@@ -11,27 +11,24 @@ live v1 stack. This is the operator/engineer record — not user-facing docs.
 
 | Image | Dockerfile | Base (build → runtime) | Why |
 | --- | --- | --- | --- |
-| `heimdallone-v2-server` | `Dockerfile.server` | `oven/bun:1.3.12-slim` → `debian:trixie-slim` | Built as a single `bun build --compile` binary; the minimal glibc runtime carries only the binary + `ca-certificates` (TLS) + `curl` (healthcheck) + `libstdc++6`. No node_modules, no source. |
-| `heimdallone-v2-web` | `Dockerfile.web` | `oven/bun:1.3.12-slim` → `oven/bun:1.3.12-slim` | TanStack Start → Nitro **node-server** `.output/` (deps inlined, self-contained). Runtime = bun-slim + `.output` + CA certs. |
-| `heimdallone-v2-docs` | `Dockerfile.docs` | `oven/bun:1.3.12-slim` → `oven/bun:1.3.12-slim` | Same Nitro pattern (`NITRO_PRESET=node-server`); Fumadocs. Optional — not required for app cutover. |
+| `heimdallone-v2-server` | `Dockerfile.server` | `oven/bun:1.3.12-slim` → `gcr.io/distroless/cc-debian12:nonroot` | Single `bun build --compile` binary on distroless/cc (glibc + libgcc + libstdc++ + ca-certs, no OS/shell). No node_modules, no source. |
+| `heimdallone-v2-web` | `Dockerfile.web` | `oven/bun:1.3.12-slim` → `oven/bun:1.3.12-alpine` | TanStack Start → Nitro **bun preset** `.output/` (deps inlined, self-contained). Alpine runtime is safe — runtime is pure JS; native build tools stay in the glibc build stage. |
+| `heimdallone-v2-docs` | `Dockerfile.docs` | `oven/bun:1.3.12-slim` → `oven/bun:1.3.12-alpine` | Same Nitro bun-preset pattern; Fumadocs. Optional — not required for app cutover. |
 
-**Base-image rationale.** `oven/bun:slim` (Debian/glibc) is the smallest *safe*
-base: Alpine (musl) is avoided because the Bun runtime + native-adjacent deps are
-not proven on musl; distroless is avoided because we need a working healthcheck +
-TLS + easy debugging. The server runtime is `debian:trixie-slim` (glibc) because a
-compiled Bun binary needs only libc + `libstdc++6` — no Bun toolchain — so this is
-smaller than shipping the bun image while staying glibc-compatible (TLS, ICU
-timezones, and `node-postgres` all verified).
+**Base-image rationale (smallest *safe*, proven by smoke test).**
+- **Server** is a glibc-linked compiled Bun binary → it **cannot** run on Alpine (musl). `distroless/cc` is the smallest glibc base that still has libstdc++ + ca-certs; verified `/health` 200 + TLS + ICU timezones + node-postgres.
+- **Web/docs** runtimes are the self-contained Nitro `.output` (pure JS) + Bun, so **Alpine (musl) is safe** — the native build tools (`@tailwindcss/oxide`, `lightningcss`) run only in the glibc *build* stage. Verified `/` and `/docs` 200 + TLS + tz.
 
-## Image sizes (local builds)
+## Image sizes (local builds, optimized)
 
-- server: **283 MB** (compiled binary; no node_modules)
-- web: **282 MB** (bun-slim base + ~7 MB `.output`)
-- docs: **282 MB** (bun-slim base + `.output`)
+- server: **179 MB** (distroless/cc + compiled binary; no node_modules, no shell)
+- web: **165 MB** (bun:alpine + ~7 MB `.output`)
+- docs: **164 MB** (bun:alpine + `.output`)
 
-The web/docs floor is the bun-slim base (~280 MB); the app payload is tiny. Going
-below ~200 MB would require Alpine (unproven for this stack) — rejected per the
-safety rule.
+Web/docs floor: the Bun runtime binary itself is ~120 MB, so **sub-100 MB is not
+reachable while shipping a JS runtime** — ~164 MB is the optimized floor for a
+`bun:alpine` runtime. (Down from ~282 MB on bun-slim.) Server dropped 283 → 179 MB
+by moving to distroless/cc.
 
 ## Build (CI → GHCR)
 
@@ -52,10 +49,12 @@ docker pull ghcr.io/kareemschultz/heimdallone-v2-server:sha-<short>
 ## Healthchecks
 
 - **server** — `GET /health` returns `{"status":"ok"}` (200) with **no DB
-  dependency** (route is registered before all middleware). Container HEALTHCHECK
-  uses `curl /health`.
-- **web / docs** — HEALTHCHECK fetches `/`; docs also serves `/docs`. (Nitro has
-  no dedicated health route; `/` is stable for docs.)
+  dependency** (route registered before all middleware). The distroless image has
+  **no in-image HEALTHCHECK** (no shell/curl) — probe `/health` **externally**
+  (compose/orchestrator/Pangolin), as the v1 deploy already does against
+  `https://api.heimdallone.com/health`.
+- **web / docs** — in-image HEALTHCHECK fetches `/` via `bun -e` (alpine ships
+  bun); docs also serves `/docs`.
 
 ## Run side-by-side (does not touch v1)
 
@@ -90,13 +89,17 @@ resources at the `heimdallone-v2-*` containers).
   keep running or be stopped. No DB restore needed because v1 still uses
   `karetech_erp` and v2 uses `heimdallone_v2_prod` (separate databases).
 
-## Known issue (pre-cutover blocker, app-level — not Docker)
+## Resolved: web production SSR (`Route.update is undefined`)
 
-The **web** image builds and boots, but SSR of `/` currently returns 500
-(`Route.update is undefined`) — a TanStack Start v1.167 + Nitro-beta production-SSR
-bug. Proven app-level, not infra: the **docs** image uses the identical Nitro
-node-server pattern and serves `/docs` → 200. This must be fixed before the web
-container is cutover-ready; the server + docs images are ready.
+The web image previously 500'd on `/` in production SSR. **Root cause: duplicate
+TanStack/React versions** in the lockfile (`@tanstack/router-core` 1.171.6 **and**
+1.171.13, plus duplicate `react-router`/`react-start`/`react`/`react-dom`). Nitro
+bundled both `router-core` copies, so a `Route` created by one was consumed by the
+other → `Route.update` undefined. **Fix:** pinned single versions via `overrides`
+in the root `package.json` (router-core 1.171.13, react-router 1.170.15,
+react-start 1.168.25, react/react-dom 19.2.7) + the official vite plugin order
+(`tanstackStart()` → `nitro({preset:"bun"})` → `viteReact()`). Web now serves
+`/` → 200 in the container. Keep `overrides` aligned when bumping TanStack.
 
 ## Secrets
 

@@ -27,10 +27,11 @@ export default defineConfig({
 	plugins: [
 		tailwindcss(),
 		tanstackStart(),
-		viteReact(),
-		// Self-hostable SSR output. Default to the Bun preset (the container
-		// runtime is Bun); inlines deps into .output/ so no node_modules at
-		// runtime. Overridable (e.g. NITRO_PRESET=vercel) without editing this file.
+		// Official order (TanStack Start + Bun docs): nitro() comes right after
+		// tanstackStart() and BEFORE viteReact(). Wrong order leaves route exports
+		// unbound in the SSR bundle → "Route.update is undefined". Bun preset
+		// (container runtime is Bun); overridable via NITRO_PRESET (e.g. vercel).
 		nitro({ preset: process.env.NITRO_PRESET ?? "bun" }),
+		viteReact(),
 	],
 });

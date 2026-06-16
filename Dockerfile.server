@@ -1,9 +1,9 @@
 # syntax=docker/dockerfile:1
 # Heimdallone v2 — API/server image.
-# Built as a single self-contained Bun executable (bun build --compile), so the
-# runtime image carries NO node_modules and NO source — just the binary on a
-# minimal glibc base with TLS certs. Smallest image that still runs Bun + TLS +
-# ICU timezones + the node-postgres driver reliably. Runs as non-root.
+# Built as a single self-contained Bun executable (bun build --compile), shipped on
+# distroless/cc (glibc + libgcc + libstdc++ + ca-certificates, no OS/shell). Smallest
+# safe image that runs the glibc-linked Bun binary with working TLS + ICU timezones
+# + node-postgres. Non-root. No node_modules, no source, no shell.
 ARG BUN_VERSION=1.3.12
 
 # ── build: install (frozen) + compile to a standalone binary ─────────────────
@@ -22,22 +22,16 @@ WORKDIR /app/apps/server
 # into one executable. --minify for size; no sourcemaps in the runtime.
 RUN bun build --compile --minify ./src/index.ts --outfile /tmp/heimdallone-server
 
-# ── runtime: minimal Debian + TLS certs only, non-root ───────────────────────
-FROM debian:trixie-slim AS runtime
+# ── runtime: distroless/cc (glibc) — smallest safe glibc base for the binary ──
+FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
 LABEL org.opencontainers.image.title="Heimdallone v2 server" \
       org.opencontainers.image.source="https://github.com/kareemschultz/heimdallone-v2" \
       org.opencontainers.image.description="Heimdallone v2 API/server (oRPC + Hono on Bun, compiled)"
-# ca-certificates: outbound TLS (OAuth/email/Stripe). curl: container healthcheck.
-# ca-certificates: outbound TLS. curl: healthcheck. libstdc++6: the compiled Bun
-# binary links against it on a bare Debian base.
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl libstdc++6 \
-  && rm -rf /var/lib/apt/lists/* \
-  && useradd -r -u 1000 -m -s /usr/sbin/nologin app
 COPY --from=build /tmp/heimdallone-server /usr/local/bin/heimdallone-server
-USER app
+# Standard distroless nonroot user (numeric, no /etc/passwd lookup needed).
+USER 65532:65532
 ENV PORT=3000 NODE_ENV=production
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
-  CMD curl -fsS "http://127.0.0.1:${PORT:-3000}/health" || exit 1
-CMD ["heimdallone-server"]
+# No in-image HEALTHCHECK: distroless has no shell/curl. /health is probed
+# externally (compose/orchestrator/Pangolin → GET /health, like the v1 deploy).
+ENTRYPOINT ["/usr/local/bin/heimdallone-server"]

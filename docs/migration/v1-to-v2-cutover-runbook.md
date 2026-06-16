@@ -139,8 +139,9 @@ export TAG=sha-<short>
 docker compose -f deploy/docker-compose.v2.yml --env-file deploy/.env.v2 up -d
 curl -fsS http://127.0.0.1:3100/health          # server → {"status":"ok"}
 curl -fsS http://127.0.0.1:3102/docs            # docs → 200
-# NOTE: web SSR of / currently 500s (app-level Route.update bug) — must be fixed
-# before the web container is cutover-ready. server + docs are ready.
+curl -fsS http://127.0.0.1:3101/                # web → 200 (SSR working)
+# All three images serve 200. (Web SSR Route.update bug was fixed via version
+# dedup — see docs/operations/docker-deployment.md.)
 ```
 
 ## 8. Post-load checks  — RUN AFTER PRODUCTION LOAD (read-only queries)

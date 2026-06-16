@@ -20,17 +20,19 @@ RUN bun install --frozen-lockfile --ignore-scripts
 COPY . .
 RUN bun run --filter=web build
 
-# ── runtime: self-contained Nitro output, non-root ──────────────────────────
-FROM base AS runtime
+# ── runtime: Alpine (musl). Safe here because the runtime is the self-contained
+# Nitro .output (pure JS) + Bun — the native build tools (tailwind oxide,
+# lightningcss) run only in the glibc build stage above, never at runtime. Alpine
+# drops the base from ~275 MB (bun-slim) to ~80 MB. Proven via smoke test.
+FROM oven/bun:${BUN_VERSION}-alpine AS runtime
+WORKDIR /app
 LABEL org.opencontainers.image.title="Heimdallone v2 web" \
       org.opencontainers.image.source="https://github.com/kareemschultz/heimdallone-v2" \
       org.opencontainers.image.description="Heimdallone v2 web app (TanStack Start SSR on Nitro)"
 ENV NODE_ENV=production
-# CA certs for any outbound TLS from the SSR server (bun-slim omits them).
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates \
-  && rm -rf /var/lib/apt/lists/*
-# Nitro node-server output is self-contained (deps inlined) — no node_modules at
+# CA certs for outbound TLS (alpine omits them; ICU for timezones ships with Bun).
+RUN apk add --no-cache ca-certificates
+# Nitro Bun-preset output is self-contained (deps inlined) — no node_modules at
 # runtime. Entry is .output/server/index.mjs (see .output/nitro.json).
 COPY --from=build /app/apps/web/.output ./.output
 USER bun
