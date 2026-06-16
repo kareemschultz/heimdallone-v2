@@ -216,3 +216,37 @@ do I register a time clock?" had no answer. Fixed (web-only, `sha-3753f5d`):
 Operator step (unchanged, needs the physical device + Pi): register the real
 ZLM60_TFT (serial PCY7012600500), capture its ingest key, re-point the Pi's
 script to the v2 endpoint — keep the v1 Gist as rollback until verified.
+
+## Pass 5 — payroll-correctness verification + payslip line backfill + QA audit (2026-06-16)
+
+### Payroll correctness (owner ask: "previous payrolls with correct formulas, hourly rates")
+
+- `migration:reconcile` re-run vs **GRA + v1**: readiness READY; statutory parity
+  for all 46 — NIS employee 46/46, NIS employer 46/46, personal allowance 46/46,
+  child allowance 46/46, PAYE 45 exact + 1 sub-cent rounding, **net identity
+  46/46**. 23 v1-bug reversals excluded.
+- **Payslip line backfill** (`scripts/migration/backfill-payslip-lines.ts`): the
+  detail view reads `payslip_line_item`; materialization wrote only totals, so
+  backfilled **189 line items across 46 payslips** from the reconciled v1
+  components, per-payslip-guarded (earnings==gross; PAYE+NIS+medical+other==
+  gross−net). Prod backed up first; idempotent.
+- **UI-verified** payslip detail (Netsurf, HR-EMP-00011, **wage type hourly,
+  contract rate $644**): Earnings Basic $12,000 + OT $750 + Public-holiday $7,100
+  + Transport $9,000 + Other $1,012.50 = **Gross $29,862.50**; NIS employee 5.6%
+  = $1,672.30; NIS employer 8.4% = $2,508.45 (transparency, not deducted); **Net
+  $28,190.20**. Hourly staff + pay rates render correctly.
+- The payslip-detail `getOwnById` 404 in the console is the **expected
+  self-service fallback** (admin isn't the payslip's owner → NOT_FOUND → renders
+  via admin `getById`); works for the employee themselves. Not a defect.
+
+### Hermes/Codex QA audit reconciliation (`qa-output/…/updated-comprehensive-qa-audit.md`)
+
+| Audit finding | Status now |
+|---------------|-----------|
+| Rate-limit 429s during traversal | **FIXED** — per-user limiter + internal exemption (the audit's fast single-IP crawl tripped the old shared bucket) |
+| 5 routes "Something went wrong" (payroll/loans, payroll/reports, contracts, assets, assets/requests) | **RESOLVED** — all load on single navigation; they were rate-limit artifacts of the crawl |
+| Payroll history "not materialized" | **DONE** — 46 payslips materialized + line breakdown, reconciled |
+| Compliance fake data (Atlas Shipping/Maya Persaud/Lia Roberts) | Admin-gated **Preview** scaffold on labeled sample data; not shown to normal users (deferred de-fake) |
+| Departments / job positions empty | Deferred — v1 names not staged; needs a v1 pull or manual setup |
+| Unlabeled inputs / icon-only buttons (a11y) | Partial — new device form + copy buttons are labelled; broader a11y label sweep remains |
+| Full CTA/button-by-button testing | Ongoing — key flows verified, exhaustive sweep remains |
