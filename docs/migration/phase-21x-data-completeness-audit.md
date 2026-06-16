@@ -18,9 +18,9 @@ what v1 actually contained and what reached v2 — and separates **migration gap
 | Per-payslip **allowances** | transport/holiday/OT/etc. | ✅ as payslip line items | ✅ transferred |
 | Shifts / roster / shift-rules | 6 / 175 / 6 | 6 / 175 / 6 | ✅ migrated |
 | GL accounts / journals | 11 / 11 | 11 / 11 | ✅ migrated |
-| **Leave policies** | **6** | 0 | 🔴 GAP — migrate next |
-| **Leave balances** | **36** | 0 | 🔴 GAP — migrate next |
-| **Leave requests** | **2** | 0 | 🔴 GAP — migrate next |
+| **Leave policies** | **6** | 6 leave types | ✅ migrated (`migrate-leave.ts`) |
+| **Leave balances** | **36** | 36 | ✅ migrated |
+| **Leave requests** | **2** | 2 | ✅ migrated |
 | **Salary-structure assignments** (recurring allowance/pay config) | **33** | 0 | 🟠 GAP — feeds go-forward payroll (not historical) |
 | Departments / job positions | (ids only, no names staged) | 0 | 🟠 needs v1 names pull or manual |
 
