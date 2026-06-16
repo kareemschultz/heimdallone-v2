@@ -745,16 +745,18 @@ function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 							<span className="kbd">K</span>
 						</span>
 					</button>
-					<button
+					<a
 						className="menu-item"
+						href="https://docs.heimdallone.com"
 						onClick={() => setUserMenuOpen(false)}
-						type="button"
+						rel="noopener"
+						target="_blank"
 					>
 						<span className="menu-icon">
 							<Info size={14} />
 						</span>{" "}
 						Help &amp; docs
-					</button>
+					</a>
 					<div className="menu-sep" />
 					<button
 						className="menu-item danger"
@@ -981,9 +983,15 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 					</div>
 				</div>
 
-				<button className="icon-btn" title="Help" type="button">
+				<a
+					className="icon-btn"
+					href="https://docs.heimdallone.com"
+					rel="noopener"
+					target="_blank"
+					title="Help & documentation"
+				>
 					<Info size={16} />
-				</button>
+				</a>
 				<div
 					style={{
 						width: "1px",

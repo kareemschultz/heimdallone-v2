@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
 	Activity,
 	ArrowRight,
@@ -19,8 +19,18 @@ import {
 	Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getHost } from "@/functions/get-host";
 
 export const Route = createFileRoute("/")({
+	// The app subdomain is the application, not the marketing site (mirrors v1:
+	// app.heimdallone.com → app, heimdallone.com/www → marketing). All three hosts
+	// hit this same web app, so route by Host here.
+	beforeLoad: async () => {
+		const host = await getHost();
+		if (host.startsWith("app.")) {
+			throw redirect({ to: "/app" });
+		}
+	},
 	component: MarketingLanding,
 });
 
