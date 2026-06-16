@@ -983,7 +983,7 @@ function ContractSheet({
 							className="input"
 							id="cs-contract-name"
 							onChange={(e) => setContractName(e.target.value)}
-							placeholder="e.g. Maya Persaud — 2026 Employment Agreement"
+							placeholder="e.g. 2026 Employment Agreement"
 							style={{ height: 34 }}
 							type="text"
 							value={contractName}

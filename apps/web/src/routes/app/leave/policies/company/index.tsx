@@ -80,7 +80,7 @@ function CreatePolicyDialog({
 						<input
 							id="cp-name"
 							onChange={(e) => setName(e.target.value)}
-							placeholder="e.g. Atlas Shipping leave 2026"
+							placeholder="e.g. Annual leave 2026"
 							value={name}
 						/>
 					</label>
