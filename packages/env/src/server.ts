@@ -9,6 +9,9 @@ export const env = createEnv({
 		BETTER_AUTH_URL: z.url(),
 		CORS_ORIGIN: z.url(),
 		PLATFORM_ADMIN_USER_ID: z.string().optional(),
+		// Google OAuth (optional) — when both are set, Google sign-in is enabled.
+		GOOGLE_CLIENT_ID: z.string().optional(),
+		GOOGLE_CLIENT_SECRET: z.string().optional(),
 		NODE_ENV: z
 			.enum(["development", "production", "test"])
 			.default("development"),

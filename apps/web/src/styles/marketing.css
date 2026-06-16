@@ -171,3 +171,26 @@
 		grid-template-columns: 1fr 1fr;
 	}
 }
+
+/* Phones: collapse the wide nav links so the top bar doesn't overflow.
+   NOTE: the marketing landing is a design-handover mockup (not the real product)
+   and should be replaced or hidden before public go-live — this is only a minimal
+   overflow guard, not a polish pass. */
+@media (max-width: 720px) {
+	.m-nav-inner {
+		gap: 12px;
+	}
+	.m-nav-links {
+		display: none;
+	}
+	.m-nav-actions {
+		gap: 8px;
+	}
+	.footer-grid {
+		grid-template-columns: 1fr 1fr;
+	}
+	.footer-meta {
+		flex-direction: column;
+		gap: 10px;
+	}
+}

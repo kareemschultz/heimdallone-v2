@@ -1,4 +1,5 @@
 import { createDb } from "@Heimdallone/db";
+// biome-ignore lint/performance/noNamespaceImport: drizzle schema is consumed as a namespace (schema.*)
 import * as schema from "@Heimdallone/db/schema/auth";
 import { env } from "@Heimdallone/env/server";
 import { expo } from "@better-auth/expo";
@@ -26,6 +27,19 @@ export function createAuth() {
 		emailAndPassword: {
 			enabled: true,
 		},
+		// Google sign-in (preserved from v1). Registered only when the client
+		// id/secret are present so non-Google deployments are unaffected. Callback
+		// is ${BETTER_AUTH_URL}/api/auth/callback/google.
+		...(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET
+			? {
+					socialProviders: {
+						google: {
+							clientId: env.GOOGLE_CLIENT_ID,
+							clientSecret: env.GOOGLE_CLIENT_SECRET,
+						},
+					},
+				}
+			: {}),
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.BETTER_AUTH_URL,
 		advanced: {
@@ -48,7 +62,7 @@ export function createAuth() {
 							return {
 								data: {
 									...session,
-									activeOrganizationId: members[0]!.organizationId,
+									activeOrganizationId: members[0]?.organizationId,
 								},
 							};
 						}
@@ -64,6 +78,7 @@ export function createAuth() {
 				roles,
 				allowUserToCreateOrganization: true,
 				creatorRole: "tenant_owner",
+				// biome-ignore lint/suspicious/useAwait: better-auth expects an async signature
 				sendInvitationEmail: async (data) => {
 					console.log(
 						`[dev] Invitation to ${data.email}, org: ${data.organization.name}`

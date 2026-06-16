@@ -105,6 +105,23 @@ function LoginPage() {
 		}
 	};
 
+	const signInGoogle = async () => {
+		try {
+			const res = await fetch("/api/auth/sign-in/social", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ provider: "google", callbackURL: "/app" }),
+				credentials: "include",
+			});
+			const data = await res.json();
+			if (data?.url) {
+				window.location.href = data.url;
+			}
+		} catch {
+			// Leave the button in place; the user can retry.
+		}
+	};
+
 	return (
 		<div className="login-grid">
 			{/* LEFT visual */}
@@ -255,9 +272,9 @@ function LoginPage() {
 							<Key size={14} />
 							SSO
 						</button>
-						<button className="sso-btn" type="button">
+						<button className="sso-btn" onClick={signInGoogle} type="button">
 							<Building size={14} />
-							Google Workspace
+							Continue with Google
 						</button>
 						<button className="sso-btn" type="button">
 							<Fingerprint size={14} />
