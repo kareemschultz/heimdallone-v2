@@ -282,7 +282,6 @@ export const NAV = [
 				label: "Countries & Tax",
 				icon: Globe,
 				href: "/app/countries",
-				preview: true,
 			},
 			{
 				key: "compliance",
@@ -382,12 +381,7 @@ function useCurrentNavKey(): string {
 // kept reachable for admin QA but hidden from normal tenant users so production
 // navigation only advertises usable features. Gated to canManageHR like the
 // migration cutover tool.
-const PREVIEW_KEYS = new Set([
-	"countries",
-	"compliance",
-	"documents",
-	"clients",
-]);
+const PREVIEW_KEYS = new Set(["compliance", "documents", "clients"]);
 
 export function isNavItemVisible(key: string, role: string): boolean {
 	// Migration status is an HR/admin cutover tool — restrict it to canManageHR
