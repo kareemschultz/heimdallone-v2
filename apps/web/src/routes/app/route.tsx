@@ -149,7 +149,7 @@ export const Route = createFileRoute("/app")({
 	},
 });
 
-const NAV = [
+export const NAV = [
 	{
 		group: "Operate",
 		items: [
@@ -364,7 +364,7 @@ const PREVIEW_KEYS = new Set([
 	"clients",
 ]);
 
-function isNavItemVisible(key: string, role: string): boolean {
+export function isNavItemVisible(key: string, role: string): boolean {
 	// Migration status is an HR/admin cutover tool — restrict it to canManageHR
 	// (owner/admin/hr_admin) BEFORE the canViewPayroll see-all branch, so payroll
 	// and auditor don't see an entry that would only 403.

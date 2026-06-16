@@ -1712,3 +1712,122 @@ button {
 .widget {
 	border-radius: 12px;
 }
+
+/* ============================================================
+   Overview dashboard — truthful, role-aware module cards
+   ============================================================ */
+.dash-wrap {
+	padding: 24px;
+	max-width: 1100px;
+}
+.dash-head {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 16px;
+	margin-bottom: 22px;
+}
+.dash-sub {
+	margin-top: 4px;
+	font-size: 13.5px;
+	color: var(--fg-3);
+	text-transform: capitalize;
+}
+.dash-unread {
+	display: inline-flex;
+	align-items: center;
+	gap: 7px;
+	padding: 7px 12px;
+	font-size: 12.5px;
+	color: var(--fg-2);
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	white-space: nowrap;
+}
+.dash-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 14px;
+}
+.dash-card {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 16px;
+	border-radius: 12px;
+	transition:
+		border-color 120ms ease,
+		transform 120ms ease,
+		background 120ms ease;
+}
+.dash-card:hover {
+	border-color: var(--accent);
+	transform: translateY(-1px);
+	background: var(--bg-2);
+}
+.dash-card-icon {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 38px;
+	height: 38px;
+	color: var(--accent);
+	background: var(--accent-soft, rgba(120, 140, 255, 0.14));
+	border-radius: 10px;
+}
+.dash-card-body {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	min-width: 0;
+	flex: 1;
+}
+.dash-card-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.dash-card-desc {
+	font-size: 12px;
+	line-height: 1.35;
+	color: var(--fg-3);
+}
+.dash-card-arrow {
+	flex-shrink: 0;
+	color: var(--fg-4);
+}
+.dash-card:hover .dash-card-arrow {
+	color: var(--accent);
+}
+.dash-analytics {
+	display: inline-flex;
+	align-items: center;
+	gap: 9px;
+	margin-top: 20px;
+	padding: 11px 16px;
+	font-size: 13.5px;
+	font-weight: 500;
+	color: var(--fg);
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 11px;
+	transition: background 120ms ease;
+}
+.dash-analytics:hover {
+	background: var(--bg-3);
+}
+
+@media (max-width: 768px) {
+	.dash-wrap {
+		padding: 16px;
+	}
+	.dash-head {
+		flex-direction: column;
+		gap: 10px;
+	}
+	.dash-grid {
+		grid-template-columns: 1fr;
+	}
+}
