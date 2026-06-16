@@ -1,14 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-	ArrowRight,
-	Building,
-	Fingerprint,
-	Key,
-	Lock,
-	Moon,
-	Sun,
-	User,
-} from "lucide-react";
+import { ArrowRight, Lock, Moon, Sun, User } from "lucide-react";
 import { type FormEvent, useEffect, useState } from "react";
 
 export const Route = createFileRoute("/login")({
@@ -53,7 +44,9 @@ function ThemeToggle() {
 		document.documentElement.setAttribute("data-theme", t);
 		try {
 			localStorage.setItem("heimdall.theme", t);
-		} catch {}
+		} catch {
+			// localStorage may be unavailable (private mode); persistence is best-effort.
+		}
 	};
 
 	return (
@@ -80,13 +73,46 @@ function ThemeToggle() {
 	);
 }
 
+// Google "G" mark (kept inline so we don't pull in an icon dependency).
+function GoogleMark({ size = 16 }: { size?: number }) {
+	return (
+		<svg
+			aria-hidden="true"
+			height={size}
+			viewBox="0 0 18 18"
+			width={size}
+			xmlns="http://www.w3.org/2000/svg"
+		>
+			<path
+				d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.57 2.68-3.89 2.68-6.62z"
+				fill="#4285F4"
+			/>
+			<path
+				d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.85.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18z"
+				fill="#34A853"
+			/>
+			<path
+				d="M3.97 10.72A5.4 5.4 0 0 1 3.68 9c0-.6.1-1.18.29-1.72V4.95H.96A9 9 0 0 0 0 9c0 1.45.35 2.83.96 4.05l3.01-2.33z"
+				fill="#FBBC05"
+			/>
+			<path
+				d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58z"
+				fill="#EA4335"
+			/>
+		</svg>
+	);
+}
+
 function LoginPage() {
 	const [email, setEmail] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
+	const [googleLoading, setGoogleLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
 	const handleSubmit = async (e: FormEvent) => {
 		e.preventDefault();
+		setError(null);
 		setLoading(true);
 		try {
 			const res = await fetch("/api/auth/sign-in/email", {
@@ -96,29 +122,41 @@ function LoginPage() {
 				credentials: "include",
 			});
 			if (!res.ok) {
+				setError("Incorrect email or password. Please try again.");
 				setLoading(false);
 				return;
 			}
 			window.location.href = "/app";
 		} catch {
+			setError("Something went wrong. Please try again.");
 			setLoading(false);
 		}
 	};
 
 	const signInGoogle = async () => {
+		setError(null);
+		setGoogleLoading(true);
 		try {
+			// Absolute callback to THIS app origin. The auth server lives on a
+			// different subdomain (api.), so a relative "/app" would resolve to
+			// api./app (404). window.location.origin keeps it correct per host.
+			const callbackURL = `${window.location.origin}/app`;
 			const res = await fetch("/api/auth/sign-in/social", {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ provider: "google", callbackURL: "/app" }),
+				body: JSON.stringify({ provider: "google", callbackURL }),
 				credentials: "include",
 			});
 			const data = await res.json();
 			if (data?.url) {
 				window.location.href = data.url;
+				return;
 			}
+			setError("Could not start Google sign-in. Please try again.");
+			setGoogleLoading(false);
 		} catch {
-			// Leave the button in place; the user can retry.
+			setError("Could not start Google sign-in. Please try again.");
+			setGoogleLoading(false);
 		}
 	};
 
@@ -136,90 +174,62 @@ function LoginPage() {
 
 					<div className="login-hero">
 						<div className="eyebrow" style={{ marginBottom: "16px" }}>
-							Workforce command center
+							Workforce operating system
 						</div>
 						<h1>
-							Sign in to run
+							One sign-in for your
 							<br />
-							your <em>operations</em>.
+							entire <em>workforce</em>.
 						</h1>
 						<p>
-							One sign-in for every tenant. Role-scoped data, country-aware
-							defaults, audit trail on every action.
+							HR, payroll, attendance, leave, contracts and assets — one
+							role-aware platform for every team, location and country you
+							operate in.
 						</p>
 
-						<div className="status-card">
-							<div className="status-row">
-								<span className="l">
-									<span className="ok-dot" />
-									Payroll engine
-								</span>
-								<span className="v">Operational</span>
-							</div>
-							<div className="status-row">
-								<span className="l">
-									<span className="ok-dot" />
-									Attendance ingest
-								</span>
-								<span className="v">Operational</span>
-							</div>
-							<div className="status-row">
-								<span className="l">
-									<span
-										className="ok-dot"
-										style={{
-											background: "var(--warning)",
-											boxShadow: "0 0 0 3px var(--warning-soft)",
-										}}
-									/>
-									JM tax tables
-								</span>
-								<span className="v">v2026.1 staged</span>
-							</div>
-							<div className="status-row">
-								<span className="l">
-									<span className="ok-dot" />
-									Audit ledger
-								</span>
-								<span className="v">Sealed · 14:42</span>
-							</div>
-						</div>
+						<ul className="login-points">
+							<li>Multi-tenant organisations with role-scoped access</li>
+							<li>Country-aware payroll &amp; statutory rules</li>
+							<li>Biometric attendance &amp; leave built in</li>
+							<li>Audit trail on every action</li>
+						</ul>
 					</div>
 
 					<div className="footer-row">
-						<span>SOC 2 Type II · ISO 27001</span>
-						<span className="mono">status.heimdallone.app</span>
+						<span>Secure by design · role-based access control</span>
 					</div>
 				</div>
 			</aside>
 
 			{/* RIGHT form */}
 			<main className="login-right">
-				<div className="login-right-top">
-					<div />
-					<div className="right-link">
-						New here? <a href="#">Request access →</a>
-					</div>
-				</div>
-
 				<div className="login-form-wrap">
 					<h2>Welcome back</h2>
 					<p className="sub">Sign in to continue to Heimdallone.</p>
 
-					<div className="org-hint">
-						<div className="tenant-avatar">AS</div>
-						<div>
-							<div className="org-name">Atlas Shipping</div>
-							<div className="org-sub">
-								atlas-shipping.heimdallone.app · GY · TT
-							</div>
+					<button
+						className="sso-btn sso-btn-primary"
+						disabled={googleLoading}
+						onClick={signInGoogle}
+						type="button"
+					>
+						<GoogleMark size={16} />
+						{googleLoading ? "Redirecting…" : "Continue with Google"}
+					</button>
+
+					<div className="divider-or">or sign in with email</div>
+
+					{error ? (
+						<div className="login-error" role="alert">
+							{error}
 						</div>
-						<div className="switch">Switch</div>
-					</div>
+					) : null}
 
 					<form onSubmit={handleSubmit}>
 						<div className="field">
-							<label className="label">Work email</label>
+							<label className="label" htmlFor="login-email">
+								Work email
+							</label>
 							<div className="input-with-icon">
 								<span className="icon-l">
 									<User size={14} />
@@ -227,8 +237,9 @@ function LoginPage() {
 								<input
 									autoComplete="email"
 									className="input"
+									id="login-email"
 									onChange={(e) => setEmail(e.target.value)}
-									placeholder="you@atlas-shipping.com"
+									placeholder="you@company.com"
 									required
 									type="email"
 									value={email}
@@ -236,10 +247,9 @@ function LoginPage() {
 							</div>
 						</div>
 						<div className="field">
-							<div className="field-row">
-								<label className="label">Password</label>
-								<a href="#">Forgot?</a>
-							</div>
+							<label className="label" htmlFor="login-password">
+								Password
+							</label>
 							<div className="input-with-icon">
 								<span className="icon-l">
 									<Lock size={14} />
@@ -247,6 +257,7 @@ function LoginPage() {
 								<input
 									autoComplete="current-password"
 									className="input"
+									id="login-password"
 									onChange={(e) => setPassword(e.target.value)}
 									placeholder="••••••••"
 									required
@@ -265,32 +276,14 @@ function LoginPage() {
 						</button>
 					</form>
 
-					<div className="divider-or">or continue with</div>
-
-					<div className="sso-row">
-						<button className="sso-btn" type="button">
-							<Key size={14} />
-							SSO
-						</button>
-						<button className="sso-btn" onClick={signInGoogle} type="button">
-							<Building size={14} />
-							Continue with Google
-						</button>
-						<button className="sso-btn" type="button">
-							<Fingerprint size={14} />
-							Passkey
-						</button>
-					</div>
-
 					<p className="legal">
-						By continuing you agree to the <a href="#">Terms</a> and{" "}
-						<a href="#">Privacy Policy</a>.
+						Trouble signing in? Contact your workspace administrator.
 					</p>
 				</div>
 
 				<div className="footer-row">
 					<ThemeToggle />
-					<span className="mono">v0.4.0-preview</span>
+					<span className="mono">Heimdallone v2</span>
 				</div>
 			</main>
 		</div>

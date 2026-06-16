@@ -33,7 +33,7 @@ function PayrollSettingsPage() {
 	const [saving, setSaving] = useState(false);
 
 	const activeProfile = profiles?.find(
-		(p: { isActive: boolean }) => p.isActive
+		(p: { isPublished: boolean }) => p.isPublished
 	);
 
 	const val = (key: string, fallback: string | number | boolean = "") => {

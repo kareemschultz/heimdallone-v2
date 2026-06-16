@@ -402,7 +402,7 @@ function ReadinessStep({
 		orpc.payroll.settings.listCountryProfiles.queryOptions({})
 	);
 	const activeProfile = profiles?.find(
-		(p: { isActive: boolean }) => p.isActive
+		(p: { isPublished: boolean }) => p.isPublished
 	);
 
 	const checks = [

@@ -303,3 +303,71 @@
 		display: none;
 	}
 }
+
+/* Production login polish — value props, error state, primary Google button */
+.login-points {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 0;
+	margin-top: 26px;
+	list-style: none;
+}
+.login-points li {
+	position: relative;
+	padding-left: 22px;
+	font-size: 13.5px;
+	line-height: 1.4;
+	color: var(--fg-2);
+}
+.login-points li::before {
+	position: absolute;
+	top: 6px;
+	left: 0;
+	width: 8px;
+	height: 8px;
+	content: "";
+	background: var(--accent);
+	border-radius: 50%;
+	box-shadow: 0 0 0 3px var(--accent-soft, rgba(120, 140, 255, 0.18));
+}
+
+.login-error {
+	padding: 10px 12px;
+	margin-bottom: 14px;
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--danger, #ef4444);
+	background: color-mix(in oklab, var(--danger, #ef4444) 12%, transparent);
+	border: 1px solid color-mix(in oklab, var(--danger, #ef4444) 35%, transparent);
+	border-radius: 10px;
+}
+
+/* Single full-width SSO/Google button */
+.login-form-wrap .sso-btn {
+	gap: 10px;
+	justify-content: center;
+	width: 100%;
+	height: 42px;
+	font-weight: 500;
+	border-radius: 11px;
+}
+.sso-btn-primary {
+	color: var(--fg);
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+}
+.sso-btn-primary:hover {
+	background: var(--bg-3);
+}
+
+@media (max-width: 900px) {
+	.login-right {
+		padding: 24px 18px;
+	}
+	.login-form-wrap {
+		width: 100%;
+		max-width: 420px;
+		margin: 0 auto;
+	}
+}

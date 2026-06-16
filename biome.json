@@ -29,7 +29,8 @@
       "!design_handoff_heimdallone",
       "!.references",
       "!.agents",
-      "!apps/docs"
+      "!apps/docs",
+      "!apps/web/public"
     ]
   },
   "formatter": {

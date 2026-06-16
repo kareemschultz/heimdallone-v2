@@ -15,7 +15,6 @@ import {
 	Clock,
 	Command,
 	DatabaseBackup,
-	ExternalLink,
 	FileText,
 	FolderKanban,
 	Globe,
@@ -28,8 +27,6 @@ import {
 	Moon,
 	Package,
 	PanelLeft,
-	Play,
-	Plus,
 	Search,
 	Settings,
 	Shield,
@@ -167,7 +164,6 @@ const NAV = [
 				label: "Employees",
 				icon: Users,
 				href: "/app/employees",
-				meta: "1,284",
 			},
 			{
 				key: "attendance",
@@ -180,15 +176,12 @@ const NAV = [
 				label: "Leave",
 				icon: Calendar,
 				href: "/app/leave",
-				meta: "12",
 			},
 			{
 				key: "payroll",
 				label: "Payroll",
 				icon: Wallet,
 				href: "/app/payroll",
-				meta: "●",
-				metaAccent: true,
 			},
 			{
 				key: "contracts",
@@ -360,11 +353,26 @@ function useCurrentNavKey(): string {
 	return segment || "overview";
 }
 
+// Preview/scaffold modules not backed by live data (sample/demo only). These are
+// kept reachable for admin QA but hidden from normal tenant users so production
+// navigation only advertises usable features. Gated to canManageHR like the
+// migration cutover tool.
+const PREVIEW_KEYS = new Set([
+	"countries",
+	"compliance",
+	"documents",
+	"clients",
+]);
+
 function isNavItemVisible(key: string, role: string): boolean {
 	// Migration status is an HR/admin cutover tool — restrict it to canManageHR
 	// (owner/admin/hr_admin) BEFORE the canViewPayroll see-all branch, so payroll
 	// and auditor don't see an entry that would only 403.
 	if (key === "migration-status") {
+		return canManageHR(role);
+	}
+	// Preview/scaffold modules: admin-only (QA), hidden from everyone else.
+	if (PREVIEW_KEYS.has(key)) {
 		return canManageHR(role);
 	}
 	if (canViewPayroll(role)) {
@@ -393,11 +401,33 @@ function isNavItemVisible(key: string, role: string): boolean {
 	return false;
 }
 
-function AppSidebar() {
+function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 	const currentKey = useCurrentNavKey();
 	const org = useContext(OrgCtx);
 	const [tenantMenuOpen, setTenantMenuOpen] = useState(false);
 	const [userMenuOpen, setUserMenuOpen] = useState(false);
+	const [switchingOrgId, setSwitchingOrgId] = useState<string | null>(null);
+	// Real list of organizations this user belongs to (better-auth org plugin).
+	// Drives the tenant switcher so every authorized workspace is selectable.
+	const orgListQuery = authClient.useListOrganizations();
+	const organizations = orgListQuery.data ?? [];
+	const activeOrg = authClient.useActiveOrganization();
+	const activeOrgId = activeOrg.data?.id ?? "";
+
+	const switchOrg = async (organizationId: string) => {
+		if (organizationId === activeOrgId) {
+			setTenantMenuOpen(false);
+			return;
+		}
+		setSwitchingOrgId(organizationId);
+		try {
+			await authClient.organization.setActive({ organizationId });
+			// Hard reload to /app so every tenant-scoped query refetches cleanly.
+			window.location.assign("/app");
+		} catch {
+			setSwitchingOrgId(null);
+		}
+	};
 	const initials = org.orgName
 		.split(" ")
 		.map((w) => w[0])
@@ -482,47 +512,58 @@ function AppSidebar() {
 						top: "calc(100% - 6px)",
 					}}
 				>
-					<div className="menu-section">Workspace</div>
-					<button
-						className="menu-item"
-						onClick={() => setTenantMenuOpen(false)}
-						type="button"
-					>
-						<span
-							className="tenant-avatar"
-							style={{
-								width: "22px",
-								height: "22px",
-								borderRadius: "7px",
-								fontSize: "10px",
-							}}
-						>
-							{initials}
-						</span>
-						<span style={{ flex: 1 }}>{org.orgName}</span>
-						<span className="menu-meta">current</span>
-					</button>
+					<div className="menu-section">
+						{organizations.length > 1 ? "Switch workspace" : "Workspace"}
+					</div>
+					{organizations.map((o) => {
+						const isCurrent = o.id === activeOrgId;
+						const oInitials = o.name
+							.split(" ")
+							.map((w) => w[0])
+							.join("")
+							.slice(0, 2)
+							.toUpperCase();
+						return (
+							<button
+								className="menu-item"
+								disabled={switchingOrgId !== null}
+								key={o.id}
+								onClick={() => switchOrg(o.id)}
+								type="button"
+							>
+								<span
+									className="tenant-avatar"
+									style={{
+										width: "22px",
+										height: "22px",
+										borderRadius: "7px",
+										fontSize: "10px",
+									}}
+								>
+									{oInitials}
+								</span>
+								<span style={{ flex: 1, minWidth: 0 }}>{o.name}</span>
+								{isCurrent ? <span className="menu-meta">current</span> : null}
+								{switchingOrgId === o.id ? (
+									<span className="menu-meta">switching…</span>
+								) : null}
+							</button>
+						);
+					})}
 					<div className="menu-sep" />
-					<button
+					<Link
 						className="menu-item"
-						onClick={() => setTenantMenuOpen(false)}
-						type="button"
-					>
-						<span className="menu-icon">
-							<Plus size={14} />
-						</span>
-						<span>Create workspace</span>
-					</button>
-					<button
-						className="menu-item"
-						onClick={() => setTenantMenuOpen(false)}
-						type="button"
+						onClick={() => {
+							setTenantMenuOpen(false);
+							onNavigate?.();
+						}}
+						to="/app/settings"
 					>
 						<span className="menu-icon">
 							<Settings size={14} />
 						</span>
 						<span>Workspace settings</span>
-					</button>
+					</Link>
 				</div>
 			</div>
 
@@ -541,6 +582,7 @@ function AppSidebar() {
 							<Link
 								className={`nav-item ${item.key === currentKey ? "active" : ""}`}
 								key={item.key}
+								onClick={() => onNavigate?.()}
 								title={item.label}
 								to={item.href}
 							>
@@ -566,18 +608,6 @@ function AppSidebar() {
 										title="Preview module — not backed by live data"
 									>
 										Preview
-									</span>
-								) : null}
-								{"meta" in item && item.meta ? (
-									<span
-										className="nav-meta"
-										style={
-											"metaAccent" in item && item.metaAccent
-												? { color: "var(--accent)" }
-												: undefined
-										}
-									>
-										{item.meta}
 									</span>
 								) : null}
 							</Link>
@@ -754,7 +784,6 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 	const org = useContext(OrgCtx);
 	const queryClient = useQueryClient();
 	const [_theme, setTheme] = useState("dark");
-	const [syncMenuOpen, setSyncMenuOpen] = useState(false);
 	const [notifMenuOpen, setNotifMenuOpen] = useState(false);
 	const [userMenuOpen, setUserMenuOpen] = useState(false);
 
@@ -790,7 +819,6 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 	}, []);
 
 	const closeAll = useCallback(() => {
-		setSyncMenuOpen(false);
 		setNotifMenuOpen(false);
 		setUserMenuOpen(false);
 	}, []);
@@ -825,95 +853,6 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 				</span>
 			</button>
 
-			{/* HR Sync Badge */}
-			<div
-				className="menu-root"
-				style={{ display: "flex", alignItems: "center", gap: "6px" }}
-			>
-				<button
-					className="badge badge-success"
-					onClick={() => {
-						setSyncMenuOpen(!syncMenuOpen);
-						setNotifMenuOpen(false);
-						setUserMenuOpen(false);
-					}}
-					style={{
-						border: 0,
-						cursor: "pointer",
-						fontFamily: "inherit",
-						height: "26px",
-						padding: "0 10px",
-					}}
-					title="Last HR data sync — sample data only in this demo build. Click for details."
-					type="button"
-				>
-					<span className="badge-dot" />
-					Demo sync status
-				</button>
-				<div
-					className="menu"
-					data-open={syncMenuOpen ? "true" : "false"}
-					data-side="bottom-start"
-					style={{ minWidth: "280px" }}
-				>
-					<div className="menu-section">Integration status (preview)</div>
-					<div style={{ padding: "8px 10px" }}>
-						<div
-							style={{
-								marginBottom: "6px",
-								fontSize: "11.5px",
-								lineHeight: 1.4,
-								color: "var(--fg-3)",
-							}}
-						>
-							Sample data — this build is not connected to a live HRMS sync.
-						</div>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "space-between",
-								fontSize: "12.5px",
-							}}
-						>
-							<span style={{ color: "var(--fg-2)" }}>Status</span>
-							<span
-								className="badge"
-								style={{ height: "18px", color: "var(--fg-3)" }}
-							>
-								<span className="badge-dot" />
-								Demo
-							</span>
-						</div>
-						<div className="kv" style={{ padding: "6px 0" }}>
-							<span className="kv-k">Last full sync</span>
-							<span className="kv-v">14:42:08</span>
-						</div>
-						<div className="kv" style={{ padding: "6px 0" }}>
-							<span className="kv-k">Records ingested</span>
-							<span className="kv-v">1,284</span>
-						</div>
-						<div className="kv" style={{ padding: "6px 0" }}>
-							<span className="kv-k">Next sync</span>
-							<span className="kv-v">15:00</span>
-						</div>
-					</div>
-					<div className="menu-sep" />
-					<button className="menu-item" onClick={closeAll} type="button">
-						<span className="menu-icon">
-							<Play size={14} />
-						</span>{" "}
-						Sync now
-					</button>
-					<button className="menu-item" onClick={closeAll} type="button">
-						<span className="menu-icon">
-							<ExternalLink size={14} />
-						</span>{" "}
-						Open Horilla admin
-					</button>
-				</div>
-			</div>
-
 			{/* Right side */}
 			<div
 				style={{
@@ -931,7 +870,6 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 						className="icon-btn"
 						onClick={() => {
 							setNotifMenuOpen(!notifMenuOpen);
-							setSyncMenuOpen(false);
 							setUserMenuOpen(false);
 						}}
 						style={{ position: "relative" }}
@@ -1045,7 +983,6 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 						className="avatar"
 						onClick={() => {
 							setUserMenuOpen(!userMenuOpen);
-							setSyncMenuOpen(false);
 							setNotifMenuOpen(false);
 						}}
 						style={{
@@ -1132,6 +1069,17 @@ function AppLayout() {
 			window.localStorage.setItem(SIDEBAR_COLLAPSE_KEY, next ? "1" : "0");
 			return next;
 		});
+	// Mobile: the sidebar is an off-canvas drawer toggled by the topbar button.
+	// On desktop the same button collapses the rail (existing behaviour).
+	const [mobileNavOpen, setMobileNavOpen] = useState(false);
+	const closeMobileNav = useCallback(() => setMobileNavOpen(false), []);
+	const handleToggleSidebar = () => {
+		if (typeof window !== "undefined" && window.innerWidth <= 768) {
+			setMobileNavOpen((prev) => !prev);
+		} else {
+			toggleCollapsed();
+		}
+	};
 	const [orgCtx, setOrgCtx] = useState<OrgContext>({
 		orgName: "Workspace",
 		orgSlug: "",
@@ -1157,10 +1105,22 @@ function AppLayout() {
 
 	return (
 		<OrgCtx.Provider value={orgCtx}>
-			<div className="app" data-collapsed={collapsed ? "true" : "false"}>
-				<AppSidebar />
+			<div
+				className="app"
+				data-collapsed={collapsed ? "true" : "false"}
+				data-mobile-open={mobileNavOpen ? "true" : "false"}
+			>
+				<AppSidebar onNavigate={closeMobileNav} />
+				{/* Mobile drawer backdrop — tap to dismiss the off-canvas sidebar. */}
+				<button
+					aria-label="Close navigation"
+					className="sidebar-backdrop"
+					onClick={closeMobileNav}
+					tabIndex={-1}
+					type="button"
+				/>
 				<main>
-					<AppTopbar onToggleSidebar={toggleCollapsed} />
+					<AppTopbar onToggleSidebar={handleToggleSidebar} />
 					<FirstLoginModal />
 					<Outlet />
 				</main>

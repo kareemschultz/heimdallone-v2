@@ -1591,3 +1591,124 @@ button {
 	left: 8px;
 	min-width: 220px;
 }
+
+/* ============================================================
+   Production stabilization — mobile / responsive app shell
+   ============================================================ */
+
+/* Off-canvas drawer backdrop. Hidden on desktop; shown on mobile when open. */
+.sidebar-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 55;
+	display: none;
+	padding: 0;
+	cursor: pointer;
+	background: rgba(0, 0, 0, 0.5);
+	border: 0;
+	backdrop-filter: blur(2px);
+}
+
+@media (max-width: 768px) {
+	/* No global horizontal scroll on small screens. */
+	html,
+	body {
+		max-width: 100%;
+		overflow-x: hidden;
+	}
+
+	/* Single column; the sidebar floats above content as a drawer. */
+	.app,
+	.app[data-collapsed="true"] {
+		grid-template-columns: 1fr;
+	}
+
+	.sidebar {
+		position: fixed;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		z-index: 60;
+		width: 280px;
+		max-width: 86vw;
+		height: 100dvh;
+		overflow-y: auto;
+		box-shadow: 0 0 48px rgba(0, 0, 0, 0.5);
+		transform: translateX(-100%);
+		transition: transform 0.22s ease;
+	}
+	.app[data-mobile-open="true"] .sidebar {
+		transform: translateX(0);
+	}
+	.app[data-mobile-open="true"] .sidebar-backdrop {
+		display: block;
+	}
+
+	/* In the drawer, always show full labels even if desktop rail was collapsed. */
+	.app[data-collapsed="true"] .sidebar {
+		width: 280px;
+		max-width: 86vw;
+	}
+	.app[data-collapsed="true"] .nav-label,
+	.app[data-collapsed="true"] .nav-meta,
+	.app[data-collapsed="true"] .nav-group-label,
+	.app[data-collapsed="true"] .nav-preview-badge,
+	.app[data-collapsed="true"]
+		.sidebar
+		[role="button"]
+		> div:not(.tenant-avatar):not(.avatar),
+	.app[data-collapsed="true"] .sidebar [role="button"] > svg {
+		display: revert;
+	}
+	.app[data-collapsed="true"] .nav-item,
+	.app[data-collapsed="true"] .sidebar [role="button"] {
+		justify-content: flex-start;
+		padding-right: 10px;
+		padding-left: 10px;
+	}
+	.app[data-collapsed="true"] .sidebar-section {
+		padding: 14px 12px;
+	}
+	.app[data-collapsed="true"] .sidebar .menu {
+		right: 14px;
+		left: 14px;
+	}
+
+	main {
+		min-width: 0;
+		max-width: 100vw;
+		overflow-x: hidden;
+	}
+
+	/* Topbar fits narrow widths; drop the ⌘K hint. */
+	.topbar {
+		gap: 8px;
+		padding: 0 12px;
+	}
+	.cmd-trigger .right {
+		display: none;
+	}
+	.cmd-trigger {
+		min-width: 0;
+	}
+
+	/* Tables scroll inside their own container, not the whole page. */
+	.table-wrap,
+	.data-table-wrap,
+	.table-scroll {
+		max-width: 100%;
+		overflow-x: auto;
+	}
+}
+
+/* ============================================================
+   Rounded-corner / surface polish (consistent radii)
+   ============================================================ */
+.menu {
+	border-radius: 12px;
+}
+.card,
+.stat-tile,
+.widget {
+	border-radius: 12px;
+}

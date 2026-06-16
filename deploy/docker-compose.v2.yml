@@ -32,6 +32,7 @@ services:
       PLATFORM_ADMIN_USER_ID: ${PLATFORM_ADMIN_USER_ID:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN:-}
     # db → reach postgres-central; heimdallone-v2 → web↔server; pangolin → Traefik
     # ingress. External pangolin keeps the stack reachable across `compose up`
     # recreates (a recreate without it drops the network → Traefik 502).

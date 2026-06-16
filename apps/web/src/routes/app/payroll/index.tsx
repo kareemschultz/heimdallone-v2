@@ -49,7 +49,7 @@ function PayrollDashboard() {
 	);
 
 	const activeProfile = profiles?.find(
-		(p: { isActive: boolean }) => p.isActive
+		(p: { isPublished: boolean }) => p.isPublished
 	);
 	const openPeriods =
 		periods?.data?.filter((p: { status: string }) => p.status === "open") ?? [];

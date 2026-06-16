@@ -20,6 +20,9 @@ export function createAuth() {
 		}),
 		trustedOrigins: [
 			env.CORS_ORIGIN,
+			// The auth server's own origin (api.) — needed so the OAuth callback
+			// redirect back to the app is honored when app./api. differ.
+			env.BETTER_AUTH_URL,
 			"Heimdallone://",
 			"exp://",
 			"http://localhost:8081",
@@ -43,6 +46,18 @@ export function createAuth() {
 		secret: env.BETTER_AUTH_SECRET,
 		baseURL: env.BETTER_AUTH_URL,
 		advanced: {
+			// When the browser (app.) and the auth server (api.) live on different
+			// subdomains, the session cookie must be scoped to the shared apex so
+			// it is readable on both. Enabled only when COOKIE_DOMAIN is set, so
+			// single-host / localhost deploys are unaffected.
+			...(env.COOKIE_DOMAIN
+				? {
+						crossSubDomainCookies: {
+							enabled: true,
+							domain: env.COOKIE_DOMAIN,
+						},
+					}
+				: {}),
 			defaultCookieAttributes: {
 				sameSite: env.NODE_ENV === "production" ? "none" : "lax",
 				secure: env.NODE_ENV === "production",

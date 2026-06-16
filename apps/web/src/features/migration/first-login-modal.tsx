@@ -88,7 +88,7 @@ export function FirstLoginModal() {
 			}}
 			open={open}
 		>
-			<AlertDialogContent className="max-w-lg">
+			<AlertDialogContent className="max-h-[88dvh] w-[calc(100vw-1.5rem)] max-w-lg gap-3 overflow-y-auto">
 				<AlertDialogHeader>
 					<AlertDialogTitle>Welcome to Heimdallone v2</AlertDialogTitle>
 					<AlertDialogDescription>
