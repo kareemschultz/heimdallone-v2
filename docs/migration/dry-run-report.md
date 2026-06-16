@@ -1,6 +1,6 @@
 # v1 → v2 Migration Dry-Run Report
 
-**Generated:** 2026-06-16T01:51:18.338Z
+**Generated:** 2026-06-16T02:00:54.253Z
 **v1 source (read-only):** `postgresql://migration_reader:***@localhost:5432/karetech_erp`
 **v2 staging target:** _none configured (schema-from-code mode)_
 

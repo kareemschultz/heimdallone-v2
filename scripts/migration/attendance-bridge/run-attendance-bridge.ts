@@ -52,13 +52,31 @@ function assertScratchTarget(): string {
 		);
 	}
 	const name = new URL(url).pathname.replace(/^\//, "");
+	// v1 is NEVER a write target.
+	if (name === "karetech_erp") {
+		throw new Error(`Refusing: '${name}' is the v1 database.`);
+	}
+	// Explicit, named production-write opt-in (Phase 21R cutover) bypasses the
+	// scratch-only check — requires CONFIRM_PRODUCTION_WRITE=1 + an exact
+	// PRODUCTION_WRITE_TARGET match.
+	if (process.env.CONFIRM_PRODUCTION_WRITE === "1") {
+		const declared = process.env.PRODUCTION_WRITE_TARGET ?? "";
+		if (declared !== name) {
+			throw new Error(
+				`Refusing: DATABASE_URL db '${name}' does not match PRODUCTION_WRITE_TARGET '${declared}'.`
+			);
+		}
+		process.stdout.write(`⚠️  PRODUCTION WRITE ENABLED — target: ${name}\n`);
+		return name;
+	}
 	if (!/scratch|staging|migrat|test/i.test(name)) {
 		throw new Error(
-			`Refusing: DATABASE_URL db '${name}' is not a scratch DB (need scratch/staging/migrat/test).`
+			`Refusing: DATABASE_URL db '${name}' is not a scratch DB (need scratch/staging/migrat/test). ` +
+				"For a real cutover set CONFIRM_PRODUCTION_WRITE=1 + PRODUCTION_WRITE_TARGET=<db>."
 		);
 	}
-	if (name === "Heimdallone" || name === "karetech_erp") {
-		throw new Error(`Refusing: '${name}' is the prod v2 / v1 database.`);
+	if (name === "Heimdallone") {
+		throw new Error(`Refusing: '${name}' is the dev v2 database.`);
 	}
 	return name;
 }

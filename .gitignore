@@ -66,3 +66,4 @@ temp
 # screenshots/ are committed so other agents can see the latest UI state
 screenshots-review/
 .env.migration
+backups/
