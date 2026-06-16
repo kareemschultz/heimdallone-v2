@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ArrowLeft, Printer } from "lucide-react";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 
 import "@/styles/employees.css";
 import "@/styles/payroll.css";
@@ -19,6 +19,9 @@ function PayslipDetailPage() {
 	const org = useContext(OrgCtx);
 	const canManage = canManagePayroll(org.memberRole);
 	const isEmployee = org.memberRole === "employee";
+	const [template, setTemplate] = useState<"classic" | "compact" | "detailed">(
+		"classic"
+	);
 
 	const adminQuery = useQuery({
 		...orpc.payroll.payslips.getById.queryOptions({ input: { id } }),
@@ -172,12 +175,35 @@ function PayslipDetailPage() {
 					borderRadius: 10,
 				}}
 			>
-				<div style={{ fontSize: 12.5, color: "var(--fg-3)" }}>
-					Template: <strong style={{ color: "var(--fg-2)" }}>Classic</strong>
-					<span style={{ marginLeft: 8, fontSize: 10, color: "var(--fg-4)" }}>
-						Modern, Compact, Detailed, Statutory — coming later
-					</span>
-				</div>
+				<label
+					style={{
+						fontSize: 12.5,
+						color: "var(--fg-3)",
+						display: "flex",
+						alignItems: "center",
+						gap: 8,
+					}}
+				>
+					Template
+					<select
+						onChange={(e) =>
+							setTemplate(e.target.value as "classic" | "compact" | "detailed")
+						}
+						style={{
+							fontSize: 12.5,
+							padding: "4px 8px",
+							background: "var(--bg-2)",
+							color: "var(--fg)",
+							border: "1px solid var(--line)",
+							borderRadius: 7,
+						}}
+						value={template}
+					>
+						<option value="classic">Classic</option>
+						<option value="compact">Compact (fits one page)</option>
+						<option value="detailed">Detailed (with calculation notes)</option>
+					</select>
+				</label>
 				<div style={{ fontSize: 11, color: "var(--fg-4)" }}>
 					Use Print / Save as PDF to save a copy
 				</div>
@@ -227,7 +253,11 @@ function PayslipDetailPage() {
 			)}
 
 			{/* Print-safe payslip layout */}
-			<div className="payslip-print" id="payslip-print">
+			<div
+				className="payslip-print"
+				data-template={template}
+				id="payslip-print"
+			>
 				<div className="payslip-header">
 					<div className="payslip-company">
 						<div className="payslip-logo-placeholder">
@@ -400,9 +430,15 @@ function PayslipDetailPage() {
 
 			<CorrectionPanel canManage={canManage} payslipId={id} />
 
-			{/* Calculation explanation — screen only, not printed, collapsible */}
+			{/* Calculation explanation — collapsible; printed only in Detailed mode */}
 			{explanations.length > 0 && (
-				<details className="emp-table no-print" style={{ marginTop: 14 }}>
+				<details
+					className={
+						template === "detailed" ? "emp-table" : "emp-table no-print"
+					}
+					open={template === "detailed"}
+					style={{ marginTop: 14 }}
+				>
 					<summary
 						className="emp-head"
 						style={{

@@ -621,6 +621,18 @@
 	border: 1px solid var(--line);
 	border-radius: 16px;
 }
+/* Compact template — denser layout so a payslip fits a single page. */
+.payslip-print[data-template="compact"] {
+	padding: 16px;
+	font-size: 12px;
+}
+.payslip-print[data-template="compact"] .payslip-header {
+	padding-bottom: 10px;
+	margin-bottom: 10px;
+}
+.payslip-print[data-template="compact"] .payslip-section {
+	margin-bottom: 8px;
+}
 .payslip-header {
 	display: flex;
 	align-items: flex-start;
