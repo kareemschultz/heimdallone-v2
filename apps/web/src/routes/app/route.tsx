@@ -25,6 +25,7 @@ import {
 	LayoutDashboard,
 	LifeBuoy,
 	LogOut,
+	MapPin,
 	Moon,
 	Package,
 	PanelLeft,
@@ -48,7 +49,13 @@ import {
 import { FirstLoginModal } from "@/features/migration/first-login-modal";
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
-import { canManageHR, canViewBiometrics, canViewPayroll } from "@/lib/rbac";
+import {
+	canManageHR,
+	canUseGeofenceCheckIn,
+	canViewBiometrics,
+	canViewGeofencing,
+	canViewPayroll,
+} from "@/lib/rbac";
 import { client, orpc } from "@/utils/orpc";
 
 interface OrgContext {
@@ -177,6 +184,12 @@ export const NAV = [
 				label: "Time clocks",
 				icon: Cpu,
 				href: "/app/biometrics",
+			},
+			{
+				key: "geofencing",
+				label: "Geofencing",
+				icon: MapPin,
+				href: "/app/geofencing",
 			},
 			{
 				key: "leave",
@@ -390,6 +403,10 @@ export function isNavItemVisible(key: string, role: string): boolean {
 	// Time clocks / biometric devices: HR/admin/manager/auditor/payroll only.
 	if (key === "biometrics") {
 		return canViewBiometrics(role);
+	}
+	// Geofencing: managers/HR who manage work sites, plus employees who check in.
+	if (key === "geofencing") {
+		return canViewGeofencing(role) || canUseGeofenceCheckIn(role);
 	}
 	if (canViewPayroll(role)) {
 		return true;
