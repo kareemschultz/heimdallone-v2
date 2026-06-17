@@ -38,6 +38,9 @@ services:
       TRUST_PROXY: ${TRUST_PROXY:-true}
       RPC_RATE_MAX: ${RPC_RATE_MAX:-600}
       AUTH_RATE_MAX: ${AUTH_RATE_MAX:-60}
+      # Transactional email (Resend) — invitations etc. Falls back to logging if unset.
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-Heimdallone <noreply@heimdallone.com>}
     # db → reach postgres-central; heimdallone-v2 → web↔server; pangolin → Traefik
     # ingress. External pangolin keeps the stack reachable across `compose up`
     # recreates (a recreate without it drops the network → Traefik 502).

@@ -176,7 +176,7 @@ function RosterPage() {
 	const shiftsQuery = useQuery(orpc.roster.shifts.queryOptions({}));
 	const employeesQuery = useQuery(
 		orpc.hrCore.employees.list.queryOptions({
-			input: { isActive: true, page: 1, pageSize: 200 },
+			input: { isActive: true, page: 1, pageSize: 100 },
 		})
 	);
 

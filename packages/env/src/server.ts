@@ -16,6 +16,11 @@ export const env = createEnv({
 		// session cookies are scoped to the apex so they are readable across
 		// app./api. subdomains. Leave unset for single-host / localhost deploys.
 		COOKIE_DOMAIN: z.string().optional(),
+		// Transactional email (Resend). When RESEND_API_KEY is absent, email helpers
+		// fall back to logging (dev) so non-email deploys are unaffected. EMAIL_FROM
+		// must use a Resend-verified domain.
+		RESEND_API_KEY: z.string().optional(),
+		EMAIL_FROM: z.string().default("Heimdallone <noreply@heimdallone.com>"),
 		NODE_ENV: z
 			.enum(["development", "production", "test"])
 			.default("development"),
