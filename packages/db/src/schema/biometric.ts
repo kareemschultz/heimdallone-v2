@@ -161,6 +161,18 @@ export const attendanceExceptionSeverityEnum = pgEnum(
 	["info", "warning", "blocker"]
 );
 
+// Work-location type (Phase 22B). The one field a "Work Locations" Settings tab
+// needs that geofence_location did not carry from v1. `geofence_location` IS the
+// v2 home for v1's `work_location` table; this enum surfaces v1's office/site/
+// remote/warehouse/other classification on it. Existing rows backfill to `office`.
+export const workLocationTypeEnum = pgEnum("work_location_type", [
+	"office",
+	"site",
+	"remote",
+	"warehouse",
+	"other",
+]);
+
 // ─── 1. geofence_location (work site) ─────────────────────────────────────────
 // Org-scoped named site with a centre + allowed radius. Coordinates are
 // numeric(10,7) (≈11mm precision). NOTE: the existing attendance_event
@@ -182,6 +194,11 @@ export const geofenceLocation = pgTable(
 			.notNull(),
 		allowOutsideWithReason: boolean("allow_outside_with_reason")
 			.default(true)
+			.notNull(),
+		// Phase 22B "Work Locations" classification (office/site/remote/…).
+		// Backfills existing rows to `office`.
+		locationType: workLocationTypeEnum("location_type")
+			.default("office")
 			.notNull(),
 		isActive: boolean("is_active").default(true).notNull(),
 		notes: text("notes"),

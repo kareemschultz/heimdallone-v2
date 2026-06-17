@@ -522,7 +522,17 @@ function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 			setSwitchingOrgId(null);
 		}
 	};
-	const initials = org.orgName
+	// Settings Depth (Phase 22): the sidebar header consumes tenant branding for
+	// display name + logo. Falls back to the org name + initials avatar when unset.
+	const brandingQuery = useQuery(
+		orpc.branding.get.queryOptions({ input: undefined })
+	);
+	const branding = brandingQuery.data as
+		| { logoUrl: string | null; resolvedDisplayName: string }
+		| undefined;
+	const sidebarName = branding?.resolvedDisplayName || org.orgName;
+	const sidebarLogoUrl = branding?.logoUrl ?? null;
+	const initials = sidebarName
 		.split(" ")
 		.map((w) => w[0])
 		.join("")
@@ -570,7 +580,23 @@ function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 					role="button"
 					tabIndex={0}
 				>
-					<div className="tenant-avatar">{initials}</div>
+					<div className="tenant-avatar">
+						{sidebarLogoUrl ? (
+							// biome-ignore lint/correctness/useImageSize: avatar logo is sized via its fixed-size container (100%/objectFit), not intrinsic width/height
+							<img
+								alt={`${sidebarName} logo`}
+								src={sidebarLogoUrl}
+								style={{
+									width: "100%",
+									height: "100%",
+									objectFit: "cover",
+									borderRadius: "inherit",
+								}}
+							/>
+						) : (
+							initials
+						)}
+					</div>
 					<div style={{ flex: 1, minWidth: 0 }}>
 						<div
 							style={{
@@ -579,7 +605,7 @@ function AppSidebar({ onNavigate }: { onNavigate?: () => void }) {
 								letterSpacing: "-0.005em",
 							}}
 						>
-							{org.orgName}
+							{sidebarName}
 						</div>
 						<div
 							style={{
