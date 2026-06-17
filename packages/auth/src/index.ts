@@ -8,7 +8,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, organization } from "better-auth/plugins";
 import { eq } from "drizzle-orm";
 
-import { emailLayout, sendEmail } from "./email";
+import { emailLayout, escapeHtml, sendEmail } from "./email";
 import { ac, roles } from "./permissions";
 
 const TRAILING_SLASH = /\/$/;
@@ -103,12 +103,15 @@ export function createAuth() {
 					const orgName = data.organization.name ?? "your workspace";
 					const inviter =
 						data.inviter?.user?.name || data.inviter?.user?.email || "An admin";
+					// orgName/inviter are tenant-controlled → escape before embedding in HTML.
+					const safeOrg = escapeHtml(orgName);
+					const safeInviter = escapeHtml(inviter);
 					await sendEmail({
 						to: data.email,
 						subject: `You've been invited to ${orgName} on Heimdallone`,
 						html: emailLayout({
 							heading: `Join ${orgName}`,
-							bodyHtml: `<p>${inviter} invited you to join <strong>${orgName}</strong> on Heimdallone. Sign in with this email address to accept.</p>`,
+							bodyHtml: `<p>${safeInviter} invited you to join <strong>${safeOrg}</strong> on Heimdallone. Sign in with this email address to accept.</p>`,
 							ctaLabel: "Accept invitation",
 							ctaUrl: acceptUrl,
 						}),

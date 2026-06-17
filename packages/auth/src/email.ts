@@ -36,21 +36,42 @@ export async function sendEmail(opts: SendEmailOptions): Promise<void> {
 	}
 }
 
+/**
+ * HTML-escape a string for safe interpolation into email markup. Callers MUST
+ * run this over any user/tenant-controlled value (org name, person name, etc.)
+ * before placing it in `bodyHtml`; `heading`/`ctaLabel` are escaped here.
+ */
+export function escapeHtml(value: string): string {
+	return value
+		.replace(/&/g, "&amp;")
+		.replace(/</g, "&lt;")
+		.replace(/>/g, "&gt;")
+		.replace(/"/g, "&quot;")
+		.replace(/'/g, "&#39;");
+}
+
+const HTTP_URL = /^https?:\/\//i;
+
 /** Minimal branded HTML wrapper for transactional emails. */
 export function emailLayout(opts: {
+	/** Plain text — escaped here. */
 	heading: string;
+	/** Trusted HTML — caller must escape any dynamic values with escapeHtml(). */
 	bodyHtml: string;
+	/** Plain text — escaped here. */
 	ctaLabel?: string;
 	ctaUrl?: string;
 }): string {
+	// Only emit the CTA for an http(s) URL, escaped for the href attribute.
+	const safeUrl = opts.ctaUrl && HTTP_URL.test(opts.ctaUrl) ? opts.ctaUrl : "";
 	const cta =
-		opts.ctaLabel && opts.ctaUrl
-			? `<p style="margin:24px 0;"><a href="${opts.ctaUrl}" style="display:inline-block;padding:11px 20px;background:#1f2a44;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">${opts.ctaLabel}</a></p>`
+		opts.ctaLabel && safeUrl
+			? `<p style="margin:24px 0;"><a href="${escapeHtml(safeUrl)}" style="display:inline-block;padding:11px 20px;background:#1f2a44;color:#fff;text-decoration:none;border-radius:8px;font-weight:600;">${escapeHtml(opts.ctaLabel)}</a></p>`
 			: "";
 	return `<!doctype html><html><body style="margin:0;background:#f4f5f7;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;">
   <div style="max-width:520px;margin:0 auto;padding:32px 20px;">
     <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:28px;">
-      <h1 style="margin:0 0 12px;font-size:19px;color:#0f172a;">${opts.heading}</h1>
+      <h1 style="margin:0 0 12px;font-size:19px;color:#0f172a;">${escapeHtml(opts.heading)}</h1>
       <div style="font-size:14px;line-height:1.55;color:#334155;">${opts.bodyHtml}</div>
       ${cta}
     </div>
