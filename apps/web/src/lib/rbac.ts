@@ -505,3 +505,13 @@ export function canViewNotifications(_role: MemberRole): boolean {
 export function canManageNotifications(_role: MemberRole): boolean {
 	return true;
 }
+
+// Communications / announcements (mirror of packages/api/src/utils/role-helpers.ts).
+// read held by every role (the member feed); manage by owner/admin/hr_admin.
+export function canViewAnnouncements(_role: MemberRole): boolean {
+	return true;
+}
+
+export function canManageAnnouncements(role: MemberRole): boolean {
+	return canManageHR(role);
+}

@@ -27,6 +27,7 @@ import {
 	LifeBuoy,
 	LogOut,
 	MapPin,
+	Megaphone,
 	Moon,
 	Package,
 	PanelLeft,
@@ -207,6 +208,12 @@ export const NAV = [
 				label: "Leave",
 				icon: Calendar,
 				href: "/app/leave",
+			},
+			{
+				key: "announcements",
+				label: "Announcements",
+				icon: Megaphone,
+				href: "/app/announcements",
 			},
 			{
 				key: "payroll",
@@ -410,6 +417,10 @@ export function isNavItemVisible(key: string, role: string): boolean {
 	// Migration status is an HR/admin cutover tool — restrict it to canManageHR
 	// (owner/admin/hr_admin) BEFORE the canViewPayroll see-all branch, so payroll
 	// and auditor don't see an entry that would only 403.
+	// Announcements: company-wide feed held by every role (read universal).
+	if (key === "announcements") {
+		return true;
+	}
 	if (key === "migration-status") {
 		return canManageHR(role);
 	}

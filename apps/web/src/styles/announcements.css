@@ -1,0 +1,122 @@
+/* Communications — announcements feed + management. */
+
+.ann-card {
+	padding: 16px 18px;
+	margin-bottom: 12px;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+.ann-card.unread {
+	border-color: color-mix(in oklch, var(--accent) 45%, var(--line));
+	box-shadow: inset 3px 0 0 var(--accent);
+}
+.ann-card-head {
+	display: flex;
+	gap: 10px;
+	align-items: flex-start;
+	justify-content: space-between;
+}
+.ann-title {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.ann-meta {
+	margin-top: 2px;
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.ann-body {
+	margin-top: 8px;
+	font-size: 13.5px;
+	line-height: 1.55;
+	color: var(--fg-2);
+	white-space: pre-wrap;
+}
+.ann-pin {
+	display: inline-flex;
+	gap: 4px;
+	align-items: center;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--accent);
+}
+.ann-row-actions {
+	display: flex;
+	gap: 6px;
+	justify-content: flex-end;
+}
+
+/* Dialog (mirrors crm-dialog) */
+.ann-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background: rgba(0, 0, 0, 0.5);
+}
+.ann-dialog {
+	width: 100%;
+	max-width: 540px;
+	max-height: calc(100vh - 40px);
+	padding: 20px;
+	overflow-y: auto;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.ann-dialog h2 {
+	margin: 0 0 4px;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.ann-form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin-top: 12px;
+}
+.ann-form-field label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--fg-2);
+}
+.ann-form-field input,
+.ann-form-field select,
+.ann-form-field textarea {
+	padding: 8px 10px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.ann-form-field textarea {
+	min-height: 120px;
+	resize: vertical;
+}
+.ann-form-field input:focus-visible,
+.ann-form-field select:focus-visible,
+.ann-form-field textarea:focus-visible {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent);
+}
+.ann-form-row {
+	display: flex;
+	gap: 10px;
+}
+.ann-form-row > * {
+	flex: 1;
+}
+.ann-dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 18px;
+}

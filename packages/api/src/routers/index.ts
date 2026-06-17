@@ -5,6 +5,7 @@ import { analyticsRouter } from "./analytics";
 import { assetsRouter } from "./assets";
 import { attendanceRouter } from "./attendance";
 import { biometricRouter } from "./biometric";
+import { communicationsRouter } from "./communications";
 import { contractsRouter } from "./contracts";
 import { crmRouter } from "./crm";
 import { financeRouter } from "./finance";
@@ -35,6 +36,7 @@ export const appRouter = {
 	assets: assetsRouter,
 	attendance: attendanceRouter,
 	biometric: biometricRouter,
+	communications: communicationsRouter,
 	crm: crmRouter,
 	finance: financeRouter,
 	gl: glRouter,
