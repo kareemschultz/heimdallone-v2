@@ -954,19 +954,31 @@ const LON_MAX = 180;
 const RADIUS_MAX = 100_000;
 
 const geofencesList = authorizedProcedure("geofence", "read")
-	.input(z.object({ includeInactive: z.boolean().optional() }).optional())
+	.input(
+		z
+			.object({
+				includeInactive: z.boolean().optional(),
+				// Phase 22 "Work Locations" parity: when true, soft-deleted (archived)
+				// work locations are returned too (for the "Show archived" toggle).
+				includeArchived: z.boolean().optional(),
+			})
+			.optional()
+	)
 	.handler(async ({ context, input }) => {
+		const conditions = [eq(geofenceLocation.organizationId, orgId(context))];
+		if (!input?.includeArchived) {
+			conditions.push(isNull(geofenceLocation.deletedAt));
+		}
 		const rows = await db
 			.select()
 			.from(geofenceLocation)
-			.where(
-				and(
-					eq(geofenceLocation.organizationId, orgId(context)),
-					isNull(geofenceLocation.deletedAt)
-				)
-			)
+			.where(and(...conditions))
 			.orderBy(desc(geofenceLocation.createdAt));
-		return input?.includeInactive ? rows : rows.filter((r) => r.isActive);
+		// includeArchived implies show-everything; otherwise honor includeInactive.
+		if (input?.includeArchived || input?.includeInactive) {
+			return rows;
+		}
+		return rows.filter((r) => r.isActive);
 	});
 
 const geofencesGetById = authorizedProcedure("geofence", "read")
@@ -991,6 +1003,10 @@ const geofencesCreate = authorizedProcedure("geofence", "manage")
 				.max(RADIUS_MAX)
 				.default(100),
 			allowOutsideWithReason: z.boolean().default(true),
+			// Phase 22 "Work Locations" classification.
+			locationType: z
+				.enum(["office", "site", "remote", "warehouse", "other"])
+				.default("office"),
 			notes: z.string().optional(),
 		})
 	)
@@ -1007,6 +1023,7 @@ const geofencesCreate = authorizedProcedure("geofence", "manage")
 				radiusMeters: input.radiusMeters,
 				accuracyThresholdMeters: input.accuracyThresholdMeters,
 				allowOutsideWithReason: input.allowOutsideWithReason,
+				locationType: input.locationType,
 				notes: input.notes,
 			});
 		} catch (err) {
@@ -1045,6 +1062,10 @@ const geofencesUpdate = authorizedProcedure("geofence", "manage")
 				.max(RADIUS_MAX)
 				.optional(),
 			allowOutsideWithReason: z.boolean().optional(),
+			// Phase 22 "Work Locations" classification.
+			locationType: z
+				.enum(["office", "site", "remote", "warehouse", "other"])
+				.optional(),
 			isActive: z.boolean().optional(),
 			notes: z.string().nullable().optional(),
 		})

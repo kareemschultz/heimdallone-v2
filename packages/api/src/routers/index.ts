@@ -4,7 +4,9 @@ import { protectedProcedure, publicProcedure } from "../index";
 import { analyticsRouter } from "./analytics";
 import { assetsRouter } from "./assets";
 import { attendanceRouter } from "./attendance";
+import { auditRouter } from "./audit";
 import { biometricRouter } from "./biometric";
+import { brandingRouter } from "./branding";
 import { contractsRouter } from "./contracts";
 import { crmRouter } from "./crm";
 import { financeRouter } from "./finance";
@@ -34,7 +36,9 @@ export const appRouter = {
 	analytics: analyticsRouter,
 	assets: assetsRouter,
 	attendance: attendanceRouter,
+	...auditRouter,
 	biometric: biometricRouter,
+	...brandingRouter,
 	crm: crmRouter,
 	finance: financeRouter,
 	gl: glRouter,

@@ -536,3 +536,23 @@ export function canViewNotifications(_role: MemberRole): boolean {
 export function canManageNotifications(_role: MemberRole): boolean {
 	return true;
 }
+
+// ── Settings Depth (Phase 22) ────────────────────────────────────────────────
+
+// Branding — per-tenant identity & payslip presentation. read held by EVERY role
+// (logo/name/accent are non-sensitive org chrome shown in the sidebar); manage by
+// owner/admin/hr_admin (canManageHR). Mirror of apps/web/src/lib/rbac.ts.
+export function canViewBranding(_role: MemberRole): boolean {
+	return true;
+}
+
+export function canManageBranding(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+// Audit-log viewer — read-only oversight over the shared audit_event table.
+// Byte-aligned to the `audit_log:read` grant (owner/admin/hr_admin/payroll_admin/
+// auditor = canViewPayroll), NOT spec prose. Mirror of apps/web/src/lib/rbac.ts.
+export function canViewAuditLog(role: MemberRole): boolean {
+	return canViewPayroll(role);
+}

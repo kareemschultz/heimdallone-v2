@@ -18,3 +18,4 @@ export * from "./performance";
 export * from "./projects";
 export * from "./recruitment";
 export * from "./roster";
+export * from "./tenant-branding";

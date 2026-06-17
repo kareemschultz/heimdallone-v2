@@ -60,6 +60,12 @@ export const statement = {
 	// action, so there is no `create` action here.
 	notification: ["read", "manage"],
 
+	// Branding (Phase 22 / Settings Depth) — per-tenant identity & payslip
+	// presentation. `read` is broad (logo/name/accent are non-sensitive org chrome
+	// every member already sees in the sidebar); only `manage` is admin/HR-gated.
+	// First consumer = the `branding` router → +1 router, +2 pairs in the audit.
+	branding: ["read", "manage"],
+
 	attendance: ["create", "read", "correct"],
 	attendance_device: ["read", "manage", "sync"],
 	attendance_punch: ["read", "process", "import"],
@@ -72,6 +78,11 @@ export const statement = {
 	roster: ["read", "manage", "approve"],
 	leave_request: ["create", "read", "approve", "reject", "cancel"],
 	holiday: ["create", "read", "update", "archive"],
+	// DEPRECATED in favour of `geofence` (Phase 22 / Settings Depth). The
+	// "Work Locations" feature surfaces the existing `geofence_location` table and
+	// is gated by the already-consumed `geofence` resource — this standalone
+	// `work_location` resource is UNCONSUMED. Left in place this phase to keep the
+	// change additive; a dedicated cleanup can remove it once nothing references it.
 	work_location: ["read", "manage"],
 	// Phase 7I — statutory/company leave policy library. "adopt" snapshots a
 	// system template into an org-owned policy. Entitlement source is labour
@@ -244,6 +255,7 @@ const FULL_OFFBOARDING = [
 export const tenant_owner = ac.newRole({
 	...ownerAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read", "manage"],
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
 	onboarding: [
 		"read",
@@ -314,6 +326,7 @@ export const tenant_owner = ac.newRole({
 export const tenant_admin = ac.newRole({
 	...adminAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read", "manage"],
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
 	onboarding: [
 		"read",
@@ -384,6 +397,7 @@ export const tenant_admin = ac.newRole({
 export const hr_admin = ac.newRole({
 	...adminAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read", "manage"],
 	member: ["create", "update", "delete", "invite", "update_role", "remove"],
 	onboarding: [
 		"read",
@@ -438,6 +452,7 @@ export const hr_admin = ac.newRole({
 export const payroll_admin = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	resignation: ["read", "complete"],
 	payroll: ["create", "read", "update", "delete"],
@@ -490,6 +505,7 @@ export const payroll_admin = ac.newRole({
 export const manager = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	resignation: ["read", "approve"],
 	// Managers roster their own team; the handler scopes to direct reports.
@@ -535,6 +551,7 @@ export const manager = ac.newRole({
 export const employee = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	resignation: ["create", "read", "withdraw"],
 	// Employees see their OWN roster (handler self-scopes); cannot edit/approve.
@@ -566,6 +583,7 @@ export const employee = ac.newRole({
 export const auditor = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	resignation: ["read"],
 	transfer: ["read"],
@@ -620,6 +638,7 @@ export const auditor = ac.newRole({
 export const recruiter = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	posting: ["create", "read", "update", "publish", "archive"],
 	applicant: ["create", "read", "update", "convert"],
@@ -635,6 +654,7 @@ export const recruiter = ac.newRole({
 export const helpdesk_agent = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	ticket: ["create", "read", "update", "assign", "resolve", "close", "approve"],
 	document: ["read"],
@@ -654,6 +674,7 @@ export const helpdesk_agent = ac.newRole({
 export const project_manager = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	document: ["read"],
 	project: [
@@ -679,6 +700,7 @@ export const project_manager = ac.newRole({
 export const sales_admin = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	document: ["read"],
 	...FULL_CRM,
@@ -690,6 +712,7 @@ export const sales_admin = ac.newRole({
 export const sales_rep = ac.newRole({
 	...memberAc.statements,
 	notification: ["read", "manage"],
+	branding: ["read"],
 	employee: ["read"],
 	document: ["read"],
 	crm_customer: ["create", "read", "update"],
