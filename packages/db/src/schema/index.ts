@@ -5,6 +5,7 @@ export * from "./auth";
 export * from "./biometric";
 export * from "./communication";
 export * from "./crm";
+export * from "./development";
 export * from "./finance";
 export * from "./gl";
 export * from "./helpdesk";

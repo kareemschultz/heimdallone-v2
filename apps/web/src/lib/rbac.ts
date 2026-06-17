@@ -585,3 +585,43 @@ export function canRequestResignation(role: MemberRole): boolean {
 export function seesAllResignations(role: MemberRole): boolean {
 	return canManageHR(role) || role === "auditor" || role === "payroll_admin";
 }
+
+// Development — Training + Certifications + Skills (Phase Dev). Mirror of
+// packages/api/src/utils/role-helpers.ts — keep byte-aligned. Aligned to the
+// `development` AC grant in permissions.ts (lesson #88: align to the GRANT, not
+// prose).
+//
+// Managing the catalogue/definitions + assessing/enrolling/recording for anyone
+// is HR-level OR a manager (the handler narrows a manager's `manage` writes to
+// their direct reports — option A). Viewing extends to auditor / payroll_admin /
+// recruiter / employee. Self-service (enroll yourself, record your own cert,
+// self-assess a skill) is held by any participating staff (HR/manager/employee) —
+// NEVER sitting behind the manage-only gate (the asset:request precedent).
+// seesAllDevelopment is the scope ceiling: HR/auditor/payroll see every employee's
+// records; managers are scoped to own + direct reports; employees to themselves;
+// recruiter gets the catalogue + AGGREGATE skill counts only (no individual rows).
+export function canManageDevelopment(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager";
+}
+
+export function canViewDevelopment(role: MemberRole): boolean {
+	return (
+		canManageDevelopment(role) ||
+		role === "auditor" ||
+		role === "payroll_admin" ||
+		role === "recruiter" ||
+		role === "employee"
+	);
+}
+
+export function canEnrollSelf(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager" || role === "employee";
+}
+
+export function canRecordOwnSkill(role: MemberRole): boolean {
+	return canEnrollSelf(role);
+}
+
+export function seesAllDevelopment(role: MemberRole): boolean {
+	return canManageHR(role) || role === "auditor" || role === "payroll_admin";
+}

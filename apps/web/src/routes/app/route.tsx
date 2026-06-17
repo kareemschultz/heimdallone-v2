@@ -21,6 +21,7 @@ import {
 	FolderKanban,
 	GitBranch,
 	Globe,
+	GraduationCap,
 	Handshake,
 	Info,
 	Landmark,
@@ -90,6 +91,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"performance",
 	// Employees reach My disciplinary + My resignation via the Lifecycle landing.
 	"lifecycle",
+	"development",
 	"settings",
 ]);
 const MANAGER_VISIBLE_KEYS = new Set([
@@ -105,6 +107,8 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"performance",
 	// Managers see scoped disciplinary/transfers/resignations for direct reports.
 	"lifecycle",
+	// Managers curate their team's training/certs/skills (scoped server-side).
+	"development",
 	// Managers can VIEW the executive dashboard but are department-scoped
 	// server-side. canViewAnalytics includes "manager".
 	"analytics",
@@ -131,6 +135,8 @@ const RECRUITER_VISIBLE_KEYS = new Set([
 	"recruitment",
 	"onboarding",
 	"documents",
+	// Recruiters get the catalogue + aggregate skill search (no individual rows).
+	"development",
 	"settings",
 ]);
 const HELPDESK_VISIBLE_KEYS = new Set([
@@ -261,6 +267,12 @@ export const NAV = [
 				label: "Lifecycle",
 				icon: GitBranch,
 				href: "/app/lifecycle",
+			},
+			{
+				key: "development",
+				label: "Development",
+				icon: GraduationCap,
+				href: "/app/development",
 			},
 		],
 	},
