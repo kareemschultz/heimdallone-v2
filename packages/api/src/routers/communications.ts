@@ -18,9 +18,11 @@ import { db } from "@Heimdallone/db";
 import {
 	announcement,
 	announcementRead,
+} from "@Heimdallone/db/schema/communication";
+import {
 	employeeProfile,
 	employeeWorkInfo,
-} from "@Heimdallone/db/schema";
+} from "@Heimdallone/db/schema/hr-core";
 import { ORPCError } from "@orpc/server";
 import { and, desc, eq, isNull, lte, or, sql } from "drizzle-orm";
 import { z } from "zod";
