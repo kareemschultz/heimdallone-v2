@@ -15,13 +15,35 @@ do**.
 
 ## Members
 
-The people who can sign in to an organization are its **members**. Manage members
-from the **workspace switcher → Workspace settings**: invite a new member, see
-existing members and their access role, and remove access.
+The people who can sign in to an organization are its **members**. Manage them
+from **App → Users & Access** (in the **Workspace** section of the sidebar — visible
+to Tenant Owner, Tenant Admin and HR Admin). There you can:
+
+- See every member, their **access role** and when they joined.
+- **Change a member's role** inline.
+- **Remove** a member (they lose access immediately; their employee record is kept).
+- **Invite** a new member by email and pick their starting role.
+- See and manage **pending invitations**.
 
 <Callout type="warn" title="Only owners/admins change access">
-  Changing someone's access role is limited to **Tenant Owner** and **Tenant
-  Admin**. Other roles can view but not reassign.
+  Inviting, changing a role, and removing a member are limited to **Tenant Owner**,
+  **Tenant Admin** and **HR Admin**. The server enforces this regardless of the UI —
+  other roles don't see the page.
+</Callout>
+
+### Invitations
+
+Email delivery is not yet configured, so an invitation does **not** send an email
+automatically. Instead:
+
+<Steps>
+<Step>Open **Users & Access → Invite member**, enter the email and pick a role.</Step>
+<Step>In the **Pending invitations** list, use **Copy link** and share that link with the person directly.</Step>
+<Step>They open the link, **sign in with the invited email**, and accept. They then appear as a member.</Step>
+</Steps>
+
+<Callout title="Cancelling">
+  Pending invitations can be cancelled from the same list before they're accepted.
 </Callout>
 
 ## Two kinds of "role"
@@ -37,8 +59,8 @@ These are easy to confuse:
 ## Give someone access
 
 <Steps>
-<Step>For a brand-new person, add them in **App → Employees** with a real email, then invite them — see [Migrated logins & access](/docs/administration/migration-logins).</Step>
-<Step>To change what an existing member can do, open **Workspace settings** and set their **access role**.</Step>
+<Step>For a brand-new person, add them in **App → Employees** with a real email, then invite them from **Users & Access** — see [Migrated logins & access](/docs/administration/migration-logins).</Step>
+<Step>To change what an existing member can do, open **App → Users & Access** and set their **access role**.</Step>
 <Step>Confirm the change by checking which sidebar areas they can now see (access is least-privilege — people only see what their role allows).</Step>
 </Steps>
 
@@ -52,6 +74,8 @@ These are easy to confuse:
 
 | Symptom | Fix |
 | --- | --- |
-| "I can't see a module" | Their access role doesn't include it — adjust in Workspace settings |
-| "I can't change a role" | Only Tenant Owner / Admin can |
+| "I can't see a module" | Their access role doesn't include it — adjust in **Users & Access** |
+| "I can't change a role" | Only Tenant Owner / Admin / HR Admin can |
 | "New hire has no login" | Add a real email and invite — never use a placeholder |
+| "Invite email never arrived" | Email isn't wired yet — use **Copy link** and share it directly |
+| "Can't find Users & Access" | It's under **Workspace** in the sidebar, owner/admin/HR only |

@@ -11,12 +11,33 @@ icon: CalendarDays
   <Tag>Live</Tag>
 </Tags>
 
-<Callout type="info" title="Administrator-managed">
-  There's no end-user roster screen yet. Roster data is set up by your
-  administrator and, for migrated organisations, was loaded during the initial
-  data migration. Contact HR or your admin if a roster assignment is missing or
-  incorrect.
+<Callout type="info" title="Where to find it">
+  Open **App → Roster** (in the **Operate** section of the sidebar). Managers and
+  HR build and approve the schedule there; employees see a read-only **My schedule**.
+  For migrated organisations, historical roster data was loaded during the initial
+  data migration.
 </Callout>
+
+## Views
+
+The Roster screen offers three views of the same week of data — switch with the
+toggle at the top:
+
+| View | Best for |
+| --- | --- |
+| **Calendar** | A grid of employees (rows) × days of the week (columns). Click a cell to assign or edit that person's day. The dot on a chip shows approval status (green = approved, amber = pending). |
+| **List** | A flat table of every scheduled day in the week — employee, date, shift, hours, status and note — with edit/approve actions. |
+| **Timeline** | A horizontal strip per employee showing which days are on/off across the week, at a glance. |
+
+Use the week arrows (or **Today**) to move between weeks.
+
+## Assigning shifts
+
+<Steps>
+<Step>**Assign one day** — in the Calendar view, click an empty cell (or use **Assign shift**). Pick the employee, date, type (regular / custom hours / day off / swap), an optional shift, and a note.</Step>
+<Step>**Bulk assign** — use **Bulk assign** to apply one shift to an employee across a date range and chosen weekdays in a single step. Existing days are skipped, so it's safe to re-run.</Step>
+<Step>**Edit or remove** — click an existing entry to change it or remove that scheduled day. Editing the schedule re-opens approval.</Step>
+</Steps>
 
 ## What a roster does
 
@@ -45,8 +66,9 @@ shift for that specific date:
 ## Approval
 
 Roster changes go through an approval step before they take effect. A manager or
-HR reviews and approves (or rejects) the proposed change. Until it's approved, the
-original assignment remains in force.
+HR reviews and approves (or rejects) the proposed change from the **List** view or
+the entry dialog. Editing a day clears its approval so payroll never consumes a
+changed day on a stale approval. Until it's approved, the entry shows **Pending**.
 
 ## How it feeds attendance and payroll
 
@@ -84,7 +106,7 @@ how those rules work.
 | --- | --- |
 | HR Admin | Full access — create, edit, approve, and archive roster entries and shift assignments. |
 | Manager | Can manage roster **assignments** for direct reports but cannot edit shift pay rules (those are HR/payroll only). |
-| Employee | No roster management access. Roster data informs your attendance records, which you can view under **App → Attendance**. |
+| Employee | Read-only **My schedule** under **App → Roster** showing your own assigned shifts for the week. Roster data informs your attendance records (**App → Attendance**). |
 
 ## What to check
 
