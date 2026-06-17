@@ -20,7 +20,14 @@ import { createId } from "@paralleldrive/cuid2";
 import { and, eq } from "drizzle-orm";
 import { auth } from "../packages/auth/src/index";
 import { createDb } from "../packages/db/src/index";
-import { member, organization, user } from "../packages/db/src/schema/auth";
+import {
+	account,
+	invitation,
+	member,
+	organization,
+	session,
+	user,
+} from "../packages/db/src/schema/auth";
 
 const EMAIL = "qa+platform@heimdallone.com";
 const NAME = "QA Platform Tester";
@@ -55,15 +62,56 @@ async function removeQaUser(): Promise<void> {
 		process.stdout.write("QA user not present — nothing to remove.\n");
 		return;
 	}
+	// Delete FK dependents before the user row (no cascade on these tables).
+	await db.delete(session).where(eq(session.userId, userId));
+	await db.delete(account).where(eq(account.userId, userId));
+	await db.delete(invitation).where(eq(invitation.inviterId, userId));
 	await db.delete(member).where(eq(member.userId, userId));
 	await db.delete(user).where(eq(user.id, userId));
-	process.stdout.write("QA user + memberships removed.\n");
+	process.stdout.write(
+		"QA user + sessions + accounts + memberships removed.\n"
+	);
+}
+
+async function setFreshCredential(userId: string): Promise<void> {
+	const password = randomBytes(18).toString("base64url");
+	// Use Better Auth's own password hasher so the credential verifies on login.
+	const ctx = await auth.$context;
+	const hashed = await ctx.password.hash(password);
+	await db
+		.delete(account)
+		.where(
+			and(eq(account.userId, userId), eq(account.providerId, "credential"))
+		);
+	await db.insert(account).values({
+		id: createId(),
+		accountId: userId,
+		providerId: "credential",
+		userId,
+		password: hashed,
+		createdAt: new Date(),
+		updatedAt: new Date(),
+	});
+	writeFileSync(CRED_FILE, `${EMAIL}\n${password}\n`, { mode: 0o600 });
+	chmodSync(CRED_FILE, 0o600);
+	process.stdout.write(`QA credential (re)set; written to ${CRED_FILE}.\n`);
 }
 
 async function ensureUser(): Promise<string> {
 	const existing = await findUserId();
 	if (existing) {
-		process.stdout.write("QA user already exists — password unchanged.\n");
+		const [acct] = await db
+			.select({ id: account.id })
+			.from(account)
+			.where(
+				and(eq(account.userId, existing), eq(account.providerId, "credential"))
+			)
+			.limit(1);
+		if (acct) {
+			process.stdout.write("QA user already exists — password unchanged.\n");
+		} else {
+			await setFreshCredential(existing);
+		}
 		return existing;
 	}
 	const password = randomBytes(18).toString("base64url");
