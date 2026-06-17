@@ -38,6 +38,7 @@ const actorId = (ctx: { session: { user: { id: string } } }) =>
 const role = (ctx: unknown) => (ctx as { memberRole: string }).memberRole;
 
 import { canManageHR, canManagePayroll } from "../utils/role-helpers";
+import { attendanceDeviceCompat } from "./attendance-device-compat";
 
 async function scopedEmployeeIds(
 	organizationId: string,
@@ -1384,4 +1385,7 @@ export const attendanceRouter = {
 	summary: {
 		monthly: summaryMonthly,
 	},
+	// v1-compat device ingest (Phase 21V interim shim) — the on-site Pi posts
+	// these v1 paths with Bearer device-key auth; see attendance-device-compat.ts.
+	devices: attendanceDeviceCompat,
 };
