@@ -11,6 +11,7 @@ export * from "./helpdesk";
 export * from "./hr-core";
 export * from "./leave";
 export * from "./leave-policy";
+export * from "./lifecycle";
 export * from "./notification";
 export * from "./offboarding";
 export * from "./onboarding";

@@ -14,6 +14,7 @@ import { helpdeskRouter } from "./helpdesk";
 import { hrCoreRouter } from "./hr-core";
 import { leaveRouter } from "./leave";
 import { leavePolicyRouter } from "./leave-policy";
+import { lifecycleRouter } from "./lifecycle";
 import { migrationRouter } from "./migration";
 import { notificationsRouter } from "./notifications";
 import { offboardingRouter } from "./offboarding";
@@ -43,6 +44,7 @@ export const appRouter = {
 	helpdesk: helpdeskRouter,
 	leave: leaveRouter,
 	leavePolicy: leavePolicyRouter,
+	lifecycle: lifecycleRouter,
 	migration: migrationRouter,
 	notifications: notificationsRouter,
 	payroll: payrollRouter,

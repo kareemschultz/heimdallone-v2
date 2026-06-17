@@ -27,6 +27,27 @@ export const statement = {
 	employee: ["create", "read", "update", "terminate"],
 	resignation: ["create", "read", "approve", "complete", "withdraw"],
 	transfer: ["create", "read", "submit", "approve", "execute", "cancel"],
+	// Lifecycle (Phase Lifecycle-B) — disciplinary case tracking. `resignation`
+	// and `transfer` (above) ALREADY existed but were UNCONSUMED; the lifecycle
+	// router is their first consumer. `disciplinary` is NEW. Least-privilege
+	// actions map to the case lifecycle so employee self-service (explain/appeal
+	// on their OWN record) sits behind actions the subject actually holds:
+	//   read   — view records/categories/actions (handler-scoped)
+	//   create — open a record + manage the category/action catalogues (HR)
+	//   explain— submit the employee explanation (employee on own + HR)
+	//   act    — request explanation + record the final action (HR)
+	//   appeal — submit an appeal (employee on own)
+	//   close  — resolve/overturn an appeal, terminal close (HR)
+	//   manage — archive catalogue entries (HR)
+	disciplinary: [
+		"read",
+		"create",
+		"explain",
+		"act",
+		"appeal",
+		"close",
+		"manage",
+	],
 
 	payroll: ["create", "read", "update", "delete"],
 	payslip: ["draft", "finalize", "reverse", "read"],
@@ -242,6 +263,19 @@ const FULL_OFFBOARDING = [
 	"read_settlement",
 ] as const;
 
+// Lifecycle (Phase Lifecycle-B) — full grants spread into the HR-level role
+// blocks (owner/admin/hr_admin). disciplinary catalogue + lifecycle actions,
+// plus the full transfer + resignation grants those roles already hold.
+const FULL_DISCIPLINARY = [
+	"read",
+	"create",
+	"explain",
+	"act",
+	"appeal",
+	"close",
+	"manage",
+] as const;
+
 export const tenant_owner = ac.newRole({
 	...ownerAc.statements,
 	notification: ["read", "manage"],
@@ -262,6 +296,7 @@ export const tenant_owner = ac.newRole({
 	employee: ["create", "read", "update", "terminate"],
 	resignation: ["create", "read", "approve", "complete", "withdraw"],
 	transfer: ["create", "read", "submit", "approve", "execute", "cancel"],
+	disciplinary: FULL_DISCIPLINARY,
 	payroll: ["create", "read", "update", "delete"],
 	payslip: ["draft", "finalize", "reverse", "read"],
 	payroll_period: ["create", "read", "finalize", "cancel", "delete"],
@@ -333,6 +368,7 @@ export const tenant_admin = ac.newRole({
 	employee: ["create", "read", "update", "terminate"],
 	resignation: ["create", "read", "approve", "complete", "withdraw"],
 	transfer: ["create", "read", "submit", "approve", "execute", "cancel"],
+	disciplinary: FULL_DISCIPLINARY,
 	payroll: ["create", "read", "update", "delete"],
 	payslip: ["draft", "finalize", "reverse", "read"],
 	payroll_period: ["create", "read", "finalize", "cancel", "delete"],
@@ -404,6 +440,7 @@ export const hr_admin = ac.newRole({
 	employee: ["create", "read", "update", "terminate"],
 	resignation: ["create", "read", "approve", "complete", "withdraw"],
 	transfer: ["create", "read", "submit", "approve", "execute", "cancel"],
+	disciplinary: FULL_DISCIPLINARY,
 	payroll: ["create", "read", "update"],
 	payslip: ["draft", "read"],
 	payroll_period: ["create", "read"],
@@ -498,6 +535,11 @@ export const manager = ac.newRole({
 	announcement: ["read"],
 	employee: ["read"],
 	resignation: ["read", "approve"],
+	// Lifecycle: managers may PROPOSE a transfer for a direct report (create/
+	// submit/cancel) — approval + execute stay HR-only. Disciplinary is read-only
+	// for managers (direct reports, handler-scoped); internal notes are redacted.
+	transfer: ["read", "create", "submit", "cancel"],
+	disciplinary: ["read"],
 	// Managers roster their own team; the handler scopes to direct reports.
 	roster: ["read", "manage", "approve"],
 	payslip: ["read"],
@@ -544,6 +586,9 @@ export const employee = ac.newRole({
 	announcement: ["read"],
 	employee: ["read"],
 	resignation: ["create", "read", "withdraw"],
+	// Lifecycle self-service: an employee reads, explains, and appeals their OWN
+	// disciplinary record (handler self-scopes; internal notes are redacted).
+	disciplinary: ["read", "explain", "appeal"],
 	// Employees see their OWN roster (handler self-scopes); cannot edit/approve.
 	roster: ["read"],
 	onboarding: ["read", "complete", "sign_acknowledgement"],
@@ -577,6 +622,8 @@ export const auditor = ac.newRole({
 	employee: ["read"],
 	resignation: ["read"],
 	transfer: ["read"],
+	// Read-only lifecycle oversight (internal notes still redacted server-side).
+	disciplinary: ["read"],
 	// Read-only oversight of the roster.
 	roster: ["read"],
 	onboarding: ["read"],

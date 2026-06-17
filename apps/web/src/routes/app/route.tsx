@@ -19,6 +19,7 @@ import {
 	DatabaseBackup,
 	FileText,
 	FolderKanban,
+	GitBranch,
 	Globe,
 	Handshake,
 	Info,
@@ -87,6 +88,8 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"helpdesk",
 	"projects",
 	"performance",
+	// Employees reach My disciplinary + My resignation via the Lifecycle landing.
+	"lifecycle",
 	"settings",
 ]);
 const MANAGER_VISIBLE_KEYS = new Set([
@@ -100,6 +103,8 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"helpdesk",
 	"projects",
 	"performance",
+	// Managers see scoped disciplinary/transfers/resignations for direct reports.
+	"lifecycle",
 	// Managers can VIEW the executive dashboard but are department-scoped
 	// server-side. canViewAnalytics includes "manager".
 	"analytics",
@@ -250,6 +255,12 @@ export const NAV = [
 				label: "Performance",
 				icon: Target,
 				href: "/app/performance",
+			},
+			{
+				key: "lifecycle",
+				label: "Lifecycle",
+				icon: GitBranch,
+				href: "/app/lifecycle",
 			},
 		],
 	},

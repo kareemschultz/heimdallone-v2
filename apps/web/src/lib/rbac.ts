@@ -515,3 +515,73 @@ export function canViewAnnouncements(_role: MemberRole): boolean {
 export function canManageAnnouncements(role: MemberRole): boolean {
 	return canManageHR(role);
 }
+// Lifecycle (Phase Lifecycle-C) — disciplinary / transfers / resignations.
+// Mirror of packages/api/src/utils/role-helpers.ts (keep BYTE-ALIGNED). Aligned
+// to the ACTUAL AC grants in permissions.ts (lesson #88), not spec prose.
+// Employee self-service (own disciplinary explain/appeal; own resignation
+// create/withdraw) is gated by the AC actions + handler self-scope, NOT these
+// helpers. internalNote on a disciplinary record is redacted SERVER-SIDE.
+//
+// The seesAll* helpers drive the list-scope branch: seesAll → whole org;
+// manager → own + direct reports; employee → self.
+
+// Disciplinary — catalogues + act + close are HR-level; viewing extends to
+// manager (direct reports, handler-scoped) + auditor.
+export function canManageDisciplinary(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canViewDisciplinary(role: MemberRole): boolean {
+	return (
+		canManageDisciplinary(role) || role === "manager" || role === "auditor"
+	);
+}
+
+export function seesAllDisciplinary(role: MemberRole): boolean {
+	return canManageHR(role) || role === "auditor";
+}
+
+// Transfers — approve/execute/reject are HR-level; managers may PROPOSE
+// (create/submit/cancel) for direct reports; viewing extends to manager + auditor.
+export function canManageTransfers(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canProposeTransfer(role: MemberRole): boolean {
+	return canManageTransfers(role) || role === "manager";
+}
+
+export function canViewTransfers(role: MemberRole): boolean {
+	return canManageTransfers(role) || role === "manager" || role === "auditor";
+}
+
+export function seesAllTransfers(role: MemberRole): boolean {
+	return canManageHR(role) || role === "auditor";
+}
+
+// Resignations — HR approve/handoff/reject; managers do the manager-approval
+// stage (scoped); payroll_admin reads (settlement readiness) + completes.
+export function canManageResignations(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canApproveResignation(role: MemberRole): boolean {
+	return canManageResignations(role) || role === "manager";
+}
+
+export function canViewResignations(role: MemberRole): boolean {
+	return (
+		canManageResignations(role) ||
+		role === "manager" ||
+		role === "auditor" ||
+		role === "payroll_admin"
+	);
+}
+
+export function canRequestResignation(role: MemberRole): boolean {
+	return canManageHR(role) || role === "manager" || role === "employee";
+}
+
+export function seesAllResignations(role: MemberRole): boolean {
+	return canManageHR(role) || role === "auditor" || role === "payroll_admin";
+}
