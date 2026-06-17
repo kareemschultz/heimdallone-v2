@@ -1,0 +1,228 @@
+/* Roster / Schedule — list, calendar (week grid) and timeline views. */
+
+.rst-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	align-items: center;
+	margin-bottom: 16px;
+}
+.rst-week-nav {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+}
+.rst-week-label {
+	min-width: 200px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg);
+	text-align: center;
+}
+.rst-spacer {
+	flex: 1;
+}
+
+/* Calendar week grid */
+.rst-grid-wrap {
+	overflow-x: auto;
+}
+.rst-grid {
+	width: 100%;
+	min-width: 760px;
+	border-collapse: collapse;
+}
+.rst-grid th,
+.rst-grid td {
+	padding: 0;
+	vertical-align: top;
+	border: 1px solid var(--line);
+}
+.rst-grid thead th {
+	padding: 8px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--fg-2);
+	text-align: center;
+	background: var(--bg-2);
+}
+.rst-grid thead th.rst-today {
+	color: var(--accent);
+}
+.rst-emp-col {
+	width: 160px;
+	padding: 10px !important;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--fg);
+	text-align: left !important;
+	background: var(--bg-2);
+}
+.rst-cell {
+	height: 64px;
+	padding: 4px !important;
+}
+.rst-cell-btn {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	width: 100%;
+	height: 100%;
+	padding: 6px;
+	font: inherit;
+	text-align: left;
+	cursor: pointer;
+	background: transparent;
+	border: none;
+	border-radius: 6px;
+}
+.rst-cell-btn:hover {
+	background: var(--bg-2);
+}
+.rst-cell-btn:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: -2px;
+}
+.rst-chip {
+	display: inline-block;
+	padding: 2px 6px;
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--fg);
+	background: color-mix(in oklch, var(--accent) 18%, transparent);
+	border-radius: 5px;
+}
+.rst-chip.rst-off {
+	color: var(--fg-3);
+	background: var(--bg-2);
+}
+.rst-cell-time {
+	font-size: 11px;
+	color: var(--fg-3);
+}
+.rst-cell-empty {
+	font-size: 18px;
+	line-height: 1;
+	color: var(--fg-4, var(--fg-3));
+}
+.rst-approve-dot {
+	display: inline-block;
+	width: 7px;
+	height: 7px;
+	margin-left: 4px;
+	vertical-align: middle;
+	border-radius: 50%;
+}
+.rst-approve-dot.ok {
+	background: var(--success, #34d399);
+}
+.rst-approve-dot.pending {
+	background: var(--warning, #fbbf24);
+}
+
+/* Timeline */
+.rst-timeline-row {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--line);
+}
+.rst-timeline-emp {
+	flex-shrink: 0;
+	width: 160px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.rst-timeline-strip {
+	display: grid;
+	flex: 1;
+	grid-template-columns: repeat(7, 1fr);
+	gap: 4px;
+	min-width: 560px;
+}
+.rst-timeline-day {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	height: 34px;
+	padding: 0 4px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--fg-3);
+	text-align: center;
+	background: var(--bg-2);
+	border-radius: 6px;
+}
+.rst-timeline-day.on {
+	color: var(--fg);
+	background: color-mix(in oklch, var(--accent) 22%, transparent);
+}
+
+/* Dialog (mirrors crm-dialog) */
+.rst-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background: rgba(0, 0, 0, 0.5);
+}
+.rst-dialog {
+	width: 100%;
+	max-width: 460px;
+	max-height: calc(100vh - 40px);
+	padding: 20px;
+	overflow-y: auto;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.rst-dialog h2 {
+	margin: 0 0 4px;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.rst-form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin-top: 12px;
+}
+.rst-form-field label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--fg-2);
+}
+.rst-form-field input,
+.rst-form-field select {
+	padding: 8px 10px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.rst-form-field input:focus-visible,
+.rst-form-field select:focus-visible {
+	border-color: var(--accent);
+	box-shadow: 0 0 0 2px color-mix(in oklch, var(--accent) 30%, transparent);
+}
+.rst-form-row {
+	display: flex;
+	gap: 10px;
+}
+.rst-form-row > * {
+	flex: 1;
+}
+.rst-dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+	margin-top: 18px;
+}

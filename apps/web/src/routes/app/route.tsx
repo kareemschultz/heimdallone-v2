@@ -11,6 +11,7 @@ import {
 	Bell,
 	Briefcase,
 	Calendar,
+	CalendarClock,
 	ChevronDown,
 	Clock,
 	Command,
@@ -36,6 +37,7 @@ import {
 	Sun,
 	Target,
 	User,
+	UserCog,
 	Users,
 	Wallet,
 	Wrench,
@@ -79,6 +81,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"overview",
 	"contracts",
 	"leave",
+	"roster",
 	"documents",
 	"helpdesk",
 	"projects",
@@ -90,6 +93,7 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"employees",
 	"contracts",
 	"attendance",
+	"roster",
 	"leave",
 	"documents",
 	"helpdesk",
@@ -179,6 +183,12 @@ export const NAV = [
 				label: "Attendance",
 				icon: Clock,
 				href: "/app/attendance",
+			},
+			{
+				key: "roster",
+				label: "Roster",
+				icon: CalendarClock,
+				href: "/app/roster",
 			},
 			{
 				key: "biometrics",
@@ -317,6 +327,12 @@ export const NAV = [
 		group: "Workspace",
 		items: [
 			{
+				key: "users",
+				label: "Users & Access",
+				icon: UserCog,
+				href: "/app/users",
+			},
+			{
 				key: "settings",
 				label: "Settings",
 				icon: Settings,
@@ -395,6 +411,12 @@ export function isNavItemVisible(key: string, role: string): boolean {
 	// (owner/admin/hr_admin) BEFORE the canViewPayroll see-all branch, so payroll
 	// and auditor don't see an entry that would only 403.
 	if (key === "migration-status") {
+		return canManageHR(role);
+	}
+	// Users & Access (members + invitations) — owner/admin/hr_admin only. The
+	// Better Auth `member` grant maps exactly to canManageHR; gate BEFORE the
+	// canViewPayroll see-all branch so payroll/auditor don't see a 403-only entry.
+	if (key === "users") {
 		return canManageHR(role);
 	}
 	// Preview/scaffold modules: admin-only (QA), hidden from everyone else.
