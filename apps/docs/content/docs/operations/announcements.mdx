@@ -1,0 +1,62 @@
+---
+title: Announcements
+description: Company-wide notices — how to post announcements, target an audience, and what members see.
+icon: Megaphone
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>HR</Tag>
+  <Tag>Manager</Tag>
+  <Tag>Employee</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Announcements are company-wide notices. Everyone sees the **feed**; owners,
+administrators and HR admins can **post and manage** them.
+
+## For everyone — the feed
+
+Open **App → Announcements** (in the **Operate** section of the sidebar). The feed
+shows published notices, **pinned items first**, with unread notices highlighted.
+Opening a notice marks it read.
+
+## For admins — posting
+
+<Callout type="info" title="Who can post">
+  Creating, editing, publishing and archiving announcements is limited to
+  **Tenant Owner**, **Tenant Admin** and **HR Admin**. Everyone else has a
+  read-only feed. The server enforces this regardless of the UI.
+</Callout>
+
+<Steps>
+<Step>Click **New announcement**, enter a title and message.</Step>
+<Step>Choose the **audience**: everyone, a single department, or a single access role.</Step>
+<Step>Optionally **pin** it (keeps it at the top) and choose **Publish now** or save as a draft.</Step>
+<Step>Manage existing notices from the **Manage** tab — publish/unpublish, archive.</Step>
+</Steps>
+
+## Audience targeting
+
+| Audience | Who sees it |
+| --- | --- |
+| Everyone | All members of the organization. |
+| Department | Members whose employee record is in that department. |
+| Role | Members holding that access role (e.g. Manager, Employee). |
+
+Audience matching is resolved on the server from the viewer's own role and
+department — it is never trusted from the browser.
+
+## Status meanings
+
+| Status | Meaning |
+| --- | --- |
+| Draft | Saved but not visible in anyone's feed. |
+| Published | Live in the feed for the matching audience. |
+| Archived | Removed from the feed; kept for the record. |
+
+## Notes
+
+- An optional **expiry** date hides an announcement from the feed after it passes.
+- Read state is per-person, so unread counts are accurate for each member.
+- Surveys (the other half of v1 Communications) are a planned follow-on.

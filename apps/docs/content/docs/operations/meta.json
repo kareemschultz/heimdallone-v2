@@ -1,5 +1,5 @@
 {
   "title": "Operations",
   "icon": "Workflow",
-  "pages": ["index"]
+  "pages": ["index", "announcements"]
 }
