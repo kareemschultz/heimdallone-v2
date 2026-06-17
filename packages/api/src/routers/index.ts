@@ -7,6 +7,7 @@ import { attendanceRouter } from "./attendance";
 import { biometricRouter } from "./biometric";
 import { contractsRouter } from "./contracts";
 import { crmRouter } from "./crm";
+import { developmentRouter } from "./development";
 import { financeRouter } from "./finance";
 import { glRouter } from "./gl";
 import { helpdeskRouter } from "./helpdesk";
@@ -36,6 +37,7 @@ export const appRouter = {
 	attendance: attendanceRouter,
 	biometric: biometricRouter,
 	crm: crmRouter,
+	development: developmentRouter,
 	finance: financeRouter,
 	gl: glRouter,
 	helpdesk: helpdeskRouter,

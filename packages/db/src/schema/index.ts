@@ -4,6 +4,7 @@ export * from "./attendance";
 export * from "./auth";
 export * from "./biometric";
 export * from "./crm";
+export * from "./development";
 export * from "./finance";
 export * from "./gl";
 export * from "./helpdesk";

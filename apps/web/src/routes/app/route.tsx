@@ -19,6 +19,7 @@ import {
 	FileText,
 	FolderKanban,
 	Globe,
+	GraduationCap,
 	Handshake,
 	Info,
 	Landmark,
@@ -83,6 +84,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"helpdesk",
 	"projects",
 	"performance",
+	"development",
 	"settings",
 ]);
 const MANAGER_VISIBLE_KEYS = new Set([
@@ -95,6 +97,8 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"helpdesk",
 	"projects",
 	"performance",
+	// Managers curate their team's training/certs/skills (scoped server-side).
+	"development",
 	// Managers can VIEW the executive dashboard but are department-scoped
 	// server-side. canViewAnalytics includes "manager".
 	"analytics",
@@ -121,6 +125,8 @@ const RECRUITER_VISIBLE_KEYS = new Set([
 	"recruitment",
 	"onboarding",
 	"documents",
+	// Recruiters get the catalogue + aggregate skill search (no individual rows).
+	"development",
 	"settings",
 ]);
 const HELPDESK_VISIBLE_KEYS = new Set([
@@ -233,6 +239,12 @@ export const NAV = [
 				label: "Performance",
 				icon: Target,
 				href: "/app/performance",
+			},
+			{
+				key: "development",
+				label: "Development",
+				icon: GraduationCap,
+				href: "/app/development",
 			},
 		],
 	},

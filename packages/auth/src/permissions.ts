@@ -172,9 +172,33 @@ export const statement = {
 	crm_pipeline: ["read", "manage"],
 	crm_activity: ["create", "read", "update", "archive"],
 	crm_note: ["create", "read", "update", "archive", "read_private"],
+
+	// Development — Learning & Growth (Phase Dev). Training + Certifications +
+	// Skills matrix. HR owns the catalogue/definitions + assesses; employees
+	// self-serve their own training/certs/skills. `read` = view the catalogue +
+	// (handler-scoped) records; `manage` = curate programs/cert-types/skill-
+	// catalogue + enroll/assess anyone + record any employee's cert (managers are
+	// narrowed to direct reports server-side); `enroll_self` = self-service enroll
+	// in an active program; `record_self` = self-assess a skill / record own
+	// certification (the asset:request precedent — self-service gated by an action
+	// staff actually hold, never sitting behind a manage-only gate). First consumer
+	// = the Dev-C development router → audit rises then.
+	development: ["read", "manage", "enroll_self", "record_self"],
 } as const;
 
 export const ac = createAccessControl(statement);
+
+// Development full-grant array (Phase Dev) — spread into the full-access role
+// blocks (owner/admin/hr + manager, who is narrowed to direct reports in-handler).
+const FULL_DEVELOPMENT = [
+	"read",
+	"manage",
+	"enroll_self",
+	"record_self",
+] as const;
+// Self-service-only development grant (read catalogue + own records, self-enroll,
+// self-assess) for participating staff who do NOT curate (employee).
+const SELF_DEVELOPMENT = ["read", "enroll_self", "record_self"] as const;
 
 // CRM full-grant arrays (Phase 17B) — spread into the sales-admin/owner blocks.
 const FULL_CRM = {
@@ -307,6 +331,7 @@ export const tenant_owner = ac.newRole({
 	project: FULL_PROJECT,
 	task: FULL_TASK,
 	time_entry: FULL_TIME_ENTRY,
+	development: FULL_DEVELOPMENT,
 	...MANAGE_BIOMETRIC,
 	...FULL_CRM,
 });
@@ -377,6 +402,7 @@ export const tenant_admin = ac.newRole({
 	project: FULL_PROJECT,
 	task: FULL_TASK,
 	time_entry: FULL_TIME_ENTRY,
+	development: FULL_DEVELOPMENT,
 	...MANAGE_BIOMETRIC,
 	...FULL_CRM,
 });
@@ -432,6 +458,7 @@ export const hr_admin = ac.newRole({
 	project: FULL_PROJECT,
 	task: FULL_TASK,
 	time_entry: ["read", "approve", "view_costs"],
+	development: FULL_DEVELOPMENT,
 	...MANAGE_BIOMETRIC,
 });
 
@@ -485,6 +512,8 @@ export const payroll_admin = ac.newRole({
 	crm_activity: ["read"],
 	crm_note: ["read"],
 	crm_pipeline: ["read"],
+	// Read-only development context (training/cert can affect allowances downstream).
+	development: ["read"],
 });
 
 export const manager = ac.newRole({
@@ -530,6 +559,9 @@ export const manager = ac.newRole({
 	crm_activity: ["create", "read"],
 	crm_note: ["read"],
 	crm_pipeline: ["read"],
+	// Managers curate their TEAM's training/skills — full grant, narrowed to
+	// direct reports in the handler (option A; getDirectReportIds precedent).
+	development: FULL_DEVELOPMENT,
 });
 
 export const employee = ac.newRole({
@@ -561,6 +593,8 @@ export const employee = ac.newRole({
 	project: ["read"],
 	task: ["read", "update", "change_status", "comment"],
 	time_entry: ["create", "read", "update", "submit"],
+	// Self-service: view catalogue + own records; self-enroll; self-assess.
+	development: SELF_DEVELOPMENT,
 });
 
 export const auditor = ac.newRole({
@@ -615,6 +649,8 @@ export const auditor = ac.newRole({
 	crm_activity: ["read"],
 	crm_note: ["read"],
 	crm_pipeline: ["read"],
+	// Read-only oversight of the development records + catalogue.
+	development: ["read"],
 });
 
 export const recruiter = ac.newRole({
@@ -630,6 +666,9 @@ export const recruiter = ac.newRole({
 	// Recruiters are staff too: they may self-request company property and see
 	// their own custody (read), but not the asset inventory (canViewAssets=false).
 	asset: ["read", "request"],
+	// Read + aggregate skills search ("do we already have this skill in-house?").
+	// The handler returns aggregate counts only — NO individual employee records.
+	development: ["read"],
 });
 
 export const helpdesk_agent = ac.newRole({
