@@ -1,7 +1,7 @@
 /**
  * Notifications API verification — Phase 21D-F (DB-free).
  *
- * The inbox is UNIVERSAL: every one of the 12 roles must hold notification:read
+ * The inbox is UNIVERSAL: every one of the 14 roles must hold notification:read
  * and notification:manage (the bell/inbox is shown to everyone), and the helpers
  * must agree. Self-scoping (a member only ever touches their own rows) is a
  * handler property enforced by selfScope(userId + org) — covered by check-types
@@ -50,8 +50,8 @@ for (const r of ALL_ROLES) {
 	);
 }
 
-process.stdout.write(`\n§2 coverage: ${ALL_ROLES.length} roles (expect 12)\n`);
-ok("all 12 roles present", ALL_ROLES.length === 12, `${ALL_ROLES.length}`);
+process.stdout.write(`\n§2 coverage: ${ALL_ROLES.length} roles (expect 14)\n`);
+ok("all 14 roles present", ALL_ROLES.length === 14, `${ALL_ROLES.length}`);
 
 process.stdout.write(
 	`\nNotifications API checks: ${pass} passed, ${fail} failed\n`

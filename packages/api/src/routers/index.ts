@@ -15,6 +15,7 @@ import { financeRouter } from "./finance";
 import { glRouter } from "./gl";
 import { helpdeskRouter } from "./helpdesk";
 import { hrCoreRouter } from "./hr-core";
+import { inventoryRouter } from "./inventory";
 import { leaveRouter } from "./leave";
 import { leavePolicyRouter } from "./leave-policy";
 import { lifecycleRouter } from "./lifecycle";
@@ -48,6 +49,7 @@ export const appRouter = {
 	finance: financeRouter,
 	gl: glRouter,
 	helpdesk: helpdeskRouter,
+	inventory: inventoryRouter,
 	leave: leaveRouter,
 	leavePolicy: leavePolicyRouter,
 	lifecycle: lifecycleRouter,

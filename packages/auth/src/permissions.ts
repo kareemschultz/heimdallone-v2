@@ -542,6 +542,7 @@ export const hr_admin = ac.newRole({
 	task: FULL_TASK,
 	time_entry: ["read", "approve", "view_costs"],
 	development: FULL_DEVELOPMENT,
+	...FULL_INVENTORY,
 	...MANAGE_BIOMETRIC,
 });
 
