@@ -2,7 +2,6 @@ import { createFileRoute, Link, redirect } from "@tanstack/react-router";
 import {
 	Activity,
 	ArrowRight,
-	Briefcase,
 	Building,
 	Calendar,
 	Clock,
@@ -10,13 +9,10 @@ import {
 	GitBranch,
 	Globe,
 	Moon,
-	Shield,
 	ShieldCheck,
-	Sparkles,
 	Sun,
 	Users,
 	Wallet,
-	Zap,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getHost } from "@/functions/get-host";
@@ -697,9 +693,9 @@ function MarketingLanding() {
 												borderRadius: 4,
 											}}
 										>
-											AS
+											YC
 										</span>
-										Atlas Shipping
+										Your company
 									</div>
 									<div
 										style={{
@@ -813,85 +809,6 @@ function MarketingLanding() {
 										</div>
 									</div>
 								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</section>
-
-			{/* ═══════════ LOGO MARQUEE ═══════════ */}
-			<section className="logos">
-				<div className="container">
-					<div className="logos-label">
-						Trusted by operations teams across the region
-					</div>
-					<div className="marquee">
-						<div className="marquee-track">
-							{/* Set 1 */}
-							<div className="logo-placeholder">
-								<Zap size={18} />
-								Atlas Shipping
-							</div>
-							<div className="logo-placeholder">
-								<Building size={18} />
-								Mahaica Group
-							</div>
-							<div className="logo-placeholder">
-								<Globe size={18} />
-								Bridgetown Ltd
-							</div>
-							<div className="logo-placeholder">
-								<Briefcase size={18} />
-								Kingston &amp; Co
-							</div>
-							<div className="logo-placeholder">
-								<Sparkles size={18} />
-								Demerara Works
-							</div>
-							<div className="logo-placeholder">
-								<Shield size={18} />
-								Trident Capital
-							</div>
-							<div className="logo-placeholder">
-								<Activity size={18} />
-								Spiceland Coöp
-							</div>
-							<div className="logo-placeholder">
-								<GitBranch size={18} />
-								Port Mourant
-							</div>
-							{/* Set 2 — duplicate for seamless loop */}
-							<div className="logo-placeholder">
-								<Zap size={18} />
-								Atlas Shipping
-							</div>
-							<div className="logo-placeholder">
-								<Building size={18} />
-								Mahaica Group
-							</div>
-							<div className="logo-placeholder">
-								<Globe size={18} />
-								Bridgetown Ltd
-							</div>
-							<div className="logo-placeholder">
-								<Briefcase size={18} />
-								Kingston &amp; Co
-							</div>
-							<div className="logo-placeholder">
-								<Sparkles size={18} />
-								Demerara Works
-							</div>
-							<div className="logo-placeholder">
-								<Shield size={18} />
-								Trident Capital
-							</div>
-							<div className="logo-placeholder">
-								<Activity size={18} />
-								Spiceland Coöp
-							</div>
-							<div className="logo-placeholder">
-								<GitBranch size={18} />
-								Port Mourant
 							</div>
 						</div>
 					</div>
@@ -1371,8 +1288,8 @@ function MarketingLanding() {
 									<ArrowRight size={14} />
 								</span>
 							</Link>
-							<Link className="btn btn-outline btn-lg" to="/app">
-								View live demo
+							<Link className="btn btn-outline btn-lg" to="/login">
+								Sign in
 							</Link>
 						</div>
 					</div>
