@@ -92,6 +92,18 @@ const ROLE_CATALOGUE: { value: string; label: string; description: string }[] =
 			label: "Sales Rep",
 			description: "Own CRM records — leads, deals and activities.",
 		},
+		{
+			value: "inventory_manager",
+			label: "Inventory Manager",
+			description:
+				"Full inventory — catalogue, locations, stock movements and approvals.",
+		},
+		{
+			value: "stock_officer",
+			label: "Stock Officer",
+			description:
+				"Maintains catalogue and proposes stock movements (no approval).",
+		},
 	];
 
 function roleLabel(role: string): string {

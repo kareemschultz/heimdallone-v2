@@ -217,9 +217,35 @@ export const statement = {
 	// staff actually hold, never sitting behind a manage-only gate). First consumer
 	// = the Dev-C development router → audit rises then.
 	development: ["read", "manage", "enroll_self", "record_self"],
+
+	// Inventory (Phase INV-B) — ported from Netsurf StockHub, multi-tenantised.
+	// Distinct from Assets ("who holds this laptop"); Inventory = ledger-backed
+	// "how many units of SKU X are in which bond". New resources consumed first by
+	// the INV-C `inventory` router (audit rises then; CRM/Projects precedent —
+	// unconsumed at the DB phase). Stock actions carry the separation-of-duties
+	// surface: `create` proposes a movement, `approve` commits it to balances
+	// (handler blocks self-approval), `negative_override` is the manager-only
+	// permission to approve a movement that would drive a balance below zero.
+	inventory_product: ["create", "read", "update", "archive"],
+	inventory_location: ["create", "read", "update", "archive"],
+	inventory_stock: ["read", "create", "approve", "negative_override"],
 } as const;
 
 export const ac = createAccessControl(statement);
+
+// Inventory full-grant arrays (Phase INV-B) — spread into the org-admin and
+// inventory-manager role blocks.
+const FULL_INVENTORY = {
+	inventory_product: ["create", "read", "update", "archive"],
+	inventory_location: ["create", "read", "update", "archive"],
+	inventory_stock: ["read", "create", "approve", "negative_override"],
+} as const;
+// Read-only inventory grant (auditor).
+const READ_INVENTORY = {
+	inventory_product: ["read"],
+	inventory_location: ["read"],
+	inventory_stock: ["read"],
+} as const;
 
 // Development full-grant array (Phase Dev) — spread into the full-access role
 // blocks (owner/admin/hr + manager, who is narrowed to direct reports in-handler).
@@ -383,6 +409,7 @@ export const tenant_owner = ac.newRole({
 	development: FULL_DEVELOPMENT,
 	...MANAGE_BIOMETRIC,
 	...FULL_CRM,
+	...FULL_INVENTORY,
 });
 
 export const tenant_admin = ac.newRole({
@@ -457,6 +484,7 @@ export const tenant_admin = ac.newRole({
 	development: FULL_DEVELOPMENT,
 	...MANAGE_BIOMETRIC,
 	...FULL_CRM,
+	...FULL_INVENTORY,
 });
 
 export const hr_admin = ac.newRole({
@@ -724,6 +752,8 @@ export const auditor = ac.newRole({
 	crm_pipeline: ["read"],
 	// Read-only oversight of the development records + catalogue.
 	development: ["read"],
+	// Read-only oversight of the inventory catalogue, locations + ledger.
+	...READ_INVENTORY,
 });
 
 export const recruiter = ac.newRole({
@@ -823,6 +853,37 @@ export const sales_rep = ac.newRole({
 	crm_pipeline: ["read"],
 });
 
+// Inventory manager (Phase INV-B) — the org-wide inventory administrator: full
+// catalogue + locations + ledger incl. approve and the negative-balance
+// override. The Inventory analogue of project_manager / sales_admin. (Separation
+// of duties still applies in-handler: even this role cannot approve a movement
+// it created itself.)
+export const inventory_manager = ac.newRole({
+	...memberAc.statements,
+	notification: ["read", "manage"],
+	announcement: ["read"],
+	branding: ["read"],
+	employee: ["read"],
+	document: ["read"],
+	...FULL_INVENTORY,
+});
+
+// Stock officer (Phase INV-B) — operational stock staff. Maintains the
+// catalogue + locations and PROPOSES stock movements (create), but does NOT
+// hold `approve` or `negative_override` — a manager commits the movement to
+// balances. This grant is the ceiling; the handler enforces tenant scope.
+export const stock_officer = ac.newRole({
+	...memberAc.statements,
+	notification: ["read", "manage"],
+	announcement: ["read"],
+	branding: ["read"],
+	employee: ["read"],
+	document: ["read"],
+	inventory_product: ["create", "read", "update"],
+	inventory_location: ["read"],
+	inventory_stock: ["read", "create"],
+});
+
 export const roles = {
 	tenant_owner,
 	tenant_admin,
@@ -836,6 +897,8 @@ export const roles = {
 	project_manager,
 	sales_admin,
 	sales_rep,
+	inventory_manager,
+	stock_officer,
 } as const;
 
 export type TenantRole = keyof typeof roles;

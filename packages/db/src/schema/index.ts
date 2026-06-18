@@ -10,6 +10,7 @@ export * from "./finance";
 export * from "./gl";
 export * from "./helpdesk";
 export * from "./hr-core";
+export * from "./inventory";
 export * from "./leave";
 export * from "./leave-policy";
 export * from "./lifecycle";

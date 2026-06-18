@@ -29,6 +29,8 @@ const ROLE_OPTIONS = [
 	"project_manager",
 	"sales_admin",
 	"sales_rep",
+	"inventory_manager",
+	"stock_officer",
 ];
 
 interface FeedItem {

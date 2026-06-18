@@ -218,6 +218,13 @@
       "when": 1781735926682,
       "tag": "0030_stormy_zemo",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1781800883021,
+      "tag": "0031_minor_sprite",
+      "breakpoints": true
     }
   ]
 }

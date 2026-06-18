@@ -108,6 +108,52 @@ export function canReadPrivateCrmNotes(role: MemberRole): boolean {
 	return isOwnerOrAdmin(role) || role === "sales_admin" || role === "sales_rep";
 }
 
+// Inventory (Phase INV) — ledger-backed stock (ported from StockHub). Mirror of
+// apps/web/src/lib/rbac.ts; aligned BYTE-FOR-BYTE to the `inventory_*` AC grants
+// in permissions.ts. Stock is org-wide (no per-user "own inventory"), so there
+// is no lateral scope — `canViewInventory` is the whole read audience. The
+// separation-of-duties rule (creator ≠ approver) is enforced in-handler on top
+// of `canApproveStockMovement`.
+export function canViewInventory(role: MemberRole): boolean {
+	return (
+		isOwnerOrAdmin(role) ||
+		role === "hr_admin" ||
+		role === "inventory_manager" ||
+		role === "stock_officer" ||
+		role === "auditor"
+	);
+}
+
+// Full inventory administration: archive products, manage locations, approve
+// movements, override negative balances.
+export function canManageInventory(role: MemberRole): boolean {
+	return (
+		isOwnerOrAdmin(role) || role === "hr_admin" || role === "inventory_manager"
+	);
+}
+
+// Maintain the catalogue (create/update products). Includes stock_officer, which
+// holds inventory_product create/update but not archive.
+export function canManageInventoryCatalog(role: MemberRole): boolean {
+	return canManageInventory(role) || role === "stock_officer";
+}
+
+// Propose a stock movement (draft/pending). Officers create; managers approve.
+export function canCreateStockMovement(role: MemberRole): boolean {
+	return canManageInventory(role) || role === "stock_officer";
+}
+
+// Commit a pending movement to balances. Excludes stock_officer (no approve
+// grant). The handler additionally blocks approving a self-created movement.
+export function canApproveStockMovement(role: MemberRole): boolean {
+	return canManageInventory(role);
+}
+
+// Approve a movement that would drive a balance below zero (manager override).
+export function canOverrideNegativeStock(role: MemberRole): boolean {
+	return canManageInventory(role);
+}
+
 // Recruitment (Phase 9C)
 export function canManageRecruitment(role: MemberRole): boolean {
 	return canManageHR(role) || role === "recruiter";

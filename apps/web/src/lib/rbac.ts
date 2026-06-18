@@ -106,6 +106,43 @@ export function canReadPrivateCrmNotes(role: MemberRole): boolean {
 	return isOwnerOrAdmin(role) || role === "sales_admin" || role === "sales_rep";
 }
 
+// Inventory (Phase INV) — ledger-backed stock (ported from StockHub). Server
+// mirror in packages/api/src/utils/role-helpers.ts; aligned BYTE-FOR-BYTE to the
+// `inventory_*` AC grants. Stock is org-wide (no per-user "own inventory"), so
+// canViewInventory is the whole read audience. Separation of duties (creator ≠
+// approver) is enforced in-handler on top of canApproveStockMovement.
+export function canViewInventory(role: MemberRole): boolean {
+	return (
+		isOwnerOrAdmin(role) ||
+		role === "hr_admin" ||
+		role === "inventory_manager" ||
+		role === "stock_officer" ||
+		role === "auditor"
+	);
+}
+
+export function canManageInventory(role: MemberRole): boolean {
+	return (
+		isOwnerOrAdmin(role) || role === "hr_admin" || role === "inventory_manager"
+	);
+}
+
+export function canManageInventoryCatalog(role: MemberRole): boolean {
+	return canManageInventory(role) || role === "stock_officer";
+}
+
+export function canCreateStockMovement(role: MemberRole): boolean {
+	return canManageInventory(role) || role === "stock_officer";
+}
+
+export function canApproveStockMovement(role: MemberRole): boolean {
+	return canManageInventory(role);
+}
+
+export function canOverrideNegativeStock(role: MemberRole): boolean {
+	return canManageInventory(role);
+}
+
 export function isEmployee(role: MemberRole): boolean {
 	return role === "employee";
 }
