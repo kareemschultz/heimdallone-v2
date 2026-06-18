@@ -14,6 +14,7 @@ import {
 	Calendar,
 	CalendarClock,
 	ChevronDown,
+	ClipboardList,
 	Clock,
 	Command,
 	Cpu,
@@ -248,6 +249,12 @@ export const NAV = [
 				href: "/app/announcements",
 			},
 			{
+				key: "surveys",
+				label: "Surveys",
+				icon: ClipboardList,
+				href: "/app/surveys",
+			},
+			{
 				key: "payroll",
 				label: "Payroll",
 				icon: Wallet,
@@ -462,13 +469,15 @@ function useCurrentNavKey(): string {
 // navigation only advertises usable features. Gated to canManageHR like the
 // migration cutover tool.
 const PREVIEW_KEYS = new Set(["compliance", "documents", "clients"]);
+// Company-wide member surfaces every role can reach (read/respond universal;
+// audience is matched server-side). Announcements feed + Surveys feed.
+const ALWAYS_VISIBLE_KEYS = new Set(["announcements", "surveys"]);
 
 export function isNavItemVisible(key: string, role: string): boolean {
 	// Migration status is an HR/admin cutover tool — restrict it to canManageHR
 	// (owner/admin/hr_admin) BEFORE the canViewPayroll see-all branch, so payroll
 	// and auditor don't see an entry that would only 403.
-	// Announcements: company-wide feed held by every role (read universal).
-	if (key === "announcements") {
+	if (ALWAYS_VISIBLE_KEYS.has(key)) {
 		return true;
 	}
 	if (key === "migration-status") {

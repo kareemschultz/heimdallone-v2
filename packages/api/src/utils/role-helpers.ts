@@ -592,6 +592,21 @@ export function canViewAnnouncements(_role: MemberRole): boolean {
 export function canManageAnnouncements(role: MemberRole): boolean {
 	return canManageHR(role);
 }
+
+// Surveys (Communications follow-on). view + respond held by every role (the
+// member feed); manage (create/build/publish/results) by owner/admin/hr_admin.
+// Anonymity is enforced server-side, not via these helpers. Mirror of rbac.ts.
+export function canViewSurveys(_role: MemberRole): boolean {
+	return true;
+}
+
+export function canManageSurveys(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canRespondToSurvey(_role: MemberRole): boolean {
+	return true;
+}
 // Lifecycle (Phase Lifecycle-C) — disciplinary / transfers / resignations.
 // Mirror of apps/web/src/lib/rbac.ts (keep BYTE-ALIGNED). Aligned to the ACTUAL
 // AC grants in permissions.ts (lesson #88), not spec prose. Employee

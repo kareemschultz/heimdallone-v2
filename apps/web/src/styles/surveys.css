@@ -1,0 +1,235 @@
+/* Surveys module (Communications follow-on) — mirrors announcements/finance css with sv- prefix. */
+
+.sv-card {
+	display: block;
+	width: 100%;
+	padding: 14px 16px;
+	margin-bottom: 10px;
+	text-align: left;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+.sv-card-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.sv-card-desc {
+	margin-top: 4px;
+	font-size: 12.5px;
+	color: var(--fg-3);
+}
+.sv-card-meta {
+	margin-top: 6px;
+	font-size: 11.5px;
+	color: var(--fg-4);
+}
+.sv-card-foot {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: space-between;
+	margin-top: 10px;
+}
+
+/* Dialog */
+.sv-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background: rgba(0, 0, 0, 0.5);
+}
+.sv-dialog {
+	width: 100%;
+	max-width: 560px;
+	max-height: calc(100vh - 40px);
+	padding: 20px;
+	overflow-y: auto;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.sv-dialog h2 {
+	margin: 0 0 4px;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.sv-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin-top: 12px;
+}
+.sv-field-row {
+	display: flex;
+	gap: 10px;
+}
+.sv-field-row .sv-field {
+	flex: 1;
+}
+.sv-field label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--fg-2);
+}
+.sv-field input[type="text"],
+.sv-field input:not([type]),
+.sv-field select,
+.sv-field textarea {
+	padding: 8px 10px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.sv-checkline {
+	display: flex;
+	gap: 6px;
+	align-items: center;
+	font-size: 13px;
+	color: var(--fg-2);
+}
+.sv-dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 18px;
+}
+
+/* Question builder */
+.sv-q {
+	padding: 10px 12px;
+	margin-top: 10px;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.sv-q-head {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	justify-content: space-between;
+}
+.sv-q-type {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--fg-3);
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+.sv-q-text {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg);
+}
+
+/* Respond form controls */
+.sv-opt {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-top: 6px;
+	font-size: 13px;
+	color: var(--fg-2);
+}
+.sv-rating {
+	display: flex;
+	gap: 6px;
+	margin-top: 6px;
+}
+.sv-rating-btn {
+	width: 36px;
+	height: 36px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg-2);
+	cursor: pointer;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.sv-rating-btn.active {
+	color: #fff;
+	background: var(--accent);
+	border-color: var(--accent);
+}
+.sv-req {
+	color: var(--danger);
+}
+
+/* Results */
+.sv-result {
+	padding-bottom: 12px;
+	margin-top: 14px;
+	border-bottom: 1px solid var(--line);
+}
+.sv-result-q {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.sv-bar-row {
+	display: flex;
+	gap: 8px;
+	align-items: center;
+	margin-top: 6px;
+	font-size: 12.5px;
+	color: var(--fg-2);
+}
+.sv-bar-label {
+	flex-shrink: 0;
+	width: 130px;
+}
+.sv-bar-track {
+	position: relative;
+	flex: 1;
+	height: 10px;
+	overflow: hidden;
+	background: var(--bg-3);
+	border-radius: 999px;
+}
+.sv-bar-fill {
+	height: 100%;
+	background: var(--accent);
+}
+.sv-bar-count {
+	flex-shrink: 0;
+	width: 40px;
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+.sv-text-answer {
+	padding: 8px 10px;
+	margin-top: 6px;
+	font-size: 12.5px;
+	color: var(--fg-2);
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.sv-anon-note {
+	padding: 10px 12px;
+	margin: 6px 0 14px;
+	font-size: 12px;
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border-left: 3px solid var(--accent);
+	border-radius: 6px;
+}
+
+.sv-card:focus-visible,
+.sv-rating-btn:focus-visible,
+.sv-field input:focus-visible,
+.sv-field select:focus-visible,
+.sv-field textarea:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}

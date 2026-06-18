@@ -552,6 +552,20 @@ export function canViewAnnouncements(_role: MemberRole): boolean {
 export function canManageAnnouncements(role: MemberRole): boolean {
 	return canManageHR(role);
 }
+
+// Surveys (Communications follow-on; mirror of role-helpers.ts). view + respond
+// held by every role; manage by owner/admin/hr_admin. Anonymity enforced server-side.
+export function canViewSurveys(_role: MemberRole): boolean {
+	return true;
+}
+
+export function canManageSurveys(role: MemberRole): boolean {
+	return canManageHR(role);
+}
+
+export function canRespondToSurvey(_role: MemberRole): boolean {
+	return true;
+}
 // Lifecycle (Phase Lifecycle-C) — disciplinary / transfers / resignations.
 // Mirror of packages/api/src/utils/role-helpers.ts (keep BYTE-ALIGNED). Aligned
 // to the ACTUAL AC grants in permissions.ts (lesson #88), not spec prose.

@@ -1,0 +1,109 @@
+---
+title: Surveys
+description: Anonymous or identified questionnaires with audience targeting, typed questions, and aggregate-only results.
+icon: ClipboardList
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>HR</Tag>
+  <Tag>Employee</Tag>
+  <Tag>Self-Service</Tag>
+  <Tag>Tenant Configurable</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Surveys let HR/admins collect feedback from members with a short questionnaire.
+A survey can be **anonymous** (responses are never linked to a person) or
+**identified** (one response per member, tied to their account). It is the
+companion to [Announcements](/docs/operations) — announcements push information
+out; surveys pull feedback in.
+
+## What it does
+
+- **Build** a survey with typed questions (text, single choice, multiple choice,
+  rating), each optionally required.
+- **Target** an audience — everyone, a single department, or a single role.
+- **Publish** it (optionally within an open/close window); members see it in
+  their Surveys feed and respond.
+- **Review** aggregate results — choice counts, rating averages, and free-text
+  answers.
+
+<Callout type="warn" title="Anonymity is enforced by the system">
+  When a survey is marked anonymous, the response is stored with **no
+  respondent id** — there is no record of who answered. Results are
+  aggregate-only and there is no way, in the product or the database, to map an
+  answer back to a person. This is enforced server-side, not just hidden in the
+  UI.
+</Callout>
+
+## Who can access it
+
+| Role | Access |
+| --- | --- |
+| Admin / HR Admin | Full: create surveys, build questions, publish/close, view results. |
+| Everyone else | See and respond to surveys addressed to them; cannot create or view results. |
+
+Surveys appear in the navigation for every role. Which surveys a person actually
+sees is decided by the audience (all members / their department / their role).
+
+## Question types
+
+| Type | Member answers with | Results show |
+| --- | --- | --- |
+| Text | A free-text box | The list of answers |
+| Single choice | One option (radio) | A count per option |
+| Multiple choice | One or more options (checkboxes) | A count per option |
+| Rating | A number 1…N | Average + distribution |
+
+## Main workflow
+
+### Create and publish (Admin / HR)
+
+1. **Surveys → New survey.** Give it a title and (optional) description.
+2. Choose **Anonymous** or identified, and the **audience** (everyone, a
+   department, or a role).
+3. **Add questions** — pick a type, write the question, mark it required if
+   needed. Choice questions take one option per line; rating questions take a max.
+4. **Save draft.** Drafts are editable; published surveys are locked.
+5. From the **Manage** tab, **Publish** when ready. Members in the audience now
+   see it in their feed.
+6. **Close** the survey when you're done collecting responses.
+
+### Respond (everyone)
+
+1. Open **Surveys** — the feed lists surveys addressed to you that are open.
+2. Click **Respond**, answer the questions (required ones are marked), and submit.
+3. Identified surveys accept **one response per person**; anonymous surveys show
+   a reminder that your answers aren't linked to you.
+
+### Read results (Admin / HR)
+
+From **Manage → Results**, see the response count and a per-question breakdown.
+For anonymous surveys this is aggregate-only by design.
+
+## Statuses
+
+| Status | Meaning |
+| --- | --- |
+| Draft | Being built. Editable. Not visible to members. |
+| Published | Live. Audience members can respond (within the open/close window if set). |
+| Closed | No longer accepting responses. Results remain available to HR. |
+
+## Admin setup & tenant configuration
+
+Everything about a survey is per-organisation: questions, options, audience, and
+the anonymity choice. Nothing is hardcoded. Department/role audiences are matched
+at read time, so a survey keeps working even if a department is later renamed or
+archived.
+
+## Common questions
+
+- **Can I edit a published survey?** No — only drafts are editable, so responses
+  always match the questions that were asked. Close it and create a new one.
+- **Why can't I see a survey a colleague mentioned?** It's probably targeted at a
+  different department or role, or it hasn't been published yet.
+- **Can HR see who answered an anonymous survey?** No. There is no respondent id
+  stored for anonymous responses.
+- **A required question won't let me submit.** Answer every question marked with
+  an asterisk (\*) before submitting.

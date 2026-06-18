@@ -22,4 +22,5 @@ export * from "./performance";
 export * from "./projects";
 export * from "./recruitment";
 export * from "./roster";
+export * from "./survey";
 export * from "./tenant-branding";
