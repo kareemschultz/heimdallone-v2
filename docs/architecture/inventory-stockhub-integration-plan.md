@@ -113,3 +113,19 @@ and Inventory is a multi-pass effort. Start INV-B once the owner confirms (a) th
 two new role names and (b) that a file-storage layer is in scope (or that MVP ships
 text-only first). Source surveys captured in this session; StockHub source is the
 reference implementation to lift from.
+
+---
+
+## ✅ Implementation status (2026-06-18)
+
+**INV-B → INV-E + docs COMPLETE and DEPLOYED to production (`sha-fca9c99`).**
+
+- **INV-B** (commit `8f58608`): `schema/inventory.ts` 10 tables + 4 enums, migration `0031_minor_sprite` (additive); AC resources `inventory_product`/`inventory_location`/`inventory_stock` + `FULL_INVENTORY`/`READ_INVENTORY`; new roles `inventory_manager` + `stock_officer`; 6 byte-aligned RBAC helpers (role-helpers ↔ rbac); `lib/inventory/{balances,approval}.ts` (org-scoped ledger fold + cache rebuild + separation-of-duties predicate); idempotent `scripts/seed-inventory.ts` (dev atlas-shipping only).
+- **INV-C** (commit `d86657e`): `routers/inventory.ts` (categories/productTypes/products/locations/movements/balances) wired into appRouter; two-layer authz (AC gate + org-fence/IDOR assert on every read+write); ported approve/reject/cancel/recompute with `isSelfApproval` + manager-only `canOverrideNegativeStock`; 18 unit tests (`bun test`) + `scripts/verify-inventory-api.ts` 127/127 (RBAC helper⟺grant for all 14 roles + SoD + override matrix + ledger maths), wired into `verify:core`. **audit:permissions 185/28 → 196/29.** Fixed `hr_admin` missing `...FULL_INVENTORY`.
+- **INV-D/E** (commit `a325d80`): UI — `features/inventory/{labels,types,badge,inventory-tabs,product-form,movement-form}`, routes `app/inventory/{index,catalog,movements,locations}`, `styles/inventory.css`, sidebar "Inventory" (Boxes, Operate group) gated `canViewInventory` + `INVENTORY_VISIBLE_KEYS` for the dedicated stock roles. StatTile + DataTable + navy theme + `:focus-visible`.
+- **Docs** (commit `fca9c99`): Fumadocs `operations/inventory.mdx` (role matrix, SoD, workflows, statuses, dashboard, admin setup, troubleshooting) + meta/index wiring.
+- **Deploy**: prod DB backed up (`backups/heimdallone_v2_prod_pre-inventory_*.dump`); migration `0031` applied to `heimdallone_v2_prod` (10 inventory tables, journal 31→32); coherent images web+server+docs all `sha-fca9c99`; v2 stack recreated; verified `/login` 200, docs inventory 200, server RPC live, `/app/*` behave identically (inventory == existing shipped routes). Prod inventory tables ship **empty** (no fake data).
+
+**Gates at ship:** check-types 3/3 · build 3/3 · audit 196/29 · verify:core green (inventory 127/127, ledger units 18/18) · lint clean · web tsc inventory 0.
+
+**Deferred (documented):** INV-F counts UI / INV-G inbound UI (the generic movement form already covers `count_adjustment` and `in`); INV-H exports/reports; INV-I Excel import + file/image storage (net-new infra); a real Netsurf StockHub catalogue ETL into the Netsurf tenant (separate owner-approved production write). See [[lessons-learned]] #102.
