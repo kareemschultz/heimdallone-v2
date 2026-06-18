@@ -1,0 +1,136 @@
+---
+title: Inventory
+description: Ledger-backed stock — the catalogue, locations, stock movements with approval, and on-hand balances.
+icon: Boxes
+---
+
+<Tags>
+  <Tag>Admin</Tag>
+  <Tag>Manager</Tag>
+  <Tag>Auditor</Tag>
+  <Tag>Tenant Configurable</Tag>
+  <Tag>Requires Setup</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Inventory tracks physical stock — products, the locations stock lives in, and an
+append-only ledger of stock movements. On-hand balances are **never edited
+directly**: they change only when a stock movement is **approved**. This gives a
+complete, auditable history of every change to stock.
+
+## What it does
+
+- **Catalogue** — the products you track, grouped by category and product type,
+  each with a unit price and a reorder level.
+- **Locations** — where stock physically lives (an office/warehouse, or a customs
+  bond).
+- **Movements** — the stock ledger. Receiving, sales, transfers, adjustments,
+  reservations, damages, and returns are all recorded as movements.
+- **Balances** — the derived on-hand (and reserved) quantity per product per
+  location, plus a dashboard of stock value, low-stock items, and movements
+  awaiting approval.
+
+<Callout type="info" title="Balances are derived, not entered">
+  You cannot type a stock level. The on-hand figure for every product/location is
+  computed from the approved movement ledger. To change stock, record a movement
+  and have it approved. This makes the ledger the single source of truth and lets
+  balances be rebuilt deterministically at any time.
+</Callout>
+
+## Who can access it
+
+| Role | Access |
+| --- | --- |
+| Admin / HR Admin | Full access: manage the catalogue and locations, record movements, **approve** movements, and override a negative balance. |
+| Inventory Manager | Full access (same as Admin for inventory): catalogue, locations, record, **approve**, negative override. |
+| Stock Officer | Maintain the catalogue and **record** movements, but **cannot approve** them or override a negative balance. |
+| Auditor | Read-only — sees the catalogue, locations, ledger, and balances; no changes. |
+| Everyone else | No access. Inventory does not appear in their navigation. |
+
+<Callout type="warn" title="Separation of duties">
+  The person who records a movement **cannot approve their own movement** — a
+  different approver is required. This is enforced by the system, not just hidden
+  in the UI. It means a stock officer records receipts and sales, and a manager or
+  admin signs them off before stock levels change.
+</Callout>
+
+## Main workflows
+
+### Recording stock coming in (receiving)
+
+1. Go to **Inventory → Movements → New movement**.
+2. Choose the product, set the type to **Stock in**, enter the quantity, and pick
+   the **destination** location.
+3. Save. The movement is created as **Pending** — stock has not changed yet.
+4. A different person with approval rights opens the movement and **Approves** it.
+   On approval, the destination balance increases.
+
+### Moving stock between locations (transfer)
+
+A **Transfer** moves stock from a source location to a destination in one
+movement. The two locations must differ. On approval, the source balance
+decreases and the destination balance increases by the same quantity — the
+transfer is balance-neutral for the organisation as a whole.
+
+### Selling or issuing stock
+
+Use **Sold**, **Issued**, **Out**, or **Damaged** with a **source** location. On
+approval, the source balance decreases. If the approval would drive a balance
+below zero, it is blocked unless the approver holds the negative-override
+capability (admins and inventory managers).
+
+### Corrections and counts
+
+- **Adjustment** / **Count adjustment** apply a signed change to a location (the
+  quantity may be negative to write a balance down after a physical count).
+- **Reserve** / **Release** move the *reserved* quantity without changing physical
+  on-hand — useful for earmarking stock.
+
+## Movement statuses
+
+| Status | Meaning |
+| --- | --- |
+| Pending approval | Recorded but not yet approved. Stock has **not** changed. |
+| Approved | Signed off. Balances have been updated. Approved movements cannot be cancelled — post a correcting movement instead. |
+| Rejected | An approver declined it. Stock is unchanged. |
+| Cancelled | The recorder withdrew it before approval. Stock is unchanged. |
+
+## The overview dashboard
+
+The Inventory overview shows:
+
+- **Active products**, **units on hand**, and total **stock value** (sum of
+  quantity × unit price).
+- **Low stock** — products at or below their reorder level.
+- **Pending approval** — movements waiting for sign-off.
+- A **Needs attention** list linking straight to the pending queue and each
+  low-stock product, plus an **on-hand by location** table.
+
+## Admin setup
+
+Before recording movements, an administrator (or inventory manager) sets up:
+
+1. **Categories** and **product types** (e.g. *Networking → Routers*).
+2. **Products**, each assigned to a category and type, with an optional SKU, unit
+   price, and reorder level. Changing a product's price records a price-history
+   entry automatically.
+3. **Locations** — at least one office/warehouse, plus any customs bond.
+
+<Callout type="info" title="Tenant-configurable">
+  Categories, product types, locations, products, and reorder levels are all
+  per-organisation. Nothing about the catalogue is hardcoded — each tenant defines
+  its own stock model.
+</Callout>
+
+## What to check
+
+- **A balance looks wrong** — review the product's movement history. Because
+  balances are derived from approved movements, the ledger always explains the
+  current figure.
+- **An approval is blocked with a "below zero" message** — the movement would take
+  a location negative. Confirm the source location actually holds the stock, or ask
+  an admin/inventory manager (who can override) to review.
+- **You can't approve a movement you recorded** — that's by design. A different
+  person must approve it.
+- **A product isn't appearing** — check the catalogue filters (it may be archived,
+  or filtered out by category/type/"active only").
