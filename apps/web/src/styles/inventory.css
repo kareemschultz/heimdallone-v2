@@ -1,0 +1,358 @@
+/* Inventory module (Phase INV-D) — self-contained; mirrors finance.css with inv- prefix. */
+
+.inv-tabs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin: 4px 0 16px;
+	border-bottom: 1px solid var(--line);
+}
+.inv-tab {
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg-3);
+	text-decoration: none;
+	border-bottom: 2px solid transparent;
+}
+.inv-tab:hover {
+	color: var(--fg);
+}
+.inv-tab.active {
+	color: var(--fg);
+	border-bottom-color: var(--accent);
+}
+
+/* Badges */
+.inv-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	white-space: nowrap;
+	border-radius: 999px;
+}
+.inv-badge.tone-success {
+	color: var(--success);
+	background: var(--success-soft);
+}
+.inv-badge.tone-warning {
+	color: var(--warning);
+	background: var(--warning-soft);
+}
+.inv-badge.tone-danger {
+	color: var(--danger);
+	background: var(--danger-soft);
+}
+.inv-badge.tone-info {
+	color: var(--info);
+	background: var(--info-soft);
+}
+.inv-badge.tone-neutral {
+	color: var(--fg-3);
+	background: var(--bg-3);
+}
+
+/* Stat tiles wrapper */
+.inv-tiles {
+	margin-bottom: 18px;
+}
+
+/* Toolbar / filters */
+.inv-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	align-items: center;
+	margin-bottom: 14px;
+}
+.inv-toolbar label {
+	font-size: 12px;
+	color: var(--fg-3);
+}
+.inv-toolbar input,
+.inv-toolbar select {
+	height: 32px;
+	padding: 0 10px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.inv-toolbar .spacer {
+	flex: 1;
+}
+
+/* Table */
+.inv-table {
+	width: 100%;
+	font-size: 13px;
+	border-collapse: collapse;
+}
+.inv-table th {
+	padding: 8px 10px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--fg-3);
+	text-align: left;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	border-bottom: 1px solid var(--line);
+}
+.inv-table td {
+	padding: 10px;
+	vertical-align: middle;
+	color: var(--fg-2);
+	border-bottom: 1px solid var(--line);
+}
+.inv-table td.num,
+.inv-table th.num {
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+/* Names / cells */
+.inv-name {
+	font-weight: 600;
+	color: var(--fg);
+}
+.inv-name-link {
+	font-weight: 600;
+	color: var(--fg);
+	text-decoration: none;
+}
+.inv-name-link:hover {
+	color: var(--accent);
+}
+.inv-sub {
+	font-size: 11.5px;
+	color: var(--fg-4);
+}
+.inv-mono {
+	font-variant-numeric: tabular-nums;
+}
+.num {
+	font-variant-numeric: tabular-nums;
+	text-align: right;
+}
+
+/* Direction-coloured quantity in the ledger */
+.inv-qty.dir-in {
+	color: var(--success);
+}
+.inv-qty.dir-out {
+	color: var(--danger);
+}
+.inv-qty.dir-move {
+	color: var(--info);
+}
+
+/* Section heads */
+.inv-section {
+	margin-top: 22px;
+}
+.inv-section-title {
+	margin-bottom: 10px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg);
+}
+
+/* Needs-attention list */
+.inv-attention {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.inv-attn-row {
+	display: flex;
+	gap: 10px;
+	align-items: center;
+	justify-content: space-between;
+	padding: 10px 12px;
+	text-decoration: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+.inv-attn-row:hover {
+	border-color: var(--accent);
+}
+.inv-attn-main {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.inv-attn-sub {
+	font-size: 11.5px;
+	color: var(--fg-3);
+}
+
+/* Quicklink cards */
+.inv-quicklinks {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+	gap: 12px;
+	margin-top: 18px;
+}
+.inv-quicklink {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+	padding: 14px 16px;
+	text-decoration: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+}
+.inv-quicklink:hover {
+	border-color: var(--accent);
+}
+.inv-ql-title {
+	font-size: 13.5px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.inv-ql-sub {
+	font-size: 11.5px;
+	color: var(--fg-3);
+}
+
+/* Note callout */
+.inv-note {
+	padding: 10px 12px;
+	margin: 6px 0 14px;
+	font-size: 12px;
+	color: var(--fg-3);
+	background: var(--bg-3);
+	border-left: 3px solid var(--accent);
+	border-radius: 6px;
+}
+
+/* Skeleton */
+.inv-skeleton {
+	height: 160px;
+	margin-top: 8px;
+	background: linear-gradient(90deg, var(--bg-2), var(--bg-3), var(--bg-2));
+	border-radius: 12px;
+}
+
+/* Dialog */
+.inv-dialog-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 20px;
+	background: rgba(0, 0, 0, 0.5);
+}
+.inv-dialog {
+	width: 100%;
+	max-width: 480px;
+	max-height: calc(100vh - 40px);
+	padding: 20px;
+	overflow-y: auto;
+	background: var(--bg);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+}
+.inv-dialog h2 {
+	margin: 0 0 4px;
+	font-size: 16px;
+	font-weight: 600;
+	color: var(--fg);
+}
+.inv-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	margin-top: 12px;
+}
+.inv-field-row {
+	display: flex;
+	gap: 10px;
+}
+.inv-field-row .inv-field {
+	flex: 1;
+}
+.inv-field label {
+	font-size: 12px;
+	font-weight: 500;
+	color: var(--fg-2);
+}
+.inv-field input,
+.inv-field select,
+.inv-field textarea {
+	padding: 8px 10px;
+	font-size: 13px;
+	color: var(--fg);
+	outline: none;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.inv-dialog-actions {
+	display: flex;
+	gap: 8px;
+	justify-content: flex-end;
+	margin-top: 18px;
+}
+
+/* Buttons */
+.inv-btn {
+	display: inline-flex;
+	gap: 6px;
+	align-items: center;
+	padding: 7px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--fg);
+	cursor: pointer;
+	background: var(--bg-2);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+}
+.inv-btn:hover {
+	border-color: var(--accent);
+}
+.inv-btn.primary {
+	color: #fff;
+	background: var(--accent);
+	border-color: var(--accent);
+}
+.inv-btn.danger {
+	color: var(--danger);
+}
+.inv-btn.small {
+	padding: 4px 10px;
+	font-size: 12px;
+}
+.inv-btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+.inv-row-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+/* Accessible focus rings everywhere (WCAG 2.4.7 — lesson #86). */
+.inv-tab:focus-visible,
+.inv-btn:focus-visible,
+.inv-quicklink:focus-visible,
+.inv-attn-row:focus-visible,
+.inv-name-link:focus-visible,
+.inv-toolbar input:focus-visible,
+.inv-toolbar select:focus-visible,
+.inv-field input:focus-visible,
+.inv-field select:focus-visible,
+.inv-field textarea:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+}

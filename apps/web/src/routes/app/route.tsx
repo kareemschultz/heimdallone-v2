@@ -9,6 +9,7 @@ import {
 import {
 	BarChart3,
 	Bell,
+	Boxes,
 	Briefcase,
 	Calendar,
 	CalendarClock,
@@ -60,6 +61,7 @@ import {
 	canUseGeofenceCheckIn,
 	canViewBiometrics,
 	canViewGeofencing,
+	canViewInventory,
 	canViewPayroll,
 } from "@/lib/rbac";
 import { client, orpc } from "@/utils/orpc";
@@ -163,6 +165,17 @@ const PROJECT_MANAGER_VISIBLE_KEYS = new Set([
 	"settings",
 ]);
 
+// Inventory roles (Phase INV) — inventory_manager / stock_officer are dedicated
+// stock roles. Without an explicit set, isNavItemVisible would deny them every
+// item (they're not covered by canViewPayroll). They see the stock surface plus
+// the basics. The "inventory" key itself is gated by canViewInventory below.
+const INVENTORY_VISIBLE_KEYS = new Set([
+	"overview",
+	"inventory",
+	"documents",
+	"settings",
+]);
+
 export const Route = createFileRoute("/app")({
 	component: AppLayout,
 	beforeLoad: async () => {
@@ -243,6 +256,12 @@ export const NAV = [
 				label: "Assets",
 				icon: Package,
 				href: "/app/assets",
+			},
+			{
+				key: "inventory",
+				label: "Inventory",
+				icon: Boxes,
+				href: "/app/inventory",
 			},
 			{
 				key: "helpdesk",
@@ -469,8 +488,17 @@ export function isNavItemVisible(key: string, role: string): boolean {
 	if (key === "setup") {
 		return canManageHR(role) || canViewPayroll(role);
 	}
+	// Inventory: gated by canViewInventory (admins/inventory_manager/stock_officer/
+	// auditor) BEFORE the canViewPayroll see-all branch, so payroll managers — who
+	// have NO inventory grant — don't see an entry that would only 403.
+	if (key === "inventory") {
+		return canViewInventory(role);
+	}
 	if (canViewPayroll(role)) {
 		return true;
+	}
+	if (role === "inventory_manager" || role === "stock_officer") {
+		return INVENTORY_VISIBLE_KEYS.has(key);
 	}
 	if (role === "employee") {
 		return EMPLOYEE_VISIBLE_KEYS.has(key);
