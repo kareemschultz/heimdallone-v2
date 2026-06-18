@@ -32,6 +32,7 @@ import {
 	MapPin,
 	Megaphone,
 	Moon,
+	Network,
 	Package,
 	PanelLeft,
 	Search,
@@ -99,6 +100,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 const MANAGER_VISIBLE_KEYS = new Set([
 	"overview",
 	"employees",
+	"org-chart",
 	"contracts",
 	"attendance",
 	"roster",
@@ -202,6 +204,12 @@ export const NAV = [
 				label: "Employees",
 				icon: Users,
 				href: "/app/employees",
+			},
+			{
+				key: "org-chart",
+				label: "Org chart",
+				icon: Network,
+				href: "/app/org-chart",
 			},
 			{
 				key: "attendance",

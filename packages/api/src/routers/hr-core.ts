@@ -995,6 +995,97 @@ const employeeGetById = authorizedProcedure("employee", "read")
 		};
 	});
 
+// Read-only org chart: a flat list of nodes (employee + reporting line + dept +
+// position) that the UI assembles into a tree. Reuses employee:read (no new AC
+// pair). See-all roles get the whole org; a manager gets their own subtree
+// (self + all descendants, resolved server-side via BFS over reportingManagerId
+// so scope can never widen on the client). Names/titles only — no salary/PII.
+const employeeOrgChart = authorizedProcedure("employee", "read")
+	.input(z.object({ includeArchived: z.boolean().optional() }).optional())
+	.handler(async ({ context, input }) => {
+		const organizationId = context.organizationId;
+		const role = context.memberRole;
+		const includeArchived = input?.includeArchived ?? false;
+
+		const conditions = [
+			eq(schema.employeeProfile.organizationId, organizationId),
+		];
+		if (!includeArchived) {
+			conditions.push(eq(schema.employeeProfile.isActive, true));
+		}
+
+		const allNodes = await db
+			.select({
+				id: schema.employeeProfile.id,
+				firstName: schema.employeeProfile.firstName,
+				lastName: schema.employeeProfile.lastName,
+				profileImageUrl: schema.employeeProfile.profileImageUrl,
+				isActive: schema.employeeProfile.isActive,
+				reportingManagerId: schema.employeeWorkInfo.reportingManagerId,
+				departmentName: schema.department.name,
+				jobPositionName: schema.jobPosition.name,
+			})
+			.from(schema.employeeProfile)
+			.leftJoin(
+				schema.employeeWorkInfo,
+				eq(schema.employeeProfile.id, schema.employeeWorkInfo.employeeId)
+			)
+			.leftJoin(
+				schema.department,
+				eq(schema.employeeWorkInfo.departmentId, schema.department.id)
+			)
+			.leftJoin(
+				schema.jobPosition,
+				eq(schema.employeeWorkInfo.jobPositionId, schema.jobPosition.id)
+			)
+			.where(and(...conditions))
+			.orderBy(schema.employeeProfile.firstName);
+
+		// See-all roles (owner/admin/hr/payroll/auditor) see the whole org.
+		if (canReadAllEmployees(role)) {
+			return { nodes: allNodes, scoped: false };
+		}
+
+		// Manager: restrict to self + all descendants (BFS over the in-memory set).
+		const currentEmp = await resolveCurrentEmployee(
+			organizationId,
+			context.session.user.id
+		);
+		if (!currentEmp) {
+			return { nodes: [], scoped: true };
+		}
+		const childrenByManager = new Map<string, typeof allNodes>();
+		for (const n of allNodes) {
+			if (n.reportingManagerId) {
+				const list = childrenByManager.get(n.reportingManagerId) ?? [];
+				list.push(n);
+				childrenByManager.set(n.reportingManagerId, list);
+			}
+		}
+		const subtree: typeof allNodes = [];
+		const seen = new Set<string>();
+		const queue = [currentEmp.id];
+		const selfNode = allNodes.find((n) => n.id === currentEmp.id);
+		if (selfNode) {
+			subtree.push(selfNode);
+			seen.add(selfNode.id);
+		}
+		while (queue.length > 0) {
+			const managerId = queue.shift();
+			if (!managerId) {
+				continue;
+			}
+			for (const child of childrenByManager.get(managerId) ?? []) {
+				if (!seen.has(child.id)) {
+					seen.add(child.id);
+					subtree.push(child);
+					queue.push(child.id);
+				}
+			}
+		}
+		return { nodes: subtree, scoped: true };
+	});
+
 const employeeCreate = authorizedProcedure("employee", "create")
 	.input(
 		z.object({
@@ -1894,6 +1985,7 @@ export const hrCoreRouter = {
 	employees: {
 		list: employeeList,
 		getById: employeeGetById,
+		orgChart: employeeOrgChart,
 		create: employeeCreate,
 		update: employeeUpdate,
 		archive: employeeArchive,

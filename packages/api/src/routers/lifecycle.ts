@@ -252,6 +252,11 @@ const categoriesCreate = authorizedProcedure("disciplinary", "create")
 				description: input.description ?? null,
 			})
 			.returning({ id: disciplinaryCategory.id });
+		if (!created) {
+			throw new ORPCError("INTERNAL_SERVER_ERROR", {
+				message: "Insert failed.",
+			});
+		}
 		await createAuditEvent(db, {
 			organizationId: oid,
 			entityType: "disciplinary_category",
@@ -350,6 +355,11 @@ const actionsCreate = authorizedProcedure("disciplinary", "create")
 				outcome: input.outcome,
 			})
 			.returning({ id: disciplinaryAction.id });
+		if (!created) {
+			throw new ORPCError("INTERNAL_SERVER_ERROR", {
+				message: "Insert failed.",
+			});
+		}
 		await createAuditEvent(db, {
 			organizationId: oid,
 			entityType: "disciplinary_action",
@@ -559,6 +569,11 @@ const recordsCreate = authorizedProcedure("disciplinary", "create")
 						status: "draft",
 					})
 					.returning({ id: disciplinaryRecord.id });
+				if (!created) {
+					throw new ORPCError("INTERNAL_SERVER_ERROR", {
+						message: "Insert failed.",
+					});
+				}
 				await createAuditEvent(db, {
 					organizationId: oid,
 					entityType: "disciplinary_record",
@@ -1051,6 +1066,11 @@ const transfersCreate = authorizedProcedure("transfer", "create")
 						reason: input.reason ?? null,
 					})
 					.returning({ id: employeeTransfer.id });
+				if (!created) {
+					throw new ORPCError("INTERNAL_SERVER_ERROR", {
+						message: "Insert failed.",
+					});
+				}
 				await createAuditEvent(db, {
 					organizationId: oid,
 					entityType: "employee_transfer",
@@ -1524,6 +1544,11 @@ const resignationsCreate = authorizedProcedure("resignation", "create")
 						createdByUserId: actorId(context),
 					})
 					.returning({ id: resignationRequest.id });
+				if (!created) {
+					throw new ORPCError("INTERNAL_SERVER_ERROR", {
+						message: "Insert failed.",
+					});
+				}
 				await createAuditEvent(db, {
 					organizationId: oid,
 					entityType: "resignation_request",

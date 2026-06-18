@@ -85,7 +85,13 @@ async function authenticateDevice(reqHeaders: Headers) {
 			message: "Missing device bearer token.",
 		});
 	}
-	const key = match[1].trim();
+	const token = match[1];
+	if (!token) {
+		throw new ORPCError("UNAUTHORIZED", {
+			message: "Missing device bearer token.",
+		});
+	}
+	const key = token.trim();
 	const [device] = await db
 		.select()
 		.from(attendanceDevice)

@@ -308,6 +308,11 @@ const create = authorizedProcedure("announcement", "manage")
 				createdByUserId: actorId(context),
 			})
 			.returning({ id: announcement.id });
+		if (!row) {
+			throw new ORPCError("INTERNAL_SERVER_ERROR", {
+				message: "Insert failed.",
+			});
+		}
 		await createAuditEvent(db, {
 			organizationId: oid,
 			entityType: "announcement",
