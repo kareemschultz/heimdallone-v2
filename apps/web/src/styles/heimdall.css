@@ -1,6 +1,7 @@
 /* ============================================================
-   HEIMDALLONE — Design System
-   Dark-first, gold-accent, operational SaaS
+   HEIMDALLONE — Design System ("Meridian")
+   Dark-first, teal-accent, operational SaaS.
+   Brand accent chains to --primary (set in packages/ui globals.css).
    ============================================================ */
 
 /* Fonts loaded via <link> in __root.tsx to avoid FOUC */
@@ -47,21 +48,21 @@
 	color-scheme: dark;
 }
 
-/* ---------- TOKENS — LIGHT ---------- */
+/* ---------- TOKENS — LIGHT (Meridian cool-neutral) ---------- */
 [data-theme="light"] {
-	--bg: #fbfaf6;
+	--bg: #f4f7f7;
 	--bg-1: #ffffff;
 	--bg-2: #ffffff;
-	--bg-3: #f6f4ee;
-	--bg-4: #eeebe2;
-	--line: #e8e4d8;
-	--line-2: #d8d2c1;
-	--line-strong: #b8b09a;
+	--bg-3: #eef2f2;
+	--bg-4: #e4eaea;
+	--line: #e2e8e8;
+	--line-2: #cdd6d6;
+	--line-strong: #aab6b6;
 
-	--fg: #14161c;
-	--fg-2: #4a5160;
-	--fg-3: #6e7686;
-	--fg-4: #9aa0ad;
+	--fg: #131718;
+	--fg-2: #495257;
+	--fg-3: #6c757b;
+	--fg-4: #98a1a6;
 
 	--accent: var(--primary);
 	--accent-2: var(--primary);

@@ -190,9 +190,12 @@ export const Route = createFileRoute("/app")({
 	},
 });
 
+// Information architecture — Meridian 7-hub grouping. Group labels are
+// display-only (rendered as nav-group-label); all role visibility + preview
+// gating keys off each item's `key`, so regrouping never changes access.
 export const NAV = [
 	{
-		group: "Operate",
+		group: "Workspace",
 		items: [
 			{
 				key: "overview",
@@ -200,6 +203,23 @@ export const NAV = [
 				icon: LayoutDashboard,
 				href: "/app",
 			},
+			{
+				key: "announcements",
+				label: "Announcements",
+				icon: Megaphone,
+				href: "/app/announcements",
+			},
+			{
+				key: "surveys",
+				label: "Surveys",
+				icon: ClipboardList,
+				href: "/app/surveys",
+			},
+		],
+	},
+	{
+		group: "People",
+		items: [
 			{
 				key: "employees",
 				label: "Employees",
@@ -212,6 +232,29 @@ export const NAV = [
 				icon: Network,
 				href: "/app/org-chart",
 			},
+			{
+				key: "performance",
+				label: "Performance",
+				icon: Target,
+				href: "/app/performance",
+			},
+			{
+				key: "development",
+				label: "Development",
+				icon: GraduationCap,
+				href: "/app/development",
+			},
+			{
+				key: "lifecycle",
+				label: "Lifecycle",
+				icon: GitBranch,
+				href: "/app/lifecycle",
+			},
+		],
+	},
+	{
+		group: "Time & Attendance",
+		items: [
 			{
 				key: "attendance",
 				label: "Attendance",
@@ -242,18 +285,11 @@ export const NAV = [
 				icon: Calendar,
 				href: "/app/leave",
 			},
-			{
-				key: "announcements",
-				label: "Announcements",
-				icon: Megaphone,
-				href: "/app/announcements",
-			},
-			{
-				key: "surveys",
-				label: "Surveys",
-				icon: ClipboardList,
-				href: "/app/surveys",
-			},
+		],
+	},
+	{
+		group: "Pay & Finance",
+		items: [
 			{
 				key: "payroll",
 				label: "Payroll",
@@ -267,6 +303,35 @@ export const NAV = [
 				href: "/app/contracts",
 			},
 			{
+				key: "finance",
+				label: "Finance",
+				icon: Landmark,
+				href: "/app/finance",
+			},
+			{
+				key: "analytics",
+				label: "Analytics",
+				icon: BarChart3,
+				href: "/app/analytics",
+			},
+		],
+	},
+	{
+		group: "Operations",
+		items: [
+			{
+				key: "projects",
+				label: "Projects",
+				icon: FolderKanban,
+				href: "/app/projects",
+			},
+			{
+				key: "helpdesk",
+				label: "Helpdesk",
+				icon: LifeBuoy,
+				href: "/app/helpdesk",
+			},
+			{
 				key: "assets",
 				label: "Assets",
 				icon: Package,
@@ -278,62 +343,10 @@ export const NAV = [
 				icon: Boxes,
 				href: "/app/inventory",
 			},
-			{
-				key: "helpdesk",
-				label: "Helpdesk",
-				icon: LifeBuoy,
-				href: "/app/helpdesk",
-			},
-			{
-				key: "projects",
-				label: "Projects",
-				icon: FolderKanban,
-				href: "/app/projects",
-			},
-			{
-				key: "performance",
-				label: "Performance",
-				icon: Target,
-				href: "/app/performance",
-			},
-			{
-				key: "lifecycle",
-				label: "Lifecycle",
-				icon: GitBranch,
-				href: "/app/lifecycle",
-			},
-			{
-				key: "development",
-				label: "Development",
-				icon: GraduationCap,
-				href: "/app/development",
-			},
 		],
 	},
 	{
-		group: "Insights",
-		items: [
-			{
-				key: "analytics",
-				label: "Analytics",
-				icon: BarChart3,
-				href: "/app/analytics",
-			},
-		],
-	},
-	{
-		group: "Finance",
-		items: [
-			{
-				key: "finance",
-				label: "Finance",
-				icon: Landmark,
-				href: "/app/finance",
-			},
-		],
-	},
-	{
-		group: "CRM",
+		group: "Growth",
 		items: [
 			{
 				key: "crm",
@@ -341,11 +354,30 @@ export const NAV = [
 				icon: Handshake,
 				href: "/app/crm",
 			},
+			{
+				key: "clients",
+				label: "Clients",
+				icon: Briefcase,
+				href: "/app/clients",
+				preview: true,
+			},
 		],
 	},
 	{
-		group: "Govern",
+		group: "Admin",
 		items: [
+			{
+				key: "users",
+				label: "Users & Access",
+				icon: UserCog,
+				href: "/app/users",
+			},
+			{
+				key: "settings",
+				label: "Settings",
+				icon: Settings,
+				href: "/app/settings",
+			},
 			{
 				key: "setup",
 				label: "Setup center",
@@ -377,30 +409,6 @@ export const NAV = [
 				icon: FileText,
 				href: "/app/documents",
 				preview: true,
-			},
-			{
-				key: "clients",
-				label: "Clients",
-				icon: Briefcase,
-				href: "/app/clients",
-				preview: true,
-			},
-		],
-	},
-	{
-		group: "Workspace",
-		items: [
-			{
-				key: "users",
-				label: "Users & Access",
-				icon: UserCog,
-				href: "/app/users",
-			},
-			{
-				key: "settings",
-				label: "Settings",
-				icon: Settings,
-				href: "/app/settings",
 			},
 		],
 	},
