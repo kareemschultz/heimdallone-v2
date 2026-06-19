@@ -63,7 +63,7 @@ export function Modal({
 			<div
 				aria-labelledby={titleId}
 				aria-modal="true"
-				className={`hd-modal${wide ? "hd-modal-wide" : ""}`}
+				className={wide ? "hd-modal hd-modal-wide" : "hd-modal"}
 				ref={dialogRef}
 				role="dialog"
 				tabIndex={-1}
