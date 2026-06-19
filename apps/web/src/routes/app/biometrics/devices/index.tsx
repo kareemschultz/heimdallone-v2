@@ -9,6 +9,7 @@ import { BiometricTabs } from "@/features/biometrics/biometric-tabs";
 import {
 	AdapterStatusBadge,
 	BiometricNoAccess,
+	DeviceConnectionBadge,
 	TagList,
 } from "@/features/biometrics/biometric-ui";
 import {
@@ -406,6 +407,14 @@ function DeviceCard({ device }: { device: DeviceRow }) {
 						{VENDOR_LABEL[device.vendor] ?? device.vendor}
 						{device.model ? ` · ${device.model}` : ""}
 						{device.modelFamily ? ` (${device.modelFamily})` : ""}
+					</div>
+					<div style={{ marginTop: 8 }}>
+						<DeviceConnectionBadge
+							lastSyncCursor={device.lastSyncCursor}
+							lastSyncStatus={device.lastSyncStatus}
+							mode={device.mode}
+							status={device.status}
+						/>
 					</div>
 				</div>
 				<AdapterStatusBadge mode={device.mode} vendor={device.vendor} />
