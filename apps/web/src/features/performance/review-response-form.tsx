@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Star } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 import { relationshipLabel } from "./review-labels";
 import type { ReviewRequestRow } from "./review-types";
@@ -64,58 +65,9 @@ export function ReviewResponseForm({
 	const busy = submit.isPending || decline.isPending;
 
 	return (
-		<div className="pf-sheet-overlay">
-			<div
-				aria-labelledby="pf-response-title"
-				aria-modal="true"
-				className="pf-sheet"
-				role="dialog"
-			>
-				<div className="pf-sheet-head">
-					<h2 id="pf-response-title">Review {request.subjectName ?? "—"}</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pf-sheet-body">
-					<p className="pf-sub">
-						You are giving{" "}
-						{relationshipLabel(request.relationship).toLowerCase()} feedback.
-						Your answers go to HR; peer feedback is shown anonymously.
-					</p>
-					<div className="pf-field">
-						<span>Overall rating</span>
-						<div className="pf-rating-row">
-							{RATINGS.map((n) => (
-								<button
-									aria-pressed={rating === n}
-									className={`pf-rating-pill ${rating === n ? "active" : ""}`}
-									key={n}
-									onClick={() => setRating(n)}
-									type="button"
-								>
-									{n}
-								</button>
-							))}
-						</div>
-					</div>
-					<label className="pf-field" htmlFor="pf-response-comment">
-						<span>Comments</span>
-						<textarea
-							id="pf-response-comment"
-							onChange={(e) => setComment(e.target.value)}
-							placeholder="What is going well, and what could improve?"
-							rows={4}
-							value={comment}
-						/>
-					</label>
-				</div>
-				<div className="pf-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn"
 						disabled={busy}
@@ -132,8 +84,42 @@ export function ReviewResponseForm({
 					>
 						Submit review
 					</button>
+				</>
+			}
+			icon={<Star size={18} />}
+			onClose={onClose}
+			title={`Review ${request.subjectName ?? "—"}`}
+		>
+			<p className="pf-sub">
+				You are giving {relationshipLabel(request.relationship).toLowerCase()}{" "}
+				feedback. Your answers go to HR; peer feedback is shown anonymously.
+			</p>
+			<div className="pf-field">
+				<span>Overall rating</span>
+				<div className="pf-rating-row">
+					{RATINGS.map((n) => (
+						<button
+							aria-pressed={rating === n}
+							className={`pf-rating-pill ${rating === n ? "active" : ""}`}
+							key={n}
+							onClick={() => setRating(n)}
+							type="button"
+						>
+							{n}
+						</button>
+					))}
 				</div>
 			</div>
-		</div>
+			<label className="pf-field" htmlFor="pf-response-comment">
+				<span>Comments</span>
+				<textarea
+					id="pf-response-comment"
+					onChange={(e) => setComment(e.target.value)}
+					placeholder="What is going well, and what could improve?"
+					rows={4}
+					value={comment}
+				/>
+			</label>
+		</Modal>
 	);
 }
