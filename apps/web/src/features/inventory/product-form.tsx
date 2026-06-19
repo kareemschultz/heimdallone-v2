@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useState } from "react";
+import { Package } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Modal } from "@/components/modal";
 import { orpc } from "@/utils/orpc";
 import type { CategoryRow, ProductRow, ProductTypeRow } from "./types";
 
@@ -54,16 +56,6 @@ export function ProductForm({
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				onCancel();
-			}
-		};
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onCancel]);
-
 	const categories = useQuery(
 		orpc.inventory.categories.list.queryOptions({ input: {} })
 	);
@@ -112,133 +104,11 @@ export function ProductForm({
 	}
 
 	return (
-		<div className="inv-dialog-backdrop">
-			<div
-				aria-labelledby="inv-product-title"
-				aria-modal="true"
-				className="inv-dialog"
-				role="dialog"
-			>
-				<h2 id="inv-product-title">
-					{isEdit ? "Edit product" : "New product"}
-				</h2>
-				<p className="inv-sub">
-					Products are the items you track. Quantities change only through
-					approved stock movements.
-				</p>
-
-				<div className="inv-field">
-					<label htmlFor="inv-p-name">Name</label>
-					<input
-						id="inv-p-name"
-						onChange={(e) => setName(e.target.value)}
-						placeholder="e.g. Core Router 4-Port"
-						value={name}
-					/>
-				</div>
-
-				<div className="inv-field-row">
-					<div className="inv-field">
-						<label htmlFor="inv-p-sku">SKU</label>
-						<input
-							id="inv-p-sku"
-							onChange={(e) => setSku(e.target.value)}
-							placeholder="optional"
-							value={sku}
-						/>
-					</div>
-					<div className="inv-field">
-						<label htmlFor="inv-p-brand">Brand</label>
-						<input
-							id="inv-p-brand"
-							onChange={(e) => setBrand(e.target.value)}
-							placeholder="optional"
-							value={brand}
-						/>
-					</div>
-				</div>
-
-				<div className="inv-field">
-					<label htmlFor="inv-p-model">Model</label>
-					<input
-						id="inv-p-model"
-						onChange={(e) => setModelName(e.target.value)}
-						placeholder="optional"
-						value={modelName}
-					/>
-				</div>
-
-				{isEdit ? null : (
-					<div className="inv-field-row">
-						<div className="inv-field">
-							<label htmlFor="inv-p-cat">Category</label>
-							<select
-								id="inv-p-cat"
-								onChange={(e) => {
-									setCategoryId(e.target.value);
-									setTypeId("");
-								}}
-								value={categoryId}
-							>
-								<option value="">Select…</option>
-								{categoryRows.map((c) => (
-									<option key={c.id} value={c.id}>
-										{c.name}
-									</option>
-								))}
-							</select>
-						</div>
-						<div className="inv-field">
-							<label htmlFor="inv-p-type">Product type</label>
-							<select
-								disabled={!categoryId}
-								id="inv-p-type"
-								onChange={(e) => setTypeId(e.target.value)}
-								value={typeId}
-							>
-								<option value="">Select…</option>
-								{typesForCategory.map((t) => (
-									<option key={t.id} value={t.id}>
-										{t.name}
-									</option>
-								))}
-							</select>
-						</div>
-					</div>
-				)}
-
-				<div className="inv-field-row">
-					<div className="inv-field">
-						<label htmlFor="inv-p-price">Unit price</label>
-						<input
-							id="inv-p-price"
-							inputMode="decimal"
-							onChange={(e) => setPrice(e.target.value)}
-							placeholder="0.00"
-							value={price}
-						/>
-					</div>
-					<div className="inv-field">
-						<label htmlFor="inv-p-reorder">Reorder level</label>
-						<input
-							id="inv-p-reorder"
-							inputMode="numeric"
-							onChange={(e) => setReorder(e.target.value)}
-							placeholder="0"
-							value={reorder}
-						/>
-					</div>
-				</div>
-
-				{error ? (
-					<p className="inv-sub" style={{ color: "var(--danger)" }}>
-						{error}
-					</p>
-				) : null}
-
-				<div className="inv-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button
-						className="inv-btn"
+						className="btn"
 						disabled={busy}
 						onClick={onCancel}
 						type="button"
@@ -246,15 +116,128 @@ export function ProductForm({
 						Cancel
 					</button>
 					<button
-						className="inv-btn primary"
+						className="btn btn-primary"
 						disabled={busy}
 						onClick={handleSave}
 						type="button"
 					>
 						{busy ? "Saving…" : "Save"}
 					</button>
+				</>
+			}
+			icon={<Package size={18} />}
+			intro="Products are the items you track. Quantities change only through approved stock movements."
+			onClose={onCancel}
+			title={isEdit ? "Edit product" : "New product"}
+		>
+			<div className="inv-field">
+				<label htmlFor="inv-p-name">Name</label>
+				<input
+					id="inv-p-name"
+					onChange={(e) => setName(e.target.value)}
+					placeholder="e.g. Core Router 4-Port"
+					value={name}
+				/>
+			</div>
+
+			<div className="inv-field-row">
+				<div className="inv-field">
+					<label htmlFor="inv-p-sku">SKU</label>
+					<input
+						id="inv-p-sku"
+						onChange={(e) => setSku(e.target.value)}
+						placeholder="optional"
+						value={sku}
+					/>
+				</div>
+				<div className="inv-field">
+					<label htmlFor="inv-p-brand">Brand</label>
+					<input
+						id="inv-p-brand"
+						onChange={(e) => setBrand(e.target.value)}
+						placeholder="optional"
+						value={brand}
+					/>
 				</div>
 			</div>
-		</div>
+
+			<div className="inv-field">
+				<label htmlFor="inv-p-model">Model</label>
+				<input
+					id="inv-p-model"
+					onChange={(e) => setModelName(e.target.value)}
+					placeholder="optional"
+					value={modelName}
+				/>
+			</div>
+
+			{isEdit ? null : (
+				<div className="inv-field-row">
+					<div className="inv-field">
+						<label htmlFor="inv-p-cat">Category</label>
+						<select
+							id="inv-p-cat"
+							onChange={(e) => {
+								setCategoryId(e.target.value);
+								setTypeId("");
+							}}
+							value={categoryId}
+						>
+							<option value="">Select…</option>
+							{categoryRows.map((c) => (
+								<option key={c.id} value={c.id}>
+									{c.name}
+								</option>
+							))}
+						</select>
+					</div>
+					<div className="inv-field">
+						<label htmlFor="inv-p-type">Product type</label>
+						<select
+							disabled={!categoryId}
+							id="inv-p-type"
+							onChange={(e) => setTypeId(e.target.value)}
+							value={typeId}
+						>
+							<option value="">Select…</option>
+							{typesForCategory.map((t) => (
+								<option key={t.id} value={t.id}>
+									{t.name}
+								</option>
+							))}
+						</select>
+					</div>
+				</div>
+			)}
+
+			<div className="inv-field-row">
+				<div className="inv-field">
+					<label htmlFor="inv-p-price">Unit price</label>
+					<input
+						id="inv-p-price"
+						inputMode="decimal"
+						onChange={(e) => setPrice(e.target.value)}
+						placeholder="0.00"
+						value={price}
+					/>
+				</div>
+				<div className="inv-field">
+					<label htmlFor="inv-p-reorder">Reorder level</label>
+					<input
+						id="inv-p-reorder"
+						inputMode="numeric"
+						onChange={(e) => setReorder(e.target.value)}
+						placeholder="0"
+						value={reorder}
+					/>
+				</div>
+			</div>
+
+			{error ? (
+				<p className="inv-sub" style={{ color: "var(--danger)" }}>
+					{error}
+				</p>
+			) : null}
+		</Modal>
 	);
 }
