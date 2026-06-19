@@ -146,12 +146,13 @@ views, empty/loading/error states everywhere, responsive (field staff on phones)
 ## Phase-2 prompt — use AFTER the repo is updated + re-synced
 
 Sequence: (1) explore the look in Claude Design with creative freedom → (2) I update
-the repo: new navy tokens/components, consolidated nav/IA, new components (calendar/
+the repo: new tokens/components (theme + color are the design agent's choice),
+consolidated nav/IA, new components (calendar/
 Gantt/wizard/⌘K) → (3) I re-run `/design-sync` so the "Heimdallone UI" project holds
 the FINISHED system → (4) start a fresh Claude Design chat, paste the domain brief,
 then this:
 
-> The Heimdallone UI library has just been updated to the new navy design system —
+> The Heimdallone UI library has just been updated to the new design system —
 > use it as the single source of truth (every component + token here is the shipped
 > look). Now design the **complete application** on top of it.
 >
@@ -178,3 +179,39 @@ then this:
 
 When that's done and you like it, hand it back and I'll wire the new IA into the
 app shell (`routes/app/route.tsx`) + build any remaining screens, then deploy.
+
+## Phase-1 prompt — use NOW (creative exploration, you choose theme + color)
+
+Paste the domain brief (top of this file) into a Claude Design chat, then this:
+
+> You're redesigning **Heimdallone** (see brief) — a multi-tenant HRMS + payroll +
+> operations SaaS. **You have complete creative freedom over the visual language:
+> choose the theme (light/dark/both) and the color palette yourself** — whatever
+> makes a best-in-class, enterprise-grade product. Optimize for **consistency,
+> intuitiveness, and ease of use**; the tone should suit software that runs payroll
+> and operations (precise, trustworthy, auditable — not gimmicky).
+>
+> **Define the system first.** On ONE hero screen, propose a complete design system —
+> color scale + semantic colors (success/warning/danger/info), typography, spacing,
+> radius, elevation, motion — and let me react before you expand. Then apply it
+> consistently to everything.
+>
+> **Design the full enterprise pattern set** (use the right one per data shape — see
+> the brief's pattern→module map): a clean **app shell + sidebar** for the modules
+> (you may re-group/consolidate the navigation — propose the IA you think is best),
+> **org switcher**, global search + **command palette (⌘K)**; enterprise **data
+> tables** (sort/filter/saved-views/bulk-actions/density/export); **list → detail →
+> side-sheet** editing; **modals**, **dropdown/action menus**; **multiple views with
+> one consistent toggle** — Kanban, Calendar (month/week), Gantt/timeline, list;
+> **wizards/steppers** for multi-step flows; a consistent **approve/reject-with-reason**
+> affordance; and **empty / loading / error** states everywhere. Dark + light, mobile
+> + desktop.
+>
+> **Design these end-to-end:** role-specific **dashboards** (Admin vs Manager vs
+> Employee), Employees list+detail, Payroll run + payslip, Attendance, Roster, Leave
+> (balances + request), Projects (board + Gantt), CRM pipeline, Finance/GL, and the
+> employee self-service experience. Realistic Guyanese data + GYD throughout (per the
+> brief), never lorem ipsum.
+>
+> Start with the **design system + one hero screen**, let me react, then expand
+> module by module.
