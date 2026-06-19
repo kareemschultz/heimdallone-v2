@@ -5,7 +5,11 @@ import { useContext, useState } from "react";
 
 import "@/styles/biometrics.css";
 import { EmptyState } from "@/components/empty-state";
-import { BiometricNoAccess, TagList } from "@/features/biometrics/biometric-ui";
+import {
+	BiometricNoAccess,
+	DeviceConnectionBadge,
+	TagList,
+} from "@/features/biometrics/biometric-ui";
 import { ImportPunchesDialog } from "@/features/biometrics/import-punches-dialog";
 import {
 	DEVICE_STATUS_LABEL,
@@ -148,6 +152,14 @@ function DeviceDetail({ canManage }: { canManage: boolean }) {
 						{device.model ? ` · ${device.model as string}` : ""} —{" "}
 						{DEVICE_STATUS_LABEL[device.status as string] ?? "—"}
 					</p>
+					<div style={{ marginTop: 8 }}>
+						<DeviceConnectionBadge
+							lastSyncCursor={device.lastSyncCursor as string | Date | null}
+							lastSyncStatus={device.lastSyncStatus as string | null}
+							mode={device.mode as string}
+							status={device.status as string}
+						/>
+					</div>
 				</div>
 				{canManage && (
 					<button
