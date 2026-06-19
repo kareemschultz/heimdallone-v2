@@ -142,3 +142,39 @@ sticky first column on mobile.
 **Enterprise hallmarks to weave throughout:** breadcrumbs, keyboard shortcuts,
 optimistic updates + toasts, audit/activity trails on records, role-scoped + redacted
 views, empty/loading/error states everywhere, responsive (field staff on phones).
+
+## Phase-2 prompt — use AFTER the repo is updated + re-synced
+
+Sequence: (1) explore the look in Claude Design with creative freedom → (2) I update
+the repo: new navy tokens/components, consolidated nav/IA, new components (calendar/
+Gantt/wizard/⌘K) → (3) I re-run `/design-sync` so the "Heimdallone UI" project holds
+the FINISHED system → (4) start a fresh Claude Design chat, paste the domain brief,
+then this:
+
+> The Heimdallone UI library has just been updated to the new navy design system —
+> use it as the single source of truth (every component + token here is the shipped
+> look). Now design the **complete application** on top of it.
+>
+> **You have full freedom over information architecture** — re-group, consolidate,
+> and rename the navigation. Today there are ~25 modules; propose a **consolidated IA**
+> that's intuitive for the primary roles (Admin / Manager / Employee). For example
+> consider hubs like *People* (employees, org chart, lifecycle, development,
+> performance), *Time & Attendance* (attendance, roster, time clocks, geofencing,
+> leave), *Pay & Finance* (payroll, contracts, finance, GL), *Operations* (assets,
+> inventory, helpdesk, projects), *Growth* (CRM), *Admin* (users, settings, setup,
+> countries & tax, compliance, documents) — but design the grouping YOU think is best
+> and justify it briefly.
+>
+> Then design every primary surface end-to-end with the new system and the full
+> enterprise pattern set (tables, side-sheets, modals, dropdowns, Kanban, calendar,
+> Gantt/timeline, wizards, command palette, approval flows, empty/loading/error):
+> the **app shell + new nav**, role-specific **dashboards** (Admin/Manager/Employee),
+> Employees, Payroll + payslip, Attendance, Roster, Leave, Projects, CRM, Finance/GL,
+> and the self-service employee experience.
+>
+> Build ONLY with Heimdallone UI components so it stays drop-in. Realistic Guyanese
+> data + GYD per the brief. Start with the **new nav + Admin dashboard**, let me
+> react, then expand module by module.
+
+When that's done and you like it, hand it back and I'll wire the new IA into the
+app shell (`routes/app/route.tsx`) + build any remaining screens, then deploy.
