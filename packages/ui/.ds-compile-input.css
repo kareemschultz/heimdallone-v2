@@ -1,0 +1,7 @@
+/* design-sync compile input: globals (shadcn tokens + tailwind) + heimdall token layer
+   + scan the authored previews so their utility classes compile too. */
+@import "./src/styles/globals.css";
+@import "../../apps/web/src/styles/heimdall.css";
+@source "../**/*.{ts,tsx}";
+@source "../../apps/**/*.{ts,tsx}";
+@source "../../.design-sync/previews/**/*.tsx";

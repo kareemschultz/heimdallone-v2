@@ -1,0 +1,10 @@
+{
+  "pkg": "@Heimdallone/ui",
+  "globalName": "HeimdalloneUI",
+  "projectId": "1352be48-8503-44e4-9a0e-fc0c74e18758",
+  "shape": "package",
+  "tsconfig": "tsconfig.json",
+  "cssEntry": ".ds-compiled.css",
+  "runtimeFontPrefixes": ["Inter", "JetBrains Mono"],
+  "readmeHeader": ".design-sync/conventions.md"
+}
