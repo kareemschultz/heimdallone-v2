@@ -484,3 +484,22 @@ npx shadcn@latest add theme-name --registry @ss-themes
 **Installed blocks location:** `apps/web/src/components/shadcn-studio/blocks/`
 
 **Style:** `base-lyra` (both `apps/web` and `packages/ui`)
+
+---
+
+## Post-cutover production-completion pass (2026-06-18) — live at `sha-702a76f`
+
+Backlog modules shipped + deployed to prod (`heimdallone_v2_prod`): **Inventory**
+(ledger stock, migration 0031, `verify:inventory` 127), **Org chart**
+(`hrCore.employees.orgChart`, reuses `employee:read`), **GL UI** (Chart of
+Accounts/Journals/Trial Balance as Finance tabs over the existing `gl` router),
+**Surveys** (migration 0032, NEW `survey` AC resource, audit **202/30**, anonymity
+enforced server-side, `verify:surveys` 140). Next-Phase-Plan A–I worked: A
+security closeout (QA cred disabled — 0 creds/0 sessions/banned), E/F apex de-fake
+(fake "Trusted by" marquee removed, dev-org name → "Your company"), G preview
+modules kept admin-only, H v2 = source of truth, I v1-archive PLAN only. **Phase D
+(re-point the on-site Pi to v2 ingest) is the one open OPERATOR blocker.** Full
+record: `docs/migration/phase-21x-production-completion.md` +
+`phase-21i-v1-archive-plan.md`; [[lessons-learned]] #102 (ledger port), #103
+(fork-parallel builds + turbo-cache-masked type errors + marketing de-fake). v1
+rollback (`sha-d03e5b4`) preserved; no v1/`karetech_erp` writes.
