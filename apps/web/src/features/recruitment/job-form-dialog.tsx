@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { BriefcaseBusiness } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 
 export interface JobFormInitial {
@@ -108,145 +109,9 @@ export function JobFormDialog({
 	}
 
 	return (
-		<div
-			aria-labelledby="job-form-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-				overflowY: "auto",
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 560,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2 id="job-form-title" style={{ fontSize: 15, fontWeight: 600 }}>
-						{mode === "create" ? "New job opening" : "Edit job opening"}
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-
-				<Field label="Job title" required>
-					<input
-						className="input"
-						onChange={(e) => setTitle(e.target.value)}
-						placeholder="e.g. Yard Operator"
-						style={{ width: "100%" }}
-						value={title}
-					/>
-					{titleError && (
-						<span style={{ color: "var(--danger, #c0392b)", fontSize: 11.5 }}>
-							A job title is required.
-						</span>
-					)}
-				</Field>
-
-				<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-					<Field label="Employment type" style={{ flex: 1, minWidth: 180 }}>
-						<select
-							className="input"
-							onChange={(e) => setEmploymentType(e.target.value)}
-							style={{ width: "100%" }}
-							value={employmentType}
-						>
-							<option value="">Not specified</option>
-							{EMPLOYMENT_TYPES.map((t) => (
-								<option key={t} value={t}>
-									{t}
-								</option>
-							))}
-						</select>
-					</Field>
-					<Field label="Number of openings" style={{ width: 160 }}>
-						<input
-							className="input"
-							min={MIN_VACANCIES}
-							onChange={(e) =>
-								setVacancyCount(
-									Math.max(
-										MIN_VACANCIES,
-										Number(e.target.value) || MIN_VACANCIES
-									)
-								)
-							}
-							style={{ width: "100%" }}
-							type="number"
-							value={vacancyCount}
-						/>
-					</Field>
-				</div>
-
-				<Field label="Work location">
-					<input
-						className="input"
-						onChange={(e) => setWorkLocation(e.target.value)}
-						placeholder="e.g. Berbice, Guyana / Remote"
-						style={{ width: "100%" }}
-						value={workLocation}
-					/>
-				</Field>
-
-				<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-					<Field label="Start date" style={{ flex: 1, minWidth: 160 }}>
-						<input
-							className="input"
-							onChange={(e) => setStartDate(e.target.value)}
-							style={{ width: "100%" }}
-							type="date"
-							value={startDate}
-						/>
-					</Field>
-					<Field label="End date" style={{ flex: 1, minWidth: 160 }}>
-						<input
-							className="input"
-							onChange={(e) => setEndDate(e.target.value)}
-							style={{ width: "100%" }}
-							type="date"
-							value={endDate}
-						/>
-					</Field>
-				</div>
-
-				<Field label="Description">
-					<textarea
-						className="input"
-						onChange={(e) => setDescription(e.target.value)}
-						placeholder="Role summary, responsibilities, requirements…"
-						rows={5}
-						style={{ width: "100%", resize: "vertical" }}
-						value={description}
-					/>
-				</Field>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={mutation.isPending}
@@ -263,9 +128,103 @@ export function JobFormDialog({
 					>
 						{submitLabel}
 					</button>
-				</div>
+				</>
+			}
+			icon={<BriefcaseBusiness size={18} />}
+			intro="Fill in the details below to post or update a job opening."
+			onClose={onClose}
+			title={mode === "create" ? "New job opening" : "Edit job opening"}
+			wide
+		>
+			<Field label="Job title" required>
+				<input
+					className="input"
+					onChange={(e) => setTitle(e.target.value)}
+					placeholder="e.g. Yard Operator"
+					style={{ width: "100%" }}
+					value={title}
+				/>
+				{titleError && (
+					<span style={{ color: "var(--danger, #c0392b)", fontSize: 11.5 }}>
+						A job title is required.
+					</span>
+				)}
+			</Field>
+
+			<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+				<Field label="Employment type" style={{ flex: 1, minWidth: 180 }}>
+					<select
+						className="input"
+						onChange={(e) => setEmploymentType(e.target.value)}
+						style={{ width: "100%" }}
+						value={employmentType}
+					>
+						<option value="">Not specified</option>
+						{EMPLOYMENT_TYPES.map((t) => (
+							<option key={t} value={t}>
+								{t}
+							</option>
+						))}
+					</select>
+				</Field>
+				<Field label="Number of openings" style={{ width: 160 }}>
+					<input
+						className="input"
+						min={MIN_VACANCIES}
+						onChange={(e) =>
+							setVacancyCount(
+								Math.max(MIN_VACANCIES, Number(e.target.value) || MIN_VACANCIES)
+							)
+						}
+						style={{ width: "100%" }}
+						type="number"
+						value={vacancyCount}
+					/>
+				</Field>
 			</div>
-		</div>
+
+			<Field label="Work location">
+				<input
+					className="input"
+					onChange={(e) => setWorkLocation(e.target.value)}
+					placeholder="e.g. Berbice, Guyana / Remote"
+					style={{ width: "100%" }}
+					value={workLocation}
+				/>
+			</Field>
+
+			<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+				<Field label="Start date" style={{ flex: 1, minWidth: 160 }}>
+					<input
+						className="input"
+						onChange={(e) => setStartDate(e.target.value)}
+						style={{ width: "100%" }}
+						type="date"
+						value={startDate}
+					/>
+				</Field>
+				<Field label="End date" style={{ flex: 1, minWidth: 160 }}>
+					<input
+						className="input"
+						onChange={(e) => setEndDate(e.target.value)}
+						style={{ width: "100%" }}
+						type="date"
+						value={endDate}
+					/>
+				</Field>
+			</div>
+
+			<Field label="Description">
+				<textarea
+					className="input"
+					onChange={(e) => setDescription(e.target.value)}
+					placeholder="Role summary, responsibilities, requirements…"
+					rows={5}
+					style={{ width: "100%", resize: "vertical" }}
+					value={description}
+				/>
+			</Field>
+		</Modal>
 	);
 }
 

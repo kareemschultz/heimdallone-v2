@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import "@/styles/recruitment.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { RecruitmentTabs } from "@/features/recruitment/recruitment-tabs";
 import { canManageRecruitment } from "@/lib/rbac";
 import { safeHttpUrl } from "@/lib/safe-url";
@@ -474,138 +475,9 @@ function ConvertDialog({
 }) {
 	const hasTemplate = Boolean(selectedTemplateId);
 	return (
-		<div
-			aria-describedby="convert-desc"
-			aria-labelledby="convert-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 480,
-					display: "flex",
-					flexDirection: "column",
-					gap: 16,
-				}}
-			>
-				<h2 id="convert-title" style={{ fontSize: 15, fontWeight: 600 }}>
-					Convert candidate to employee?
-				</h2>
-				<p
-					id="convert-desc"
-					style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
-				>
-					This will create an employee profile and optionally start onboarding.
-					All changes are committed together — if anything fails, nothing is
-					saved.
-				</p>
-
-				{/* Application selector */}
-				{apps.length > 1 && (
-					<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-						<label
-							htmlFor="convert-app-select"
-							style={{ fontSize: 12, color: "var(--fg-3)", fontWeight: 500 }}
-						>
-							Application
-						</label>
-						<select
-							className="input"
-							id="convert-app-select"
-							onChange={(e) => onApplicationChange(e.target.value)}
-							value={selectedApplicationId}
-						>
-							{apps.map((a) => (
-								<option key={a.id} value={a.id}>
-									{a.openingTitle} ({a.stage})
-								</option>
-							))}
-						</select>
-					</div>
-				)}
-
-				{/* Onboarding template selector */}
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor="convert-template-select"
-						style={{ fontSize: 12, color: "var(--fg-3)", fontWeight: 500 }}
-					>
-						Onboarding template (optional)
-					</label>
-					<select
-						className="input"
-						id="convert-template-select"
-						onChange={(e) => onTemplateChange(e.target.value || undefined)}
-						value={selectedTemplateId ?? ""}
-					>
-						<option value="">No onboarding</option>
-						{templates.map((t) => (
-							<option key={t.id} value={t.id}>
-								{t.name}
-							</option>
-						))}
-					</select>
-				</div>
-
-				{/* Checklist */}
-				<div
-					style={{
-						background: "var(--bg-1)",
-						border: "1px solid var(--line)",
-						borderRadius: 8,
-						padding: "10px 14px",
-						display: "flex",
-						flexDirection: "column",
-						gap: 7,
-					}}
-				>
-					<p
-						style={{
-							fontSize: 11,
-							fontWeight: 600,
-							color: "var(--fg-3)",
-							textTransform: "uppercase",
-							letterSpacing: "0.04em",
-							margin: 0,
-						}}
-					>
-						Will be created
-					</p>
-					{[
-						"Employee profile",
-						"Work info",
-						hasTemplate ? "Onboarding (from selected template)" : null,
-					]
-						.filter(Boolean)
-						.map((item) => (
-							<div
-								key={item}
-								style={{
-									display: "flex",
-									alignItems: "center",
-									gap: 8,
-									fontSize: 13,
-								}}
-							>
-								<CheckCircle2 color="var(--color-success)" size={13} />
-								{item}
-							</div>
-						))}
-				</div>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={isPending}
@@ -622,9 +494,106 @@ function ConvertDialog({
 					>
 						{isPending ? "Converting…" : "Convert to employee"}
 					</button>
+				</>
+			}
+			icon={<UserCheck size={18} />}
+			intro="This will create an employee profile and optionally start onboarding. All changes are committed together — if anything fails, nothing is saved."
+			onClose={onClose}
+			title="Convert candidate to employee?"
+		>
+			{/* Application selector */}
+			{apps.length > 1 && (
+				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+					<label
+						htmlFor="convert-app-select"
+						style={{ fontSize: 12, color: "var(--fg-3)", fontWeight: 500 }}
+					>
+						Application
+					</label>
+					<select
+						className="input"
+						id="convert-app-select"
+						onChange={(e) => onApplicationChange(e.target.value)}
+						value={selectedApplicationId}
+					>
+						{apps.map((a) => (
+							<option key={a.id} value={a.id}>
+								{a.openingTitle} ({a.stage})
+							</option>
+						))}
+					</select>
 				</div>
+			)}
+
+			{/* Onboarding template selector */}
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor="convert-template-select"
+					style={{ fontSize: 12, color: "var(--fg-3)", fontWeight: 500 }}
+				>
+					Onboarding template (optional)
+				</label>
+				<select
+					className="input"
+					id="convert-template-select"
+					onChange={(e) => onTemplateChange(e.target.value || undefined)}
+					value={selectedTemplateId ?? ""}
+				>
+					<option value="">No onboarding</option>
+					{templates.map((t) => (
+						<option key={t.id} value={t.id}>
+							{t.name}
+						</option>
+					))}
+				</select>
 			</div>
-		</div>
+
+			{/* Checklist */}
+			<div
+				style={{
+					background: "var(--bg-1)",
+					border: "1px solid var(--line)",
+					borderRadius: 8,
+					padding: "10px 14px",
+					display: "flex",
+					flexDirection: "column",
+					gap: 7,
+				}}
+			>
+				<p
+					style={{
+						fontSize: 11,
+						fontWeight: 600,
+						color: "var(--fg-3)",
+						textTransform: "uppercase",
+						letterSpacing: "0.04em",
+						margin: 0,
+					}}
+				>
+					Will be created
+				</p>
+				{[
+					"Employee profile",
+					"Work info",
+					hasTemplate ? "Onboarding (from selected template)" : null,
+				]
+					.filter(Boolean)
+					.map((item) => (
+						<div
+							key={item}
+							style={{
+								display: "flex",
+								alignItems: "center",
+								gap: 8,
+								fontSize: 13,
+							}}
+						>
+							<CheckCircle2 color="var(--color-success)" size={13} />
+							{item}
+						</div>
+					))}
+			</div>
+		</Modal>
 	);
 }
 

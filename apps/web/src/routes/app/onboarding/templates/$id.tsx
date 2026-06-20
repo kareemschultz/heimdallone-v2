@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, X } from "lucide-react";
+import { Archive, ArrowLeft } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/onboarding.css";
+import { Modal } from "@/components/modal";
 import { assigneeRoleLabel, categoryLabel } from "@/features/onboarding/labels";
 import { OnboardingTabs } from "@/features/onboarding/onboarding-tabs";
 import { TemplateFormDialog } from "@/features/onboarding/template-form-dialog";
@@ -228,61 +229,9 @@ function TemplateDetailPage() {
 			)}
 
 			{showArchive && (
-				<div
-					aria-describedby="archive-desc"
-					aria-labelledby="archive-title"
-					aria-modal="true"
-					role="dialog"
-					style={{
-						position: "fixed",
-						inset: 0,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						padding: 24,
-						background: "rgba(0,0,0,0.55)",
-						zIndex: 60,
-					}}
-				>
-					<div
-						className="card card-pad"
-						style={{
-							width: "100%",
-							maxWidth: 420,
-							display: "flex",
-							flexDirection: "column",
-							gap: 14,
-						}}
-					>
-						<div
-							style={{
-								display: "flex",
-								justifyContent: "space-between",
-								alignItems: "center",
-							}}
-						>
-							<h2 id="archive-title" style={{ fontSize: 15, fontWeight: 600 }}>
-								Archive this template?
-							</h2>
-							<button
-								aria-label="Close"
-								className="btn btn-sm"
-								onClick={() => setShowArchive(false)}
-								type="button"
-							>
-								<X size={14} />
-							</button>
-						</div>
-						<p
-							id="archive-desc"
-							style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
-						>
-							Existing employee onboarding will not be changed. The template
-							will no longer appear when starting new onboarding.
-						</p>
-						<div
-							style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}
-						>
+				<Modal
+					footer={
+						<>
 							<button
 								className="btn btn-sm"
 								disabled={archiveMutation.isPending}
@@ -299,9 +248,15 @@ function TemplateDetailPage() {
 							>
 								{archiveMutation.isPending ? "Archiving…" : "Archive template"}
 							</button>
-						</div>
-					</div>
-				</div>
+						</>
+					}
+					icon={<Archive size={18} />}
+					intro="Existing employee onboarding will not be changed. The template will no longer appear when starting new onboarding."
+					onClose={() => setShowArchive(false)}
+					title="Archive this template?"
+				>
+					{null}
+				</Modal>
 			)}
 		</div>
 	);

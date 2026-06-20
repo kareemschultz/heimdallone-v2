@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ClipboardList, X } from "lucide-react";
+import { ClipboardList, UserRoundPen } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	categoryLabel,
 	isTaskResolved,
@@ -289,48 +290,6 @@ function ChecklistRow({
 	);
 }
 
-function DialogShell({
-	titleId,
-	descId,
-	children,
-}: {
-	titleId: string;
-	descId: string;
-	children: React.ReactNode;
-}) {
-	return (
-		<div
-			aria-describedby={descId}
-			aria-labelledby={titleId}
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 440,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				{children}
-			</div>
-		</div>
-	);
-}
-
 function SkipDialog({
 	taskTitle,
 	isPending,
@@ -346,22 +305,38 @@ function SkipDialog({
 	const trimmed = reason.trim();
 
 	return (
-		<DialogShell descId="skip-task-desc" titleId="skip-task-title">
-			<h2 id="skip-task-title" style={{ fontSize: 15, fontWeight: 600 }}>
-				Skip this task?
-			</h2>
-			<p
-				id="skip-task-desc"
-				style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
-			>
-				Skipped tasks stay in the history, but they no longer block onboarding.
-			</p>
+		<Modal
+			footer={
+				<>
+					<button
+						className="btn btn-sm"
+						disabled={isPending}
+						onClick={onClose}
+						type="button"
+					>
+						Back
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={isPending || trimmed === ""}
+						onClick={() => onConfirm(trimmed)}
+						type="button"
+					>
+						{isPending ? "Skipping…" : "Skip task"}
+					</button>
+				</>
+			}
+			icon={<ClipboardList size={18} />}
+			intro="Skipped tasks stay in the history, but they no longer block onboarding."
+			onClose={onClose}
+			title="Skip this task?"
+		>
 			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
 				<label
 					htmlFor="skip-reason"
 					style={{ fontSize: 12, color: "var(--fg-3)" }}
 				>
-					Reason for skipping “{taskTitle}”
+					Reason for skipping "{taskTitle}"
 				</label>
 				<textarea
 					className="input"
@@ -373,25 +348,7 @@ function SkipDialog({
 					value={reason}
 				/>
 			</div>
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-				<button
-					className="btn btn-sm"
-					disabled={isPending}
-					onClick={onClose}
-					type="button"
-				>
-					Back
-				</button>
-				<button
-					className="btn btn-primary btn-sm"
-					disabled={isPending || trimmed === ""}
-					onClick={() => onConfirm(trimmed)}
-					type="button"
-				>
-					{isPending ? "Skipping…" : "Skip task"}
-				</button>
-			</div>
-		</DialogShell>
+		</Modal>
 	);
 }
 
@@ -421,32 +378,32 @@ function ReassignDialog({
 	}[];
 
 	return (
-		<DialogShell descId="reassign-desc" titleId="reassign-title">
-			<div
-				style={{
-					display: "flex",
-					justifyContent: "space-between",
-					alignItems: "center",
-				}}
-			>
-				<h2 id="reassign-title" style={{ fontSize: 15, fontWeight: 600 }}>
-					Reassign task
-				</h2>
-				<button
-					aria-label="Close"
-					className="btn btn-sm"
-					onClick={onClose}
-					type="button"
-				>
-					<X size={14} />
-				</button>
-			</div>
-			<p
-				id="reassign-desc"
-				style={{ color: "var(--fg-3)", fontSize: 12.5, margin: 0 }}
-			>
-				Choose who owns “{taskTitle}”.
-			</p>
+		<Modal
+			footer={
+				<>
+					<button
+						className="btn btn-sm"
+						disabled={isPending}
+						onClick={onClose}
+						type="button"
+					>
+						Cancel
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={isPending || selected === ""}
+						onClick={() => onSubmit(selected)}
+						type="button"
+					>
+						{isPending ? "Saving…" : "Save assignee"}
+					</button>
+				</>
+			}
+			icon={<UserRoundPen size={18} />}
+			intro={`Choose who owns "${taskTitle}".`}
+			onClose={onClose}
+			title="Reassign task"
+		>
 			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
 				<label
 					htmlFor="reassign-employee"
@@ -469,24 +426,6 @@ function ReassignDialog({
 					))}
 				</select>
 			</div>
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-				<button
-					className="btn btn-sm"
-					disabled={isPending}
-					onClick={onClose}
-					type="button"
-				>
-					Cancel
-				</button>
-				<button
-					className="btn btn-primary btn-sm"
-					disabled={isPending || selected === ""}
-					onClick={() => onSubmit(selected)}
-					type="button"
-				>
-					{isPending ? "Saving…" : "Save assignee"}
-				</button>
-			</div>
-		</DialogShell>
+		</Modal>
 	);
 }

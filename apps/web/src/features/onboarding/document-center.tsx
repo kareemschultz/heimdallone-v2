@@ -10,11 +10,12 @@
 // receipt against a placeholder URL on the server. Real upload arrives later.
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { FileCheck2, FileText } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import { FileCheck2, FileText, XCircle } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	DOC_STATUS_LABEL,
 	DOC_STATUS_TONE,
@@ -384,17 +385,32 @@ function RejectDialog({
 	const trimmed = reason.trim();
 
 	return (
-		<DialogShell descId="reject-doc-desc" titleId="reject-doc-title">
-			<h2 id="reject-doc-title" style={{ fontSize: 15, fontWeight: 600 }}>
-				Reject this document?
-			</h2>
-			<p
-				id="reject-doc-desc"
-				style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
-			>
-				The new hire will be asked to provide “{documentType}” again. Give a
-				short reason so they know what to fix.
-			</p>
+		<Modal
+			footer={
+				<>
+					<button
+						className="btn btn-sm"
+						disabled={isPending}
+						onClick={onClose}
+						type="button"
+					>
+						Back
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={isPending || trimmed === ""}
+						onClick={() => onConfirm(trimmed)}
+						type="button"
+					>
+						{isPending ? "Rejecting…" : "Reject document"}
+					</button>
+				</>
+			}
+			icon={<XCircle size={18} />}
+			intro={`The new hire will be asked to provide "${documentType}" again. Give a short reason so they know what to fix.`}
+			onClose={onClose}
+			title="Reject this document?"
+		>
 			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
 				<label
 					htmlFor="reject-doc-reason"
@@ -412,66 +428,6 @@ function RejectDialog({
 					value={reason}
 				/>
 			</div>
-			<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-				<button
-					className="btn btn-sm"
-					disabled={isPending}
-					onClick={onClose}
-					type="button"
-				>
-					Back
-				</button>
-				<button
-					className="btn btn-primary btn-sm"
-					disabled={isPending || trimmed === ""}
-					onClick={() => onConfirm(trimmed)}
-					type="button"
-				>
-					{isPending ? "Rejecting…" : "Reject document"}
-				</button>
-			</div>
-		</DialogShell>
-	);
-}
-
-function DialogShell({
-	titleId,
-	descId,
-	children,
-}: {
-	children: ReactNode;
-	descId: string;
-	titleId: string;
-}) {
-	return (
-		<div
-			aria-describedby={descId}
-			aria-labelledby={titleId}
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 440,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				{children}
-			</div>
-		</div>
+		</Modal>
 	);
 }

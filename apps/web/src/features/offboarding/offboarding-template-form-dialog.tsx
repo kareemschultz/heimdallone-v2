@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { EXIT_TYPE_LABEL } from "@/features/offboarding/labels";
 import { client } from "@/utils/orpc";
 
@@ -72,129 +73,9 @@ export function OffboardingTemplateFormDialog({
 	}
 
 	return (
-		<div
-			aria-describedby="ob-template-form-desc"
-			aria-labelledby="ob-template-form-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 480,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2
-						id="ob-template-form-title"
-						style={{ fontSize: 15, fontWeight: 600 }}
-					>
-						{mode === "create" ? "New offboarding template" : "Edit template"}
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-				<p
-					id="ob-template-form-desc"
-					style={{ color: "var(--fg-3)", fontSize: 12.5, margin: 0 }}
-				>
-					Templates are copied into each offboarding case when the case starts.
-					Editing a template does not change cases already in progress.
-				</p>
-
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor="ob-template-name"
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Template name *
-					</label>
-					<input
-						className="input"
-						id="ob-template-name"
-						onChange={(e) => setName(e.target.value)}
-						placeholder="e.g. Standard resignation offboarding"
-						style={{ width: "100%" }}
-						value={name}
-					/>
-					{nameError && (
-						<span style={{ color: "var(--danger, #c0392b)", fontSize: 11.5 }}>
-							A template name is required.
-						</span>
-					)}
-				</div>
-
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor="ob-template-exit-type"
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Exit type
-					</label>
-					<select
-						className="input"
-						id="ob-template-exit-type"
-						onChange={(e) => setExitType(e.target.value as ExitType | "")}
-						style={{ width: "100%" }}
-						value={exitType}
-					>
-						<option value="">Any exit type</option>
-						{EXIT_TYPE_OPTIONS.map((value) => (
-							<option key={value} value={value}>
-								{EXIT_TYPE_LABEL[value]}
-							</option>
-						))}
-					</select>
-					<span style={{ fontSize: 11.5, color: "var(--fg-3)" }}>
-						Optional — helps you pick the right checklist when starting a case.
-					</span>
-				</div>
-
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor="ob-template-desc"
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Description
-					</label>
-					<textarea
-						className="input"
-						id="ob-template-desc"
-						onChange={(e) => setDescription(e.target.value)}
-						placeholder="When should this checklist be used?"
-						rows={3}
-						style={{ width: "100%", resize: "vertical" }}
-						value={description}
-					/>
-				</div>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={mutation.isPending}
@@ -211,8 +92,78 @@ export function OffboardingTemplateFormDialog({
 					>
 						{submitLabel}
 					</button>
-				</div>
+				</>
+			}
+			icon={<ClipboardList size={18} />}
+			intro="Templates are copied into each offboarding case when the case starts. Editing a template does not change cases already in progress."
+			onClose={onClose}
+			title={mode === "create" ? "New offboarding template" : "Edit template"}
+		>
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor="ob-template-name"
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Template name *
+				</label>
+				<input
+					className="input"
+					id="ob-template-name"
+					onChange={(e) => setName(e.target.value)}
+					placeholder="e.g. Standard resignation offboarding"
+					style={{ width: "100%" }}
+					value={name}
+				/>
+				{nameError && (
+					<span style={{ color: "var(--danger, #c0392b)", fontSize: 11.5 }}>
+						A template name is required.
+					</span>
+				)}
 			</div>
-		</div>
+
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor="ob-template-exit-type"
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Exit type
+				</label>
+				<select
+					className="input"
+					id="ob-template-exit-type"
+					onChange={(e) => setExitType(e.target.value as ExitType | "")}
+					style={{ width: "100%" }}
+					value={exitType}
+				>
+					<option value="">Any exit type</option>
+					{EXIT_TYPE_OPTIONS.map((value) => (
+						<option key={value} value={value}>
+							{EXIT_TYPE_LABEL[value]}
+						</option>
+					))}
+				</select>
+				<span style={{ fontSize: 11.5, color: "var(--fg-3)" }}>
+					Optional — helps you pick the right checklist when starting a case.
+				</span>
+			</div>
+
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor="ob-template-desc"
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Description
+				</label>
+				<textarea
+					className="input"
+					id="ob-template-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					placeholder="When should this checklist be used?"
+					rows={3}
+					style={{ width: "100%", resize: "vertical" }}
+					value={description}
+				/>
+			</div>
+		</Modal>
 	);
 }

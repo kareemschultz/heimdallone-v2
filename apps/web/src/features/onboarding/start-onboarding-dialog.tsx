@@ -1,8 +1,9 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client, orpc } from "@/utils/orpc";
 
 interface StartOnboardingDialogProps {
@@ -51,106 +52,9 @@ export function StartOnboardingDialog({
 		employeeId !== "" && templateId !== "" && !mutation.isPending;
 
 	return (
-		<div
-			aria-describedby="start-ob-desc"
-			aria-labelledby="start-ob-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 480,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2 id="start-ob-title" style={{ fontSize: 15, fontWeight: 600 }}>
-						Start onboarding
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-				<p
-					id="start-ob-desc"
-					style={{ color: "var(--fg-3)", fontSize: 12.5, margin: 0 }}
-				>
-					The chosen template's tasks are copied into this onboarding. Later
-					template edits won't change it.
-				</p>
-
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor="start-employee"
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Employee *
-					</label>
-					<select
-						className="input"
-						id="start-employee"
-						onChange={(e) => setEmployeeId(e.target.value)}
-						style={{ width: "100%" }}
-						value={employeeId}
-					>
-						<option value="">Select an employee…</option>
-						{employeeRows.map((emp) => (
-							<option key={emp.id} value={emp.id}>
-								{[emp.firstName, emp.lastName].filter(Boolean).join(" ")}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor="start-template"
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Template *
-					</label>
-					<select
-						className="input"
-						id="start-template"
-						onChange={(e) => setTemplateId(e.target.value)}
-						style={{ width: "100%" }}
-						value={templateId}
-					>
-						<option value="">Select a template…</option>
-						{templateRows.map((t) => (
-							<option key={t.id} value={t.id}>
-								{t.name}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={mutation.isPending}
@@ -167,8 +71,58 @@ export function StartOnboardingDialog({
 					>
 						{mutation.isPending ? "Starting…" : "Start onboarding"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<UserPlus size={18} />}
+			intro="The chosen template's tasks are copied into this onboarding. Later template edits won't change it."
+			onClose={onClose}
+			title="Start onboarding"
+		>
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor="start-employee"
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Employee *
+				</label>
+				<select
+					className="input"
+					id="start-employee"
+					onChange={(e) => setEmployeeId(e.target.value)}
+					style={{ width: "100%" }}
+					value={employeeId}
+				>
+					<option value="">Select an employee…</option>
+					{employeeRows.map((emp) => (
+						<option key={emp.id} value={emp.id}>
+							{[emp.firstName, emp.lastName].filter(Boolean).join(" ")}
+						</option>
+					))}
+				</select>
 			</div>
-		</div>
+
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor="start-template"
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Template *
+				</label>
+				<select
+					className="input"
+					id="start-template"
+					onChange={(e) => setTemplateId(e.target.value)}
+					style={{ width: "100%" }}
+					value={templateId}
+				>
+					<option value="">Select a template…</option>
+					{templateRows.map((t) => (
+						<option key={t.id} value={t.id}>
+							{t.name}
+						</option>
+					))}
+				</select>
+			</div>
+		</Modal>
 	);
 }

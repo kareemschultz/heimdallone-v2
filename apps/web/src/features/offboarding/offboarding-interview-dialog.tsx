@@ -1,9 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 import { useInvalidateOffboarding } from "./use-invalidate-offboarding";
 
@@ -68,7 +69,6 @@ export function InterviewDialog({
 	);
 	const [notes, setNotes] = useState(existing?.internalNotes ?? "");
 
-	const titleId = useId();
 	const dateId = useId();
 	const privateId = useId();
 	const ratingId = useId();
@@ -104,158 +104,9 @@ export function InterviewDialog({
 	});
 
 	return (
-		<div
-			aria-labelledby={titleId}
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 540,
-					maxHeight: "90vh",
-					overflowY: "auto",
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2 id={titleId} style={{ fontSize: 15, fontWeight: 600 }}>
-						{existing ? "Edit exit interview" : "Record exit interview"}
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-
-				<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-					<DialogField flex htmlFor={dateId} label="Date conducted">
-						<input
-							className="input"
-							id={dateId}
-							onChange={(e) => setConductedAt(e.target.value)}
-							type="date"
-							value={conductedAt}
-						/>
-					</DialogField>
-					<DialogField flex htmlFor={ratingId} label="Overall rating">
-						<select
-							className="input"
-							id={ratingId}
-							onChange={(e) => setRating(e.target.value)}
-							value={rating}
-						>
-							<option value="">Not rated</option>
-							<option value="1">1 — Poor</option>
-							<option value="2">2</option>
-							<option value="3">3 — Neutral</option>
-							<option value="4">4</option>
-							<option value="5">5 — Excellent</option>
-						</select>
-					</DialogField>
-				</div>
-
-				<DialogField htmlFor={reasonId} label="Reason for leaving">
-					<textarea
-						className="input"
-						id={reasonId}
-						onChange={(e) => setReason(e.target.value)}
-						rows={2}
-						style={{ resize: "vertical" }}
-						value={reason}
-					/>
-				</DialogField>
-				<DialogField htmlFor={wellId} label="What went well">
-					<textarea
-						className="input"
-						id={wellId}
-						onChange={(e) => setWentWell(e.target.value)}
-						rows={2}
-						style={{ resize: "vertical" }}
-						value={wentWell}
-					/>
-				</DialogField>
-				<DialogField htmlFor={improveId} label="What could improve">
-					<textarea
-						className="input"
-						id={improveId}
-						onChange={(e) => setImprove(e.target.value)}
-						rows={2}
-						style={{ resize: "vertical" }}
-						value={improve}
-					/>
-				</DialogField>
-
-				<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-					<DialogField flex htmlFor={rehireId} label="Would rehire (HR only)">
-						<select
-							className="input"
-							id={rehireId}
-							onChange={(e) => setRehire(e.target.value)}
-							value={rehire}
-						>
-							<option value="">Not assessed</option>
-							<option value="yes">Yes</option>
-							<option value="no">No</option>
-						</select>
-					</DialogField>
-				</div>
-
-				<DialogField htmlFor={notesId} label="Internal notes (HR only)">
-					<textarea
-						className="input"
-						id={notesId}
-						onChange={(e) => setNotes(e.target.value)}
-						placeholder="Never shown to the employee or non-HR roles."
-						rows={2}
-						style={{ resize: "vertical" }}
-						value={notes}
-					/>
-				</DialogField>
-
-				<label
-					htmlFor={privateId}
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 8,
-						fontSize: 13,
-						color: "var(--fg-2)",
-					}}
-				>
-					<input
-						checked={isPrivate}
-						id={privateId}
-						onChange={(e) => setIsPrivate(e.target.checked)}
-						type="checkbox"
-					/>
-					Keep private (visible to HR only)
-				</label>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={mutation.isPending}
@@ -272,9 +123,118 @@ export function InterviewDialog({
 					>
 						{mutation.isPending ? "Saving…" : "Save interview"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<MessageSquare size={18} />}
+			intro="Exit interview notes are private by default and visible to HR only."
+			onClose={onClose}
+			title={existing ? "Edit exit interview" : "Record exit interview"}
+			wide
+		>
+			<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+				<DialogField flex htmlFor={dateId} label="Date conducted">
+					<input
+						className="input"
+						id={dateId}
+						onChange={(e) => setConductedAt(e.target.value)}
+						type="date"
+						value={conductedAt}
+					/>
+				</DialogField>
+				<DialogField flex htmlFor={ratingId} label="Overall rating">
+					<select
+						className="input"
+						id={ratingId}
+						onChange={(e) => setRating(e.target.value)}
+						value={rating}
+					>
+						<option value="">Not rated</option>
+						<option value="1">1 — Poor</option>
+						<option value="2">2</option>
+						<option value="3">3 — Neutral</option>
+						<option value="4">4</option>
+						<option value="5">5 — Excellent</option>
+					</select>
+				</DialogField>
 			</div>
-		</div>
+
+			<DialogField htmlFor={reasonId} label="Reason for leaving">
+				<textarea
+					className="input"
+					id={reasonId}
+					onChange={(e) => setReason(e.target.value)}
+					rows={2}
+					style={{ resize: "vertical" }}
+					value={reason}
+				/>
+			</DialogField>
+			<DialogField htmlFor={wellId} label="What went well">
+				<textarea
+					className="input"
+					id={wellId}
+					onChange={(e) => setWentWell(e.target.value)}
+					rows={2}
+					style={{ resize: "vertical" }}
+					value={wentWell}
+				/>
+			</DialogField>
+			<DialogField htmlFor={improveId} label="What could improve">
+				<textarea
+					className="input"
+					id={improveId}
+					onChange={(e) => setImprove(e.target.value)}
+					rows={2}
+					style={{ resize: "vertical" }}
+					value={improve}
+				/>
+			</DialogField>
+
+			<div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+				<DialogField flex htmlFor={rehireId} label="Would rehire (HR only)">
+					<select
+						className="input"
+						id={rehireId}
+						onChange={(e) => setRehire(e.target.value)}
+						value={rehire}
+					>
+						<option value="">Not assessed</option>
+						<option value="yes">Yes</option>
+						<option value="no">No</option>
+					</select>
+				</DialogField>
+			</div>
+
+			<DialogField htmlFor={notesId} label="Internal notes (HR only)">
+				<textarea
+					className="input"
+					id={notesId}
+					onChange={(e) => setNotes(e.target.value)}
+					placeholder="Never shown to the employee or non-HR roles."
+					rows={2}
+					style={{ resize: "vertical" }}
+					value={notes}
+				/>
+			</DialogField>
+
+			<label
+				htmlFor={privateId}
+				style={{
+					display: "flex",
+					alignItems: "center",
+					gap: 8,
+					fontSize: 13,
+					color: "var(--fg-2)",
+				}}
+			>
+				<input
+					checked={isPrivate}
+					id={privateId}
+					onChange={(e) => setIsPrivate(e.target.checked)}
+					type="checkbox"
+				/>
+				Keep private (visible to HR only)
+			</label>
+		</Modal>
 	);
 }
 

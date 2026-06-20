@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { LogOut, RotateCcw } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/offboarding.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { client, orpc } from "@/utils/orpc";
 import { caseStatusLabel, caseStatusTone, exitTypeLabel } from "./labels";
 import { useInvalidateOffboarding } from "./use-invalidate-offboarding";
@@ -334,40 +336,43 @@ function ConfirmSubmitDialog({
 	onClose: () => void;
 	pending: boolean;
 }) {
-	const titleId = useId();
 	return (
-		<DialogShell labelledBy={titleId} maxWidth={420}>
-			<DialogHeader
-				id={titleId}
-				onClose={onClose}
-				title="Submit your resignation?"
-			/>
-			<p style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}>
-				This notifies HR that you intend to resign
-				{lastWorkingDay
-					? `, with a proposed last working day of ${fmtDate(lastWorkingDay)}`
-					: ""}
-				. You can withdraw it while it is still pending approval.
-			</p>
-			<DialogActions>
-				<button
-					className="btn btn-sm"
-					disabled={pending}
-					onClick={onClose}
-					type="button"
-				>
-					Cancel
-				</button>
-				<button
-					className="btn btn-primary btn-sm"
-					disabled={pending}
-					onClick={onConfirm}
-					type="button"
-				>
-					{pending ? "Submitting…" : "Submit resignation"}
-				</button>
-			</DialogActions>
-		</DialogShell>
+		<Modal
+			footer={
+				<>
+					<button
+						className="btn btn-sm"
+						disabled={pending}
+						onClick={onClose}
+						type="button"
+					>
+						Cancel
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={pending}
+						onClick={onConfirm}
+						type="button"
+					>
+						{pending ? "Submitting…" : "Submit resignation"}
+					</button>
+				</>
+			}
+			icon={<LogOut size={18} />}
+			intro={
+				<>
+					This notifies HR that you intend to resign
+					{lastWorkingDay
+						? `, with a proposed last working day of ${fmtDate(lastWorkingDay)}`
+						: ""}
+					. You can withdraw it while it is still pending approval.
+				</>
+			}
+			onClose={onClose}
+			title="Submit your resignation?"
+		>
+			{null}
+		</Modal>
 	);
 }
 
@@ -380,38 +385,36 @@ function WithdrawDialog({
 	onClose: () => void;
 	pending: boolean;
 }) {
-	const titleId = useId();
 	return (
-		<DialogShell labelledBy={titleId} maxWidth={420}>
-			<DialogHeader
-				id={titleId}
-				onClose={onClose}
-				title="Withdraw your resignation?"
-			/>
-			<p style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}>
-				Your resignation will be cancelled and HR will be notified. You can
-				submit a new one later if you change your mind.
-			</p>
-			<DialogActions>
-				<button
-					className="btn btn-sm"
-					disabled={pending}
-					onClick={onClose}
-					type="button"
-				>
-					Keep it
-				</button>
-				<button
-					className="btn btn-sm"
-					disabled={pending}
-					onClick={onConfirm}
-					style={{ color: "var(--danger, #c0392b)" }}
-					type="button"
-				>
-					{pending ? "Withdrawing…" : "Withdraw resignation"}
-				</button>
-			</DialogActions>
-		</DialogShell>
+		<Modal
+			footer={
+				<>
+					<button
+						className="btn btn-sm"
+						disabled={pending}
+						onClick={onClose}
+						type="button"
+					>
+						Keep it
+					</button>
+					<button
+						className="btn btn-sm"
+						disabled={pending}
+						onClick={onConfirm}
+						style={{ color: "var(--danger, #c0392b)" }}
+						type="button"
+					>
+						{pending ? "Withdrawing…" : "Withdraw resignation"}
+					</button>
+				</>
+			}
+			icon={<RotateCcw size={18} />}
+			intro="Your resignation will be cancelled and HR will be notified. You can submit a new one later if you change your mind."
+			onClose={onClose}
+			title="Withdraw your resignation?"
+		>
+			{null}
+		</Modal>
 	);
 }
 
@@ -428,87 +431,6 @@ function Field({ label, value }: { label: string; value: ReactNode }) {
 		>
 			<span style={{ fontSize: 11.5, color: "var(--fg-3)" }}>{label}</span>
 			<span style={{ fontSize: 13.5, color: "var(--fg)" }}>{value}</span>
-		</div>
-	);
-}
-
-function DialogShell({
-	labelledBy,
-	maxWidth,
-	children,
-}: {
-	labelledBy: string;
-	maxWidth: number;
-	children: ReactNode;
-}) {
-	return (
-		<div
-			aria-labelledby={labelledBy}
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				{children}
-			</div>
-		</div>
-	);
-}
-
-function DialogHeader({
-	id,
-	title,
-	onClose,
-}: {
-	id: string;
-	title: string;
-	onClose: () => void;
-}) {
-	return (
-		<div
-			style={{
-				display: "flex",
-				justifyContent: "space-between",
-				alignItems: "center",
-			}}
-		>
-			<h2 id={id} style={{ fontSize: 15, fontWeight: 600 }}>
-				{title}
-			</h2>
-			<button
-				aria-label="Close"
-				className="btn btn-sm"
-				onClick={onClose}
-				type="button"
-			>
-				✕
-			</button>
-		</div>
-	);
-}
-
-function DialogActions({ children }: { children: ReactNode }) {
-	return (
-		<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-			{children}
 		</div>
 	);
 }
