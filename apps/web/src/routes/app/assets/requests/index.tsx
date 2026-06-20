@@ -165,9 +165,6 @@ function FulfillDialog({
 					))}
 				</select>
 			</label>
-			<p className="asset-desc">
-				This assigns the asset to the requester and marks the request fulfilled.
-			</p>
 		</Modal>
 	);
 }
