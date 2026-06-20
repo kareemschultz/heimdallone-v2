@@ -1964,17 +1964,30 @@ button {
 	border-radius: 16px;
 	box-shadow: var(--shadow-lg);
 	transform: translate(-50%, -50%);
-	transition:
-		opacity 160ms ease,
-		transform 160ms cubic-bezier(0.16, 1, 0.3, 1);
+	animation: hd-modal-in 160ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@keyframes hd-modal-in {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -50%) scale(0.96);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, -50%) scale(1);
+	}
+}
+@keyframes hd-modal-in-mobile {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
 }
 .hd-modal-wide {
 	max-width: 680px;
-}
-.hd-modal[data-starting-style],
-.hd-modal[data-ending-style] {
-	opacity: 0;
-	transform: translate(-50%, -50%) scale(0.96);
 }
 .hd-modal-head {
 	display: flex;
@@ -2083,10 +2096,12 @@ button {
 		max-height: 100dvh;
 		border-radius: 0;
 		transform: none;
+		animation: hd-modal-in-mobile 180ms ease;
 	}
-	.hd-modal[data-starting-style],
-	.hd-modal[data-ending-style] {
-		opacity: 0;
-		transform: translateY(8px);
+}
+@media (prefers-reduced-motion: reduce) {
+	.hd-modal,
+	.hd-modal-overlay {
+		animation: none;
 	}
 }
