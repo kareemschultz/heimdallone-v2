@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Award } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client, orpc } from "@/utils/orpc";
 
 function invalidatePerformance(qc: ReturnType<typeof useQueryClient>) {
@@ -54,72 +55,9 @@ export function AwardRecognitionForm({ onClose }: { onClose: () => void }) {
 	});
 
 	return (
-		<div className="pf-sheet-overlay">
-			<div
-				aria-labelledby="pf-award-title"
-				aria-modal="true"
-				className="pf-sheet"
-				role="dialog"
-			>
-				<div className="pf-sheet-head">
-					<h2 id="pf-award-title">Recognise someone</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pf-sheet-body">
-					<p className="pf-not-pay">
-						Recognition points are an appreciation record only. They are not
-						payroll or bonus pay.
-					</p>
-					<label className="pf-field" htmlFor="pf-award-employee">
-						<span>Who would you like to recognise?</span>
-						<select
-							id="pf-award-employee"
-							onChange={(e) => setEmployeeId(e.target.value)}
-							value={employeeId}
-						>
-							<option value="">Choose a team member…</option>
-							{emps.map((e) => (
-								<option key={e.id} value={e.id}>
-									{e.firstName} {e.lastName ?? ""}
-								</option>
-							))}
-						</select>
-					</label>
-					<div className="pf-field">
-						<span>Points</span>
-						<div className="pf-rating-row">
-							{POINT_PRESETS.map((n) => (
-								<button
-									aria-pressed={points === String(n)}
-									className={`pf-rating-pill ${points === String(n) ? "active" : ""}`}
-									key={n}
-									onClick={() => setPoints(String(n))}
-									type="button"
-								>
-									{n}
-								</button>
-							))}
-						</div>
-					</div>
-					<label className="pf-field" htmlFor="pf-award-reason">
-						<span>What did they do?</span>
-						<textarea
-							id="pf-award-reason"
-							onChange={(e) => setReason(e.target.value)}
-							placeholder="e.g. Stepped up to cover the deployment over the weekend."
-							rows={3}
-							value={reason}
-						/>
-					</label>
-				</div>
-				<div className="pf-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -131,8 +69,57 @@ export function AwardRecognitionForm({ onClose }: { onClose: () => void }) {
 					>
 						Give recognition
 					</button>
+				</>
+			}
+			icon={<Award size={18} />}
+			onClose={onClose}
+			title="Recognise someone"
+		>
+			<p className="pf-not-pay">
+				Recognition points are an appreciation record only. They are not payroll
+				or bonus pay.
+			</p>
+			<label className="pf-field" htmlFor="pf-award-employee">
+				<span>Who would you like to recognise?</span>
+				<select
+					id="pf-award-employee"
+					onChange={(e) => setEmployeeId(e.target.value)}
+					value={employeeId}
+				>
+					<option value="">Choose a team member…</option>
+					{emps.map((e) => (
+						<option key={e.id} value={e.id}>
+							{e.firstName} {e.lastName ?? ""}
+						</option>
+					))}
+				</select>
+			</label>
+			<div className="pf-field">
+				<span>Points</span>
+				<div className="pf-rating-row">
+					{POINT_PRESETS.map((n) => (
+						<button
+							aria-pressed={points === String(n)}
+							className={`pf-rating-pill ${points === String(n) ? "active" : ""}`}
+							key={n}
+							onClick={() => setPoints(String(n))}
+							type="button"
+						>
+							{n}
+						</button>
+					))}
 				</div>
 			</div>
-		</div>
+			<label className="pf-field" htmlFor="pf-award-reason">
+				<span>What did they do?</span>
+				<textarea
+					id="pf-award-reason"
+					onChange={(e) => setReason(e.target.value)}
+					placeholder="e.g. Stepped up to cover the deployment over the weekend."
+					rows={3}
+					value={reason}
+				/>
+			</label>
+		</Modal>
 	);
 }

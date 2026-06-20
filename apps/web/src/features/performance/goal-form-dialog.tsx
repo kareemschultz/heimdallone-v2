@@ -1,8 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Target } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { canManagePerformance } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -89,87 +90,9 @@ export function GoalFormDialog({
 	});
 
 	return (
-		<div className="pf-sheet-overlay">
-			<div
-				aria-labelledby="pf-goal-form-title"
-				aria-modal="true"
-				className="pf-sheet"
-				role="dialog"
-			>
-				<div className="pf-sheet-head">
-					<h2 id="pf-goal-form-title">{isEdit ? "Edit goal" : "New goal"}</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pf-sheet-body">
-					{canPickEmployee && !isEdit ? (
-						<label className="pf-field" htmlFor="pf-goal-employee">
-							<span>Whose goal is this?</span>
-							<select
-								id="pf-goal-employee"
-								onChange={(e) => setEmployeeId(e.target.value)}
-								value={employeeId}
-							>
-								<option value="">Me</option>
-								{emps.map((e) => (
-									<option key={e.id} value={e.id}>
-										{e.firstName} {e.lastName ?? ""}
-									</option>
-								))}
-							</select>
-						</label>
-					) : null}
-					<label className="pf-field" htmlFor="pf-goal-title">
-						<span>Goal</span>
-						<input
-							id="pf-goal-title"
-							onChange={(e) => setTitle(e.target.value)}
-							placeholder="What do you want to achieve?"
-							value={title}
-						/>
-					</label>
-					<label className="pf-field" htmlFor="pf-goal-desc">
-						<span>Details (optional)</span>
-						<textarea
-							id="pf-goal-desc"
-							onChange={(e) => setDescription(e.target.value)}
-							rows={3}
-							value={description}
-						/>
-					</label>
-					<label className="pf-field" htmlFor="pf-goal-due">
-						<span>Target date (optional)</span>
-						<input
-							id="pf-goal-due"
-							onChange={(e) => setDueDate(e.target.value)}
-							type="date"
-							value={dueDate}
-						/>
-					</label>
-					{isEdit ? (
-						<label className="pf-field" htmlFor="pf-goal-status">
-							<span>Status</span>
-							<select
-								id="pf-goal-status"
-								onChange={(e) => setStatus(e.target.value)}
-								value={status}
-							>
-								{STATUS_OPTIONS.map((o) => (
-									<option key={o.value} value={o.value}>
-										{o.label}
-									</option>
-								))}
-							</select>
-						</label>
-					) : null}
-				</div>
-				<div className="pf-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -181,8 +104,77 @@ export function GoalFormDialog({
 					>
 						{isEdit ? "Save goal" : "Create goal"}
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<Target size={18} />}
+			intro={
+				isEdit
+					? undefined
+					: "Set a clear, measurable goal. You can update its progress and status as work moves forward."
+			}
+			onClose={onClose}
+			title={isEdit ? "Edit goal" : "New goal"}
+		>
+			{canPickEmployee && !isEdit ? (
+				<label className="pf-field" htmlFor="pf-goal-employee">
+					<span>Whose goal is this?</span>
+					<select
+						id="pf-goal-employee"
+						onChange={(e) => setEmployeeId(e.target.value)}
+						value={employeeId}
+					>
+						<option value="">Me</option>
+						{emps.map((e) => (
+							<option key={e.id} value={e.id}>
+								{e.firstName} {e.lastName ?? ""}
+							</option>
+						))}
+					</select>
+				</label>
+			) : null}
+			<label className="pf-field" htmlFor="pf-goal-title">
+				<span>Goal</span>
+				<input
+					id="pf-goal-title"
+					onChange={(e) => setTitle(e.target.value)}
+					placeholder="What do you want to achieve?"
+					value={title}
+				/>
+			</label>
+			<label className="pf-field" htmlFor="pf-goal-desc">
+				<span>Details (optional)</span>
+				<textarea
+					id="pf-goal-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					rows={3}
+					value={description}
+				/>
+			</label>
+			<label className="pf-field" htmlFor="pf-goal-due">
+				<span>Target date (optional)</span>
+				<input
+					id="pf-goal-due"
+					onChange={(e) => setDueDate(e.target.value)}
+					type="date"
+					value={dueDate}
+				/>
+			</label>
+			{isEdit ? (
+				<label className="pf-field" htmlFor="pf-goal-status">
+					<span>Status</span>
+					<select
+						id="pf-goal-status"
+						onChange={(e) => setStatus(e.target.value)}
+						value={status}
+					>
+						{STATUS_OPTIONS.map((o) => (
+							<option key={o.value} value={o.value}>
+								{o.label}
+							</option>
+						))}
+					</select>
+				</label>
+			) : null}
+		</Modal>
 	);
 }

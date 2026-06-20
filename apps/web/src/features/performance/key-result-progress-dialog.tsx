@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { TrendingUp } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 import { keyResultTypeLabel } from "./labels";
 import type { KeyResultRow } from "./types";
@@ -48,54 +49,9 @@ export function KeyResultProgressDialog({
 	});
 
 	return (
-		<div className="pf-sheet-overlay">
-			<div
-				aria-labelledby="pf-kr-progress-title"
-				aria-modal="true"
-				className="pf-sheet"
-				role="dialog"
-			>
-				<div className="pf-sheet-head">
-					<h2 id="pf-kr-progress-title">Update progress</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pf-sheet-body">
-					<p className="pf-desc">{kr.title}</p>
-					<label className="pf-field" htmlFor="pf-kr-current">
-						<span>Current value ({keyResultTypeLabel(kr.progressType)})</span>
-						<input
-							id="pf-kr-current"
-							onChange={(e) => setCurrent(e.target.value)}
-							type="number"
-							value={current}
-						/>
-					</label>
-					<p className="pf-sub">
-						Target: {kr.targetValue} · Start: {kr.startValue}
-					</p>
-					<label className="pf-field" htmlFor="pf-kr-status">
-						<span>Status</span>
-						<select
-							id="pf-kr-status"
-							onChange={(e) => setStatus(e.target.value)}
-							value={status}
-						>
-							{STATUS_OPTIONS.map((o) => (
-								<option key={o.value} value={o.value}>
-									{o.label}
-								</option>
-							))}
-						</select>
-					</label>
-				</div>
-				<div className="pf-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -107,8 +63,39 @@ export function KeyResultProgressDialog({
 					>
 						Save progress
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<TrendingUp size={18} />}
+			onClose={onClose}
+			title="Update progress"
+		>
+			<p className="pf-desc">{kr.title}</p>
+			<label className="pf-field" htmlFor="pf-kr-current">
+				<span>Current value ({keyResultTypeLabel(kr.progressType)})</span>
+				<input
+					id="pf-kr-current"
+					onChange={(e) => setCurrent(e.target.value)}
+					type="number"
+					value={current}
+				/>
+			</label>
+			<p className="pf-sub">
+				Target: {kr.targetValue} · Start: {kr.startValue}
+			</p>
+			<label className="pf-field" htmlFor="pf-kr-status">
+				<span>Status</span>
+				<select
+					id="pf-kr-status"
+					onChange={(e) => setStatus(e.target.value)}
+					value={status}
+				>
+					{STATUS_OPTIONS.map((o) => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
+					))}
+				</select>
+			</label>
+		</Modal>
 	);
 }
