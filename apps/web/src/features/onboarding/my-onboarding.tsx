@@ -15,12 +15,14 @@ import {
 	ClipboardList,
 	FileText,
 	PartyPopper,
+	PenLine,
 	ShieldCheck,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import type {
 	AckRow,
 	DocRequestRow,
@@ -638,43 +640,9 @@ function SignDialog({
 	policyName: string;
 }) {
 	return (
-		<div
-			aria-describedby="sign-ack-desc"
-			aria-labelledby="sign-ack-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 440,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<h2 id="sign-ack-title" style={{ fontSize: 15, fontWeight: 600 }}>
-					Sign acknowledgement?
-				</h2>
-				<p
-					id="sign-ack-desc"
-					style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
-				>
-					This records that you have read and accepted this policy
-					{policyName ? `: ${policyName}` : ""}.
-				</p>
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={isPending}
@@ -691,8 +659,14 @@ function SignDialog({
 					>
 						{isPending ? "Signing…" : "Sign acknowledgement"}
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<PenLine size={18} />}
+			intro={`This records that you have read and accepted this policy${policyName ? `: ${policyName}` : ""}.`}
+			onClose={onClose}
+			title="Sign acknowledgement?"
+		>
+			{null}
+		</Modal>
 	);
 }

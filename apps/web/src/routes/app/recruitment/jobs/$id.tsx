@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, Users } from "lucide-react";
+import { ArrowLeft, Briefcase, Users } from "lucide-react";
 import { useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/recruitment.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	JobFormDialog,
 	type JobFormInitial,
@@ -549,42 +550,9 @@ function ConfirmDialog({
 	onConfirm: () => void;
 }) {
 	return (
-		<div
-			aria-describedby="job-confirm-desc"
-			aria-labelledby="job-confirm-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 420,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<h2 id="job-confirm-title" style={{ fontSize: 15, fontWeight: 600 }}>
-					{title}
-				</h2>
-				<p
-					id="job-confirm-desc"
-					style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
-				>
-					{helper}
-				</p>
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={isPending}
@@ -601,9 +569,16 @@ function ConfirmDialog({
 					>
 						{isPending ? "Working…" : confirmLabel}
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<Briefcase size={18} />}
+			intro={helper}
+			onClose={onCancel}
+			title={title}
+		>
+			{/* Confirm-only dialog — no body fields */}
+			<span />
+		</Modal>
 	);
 }
 

@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import "@/styles/recruitment.css";
 import { EmptyState } from "@/components/empty-state";
 import { KanbanBoard, type KanbanColumn } from "@/components/kanban-board";
+import { Modal } from "@/components/modal";
 import { RecruitmentTabs } from "@/features/recruitment/recruitment-tabs";
 import { canManageRecruitment } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
@@ -536,84 +537,9 @@ function RejectDialog({
 	onSubmit,
 }: RejectDialogProps) {
 	return (
-		<div
-			aria-labelledby="reject-dialog-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 480,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2
-						id="reject-dialog-title"
-						style={{ fontSize: 15, fontWeight: 600 }}
-					>
-						Reject candidate
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onCancel}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-				<div>
-					<div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 6 }}>
-						Reason
-					</div>
-					<select
-						className="input"
-						onChange={(e) => onReasonChange(e.target.value)}
-						style={{ width: "100%" }}
-						value={reason}
-					>
-						{REJECT_REASONS.map((r) => (
-							<option key={r.key} value={r.key}>
-								{r.label}
-							</option>
-						))}
-					</select>
-				</div>
-				<div>
-					<div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 6 }}>
-						Internal note (optional)
-					</div>
-					<textarea
-						className="input"
-						onChange={(e) => onFeedbackChange(e.target.value)}
-						placeholder="Visible only to recruiters and HR."
-						rows={3}
-						style={{ width: "100%", resize: "vertical" }}
-						value={feedback}
-					/>
-				</div>
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={isSubmitting}
@@ -630,8 +556,43 @@ function RejectDialog({
 					>
 						{isSubmitting ? "Rejecting…" : "Reject candidate"}
 					</button>
+				</>
+			}
+			icon={<GitPullRequestArrow size={18} />}
+			intro="Select a reason and optionally add an internal note visible only to recruiters and HR."
+			onClose={onCancel}
+			title="Reject candidate"
+		>
+			<div>
+				<div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 6 }}>
+					Reason
 				</div>
+				<select
+					className="input"
+					onChange={(e) => onReasonChange(e.target.value)}
+					style={{ width: "100%" }}
+					value={reason}
+				>
+					{REJECT_REASONS.map((r) => (
+						<option key={r.key} value={r.key}>
+							{r.label}
+						</option>
+					))}
+				</select>
 			</div>
-		</div>
+			<div>
+				<div style={{ fontSize: 12, color: "var(--fg-3)", marginBottom: 6 }}>
+					Internal note (optional)
+				</div>
+				<textarea
+					className="input"
+					onChange={(e) => onFeedbackChange(e.target.value)}
+					placeholder="Visible only to recruiters and HR."
+					rows={3}
+					style={{ width: "100%", resize: "vertical" }}
+					value={feedback}
+				/>
+			</div>
+		</Modal>
 	);
 }

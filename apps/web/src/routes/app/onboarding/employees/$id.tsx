@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft, CheckCircle2 } from "lucide-react";
 import { type ReactNode, useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/onboarding.css";
+import { Modal } from "@/components/modal";
 import {
 	AcknowledgementTable,
 	type AckRow,
@@ -294,6 +295,7 @@ function EmployeeOnboardingDetailPage() {
 							: "Mark this onboarding complete once all tasks are handled."
 					}
 					isPending={lifecycle.isPending}
+					kind={confirm}
 					onCancel={() => setConfirm(null)}
 					onConfirm={() => lifecycle.mutate(confirm)}
 					title={
@@ -467,6 +469,7 @@ function ConfirmDialog({
 	isPending,
 	onCancel,
 	onConfirm,
+	kind,
 }: {
 	title: string;
 	helper: string;
@@ -474,44 +477,12 @@ function ConfirmDialog({
 	isPending: boolean;
 	onCancel: () => void;
 	onConfirm: () => void;
+	kind: "cancel" | "complete";
 }) {
 	return (
-		<div
-			aria-describedby="ob-confirm-desc"
-			aria-labelledby="ob-confirm-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 420,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<h2 id="ob-confirm-title" style={{ fontSize: 15, fontWeight: 600 }}>
-					{title}
-				</h2>
-				<p
-					id="ob-confirm-desc"
-					style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
-				>
-					{helper}
-				</p>
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={isPending}
@@ -528,8 +499,20 @@ function ConfirmDialog({
 					>
 						{isPending ? "Working…" : confirmLabel}
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={
+				kind === "complete" ? (
+					<CheckCircle2 size={18} />
+				) : (
+					<AlertCircle size={18} />
+				)
+			}
+			intro={helper}
+			onClose={onCancel}
+			title={title}
+		>
+			{null}
+		</Modal>
 	);
 }

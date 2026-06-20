@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { ShieldOff } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 import { NotePromptDialog } from "./offboarding-note-prompt-dialog";
 import { useInvalidateOffboarding } from "./use-invalidate-offboarding";
@@ -112,7 +113,6 @@ export function AddAccessDialog({ caseId, onClose }: AddAccessDialogProps) {
 	const [system, setSystem] = useState("");
 	const [description, setDescription] = useState("");
 	const [scheduled, setScheduled] = useState("");
-	const titleId = useId();
 	const systemFieldId = useId();
 	const descFieldId = useId();
 	const dateFieldId = useId();
@@ -135,102 +135,9 @@ export function AddAccessDialog({ caseId, onClose }: AddAccessDialogProps) {
 	});
 
 	return (
-		<div
-			aria-labelledby={titleId}
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 460,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2 id={titleId} style={{ fontSize: 15, fontWeight: 600 }}>
-						Add an access item
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-				<p style={{ color: "var(--fg-3)", fontSize: 12, margin: 0 }}>
-					Track a system or account that must be disabled. Disabling happens
-					outside Heimdallone; this records it for clearance.
-				</p>
-
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor={systemFieldId}
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						System / account *
-					</label>
-					<input
-						className="input"
-						id={systemFieldId}
-						onChange={(e) => setSystem(e.target.value)}
-						placeholder="e.g. Email, VPN, Payroll portal"
-						value={system}
-					/>
-				</div>
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor={descFieldId}
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Notes
-					</label>
-					<input
-						className="input"
-						id={descFieldId}
-						onChange={(e) => setDescription(e.target.value)}
-						placeholder="Optional detail"
-						value={description}
-					/>
-				</div>
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor={dateFieldId}
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Scheduled removal
-					</label>
-					<input
-						className="input"
-						id={dateFieldId}
-						onChange={(e) => setScheduled(e.target.value)}
-						type="date"
-						value={scheduled}
-					/>
-				</div>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={mutation.isPending}
@@ -247,8 +154,58 @@ export function AddAccessDialog({ caseId, onClose }: AddAccessDialogProps) {
 					>
 						{mutation.isPending ? "Adding…" : "Add item"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<ShieldOff size={18} />}
+			intro="Track a system or account that must be disabled. Disabling happens outside Heimdallone; this records it for clearance."
+			onClose={onClose}
+			title="Add an access item"
+		>
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor={systemFieldId}
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					System / account *
+				</label>
+				<input
+					className="input"
+					id={systemFieldId}
+					onChange={(e) => setSystem(e.target.value)}
+					placeholder="e.g. Email, VPN, Payroll portal"
+					value={system}
+				/>
 			</div>
-		</div>
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor={descFieldId}
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Notes
+				</label>
+				<input
+					className="input"
+					id={descFieldId}
+					onChange={(e) => setDescription(e.target.value)}
+					placeholder="Optional detail"
+					value={description}
+				/>
+			</div>
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor={dateFieldId}
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Scheduled removal
+				</label>
+				<input
+					className="input"
+					id={dateFieldId}
+					onChange={(e) => setScheduled(e.target.value)}
+					type="date"
+					value={scheduled}
+				/>
+			</div>
+		</Modal>
 	);
 }

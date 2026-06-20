@@ -4,12 +4,13 @@ import {
 } from "@Heimdallone/ui/components/data-table";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { FileWarning, Play, X } from "lucide-react";
-import { useContext, useId, useState } from "react";
+import { FileWarning, Play } from "lucide-react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/biometrics.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { BiometricTabs } from "@/features/biometrics/biometric-tabs";
 import { BiometricNoAccess } from "@/features/biometrics/biometric-ui";
 import {
@@ -357,63 +358,10 @@ function ConfirmProcessDialog({
 	onConfirm: () => void;
 	pending: boolean;
 }) {
-	const titleId = useId();
-	const descId = useId();
 	return (
-		<div
-			aria-describedby={descId}
-			aria-labelledby={titleId}
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 440,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2 id={titleId} style={{ fontSize: 15, fontWeight: 600 }}>
-						Process pending punches
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-				<p
-					id={descId}
-					style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}
-				>
-					This turns staged punches into attendance events and may create
-					exceptions for missing, duplicate, or unmapped punches. It does not
-					finalize or update payroll.
-				</p>
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={pending}
@@ -430,8 +378,14 @@ function ConfirmProcessDialog({
 					>
 						{pending ? "Processing…" : "Process pending"}
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<Play size={18} />}
+			intro="This turns staged punches into attendance events and may create exceptions for missing, duplicate, or unmapped punches. It does not finalize or update payroll."
+			onClose={onClose}
+			title="Process pending punches"
+		>
+			{null}
+		</Modal>
 	);
 }

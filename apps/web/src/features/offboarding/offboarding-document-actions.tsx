@@ -1,8 +1,9 @@
 import { useMutation } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { FileText } from "lucide-react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 import { NotePromptDialog } from "./offboarding-note-prompt-dialog";
 import { useInvalidateOffboarding } from "./use-invalidate-offboarding";
@@ -113,7 +114,6 @@ export function AddDocumentDialog({ caseId, onClose }: AddDocumentDialogProps) {
 	const invalidate = useInvalidateOffboarding();
 	const [title, setTitle] = useState("");
 	const [documentType, setDocumentType] = useState("");
-	const titleId = useId();
 	const titleFieldId = useId();
 	const typeFieldId = useId();
 	const missing = title.trim() === "" || documentType.trim() === "";
@@ -134,83 +134,9 @@ export function AddDocumentDialog({ caseId, onClose }: AddDocumentDialogProps) {
 	});
 
 	return (
-		<div
-			aria-labelledby={titleId}
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 460,
-					display: "flex",
-					flexDirection: "column",
-					gap: 14,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2 id={titleId} style={{ fontSize: 15, fontWeight: 600 }}>
-						Request a document
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor={titleFieldId}
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Document name *
-					</label>
-					<input
-						className="input"
-						id={titleFieldId}
-						onChange={(e) => setTitle(e.target.value)}
-						placeholder="e.g. Signed exit acknowledgement"
-						value={title}
-					/>
-				</div>
-				<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-					<label
-						htmlFor={typeFieldId}
-						style={{ fontSize: 12, color: "var(--fg-3)" }}
-					>
-						Type *
-					</label>
-					<input
-						className="input"
-						id={typeFieldId}
-						onChange={(e) => setDocumentType(e.target.value)}
-						placeholder="e.g. Acknowledgement, NDA, Handover"
-						value={documentType}
-					/>
-				</div>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={mutation.isPending}
@@ -227,8 +153,43 @@ export function AddDocumentDialog({ caseId, onClose }: AddDocumentDialogProps) {
 					>
 						{mutation.isPending ? "Adding…" : "Request document"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<FileText size={18} />}
+			intro="Request a document from the employee as part of their exit clearance."
+			onClose={onClose}
+			title="Request a document"
+		>
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor={titleFieldId}
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Document name *
+				</label>
+				<input
+					className="input"
+					id={titleFieldId}
+					onChange={(e) => setTitle(e.target.value)}
+					placeholder="e.g. Signed exit acknowledgement"
+					value={title}
+				/>
 			</div>
-		</div>
+			<div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+				<label
+					htmlFor={typeFieldId}
+					style={{ fontSize: 12, color: "var(--fg-3)" }}
+				>
+					Type *
+				</label>
+				<input
+					className="input"
+					id={typeFieldId}
+					onChange={(e) => setDocumentType(e.target.value)}
+					placeholder="e.g. Acknowledgement, NDA, Handover"
+					value={documentType}
+				/>
+			</div>
+		</Modal>
 	);
 }

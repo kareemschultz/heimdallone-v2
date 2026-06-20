@@ -1,8 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
-import { type ReactNode, useState } from "react";
+import {
+	CalendarClock,
+	CheckCircle2,
+	MessageSquare,
+	UserX,
+	XCircle,
+} from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client, orpc } from "@/utils/orpc";
 
 export type InterviewActionStatus =
@@ -147,6 +154,7 @@ export function InterviewActions({
 				<ConfirmDialog
 					confirmLabel="Mark completed"
 					helper="Mark completed after the interview has taken place."
+					icon={<CheckCircle2 size={18} />}
 					isPending={transition.isPending}
 					onCancel={() => setDialog(null)}
 					onConfirm={() => transition.mutate("complete")}
@@ -157,6 +165,7 @@ export function InterviewActions({
 				<ConfirmDialog
 					confirmLabel="Cancel interview"
 					helper="Cancel only if this interview will not happen."
+					icon={<XCircle size={18} />}
 					isPending={transition.isPending}
 					onCancel={() => setDialog(null)}
 					onConfirm={() => transition.mutate("cancel")}
@@ -167,6 +176,7 @@ export function InterviewActions({
 				<ConfirmDialog
 					confirmLabel="Mark no-show"
 					helper="Use no-show when the candidate or interviewer did not attend."
+					icon={<UserX size={18} />}
 					isPending={transition.isPending}
 					onCancel={() => setDialog(null)}
 					onConfirm={() => transition.mutate("no_show")}
@@ -228,7 +238,32 @@ function RescheduleDialog({
 	});
 
 	return (
-		<DialogShell onClose={onClose} title="Reschedule interview">
+		<Modal
+			footer={
+				<>
+					<button
+						className="btn btn-sm"
+						disabled={start.trim() === "" || mutation.isPending}
+						onClick={onClose}
+						type="button"
+					>
+						Cancel
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={start.trim() === "" || mutation.isPending}
+						onClick={() => mutation.mutate()}
+						type="button"
+					>
+						{mutation.isPending ? "Saving…" : "Save new time"}
+					</button>
+				</>
+			}
+			icon={<CalendarClock size={18} />}
+			intro="Update the date, time, and location for this interview."
+			onClose={onClose}
+			title="Reschedule interview"
+		>
 			<Labeled label="New date & time">
 				<input
 					className="input"
@@ -256,13 +291,7 @@ function RescheduleDialog({
 					value={location}
 				/>
 			</Labeled>
-			<DialogFooter
-				confirmDisabled={start.trim() === "" || mutation.isPending}
-				confirmLabel={mutation.isPending ? "Saving…" : "Save new time"}
-				onCancel={onClose}
-				onConfirm={() => mutation.mutate()}
-			/>
-		</DialogShell>
+		</Modal>
 	);
 }
 
@@ -324,10 +353,32 @@ function AddFeedbackDialog({
 	});
 
 	return (
-		<DialogShell onClose={onClose} title="Add interview feedback">
-			<p style={{ color: "var(--fg-3)", fontSize: 12.5, margin: 0 }}>
-				Feedback helps the hiring team decide the next step.
-			</p>
+		<Modal
+			footer={
+				<>
+					<button
+						className="btn btn-sm"
+						disabled={effectiveId === "" || noneAvailable || mutation.isPending}
+						onClick={onClose}
+						type="button"
+					>
+						Cancel
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={effectiveId === "" || noneAvailable || mutation.isPending}
+						onClick={() => mutation.mutate()}
+						type="button"
+					>
+						{mutation.isPending ? "Saving…" : "Save feedback"}
+					</button>
+				</>
+			}
+			icon={<MessageSquare size={18} />}
+			intro="Feedback helps the hiring team decide the next step."
+			onClose={onClose}
+			title="Add interview feedback"
+		>
 			{noneAvailable ? (
 				<p style={{ color: "var(--fg-3)", fontSize: 13, margin: 0 }}>
 					All interviewers have already given feedback for this interview.
@@ -405,15 +456,7 @@ function AddFeedbackDialog({
 					value={notes}
 				/>
 			</Labeled>
-			<DialogFooter
-				confirmDisabled={
-					effectiveId === "" || noneAvailable || mutation.isPending
-				}
-				confirmLabel={mutation.isPending ? "Saving…" : "Save feedback"}
-				onCancel={onClose}
-				onConfirm={() => mutation.mutate()}
-			/>
-		</DialogShell>
+		</Modal>
 	);
 }
 
@@ -434,7 +477,17 @@ function ViewFeedbackDialog({
 	const rows = feedback.data ?? [];
 
 	return (
-		<DialogShell onClose={onClose} title="Interview feedback">
+		<Modal
+			footer={
+				<button className="btn btn-sm" onClick={onClose} type="button">
+					Close
+				</button>
+			}
+			icon={<MessageSquare size={18} />}
+			intro="Ratings and notes submitted by interviewers for this interview."
+			onClose={onClose}
+			title="Interview feedback"
+		>
 			{feedback.isLoading && (
 				<p style={{ color: "var(--fg-3)", fontSize: 13 }}>Loading…</p>
 			)}
@@ -479,82 +532,14 @@ function ViewFeedbackDialog({
 					)}
 				</div>
 			))}
-			<div style={{ display: "flex", justifyContent: "flex-end" }}>
-				<button className="btn btn-sm" onClick={onClose} type="button">
-					Close
-				</button>
-			</div>
-		</DialogShell>
-	);
-}
-
-function DialogShell({
-	title,
-	onClose,
-	children,
-}: {
-	title: string;
-	onClose: () => void;
-	children: ReactNode;
-}) {
-	return (
-		<div
-			aria-labelledby="interview-action-title"
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-				overflowY: "auto",
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 480,
-					display: "flex",
-					flexDirection: "column",
-					gap: 12,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2
-						id="interview-action-title"
-						style={{ fontSize: 15, fontWeight: 600 }}
-					>
-						{title}
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-				{children}
-			</div>
-		</div>
+		</Modal>
 	);
 }
 
 function ConfirmDialog({
 	title,
 	helper,
+	icon,
 	confirmLabel,
 	isPending,
 	onCancel,
@@ -562,54 +547,42 @@ function ConfirmDialog({
 }: {
 	title: string;
 	helper: string;
+	icon?: React.ReactNode;
 	confirmLabel: string;
 	isPending: boolean;
 	onCancel: () => void;
 	onConfirm: () => void;
 }) {
 	return (
-		<DialogShell onClose={onCancel} title={title}>
-			<p style={{ color: "var(--fg-2)", fontSize: 13, margin: 0 }}>{helper}</p>
-			<DialogFooter
-				confirmDisabled={isPending}
-				confirmLabel={isPending ? "Working…" : confirmLabel}
-				onCancel={onCancel}
-				onConfirm={onConfirm}
-			/>
-		</DialogShell>
-	);
-}
-
-function DialogFooter({
-	confirmLabel,
-	confirmDisabled,
-	onCancel,
-	onConfirm,
-}: {
-	confirmLabel: string;
-	confirmDisabled: boolean;
-	onCancel: () => void;
-	onConfirm: () => void;
-}) {
-	return (
-		<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
-			<button
-				className="btn btn-sm"
-				disabled={confirmDisabled}
-				onClick={onCancel}
-				type="button"
-			>
-				Cancel
-			</button>
-			<button
-				className="btn btn-primary btn-sm"
-				disabled={confirmDisabled}
-				onClick={onConfirm}
-				type="button"
-			>
-				{confirmLabel}
-			</button>
-		</div>
+		<Modal
+			footer={
+				<>
+					<button
+						className="btn btn-sm"
+						disabled={isPending}
+						onClick={onCancel}
+						type="button"
+					>
+						Cancel
+					</button>
+					<button
+						className="btn btn-primary btn-sm"
+						disabled={isPending}
+						onClick={onConfirm}
+						type="button"
+					>
+						{isPending ? "Working…" : confirmLabel}
+					</button>
+				</>
+			}
+			icon={icon}
+			intro={helper}
+			onClose={onCancel}
+			title={title}
+		>
+			{/* Confirm-only dialogs have no body fields */}
+			<span />
+		</Modal>
 	);
 }
 
@@ -620,7 +593,7 @@ function Labeled({
 }: {
 	label: string;
 	style?: React.CSSProperties;
-	children: ReactNode;
+	children: React.ReactNode;
 }) {
 	return (
 		<div style={{ display: "flex", flexDirection: "column", gap: 4, ...style }}>

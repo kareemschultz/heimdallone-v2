@@ -1,8 +1,9 @@
-import { X } from "lucide-react";
+import { MapPin } from "lucide-react";
 import type { ReactNode } from "react";
 import { useId, useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 
 export interface GeofenceFormValues {
@@ -74,8 +75,6 @@ export function GeofenceLocationFormDialog({
 		}
 	);
 	const [pending, setPending] = useState(false);
-	const titleId = useId();
-	const descId = useId();
 	const ids = {
 		name: useId(),
 		address: useId(),
@@ -138,168 +137,9 @@ export function GeofenceLocationFormDialog({
 	}
 
 	return (
-		<div
-			aria-describedby={descId}
-			aria-labelledby={titleId}
-			aria-modal="true"
-			role="dialog"
-			style={{
-				position: "fixed",
-				inset: 0,
-				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				padding: 24,
-				background: "rgba(0,0,0,0.55)",
-				zIndex: 60,
-				overflowY: "auto",
-			}}
-		>
-			<div
-				className="card card-pad"
-				style={{
-					width: "100%",
-					maxWidth: 520,
-					display: "flex",
-					flexDirection: "column",
-					gap: 12,
-				}}
-			>
-				<div
-					style={{
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-					}}
-				>
-					<h2 id={titleId} style={{ fontSize: 15, fontWeight: 600 }}>
-						{editing ? "Edit work location" : "New work location"}
-					</h2>
-					<button
-						aria-label="Close"
-						className="btn btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={14} />
-					</button>
-				</div>
-				<p
-					id={descId}
-					style={{ fontSize: 12.5, color: "var(--fg-3)", margin: 0 }}
-				>
-					Map picker is coming later. Enter latitude and longitude for now (e.g.
-					from Google Maps).
-				</p>
-
-				<Field id={ids.name} label="Name *">
-					<input
-						className="input"
-						id={ids.name}
-						onChange={(e) => set("name", e.target.value)}
-						value={form.name}
-					/>
-				</Field>
-				<Field id={ids.address} label="Address / site label">
-					<input
-						className="input"
-						id={ids.address}
-						onChange={(e) => set("address", e.target.value)}
-						value={form.address}
-					/>
-				</Field>
-				<div style={{ display: "flex", gap: 10 }}>
-					<Field id={ids.lat} label="Latitude *">
-						<input
-							className="input"
-							id={ids.lat}
-							inputMode="decimal"
-							onChange={(e) => set("latitude", e.target.value)}
-							placeholder="6.8013"
-							value={form.latitude}
-						/>
-					</Field>
-					<Field id={ids.lon} label="Longitude *">
-						<input
-							className="input"
-							id={ids.lon}
-							inputMode="decimal"
-							onChange={(e) => set("longitude", e.target.value)}
-							placeholder="-58.1551"
-							value={form.longitude}
-						/>
-					</Field>
-				</div>
-				<div style={{ display: "flex", gap: 10 }}>
-					<Field id={ids.radius} label="Allowed radius (m) *">
-						<input
-							className="input"
-							id={ids.radius}
-							onChange={(e) => set("radiusMeters", Number(e.target.value))}
-							type="number"
-							value={form.radiusMeters}
-						/>
-					</Field>
-					<Field id={ids.accuracy} label="GPS accuracy required (m) *">
-						<input
-							className="input"
-							id={ids.accuracy}
-							onChange={(e) =>
-								set("accuracyThresholdMeters", Number(e.target.value))
-							}
-							type="number"
-							value={form.accuracyThresholdMeters}
-						/>
-					</Field>
-				</div>
-				<label
-					htmlFor={ids.outside}
-					style={{
-						display: "flex",
-						alignItems: "center",
-						gap: 8,
-						fontSize: 12.5,
-						color: "var(--fg-2)",
-					}}
-				>
-					<input
-						checked={form.allowOutsideWithReason}
-						id={ids.outside}
-						onChange={(e) => set("allowOutsideWithReason", e.target.checked)}
-						type="checkbox"
-					/>
-					Allow check-in outside the radius with a reason
-				</label>
-				{editing && (
-					<label
-						htmlFor={ids.active}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							gap: 8,
-							fontSize: 12.5,
-							color: "var(--fg-2)",
-						}}
-					>
-						<input
-							checked={form.isActive}
-							id={ids.active}
-							onChange={(e) => set("isActive", e.target.checked)}
-							type="checkbox"
-						/>
-						Active
-					</label>
-				)}
-				<Field id={ids.notes} label="Notes">
-					<input
-						className="input"
-						id={ids.notes}
-						onChange={(e) => set("notes", e.target.value)}
-						value={form.notes}
-					/>
-				</Field>
-
-				<div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-sm"
 						disabled={pending}
@@ -316,9 +156,121 @@ export function GeofenceLocationFormDialog({
 					>
 						{saveLabel}
 					</button>
-				</div>
+				</>
+			}
+			icon={<MapPin size={18} />}
+			intro="Map picker is coming later. Enter latitude and longitude for now (e.g. from Google Maps)."
+			onClose={onClose}
+			title={editing ? "Edit work location" : "New work location"}
+			wide
+		>
+			<Field id={ids.name} label="Name *">
+				<input
+					className="input"
+					id={ids.name}
+					onChange={(e) => set("name", e.target.value)}
+					value={form.name}
+				/>
+			</Field>
+			<Field id={ids.address} label="Address / site label">
+				<input
+					className="input"
+					id={ids.address}
+					onChange={(e) => set("address", e.target.value)}
+					value={form.address}
+				/>
+			</Field>
+			<div style={{ display: "flex", gap: 10 }}>
+				<Field id={ids.lat} label="Latitude *">
+					<input
+						className="input"
+						id={ids.lat}
+						inputMode="decimal"
+						onChange={(e) => set("latitude", e.target.value)}
+						placeholder="6.8013"
+						value={form.latitude}
+					/>
+				</Field>
+				<Field id={ids.lon} label="Longitude *">
+					<input
+						className="input"
+						id={ids.lon}
+						inputMode="decimal"
+						onChange={(e) => set("longitude", e.target.value)}
+						placeholder="-58.1551"
+						value={form.longitude}
+					/>
+				</Field>
 			</div>
-		</div>
+			<div style={{ display: "flex", gap: 10 }}>
+				<Field id={ids.radius} label="Allowed radius (m) *">
+					<input
+						className="input"
+						id={ids.radius}
+						onChange={(e) => set("radiusMeters", Number(e.target.value))}
+						type="number"
+						value={form.radiusMeters}
+					/>
+				</Field>
+				<Field id={ids.accuracy} label="GPS accuracy required (m) *">
+					<input
+						className="input"
+						id={ids.accuracy}
+						onChange={(e) =>
+							set("accuracyThresholdMeters", Number(e.target.value))
+						}
+						type="number"
+						value={form.accuracyThresholdMeters}
+					/>
+				</Field>
+			</div>
+			<label
+				htmlFor={ids.outside}
+				style={{
+					display: "flex",
+					alignItems: "center",
+					gap: 8,
+					fontSize: 12.5,
+					color: "var(--fg-2)",
+				}}
+			>
+				<input
+					checked={form.allowOutsideWithReason}
+					id={ids.outside}
+					onChange={(e) => set("allowOutsideWithReason", e.target.checked)}
+					type="checkbox"
+				/>
+				Allow check-in outside the radius with a reason
+			</label>
+			{editing && (
+				<label
+					htmlFor={ids.active}
+					style={{
+						display: "flex",
+						alignItems: "center",
+						gap: 8,
+						fontSize: 12.5,
+						color: "var(--fg-2)",
+					}}
+				>
+					<input
+						checked={form.isActive}
+						id={ids.active}
+						onChange={(e) => set("isActive", e.target.checked)}
+						type="checkbox"
+					/>
+					Active
+				</label>
+			)}
+			<Field id={ids.notes} label="Notes">
+				<input
+					className="input"
+					id={ids.notes}
+					onChange={(e) => set("notes", e.target.value)}
+					value={form.notes}
+				/>
+			</Field>
+		</Modal>
 	);
 }
 
