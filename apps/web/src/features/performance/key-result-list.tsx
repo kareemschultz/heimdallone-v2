@@ -1,9 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Link2, X } from "lucide-react";
+import { Link2, Target } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 import { Badge } from "./badge";
 import { KeyResultProgressDialog } from "./key-result-progress-dialog";
@@ -52,58 +53,9 @@ function AddKeyResultDialog({
 	});
 
 	return (
-		<div className="pf-sheet-overlay">
-			<div
-				aria-labelledby="pf-kr-add-title"
-				aria-modal="true"
-				className="pf-sheet"
-				role="dialog"
-			>
-				<div className="pf-sheet-head">
-					<h2 id="pf-kr-add-title">Add a key result</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pf-sheet-body">
-					<label className="pf-field" htmlFor="pf-kr-title">
-						<span>How will you measure success?</span>
-						<input
-							id="pf-kr-title"
-							onChange={(e) => setTitle(e.target.value)}
-							placeholder="e.g. Complete onboarding for 5 new hires"
-							value={title}
-						/>
-					</label>
-					<label className="pf-field" htmlFor="pf-kr-type">
-						<span>Measured as</span>
-						<select
-							id="pf-kr-type"
-							onChange={(e) => setType(e.target.value)}
-							value={type}
-						>
-							<option value="percentage">Percentage</option>
-							<option value="number">Number</option>
-							<option value="currency">Amount</option>
-							<option value="boolean">Yes / No</option>
-						</select>
-					</label>
-					<label className="pf-field" htmlFor="pf-kr-target">
-						<span>Target</span>
-						<input
-							id="pf-kr-target"
-							onChange={(e) => setTarget(e.target.value)}
-							type="number"
-							value={target}
-						/>
-					</label>
-				</div>
-				<div className="pf-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -115,9 +67,45 @@ function AddKeyResultDialog({
 					>
 						Add key result
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<Target size={18} />}
+			intro="A key result is a measurable outcome that shows progress toward the goal."
+			onClose={onClose}
+			title="Add a key result"
+		>
+			<label className="pf-field" htmlFor="pf-kr-title">
+				<span>How will you measure success?</span>
+				<input
+					id="pf-kr-title"
+					onChange={(e) => setTitle(e.target.value)}
+					placeholder="e.g. Complete onboarding for 5 new hires"
+					value={title}
+				/>
+			</label>
+			<label className="pf-field" htmlFor="pf-kr-type">
+				<span>Measured as</span>
+				<select
+					id="pf-kr-type"
+					onChange={(e) => setType(e.target.value)}
+					value={type}
+				>
+					<option value="percentage">Percentage</option>
+					<option value="number">Number</option>
+					<option value="currency">Amount</option>
+					<option value="boolean">Yes / No</option>
+				</select>
+			</label>
+			<label className="pf-field" htmlFor="pf-kr-target">
+				<span>Target</span>
+				<input
+					id="pf-kr-target"
+					onChange={(e) => setTarget(e.target.value)}
+					type="number"
+					value={target}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

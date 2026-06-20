@@ -4,12 +4,13 @@ import {
 } from "@Heimdallone/ui/components/data-table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Landmark } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { FileText, Landmark, ScrollText } from "lucide-react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/finance.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/finance/badge";
 import { FinanceTabs } from "@/features/finance/finance-tabs";
 import {
@@ -93,16 +94,6 @@ function JournalDialog({
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				onCancel();
-			}
-		};
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onCancel]);
-
 	const postable = accounts.filter((a) => a.isPostable && !a.isArchived);
 	const totalDebit = sumLines(lines, "debit");
 	const totalCredit = sumLines(lines, "credit");
@@ -162,162 +153,9 @@ function JournalDialog({
 	}
 
 	return (
-		<div className="fn-dialog-backdrop">
-			<div
-				aria-labelledby="fn-jrnl-title"
-				aria-modal="true"
-				className="fn-dialog fn-dialog-wide"
-				role="dialog"
-			>
-				<h2 id="fn-jrnl-title">New journal entry</h2>
-				<p className="fn-sub">
-					A journal must balance — total debits equal total credits.
-				</p>
-
-				<div className="fn-field">
-					<label htmlFor="fn-j-ref">Reference</label>
-					<input
-						id="fn-j-ref"
-						onChange={(e) => setReference(e.target.value)}
-						placeholder="e.g. JE-1001"
-						value={reference}
-					/>
-				</div>
-				<div className="fn-field">
-					<label htmlFor="fn-j-date">Entry date</label>
-					<input
-						id="fn-j-date"
-						onChange={(e) => setEntryDate(e.target.value)}
-						type="date"
-						value={entryDate}
-					/>
-				</div>
-				<div className="fn-field">
-					<label htmlFor="fn-j-source">Source</label>
-					<select
-						id="fn-j-source"
-						onChange={(e) => setSource(e.target.value as GlJournalSource)}
-						value={source}
-					>
-						{SOURCE_FILTERS.map((s) => (
-							<option key={s} value={s}>
-								{journalSourceLabel(s)}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="fn-field">
-					<label htmlFor="fn-j-desc">Description (optional)</label>
-					<input
-						id="fn-j-desc"
-						onChange={(e) => setDescription(e.target.value)}
-						value={description}
-					/>
-				</div>
-
-				<div className="fn-section-title" style={{ marginTop: 14 }}>
-					Lines
-				</div>
-				<table className="fn-table">
-					<thead>
-						<tr>
-							<th>Account</th>
-							<th className="num">Debit</th>
-							<th className="num">Credit</th>
-							<th />
-						</tr>
-					</thead>
-					<tbody>
-						{lines.map((line, idx) => (
-							// biome-ignore lint/suspicious/noArrayIndexKey: draft lines have no stable id
-							<tr key={idx}>
-								<td>
-									<select
-										aria-label="Line account"
-										onChange={(e) =>
-											updateLine(idx, { accountId: e.target.value })
-										}
-										value={line.accountId}
-									>
-										<option value="">Select…</option>
-										{postable.map((a) => (
-											<option key={a.id} value={a.id}>
-												{a.code} · {a.name}
-											</option>
-										))}
-									</select>
-								</td>
-								<td className="num">
-									<input
-										aria-label="Debit"
-										inputMode="decimal"
-										onChange={(e) => updateLine(idx, { debit: e.target.value })}
-										placeholder="0.00"
-										value={line.debit}
-									/>
-								</td>
-								<td className="num">
-									<input
-										aria-label="Credit"
-										inputMode="decimal"
-										onChange={(e) =>
-											updateLine(idx, { credit: e.target.value })
-										}
-										placeholder="0.00"
-										value={line.credit}
-									/>
-								</td>
-								<td>
-									<button
-										aria-label="Remove line"
-										className="fn-btn"
-										disabled={lines.length <= 2}
-										onClick={() => removeLine(idx)}
-										type="button"
-									>
-										✕
-									</button>
-								</td>
-							</tr>
-						))}
-					</tbody>
-					<tfoot>
-						<tr>
-							<td>
-								<button className="fn-btn" onClick={addLine} type="button">
-									+ Add line
-								</button>
-							</td>
-							<td className="num">{glMoney(totalDebit)}</td>
-							<td className="num">{glMoney(totalCredit)}</td>
-							<td>
-								<Badge tone={balanced ? "success" : "danger"}>
-									{balanced ? "Balanced" : "Off"}
-								</Badge>
-							</td>
-						</tr>
-					</tfoot>
-				</table>
-
-				<div className="fn-field">
-					<label htmlFor="fn-j-post">
-						<input
-							checked={post}
-							id="fn-j-post"
-							onChange={(e) => setPost(e.target.checked)}
-							type="checkbox"
-						/>{" "}
-						Post immediately (otherwise saved as draft)
-					</label>
-				</div>
-
-				{error ? (
-					<p className="fn-sub" style={{ color: "var(--danger)" }}>
-						{error}
-					</p>
-				) : null}
-
-				<div className="fn-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button
 						className="fn-btn"
 						disabled={busy}
@@ -332,11 +170,157 @@ function JournalDialog({
 						onClick={handleSave}
 						type="button"
 					>
-						{busy ? "Saving…" : "Save journal"}
+						{busy ? "Saving..." : "Save journal"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<ScrollText size={18} />}
+			intro="A journal must balance — total debits equal total credits."
+			onClose={onCancel}
+			title="New journal entry"
+			wide
+		>
+			<div className="fn-field">
+				<label htmlFor="fn-j-ref">Reference</label>
+				<input
+					id="fn-j-ref"
+					onChange={(e) => setReference(e.target.value)}
+					placeholder="e.g. JE-1001"
+					value={reference}
+				/>
 			</div>
-		</div>
+			<div className="fn-field">
+				<label htmlFor="fn-j-date">Entry date</label>
+				<input
+					id="fn-j-date"
+					onChange={(e) => setEntryDate(e.target.value)}
+					type="date"
+					value={entryDate}
+				/>
+			</div>
+			<div className="fn-field">
+				<label htmlFor="fn-j-source">Source</label>
+				<select
+					id="fn-j-source"
+					onChange={(e) => setSource(e.target.value as GlJournalSource)}
+					value={source}
+				>
+					{SOURCE_FILTERS.map((s) => (
+						<option key={s} value={s}>
+							{journalSourceLabel(s)}
+						</option>
+					))}
+				</select>
+			</div>
+			<div className="fn-field">
+				<label htmlFor="fn-j-desc">Description (optional)</label>
+				<input
+					id="fn-j-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					value={description}
+				/>
+			</div>
+
+			<div className="fn-section-title" style={{ marginTop: 14 }}>
+				Lines
+			</div>
+			<table className="fn-table">
+				<thead>
+					<tr>
+						<th>Account</th>
+						<th className="num">Debit</th>
+						<th className="num">Credit</th>
+						<th />
+					</tr>
+				</thead>
+				<tbody>
+					{lines.map((line, idx) => (
+						// biome-ignore lint/suspicious/noArrayIndexKey: draft lines have no stable id
+						<tr key={idx}>
+							<td>
+								<select
+									aria-label="Line account"
+									onChange={(e) =>
+										updateLine(idx, { accountId: e.target.value })
+									}
+									value={line.accountId}
+								>
+									<option value="">Select...</option>
+									{postable.map((a) => (
+										<option key={a.id} value={a.id}>
+											{a.code} · {a.name}
+										</option>
+									))}
+								</select>
+							</td>
+							<td className="num">
+								<input
+									aria-label="Debit"
+									inputMode="decimal"
+									onChange={(e) => updateLine(idx, { debit: e.target.value })}
+									placeholder="0.00"
+									value={line.debit}
+								/>
+							</td>
+							<td className="num">
+								<input
+									aria-label="Credit"
+									inputMode="decimal"
+									onChange={(e) => updateLine(idx, { credit: e.target.value })}
+									placeholder="0.00"
+									value={line.credit}
+								/>
+							</td>
+							<td>
+								<button
+									aria-label="Remove line"
+									className="fn-btn"
+									disabled={lines.length <= 2}
+									onClick={() => removeLine(idx)}
+									type="button"
+								>
+									&#x2715;
+								</button>
+							</td>
+						</tr>
+					))}
+				</tbody>
+				<tfoot>
+					<tr>
+						<td>
+							<button className="fn-btn" onClick={addLine} type="button">
+								+ Add line
+							</button>
+						</td>
+						<td className="num">{glMoney(totalDebit)}</td>
+						<td className="num">{glMoney(totalCredit)}</td>
+						<td>
+							<Badge tone={balanced ? "success" : "danger"}>
+								{balanced ? "Balanced" : "Off"}
+							</Badge>
+						</td>
+					</tr>
+				</tfoot>
+			</table>
+
+			<div className="fn-field">
+				<label htmlFor="fn-j-post">
+					<input
+						checked={post}
+						id="fn-j-post"
+						onChange={(e) => setPost(e.target.checked)}
+						type="checkbox"
+					/>{" "}
+					Post immediately (otherwise saved as draft)
+				</label>
+			</div>
+
+			{error ? (
+				<p className="fn-sub" style={{ color: "var(--danger)" }}>
+					{error}
+				</p>
+			) : null}
+		</Modal>
 	);
 }
 
@@ -372,124 +356,129 @@ function JournalDetail({
 		}
 	}
 
-	return (
-		<div className="fn-dialog-backdrop">
-			<div
-				aria-label="Journal entry"
-				aria-modal="true"
-				className="fn-dialog fn-dialog-wide"
-				role="dialog"
-			>
-				{detail.isLoading ? <div className="fn-skeleton" /> : null}
-				{detail.isError ? (
-					<EmptyState
-						compact
-						description="Could not load the journal."
-						title="Something went wrong"
-					/>
-				) : null}
-				{data ? (
-					<>
-						<h2>{data.entry.reference}</h2>
-						<p className="fn-sub">
-							{data.entry.entryDate} · {journalSourceLabel(data.entry.source)} ·{" "}
-							<Badge tone={journalStatusTone(data.entry.status)}>
-								{journalStatusLabel(data.entry.status)}
-							</Badge>
-						</p>
-						{data.entry.description ? (
-							<p className="fn-sub">{data.entry.description}</p>
-						) : null}
-						<table className="fn-table" style={{ marginTop: 12 }}>
-							<thead>
-								<tr>
-									<th>Account</th>
-									<th className="num">Debit</th>
-									<th className="num">Credit</th>
-								</tr>
-							</thead>
-							<tbody>
-								{data.lines.map((l) => (
-									<tr key={l.id}>
-										<td>
-											<span className="fn-mono">{l.accountCode}</span> ·{" "}
-											{l.accountName}
-											{l.description ? (
-												<>
-													<br />
-													<span className="fn-sub">{l.description}</span>
-												</>
-											) : null}
-										</td>
-										<td className="num">
-											{Number(l.debitAmount)
-												? glMoney(l.debitAmount, data.entry.currency)
-												: ""}
-										</td>
-										<td className="num">
-											{Number(l.creditAmount)
-												? glMoney(l.creditAmount, data.entry.currency)
-												: ""}
-										</td>
-									</tr>
-								))}
-							</tbody>
-						</table>
+	const footer = data ? (
+		<>
+			<button className="fn-btn" onClick={onClose} type="button">
+				Close
+			</button>
+			{canManage && data.entry.status === "draft" ? (
+				<>
+					<button
+						className="fn-btn danger"
+						disabled={busy}
+						onClick={() =>
+							run(
+								() => client.gl.journals.remove({ id }),
+								"Draft journal removed."
+							)
+						}
+						type="button"
+					>
+						Delete draft
+					</button>
+					<button
+						className="fn-btn primary"
+						disabled={busy}
+						onClick={() =>
+							run(() => client.gl.journals.post({ id }), "Journal posted.")
+						}
+						type="button"
+					>
+						Post
+					</button>
+				</>
+			) : null}
+			{canReverse && data.entry.status === "posted" ? (
+				<button
+					className="fn-btn danger"
+					disabled={busy}
+					onClick={() =>
+						run(
+							() => client.gl.journals.reverse({ id }),
+							"Journal reversed with a counter-entry."
+						)
+					}
+					type="button"
+				>
+					Reverse
+				</button>
+			) : null}
+		</>
+	) : (
+		<button className="fn-btn" onClick={onClose} type="button">
+			Close
+		</button>
+	);
 
-						<div className="fn-dialog-actions">
-							<button className="fn-btn" onClick={onClose} type="button">
-								Close
-							</button>
-							{canManage && data.entry.status === "draft" ? (
-								<>
-									<button
-										className="fn-btn danger"
-										disabled={busy}
-										onClick={() =>
-											run(
-												() => client.gl.journals.remove({ id }),
-												"Draft journal removed."
-											)
-										}
-										type="button"
-									>
-										Delete draft
-									</button>
-									<button
-										className="fn-btn primary"
-										disabled={busy}
-										onClick={() =>
-											run(
-												() => client.gl.journals.post({ id }),
-												"Journal posted."
-											)
-										}
-										type="button"
-									>
-										Post
-									</button>
-								</>
-							) : null}
-							{canReverse && data.entry.status === "posted" ? (
-								<button
-									className="fn-btn danger"
-									disabled={busy}
-									onClick={() =>
-										run(
-											() => client.gl.journals.reverse({ id }),
-											"Journal reversed with a counter-entry."
-										)
-									}
-									type="button"
-								>
-									Reverse
-								</button>
-							) : null}
-						</div>
-					</>
-				) : null}
-			</div>
-		</div>
+	const subtitle = data
+		? `${data.entry.entryDate} · ${journalSourceLabel(data.entry.source)}`
+		: undefined;
+
+	return (
+		<Modal
+			footer={footer}
+			icon={<FileText size={18} />}
+			onClose={onClose}
+			subtitle={subtitle}
+			title={data?.entry.reference ?? "Journal entry"}
+			wide
+		>
+			{detail.isLoading ? <div className="fn-skeleton" /> : null}
+			{detail.isError ? (
+				<EmptyState
+					compact
+					description="Could not load the journal."
+					title="Something went wrong"
+				/>
+			) : null}
+			{data ? (
+				<>
+					<p className="fn-sub" style={{ marginTop: 0 }}>
+						<Badge tone={journalStatusTone(data.entry.status)}>
+							{journalStatusLabel(data.entry.status)}
+						</Badge>
+					</p>
+					{data.entry.description ? (
+						<p className="fn-sub">{data.entry.description}</p>
+					) : null}
+					<table className="fn-table" style={{ marginTop: 12 }}>
+						<thead>
+							<tr>
+								<th>Account</th>
+								<th className="num">Debit</th>
+								<th className="num">Credit</th>
+							</tr>
+						</thead>
+						<tbody>
+							{data.lines.map((l) => (
+								<tr key={l.id}>
+									<td>
+										<span className="fn-mono">{l.accountCode}</span> ·{" "}
+										{l.accountName}
+										{l.description ? (
+											<>
+												<br />
+												<span className="fn-sub">{l.description}</span>
+											</>
+										) : null}
+									</td>
+									<td className="num">
+										{Number(l.debitAmount)
+											? glMoney(l.debitAmount, data.entry.currency)
+											: ""}
+									</td>
+									<td className="num">
+										{Number(l.creditAmount)
+											? glMoney(l.creditAmount, data.entry.currency)
+											: ""}
+									</td>
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</>
+			) : null}
+		</Modal>
 	);
 }
 

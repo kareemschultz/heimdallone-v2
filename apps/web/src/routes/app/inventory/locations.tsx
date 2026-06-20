@@ -4,12 +4,13 @@ import {
 } from "@Heimdallone/ui/components/data-table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Boxes } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { Boxes, MapPin } from "lucide-react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/inventory.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/inventory/badge";
 import { InventoryTabs } from "@/features/inventory/inventory-tabs";
 import { locationKindLabel } from "@/features/inventory/labels";
@@ -50,16 +51,6 @@ function LocationDialog({
 	const [error, setError] = useState<string | null>(null);
 	const isEdit = existing != null;
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				onCancel();
-			}
-		};
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onCancel]);
-
 	async function handleSave() {
 		setError(null);
 		if (!name.trim()) {
@@ -82,62 +73,9 @@ function LocationDialog({
 	}
 
 	return (
-		<div className="inv-dialog-backdrop">
-			<div
-				aria-labelledby="inv-location-title"
-				aria-modal="true"
-				className="inv-dialog"
-				role="dialog"
-			>
-				<h2 id="inv-location-title">
-					{isEdit ? "Edit location" : "New location"}
-				</h2>
-				<p className="inv-sub">
-					Locations are where stock physically lives — an office, a warehouse,
-					or a customs bond.
-				</p>
-
-				<div className="inv-field">
-					<label htmlFor="inv-l-name">Name</label>
-					<input
-						id="inv-l-name"
-						onChange={(e) => setName(e.target.value)}
-						placeholder="e.g. Main Office"
-						value={name}
-					/>
-				</div>
-
-				{isEdit ? null : (
-					<div className="inv-field">
-						<label htmlFor="inv-l-kind">Kind</label>
-						<select
-							id="inv-l-kind"
-							onChange={(e) => setKind(e.target.value as "office" | "bond")}
-							value={kind}
-						>
-							<option value="office">Office / warehouse</option>
-							<option value="bond">Customs bond</option>
-						</select>
-					</div>
-				)}
-
-				<div className="inv-field">
-					<label htmlFor="inv-l-code">Code</label>
-					<input
-						id="inv-l-code"
-						onChange={(e) => setCode(e.target.value)}
-						placeholder="optional short code (e.g. OFF)"
-						value={code}
-					/>
-				</div>
-
-				{error ? (
-					<p className="inv-sub" style={{ color: "var(--danger)" }}>
-						{error}
-					</p>
-				) : null}
-
-				<div className="inv-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button
 						className="inv-btn"
 						disabled={busy}
@@ -154,9 +92,53 @@ function LocationDialog({
 					>
 						{busy ? "Saving…" : "Save"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<MapPin size={18} />}
+			intro="Locations are where stock physically lives — an office, a warehouse, or a customs bond."
+			onClose={onCancel}
+			title={isEdit ? "Edit location" : "New location"}
+		>
+			<div className="inv-field">
+				<label htmlFor="inv-l-name">Name</label>
+				<input
+					id="inv-l-name"
+					onChange={(e) => setName(e.target.value)}
+					placeholder="e.g. Main Office"
+					value={name}
+				/>
 			</div>
-		</div>
+
+			{isEdit ? null : (
+				<div className="inv-field">
+					<label htmlFor="inv-l-kind">Kind</label>
+					<select
+						id="inv-l-kind"
+						onChange={(e) => setKind(e.target.value as "office" | "bond")}
+						value={kind}
+					>
+						<option value="office">Office / warehouse</option>
+						<option value="bond">Customs bond</option>
+					</select>
+				</div>
+			)}
+
+			<div className="inv-field">
+				<label htmlFor="inv-l-code">Code</label>
+				<input
+					id="inv-l-code"
+					onChange={(e) => setCode(e.target.value)}
+					placeholder="optional short code (e.g. OFF)"
+					value={code}
+				/>
+			</div>
+
+			{error ? (
+				<p className="inv-sub" style={{ color: "var(--danger)" }}>
+					{error}
+				</p>
+			) : null}
+		</Modal>
 	);
 }
 

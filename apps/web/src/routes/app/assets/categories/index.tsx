@@ -4,12 +4,13 @@ import {
 } from "@Heimdallone/ui/components/data-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Package, Plus, X } from "lucide-react";
+import { FolderOpen, Package, Plus } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/assets.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { AssetsTabs } from "@/features/assets/assets-tabs";
 import { canManageAssets, canViewAssets } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
@@ -55,40 +56,9 @@ function CategoryDialog({
 			toast.error(e?.message ?? "Could not create the category"),
 	});
 	return (
-		<div className="asset-sheet-overlay">
-			<div aria-modal="true" className="asset-sheet" role="dialog">
-				<div className="asset-sheet-head">
-					<h2>New category</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="asset-sheet-body">
-					<label className="field" htmlFor="cat-name">
-						<span>Name</span>
-						<input
-							id="cat-name"
-							onChange={(e) => setName(e.target.value)}
-							placeholder="e.g. Laptops"
-							value={name}
-						/>
-					</label>
-					<label className="field" htmlFor="cat-desc">
-						<span>Description (optional)</span>
-						<textarea
-							id="cat-desc"
-							onChange={(e) => setDescription(e.target.value)}
-							rows={2}
-							value={description}
-						/>
-					</label>
-				</div>
-				<div className="asset-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -100,9 +70,32 @@ function CategoryDialog({
 					>
 						Create
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<FolderOpen size={18} />}
+			intro="Categories help you group and filter assets across the inventory."
+			onClose={onClose}
+			title="New category"
+		>
+			<label className="field" htmlFor="cat-name">
+				<span>Name</span>
+				<input
+					id="cat-name"
+					onChange={(e) => setName(e.target.value)}
+					placeholder="e.g. Laptops"
+					value={name}
+				/>
+			</label>
+			<label className="field" htmlFor="cat-desc">
+				<span>Description (optional)</span>
+				<textarea
+					id="cat-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					rows={2}
+					value={description}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

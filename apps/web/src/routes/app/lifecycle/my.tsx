@@ -1,10 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { LogOut } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/lifecycle.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	Badge,
 	disciplinaryStatusTone,
@@ -262,51 +264,9 @@ function ResignDialog({
 	};
 
 	return (
-		<div className="lc-dialog-backdrop">
-			<div
-				aria-labelledby="res-dialog-title"
-				className="lc-dialog"
-				role="dialog"
-			>
-				<h2 id="res-dialog-title">Resign</h2>
-				<p className="lc-muted">
-					This files your intent to leave. HR reviews it before any offboarding
-					starts.
-				</p>
-				<div className="lc-form-field">
-					<label htmlFor="res-reason">Reason</label>
-					<select
-						id="res-reason"
-						onChange={(e) =>
-							setReasonCategory(e.target.value as (typeof REASONS)[number])
-						}
-						value={reasonCategory}
-					>
-						{REASONS.map((r) => (
-							<option key={r} value={r}>
-								{labelFor(RESIGNATION_REASON_LABELS, r)}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="res-date">Requested last working date</label>
-					<input
-						id="res-date"
-						onChange={(e) => setRequestedLastWorkingDate(e.target.value)}
-						type="date"
-						value={requestedLastWorkingDate}
-					/>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="res-notes">Notes (optional)</label>
-					<textarea
-						id="res-notes"
-						onChange={(e) => setReasonNotes(e.target.value)}
-						value={reasonNotes}
-					/>
-				</div>
-				<div className="lc-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button className="lc-btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -318,8 +278,46 @@ function ResignDialog({
 					>
 						{saving ? "Submitting…" : "Submit resignation"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<LogOut size={18} />}
+			intro="This files your intent to leave. HR reviews it before any offboarding starts."
+			onClose={onClose}
+			title="Resign"
+		>
+			<div className="lc-form-field">
+				<label htmlFor="res-reason">Reason</label>
+				<select
+					id="res-reason"
+					onChange={(e) =>
+						setReasonCategory(e.target.value as (typeof REASONS)[number])
+					}
+					value={reasonCategory}
+				>
+					{REASONS.map((r) => (
+						<option key={r} value={r}>
+							{labelFor(RESIGNATION_REASON_LABELS, r)}
+						</option>
+					))}
+				</select>
 			</div>
-		</div>
+			<div className="lc-form-field">
+				<label htmlFor="res-date">Requested last working date</label>
+				<input
+					id="res-date"
+					onChange={(e) => setRequestedLastWorkingDate(e.target.value)}
+					type="date"
+					value={requestedLastWorkingDate}
+				/>
+			</div>
+			<div className="lc-form-field">
+				<label htmlFor="res-notes">Notes (optional)</label>
+				<textarea
+					id="res-notes"
+					onChange={(e) => setReasonNotes(e.target.value)}
+					value={reasonNotes}
+				/>
+			</div>
+		</Modal>
 	);
 }

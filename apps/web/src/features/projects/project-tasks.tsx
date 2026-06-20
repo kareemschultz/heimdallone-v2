@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link2, X } from "lucide-react";
+import { Link2, SquarePen } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/empty-state";
 import { KanbanBoard, type KanbanColumn } from "@/components/kanban-board";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/projects/badge";
 import {
 	fmtDate,
@@ -77,73 +78,9 @@ function NewTaskDialog({
 	});
 
 	return (
-		<div className="pj-sheet-overlay">
-			<div
-				aria-labelledby="pj-new-task-title"
-				aria-modal="true"
-				className="pj-sheet"
-				role="dialog"
-			>
-				<div className="pj-sheet-head">
-					<h2 id="pj-new-task-title">New task</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pj-sheet-body">
-					<label className="pj-field" htmlFor="pj-task-title">
-						<span>Title</span>
-						<input
-							id="pj-task-title"
-							onChange={(e) => setTitle(e.target.value)}
-							placeholder="What needs doing?"
-							value={title}
-						/>
-					</label>
-					<label className="pj-field" htmlFor="pj-task-priority">
-						<span>Priority</span>
-						<select
-							id="pj-task-priority"
-							onChange={(e) => setPriority(e.target.value)}
-							value={priority}
-						>
-							<option value="low">Low</option>
-							<option value="normal">Normal</option>
-							<option value="high">High</option>
-							<option value="urgent">Urgent</option>
-						</select>
-					</label>
-					<label className="pj-field" htmlFor="pj-task-assignee">
-						<span>Assign to (optional)</span>
-						<select
-							id="pj-task-assignee"
-							onChange={(e) => setAssigneeId(e.target.value)}
-							value={assigneeId}
-						>
-							<option value="">Unassigned</option>
-							{emps.map((e) => (
-								<option key={e.id} value={e.id}>
-									{e.firstName} {e.lastName ?? ""}
-								</option>
-							))}
-						</select>
-					</label>
-					<label className="pj-field" htmlFor="pj-task-due">
-						<span>Due date (optional)</span>
-						<input
-							id="pj-task-due"
-							onChange={(e) => setDueDate(e.target.value)}
-							type="date"
-							value={dueDate}
-						/>
-					</label>
-				</div>
-				<div className="pj-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -155,9 +92,60 @@ function NewTaskDialog({
 					>
 						Create task
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<SquarePen size={18} />}
+			intro="Add a new task to this project and optionally assign it to a team member."
+			onClose={onClose}
+			title="New task"
+		>
+			<label className="pj-field" htmlFor="pj-task-title">
+				<span>Title</span>
+				<input
+					id="pj-task-title"
+					onChange={(e) => setTitle(e.target.value)}
+					placeholder="What needs doing?"
+					value={title}
+				/>
+			</label>
+			<label className="pj-field" htmlFor="pj-task-priority">
+				<span>Priority</span>
+				<select
+					id="pj-task-priority"
+					onChange={(e) => setPriority(e.target.value)}
+					value={priority}
+				>
+					<option value="low">Low</option>
+					<option value="normal">Normal</option>
+					<option value="high">High</option>
+					<option value="urgent">Urgent</option>
+				</select>
+			</label>
+			<label className="pj-field" htmlFor="pj-task-assignee">
+				<span>Assign to (optional)</span>
+				<select
+					id="pj-task-assignee"
+					onChange={(e) => setAssigneeId(e.target.value)}
+					value={assigneeId}
+				>
+					<option value="">Unassigned</option>
+					{emps.map((e) => (
+						<option key={e.id} value={e.id}>
+							{e.firstName} {e.lastName ?? ""}
+						</option>
+					))}
+				</select>
+			</label>
+			<label className="pj-field" htmlFor="pj-task-due">
+				<span>Due date (optional)</span>
+				<input
+					id="pj-task-due"
+					onChange={(e) => setDueDate(e.target.value)}
+					type="date"
+					value={dueDate}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

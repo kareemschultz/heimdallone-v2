@@ -4,12 +4,13 @@ import {
 } from "@Heimdallone/ui/components/data-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Package, X } from "lucide-react";
+import { Package, PackageCheck, XCircle } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/assets.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { AssetsTabs } from "@/features/assets/assets-tabs";
 import {
 	type BadgeTone,
@@ -65,32 +66,9 @@ function RejectDialog({
 		onError: () => toast.error("Could not reject the request"),
 	});
 	return (
-		<div className="asset-sheet-overlay">
-			<div aria-modal="true" className="asset-sheet" role="dialog">
-				<div className="asset-sheet-head">
-					<h2>Reject request</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="asset-sheet-body">
-					<label className="field" htmlFor="reject-reason">
-						<span>Reason (required)</span>
-						<textarea
-							id="reject-reason"
-							onChange={(e) => setReason(e.target.value)}
-							placeholder="Why is this request being rejected?"
-							rows={3}
-							value={reason}
-						/>
-					</label>
-				</div>
-				<div className="asset-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -102,9 +80,24 @@ function RejectDialog({
 					>
 						Reject
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<XCircle size={18} />}
+			intro="Your reason will be shown to the employee who made the request."
+			onClose={onClose}
+			title="Reject request"
+		>
+			<label className="field" htmlFor="reject-reason">
+				<span>Reason (required)</span>
+				<textarea
+					id="reject-reason"
+					onChange={(e) => setReason(e.target.value)}
+					placeholder="Why is this request being rejected?"
+					rows={3}
+					value={reason}
+				/>
+			</label>
+		</Modal>
 	);
 }
 
@@ -136,41 +129,9 @@ function FulfillDialog({
 			toast.error(e?.message ?? "Could not fulfil the request"),
 	});
 	return (
-		<div className="asset-sheet-overlay">
-			<div aria-modal="true" className="asset-sheet" role="dialog">
-				<div className="asset-sheet-head">
-					<h2>Fulfil request</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="asset-sheet-body">
-					<label className="field" htmlFor="fulfill-asset">
-						<span>Assign an available asset</span>
-						<select
-							id="fulfill-asset"
-							onChange={(e) => setAssetId(e.target.value)}
-							value={assetId}
-						>
-							<option value="">Select an available asset…</option>
-							{assets.map((a) => (
-								<option key={a.id} value={a.id}>
-									{a.name} ({a.trackingId})
-								</option>
-							))}
-						</select>
-					</label>
-					<p className="asset-desc">
-						This assigns the asset to the requester and marks the request
-						fulfilled.
-					</p>
-				</div>
-				<div className="asset-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -182,9 +143,32 @@ function FulfillDialog({
 					>
 						Fulfil & assign
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<PackageCheck size={18} />}
+			intro="Selecting an asset assigns it to the requester and marks this request fulfilled."
+			onClose={onClose}
+			title="Fulfil request"
+		>
+			<label className="field" htmlFor="fulfill-asset">
+				<span>Assign an available asset</span>
+				<select
+					id="fulfill-asset"
+					onChange={(e) => setAssetId(e.target.value)}
+					value={assetId}
+				>
+					<option value="">Select an available asset…</option>
+					{assets.map((a) => (
+						<option key={a.id} value={a.id}>
+							{a.name} ({a.trackingId})
+						</option>
+					))}
+				</select>
+			</label>
+			<p className="asset-desc">
+				This assigns the asset to the requester and marks the request fulfilled.
+			</p>
+		</Modal>
 	);
 }
 

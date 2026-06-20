@@ -1,10 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowRightLeft } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/lifecycle.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge, transferStatusTone } from "@/features/lifecycle/badge";
 import {
 	formatDate,
@@ -194,74 +196,9 @@ function NewTransferDialog({
 	};
 
 	return (
-		<div className="lc-dialog-backdrop">
-			<div
-				aria-labelledby="trf-dialog-title"
-				className="lc-dialog"
-				role="dialog"
-			>
-				<h2 id="trf-dialog-title">New transfer</h2>
-				<p className="lc-muted">
-					A transfer writes an effective-dated history record — it never
-					overwrites the employee's current details.
-				</p>
-				<div className="lc-form-field">
-					<label htmlFor="trf-emp">Employee</label>
-					<select
-						id="trf-emp"
-						onChange={(e) => setEmployeeId(e.target.value)}
-						value={employeeId}
-					>
-						<option value="">Select…</option>
-						{employees.map((emp) => (
-							<option key={emp.id} value={emp.id}>
-								{[emp.firstName, emp.lastName].filter(Boolean).join(" ")}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="trf-type">Type</label>
-					<select
-						id="trf-type"
-						onChange={(e) =>
-							setTransferType(e.target.value as (typeof TRANSFER_TYPES)[number])
-						}
-						value={transferType}
-					>
-						{TRANSFER_TYPES.map((t) => (
-							<option key={t} value={t}>
-								{labelFor(TRANSFER_TYPE_LABELS, t)}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="trf-date">Effective from</label>
-					<input
-						id="trf-date"
-						onChange={(e) => setEffectiveFrom(e.target.value)}
-						type="date"
-						value={effectiveFrom}
-					/>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="trf-loc">New work location</label>
-					<input
-						id="trf-loc"
-						onChange={(e) => setToWorkLocation(e.target.value)}
-						value={toWorkLocation}
-					/>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="trf-reason">Reason</label>
-					<textarea
-						id="trf-reason"
-						onChange={(e) => setReason(e.target.value)}
-						value={reason}
-					/>
-				</div>
-				<div className="lc-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button className="lc-btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -273,8 +210,70 @@ function NewTransferDialog({
 					>
 						{saving ? "Saving…" : "Create draft"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<ArrowRightLeft size={18} />}
+			intro="A transfer writes an effective-dated history record — it never overwrites the employee's current details."
+			onClose={onClose}
+			title="New transfer"
+			wide
+		>
+			<div className="lc-form-field">
+				<label htmlFor="trf-emp">Employee</label>
+				<select
+					id="trf-emp"
+					onChange={(e) => setEmployeeId(e.target.value)}
+					value={employeeId}
+				>
+					<option value="">Select…</option>
+					{employees.map((emp) => (
+						<option key={emp.id} value={emp.id}>
+							{[emp.firstName, emp.lastName].filter(Boolean).join(" ")}
+						</option>
+					))}
+				</select>
 			</div>
-		</div>
+			<div className="lc-form-field">
+				<label htmlFor="trf-type">Type</label>
+				<select
+					id="trf-type"
+					onChange={(e) =>
+						setTransferType(e.target.value as (typeof TRANSFER_TYPES)[number])
+					}
+					value={transferType}
+				>
+					{TRANSFER_TYPES.map((t) => (
+						<option key={t} value={t}>
+							{labelFor(TRANSFER_TYPE_LABELS, t)}
+						</option>
+					))}
+				</select>
+			</div>
+			<div className="lc-form-field">
+				<label htmlFor="trf-date">Effective from</label>
+				<input
+					id="trf-date"
+					onChange={(e) => setEffectiveFrom(e.target.value)}
+					type="date"
+					value={effectiveFrom}
+				/>
+			</div>
+			<div className="lc-form-field">
+				<label htmlFor="trf-loc">New work location</label>
+				<input
+					id="trf-loc"
+					onChange={(e) => setToWorkLocation(e.target.value)}
+					value={toWorkLocation}
+				/>
+			</div>
+			<div className="lc-form-field">
+				<label htmlFor="trf-reason">Reason</label>
+				<textarea
+					id="trf-reason"
+					onChange={(e) => setReason(e.target.value)}
+					value={reason}
+				/>
+			</div>
+		</Modal>
 	);
 }

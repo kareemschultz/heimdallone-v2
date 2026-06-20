@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import "@/styles/surveys.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { canManageSurveys } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -217,38 +218,9 @@ function RespondDialog({
 	};
 
 	return (
-		<div className="sv-dialog-backdrop">
-			<div
-				aria-labelledby="sv-respond-title"
-				className="sv-dialog"
-				role="dialog"
-			>
-				<h2 id="sv-respond-title">{data?.survey.title ?? "Survey"}</h2>
-				{data?.survey.isAnonymous ? (
-					<div className="sv-anon-note">
-						This survey is anonymous. Your answers are not linked to your name.
-					</div>
-				) : null}
-				{detail.isLoading ? <p className="page-sub">Loading…</p> : null}
-				{detail.isError ? (
-					<p className="page-sub" style={{ color: "var(--danger)" }}>
-						This survey is not available.
-					</p>
-				) : null}
-				{data?.questions.map((q) => (
-					<div className="sv-field" key={q.id}>
-						<label htmlFor={`q-${q.id}`}>
-							{q.questionText}
-							{q.isRequired ? <span className="sv-req"> *</span> : null}
-						</label>
-						<QuestionInput
-							onChange={(v) => setAnswers((p) => ({ ...p, [q.id]: v }))}
-							question={q}
-							value={answers[q.id] ?? {}}
-						/>
-					</div>
-				))}
-				<div className="sv-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button className="btn btn-ghost" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -260,9 +232,38 @@ function RespondDialog({
 					>
 						{saving ? "Submitting…" : "Submit"}
 					</button>
+				</>
+			}
+			icon={<ClipboardList size={18} />}
+			intro={
+				data?.survey.isAnonymous
+					? "This survey is anonymous. Your answers are not linked to your name."
+					: undefined
+			}
+			onClose={onClose}
+			title={data?.survey.title ?? "Survey"}
+			wide
+		>
+			{detail.isLoading ? <p className="page-sub">Loading…</p> : null}
+			{detail.isError ? (
+				<p className="page-sub" style={{ color: "var(--danger)" }}>
+					This survey is not available.
+				</p>
+			) : null}
+			{data?.questions.map((q) => (
+				<div className="sv-field" key={q.id}>
+					<label htmlFor={`q-${q.id}`}>
+						{q.questionText}
+						{q.isRequired ? <span className="sv-req"> *</span> : null}
+					</label>
+					<QuestionInput
+						onChange={(v) => setAnswers((p) => ({ ...p, [q.id]: v }))}
+						question={q}
+						value={answers[q.id] ?? {}}
+					/>
 				</div>
-			</div>
-		</div>
+			))}
+		</Modal>
 	);
 }
 
@@ -357,36 +358,31 @@ function ResultsPanel({
 		  }
 		| undefined;
 	return (
-		<div className="sv-dialog-backdrop">
-			<div
-				aria-labelledby="sv-results-title"
-				className="sv-dialog"
-				role="dialog"
-			>
-				<h2 id="sv-results-title">Results — {data?.survey.title ?? ""}</h2>
-				<div className="sv-card-meta">
-					{data?.responseCount ?? 0} response(s)
-					{data?.survey.isAnonymous ? " · anonymous" : ""}
-				</div>
-				{res.isLoading ? <p className="page-sub">Loading…</p> : null}
-				{res.isError ? (
-					<p className="page-sub" style={{ color: "var(--danger)" }}>
-						Could not load results.
-					</p>
-				) : null}
-				{data && data.responseCount === 0 ? (
-					<EmptyState compact description="No responses yet." title="No data" />
-				) : null}
-				{data?.questions.map((q) => (
-					<ResultRow key={q.questionId} q={q} />
-				))}
-				<div className="sv-dialog-actions">
-					<button className="btn btn-primary" onClick={onClose} type="button">
-						Close
-					</button>
-				</div>
-			</div>
-		</div>
+		<Modal
+			footer={
+				<button className="btn btn-primary" onClick={onClose} type="button">
+					Close
+				</button>
+			}
+			icon={<ClipboardList size={18} />}
+			intro={`${data?.responseCount ?? 0} response(s)${data?.survey.isAnonymous ? " · anonymous" : ""}`}
+			onClose={onClose}
+			title={data ? `Results — ${data.survey.title}` : "Results"}
+			wide
+		>
+			{res.isLoading ? <p className="page-sub">Loading…</p> : null}
+			{res.isError ? (
+				<p className="page-sub" style={{ color: "var(--danger)" }}>
+					Could not load results.
+				</p>
+			) : null}
+			{data && data.responseCount === 0 ? (
+				<EmptyState compact description="No responses yet." title="No data" />
+			) : null}
+			{data?.questions.map((q) => (
+				<ResultRow key={q.questionId} q={q} />
+			))}
+		</Modal>
 	);
 }
 
@@ -899,105 +895,9 @@ function SurveyBuilderDialog({
 	};
 
 	return (
-		<div className="sv-dialog-backdrop">
-			<div aria-labelledby="sv-build-title" className="sv-dialog" role="dialog">
-				<h2 id="sv-build-title">New survey</h2>
-				<div className="sv-field">
-					<label htmlFor="sv-title">Title</label>
-					<input
-						id="sv-title"
-						onChange={(e) => setTitle(e.target.value)}
-						value={title}
-					/>
-				</div>
-				<div className="sv-field">
-					<label htmlFor="sv-desc">Description</label>
-					<textarea
-						id="sv-desc"
-						onChange={(e) => setDescription(e.target.value)}
-						rows={2}
-						value={description}
-					/>
-				</div>
-				<div className="sv-field-row">
-					<div className="sv-field">
-						<label htmlFor="sv-aud">Audience</label>
-						<select
-							id="sv-aud"
-							onChange={(e) => setAudienceType(e.target.value as AudienceType)}
-							value={audienceType}
-						>
-							<option value="all_members">Everyone</option>
-							<option value="department">A department</option>
-							<option value="role">A role</option>
-						</select>
-					</div>
-					{audienceType === "department" ? (
-						<div className="sv-field">
-							<label htmlFor="sv-dept">Department</label>
-							<select
-								id="sv-dept"
-								onChange={(e) => setAudienceDepartmentId(e.target.value)}
-								value={audienceDepartmentId}
-							>
-								<option value="">Select…</option>
-								{departments.map((d) => (
-									<option key={d.id} value={d.id}>
-										{d.name}
-									</option>
-								))}
-							</select>
-						</div>
-					) : null}
-					{audienceType === "role" ? (
-						<div className="sv-field">
-							<label htmlFor="sv-role">Role</label>
-							<select
-								id="sv-role"
-								onChange={(e) => setAudienceRole(e.target.value)}
-								value={audienceRole}
-							>
-								{ROLE_OPTIONS.map((r) => (
-									<option key={r} value={r}>
-										{r.replace(/_/g, " ")}
-									</option>
-								))}
-							</select>
-						</div>
-					) : null}
-				</div>
-				<label className="sv-checkline" style={{ marginTop: 12 }}>
-					<input
-						checked={isAnonymous}
-						onChange={(e) => setIsAnonymous(e.target.checked)}
-						type="checkbox"
-					/>
-					Anonymous (responses are not linked to a person)
-				</label>
-
-				<div className="sv-field">
-					<span className="sv-q-type">Questions</span>
-					{questions.map((q, i) => (
-						<QuestionEditor
-							index={i}
-							// biome-ignore lint/suspicious/noArrayIndexKey: draft questions have no stable id until saved
-							key={i}
-							onRemove={removeQuestion}
-							onUpdate={updateQuestion}
-							q={q}
-						/>
-					))}
-					<button
-						className="btn btn-outline btn-sm"
-						onClick={addQuestion}
-						style={{ marginTop: 10 }}
-						type="button"
-					>
-						<Plus size={12} /> Add question
-					</button>
-				</div>
-
-				<div className="sv-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button className="btn btn-ghost" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -1009,8 +909,108 @@ function SurveyBuilderDialog({
 					>
 						{saving ? "Saving…" : "Save draft"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<ClipboardList size={18} />}
+			intro="Build your survey below. Add questions, set the audience, then save as a draft. Publish it from the Manage tab when ready."
+			onClose={onClose}
+			title="New survey"
+			wide
+		>
+			<div className="sv-field">
+				<label htmlFor="sv-title">Title</label>
+				<input
+					id="sv-title"
+					onChange={(e) => setTitle(e.target.value)}
+					value={title}
+				/>
 			</div>
-		</div>
+			<div className="sv-field">
+				<label htmlFor="sv-desc">Description</label>
+				<textarea
+					id="sv-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					rows={2}
+					value={description}
+				/>
+			</div>
+			<div className="sv-field-row">
+				<div className="sv-field">
+					<label htmlFor="sv-aud">Audience</label>
+					<select
+						id="sv-aud"
+						onChange={(e) => setAudienceType(e.target.value as AudienceType)}
+						value={audienceType}
+					>
+						<option value="all_members">Everyone</option>
+						<option value="department">A department</option>
+						<option value="role">A role</option>
+					</select>
+				</div>
+				{audienceType === "department" ? (
+					<div className="sv-field">
+						<label htmlFor="sv-dept">Department</label>
+						<select
+							id="sv-dept"
+							onChange={(e) => setAudienceDepartmentId(e.target.value)}
+							value={audienceDepartmentId}
+						>
+							<option value="">Select…</option>
+							{departments.map((d) => (
+								<option key={d.id} value={d.id}>
+									{d.name}
+								</option>
+							))}
+						</select>
+					</div>
+				) : null}
+				{audienceType === "role" ? (
+					<div className="sv-field">
+						<label htmlFor="sv-role">Role</label>
+						<select
+							id="sv-role"
+							onChange={(e) => setAudienceRole(e.target.value)}
+							value={audienceRole}
+						>
+							{ROLE_OPTIONS.map((r) => (
+								<option key={r} value={r}>
+									{r.replace(/_/g, " ")}
+								</option>
+							))}
+						</select>
+					</div>
+				) : null}
+			</div>
+			<label className="sv-checkline" style={{ marginTop: 12 }}>
+				<input
+					checked={isAnonymous}
+					onChange={(e) => setIsAnonymous(e.target.checked)}
+					type="checkbox"
+				/>
+				Anonymous (responses are not linked to a person)
+			</label>
+
+			<div className="sv-field">
+				<span className="sv-q-type">Questions</span>
+				{questions.map((q, i) => (
+					<QuestionEditor
+						index={i}
+						// biome-ignore lint/suspicious/noArrayIndexKey: draft questions have no stable id until saved
+						key={i}
+						onRemove={removeQuestion}
+						onUpdate={updateQuestion}
+						q={q}
+					/>
+				))}
+				<button
+					className="btn btn-outline btn-sm"
+					onClick={addQuestion}
+					style={{ marginTop: 10 }}
+					type="button"
+				>
+					<Plus size={12} /> Add question
+				</button>
+			</div>
+		</Modal>
 	);
 }

@@ -2,6 +2,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
 	Calendar,
+	CalendarDays,
 	Check,
 	ChevronLeft,
 	ChevronRight,
@@ -14,6 +15,7 @@ import { toast } from "sonner";
 
 import "@/styles/employees.css";
 import "@/styles/leave.css";
+import { Modal } from "@/components/modal";
 import { canManageHR, canViewLeavePolicy } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -886,217 +888,21 @@ function RequestSheet({ onClose }: { onClose: () => void }) {
 
 	if (leaveTypes.length === 0) {
 		return (
-			<>
-				<button
-					aria-label="Close"
-					onClick={onClose}
-					style={{
-						position: "fixed",
-						inset: 0,
-						background: "rgba(8,9,12,0.6)",
-						zIndex: 200,
-						border: "none",
-						cursor: "pointer",
-					}}
-					type="button"
-				/>
-				<div className="leave-sheet">
-					<div className="leave-sheet-head">
-						<h4>Request time off</h4>
-						<button
-							className="btn btn-ghost btn-sm"
-							onClick={onClose}
-							type="button"
-						>
-							<X size={16} />
-						</button>
-					</div>
-					<div className="leave-sheet-body">
-						<div className="leave-helper">
-							Leave types have not been set up yet. Ask HR to configure leave
-							types first.
-						</div>
-					</div>
-				</div>
-			</>
+			<Modal
+				icon={<CalendarDays size={18} />}
+				intro="Leave types have not been set up yet. Ask HR to configure leave types first."
+				onClose={onClose}
+				title="Request time off"
+			>
+				{null}
+			</Modal>
 		);
 	}
 
 	return (
-		<>
-			<button
-				aria-label="Close"
-				onClick={onClose}
-				style={{
-					position: "fixed",
-					inset: 0,
-					background: "rgba(8,9,12,0.6)",
-					zIndex: 200,
-					border: "none",
-					cursor: "pointer",
-				}}
-				type="button"
-			/>
-			<div className="leave-sheet">
-				<div className="leave-sheet-head">
-					<h4>Request time off</h4>
-					<button
-						className="btn btn-ghost btn-sm"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="leave-sheet-body">
-					{noPolicyNotice ? (
-						<div className="lp-notice" role="note">
-							<span>{noPolicyNotice}</span>
-						</div>
-					) : null}
-					<div className="leave-helper">
-						Paid leave does not reduce your pay. Unpaid leave may affect future
-						payroll.
-					</div>
-
-					<div style={{ marginBottom: 14 }}>
-						<label className="label" htmlFor="lr-type">
-							Leave type <span style={{ color: "var(--danger)" }}>*</span>
-						</label>
-						<select
-							className="input"
-							id="lr-type"
-							onChange={(e) => setTypeId(e.target.value)}
-							style={{ height: 34 }}
-							value={typeId}
-						>
-							<option value="">Select leave type…</option>
-							{leaveTypes.map((t) => (
-								<option key={t.id} value={t.id}>
-									{t.name} {t.isPaid ? "(Paid)" : "(Unpaid)"}
-								</option>
-							))}
-						</select>
-						{selectedBalance && (
-							<p style={{ fontSize: 12, color: "var(--fg-3)", marginTop: 4 }}>
-								Available: {Number(selectedBalance.availableDays).toFixed(1)}{" "}
-								days
-								{Number(selectedBalance.carryForwardDays) > 0
-									? ` + ${Number(selectedBalance.carryForwardDays).toFixed(1)} carry-forward`
-									: ""}
-							</p>
-						)}
-					</div>
-
-					<div
-						style={{
-							display: "grid",
-							gridTemplateColumns: "1fr 1fr",
-							gap: 10,
-							marginBottom: 14,
-						}}
-					>
-						<div>
-							<label className="label" htmlFor="lr-start">
-								Starts <span style={{ color: "var(--danger)" }}>*</span>
-							</label>
-							<input
-								className="input"
-								id="lr-start"
-								onChange={(e) => setStartDate(e.target.value)}
-								style={{ height: 34 }}
-								type="date"
-								value={startDate}
-							/>
-							<select
-								className="input"
-								onChange={(e) => setStartBd(e.target.value)}
-								style={{ height: 30, marginTop: 6, fontSize: 12 }}
-								value={startBd}
-							>
-								<option value="full_day">Full day</option>
-								<option value="first_half">Morning only</option>
-								<option value="second_half">Afternoon only</option>
-							</select>
-						</div>
-						<div>
-							<label className="label" htmlFor="lr-end">
-								Ends <span style={{ color: "var(--danger)" }}>*</span>
-							</label>
-							<input
-								className="input"
-								id="lr-end"
-								onChange={(e) => setEndDate(e.target.value)}
-								style={{ height: 34 }}
-								type="date"
-								value={endDate}
-							/>
-							<select
-								className="input"
-								onChange={(e) => setEndBd(e.target.value)}
-								style={{ height: 30, marginTop: 6, fontSize: 12 }}
-								value={endBd}
-							>
-								<option value="full_day">Full day</option>
-								<option value="first_half">Morning only</option>
-								<option value="second_half">Afternoon only</option>
-							</select>
-						</div>
-					</div>
-
-					{estimated > 0 && (
-						<div
-							style={{
-								padding: "10px 14px",
-								borderRadius: 8,
-								background: "var(--bg-2)",
-								border: "1px solid var(--line)",
-								marginBottom: 14,
-							}}
-						>
-							<span style={{ fontSize: 13, fontWeight: 500 }}>
-								{estimated.toFixed(1)} day{estimated === 1 ? "" : "s"} requested
-							</span>
-							<span
-								style={{ fontSize: 12, color: "var(--fg-3)", marginLeft: 8 }}
-							>
-								(excluding weekends)
-							</span>
-						</div>
-					)}
-
-					{insufficientBalance && (
-						<div
-							style={{
-								padding: "10px 14px",
-								borderRadius: 8,
-								background: "var(--danger-soft)",
-								color: "var(--danger)",
-								fontSize: 12,
-								marginBottom: 14,
-							}}
-						>
-							You only have {availableDays?.toFixed(1)} days available but are
-							requesting {estimated.toFixed(1)} days.
-						</div>
-					)}
-
-					<div style={{ marginBottom: 14 }}>
-						<label className="label" htmlFor="lr-reason">
-							Reason
-						</label>
-						<textarea
-							className="input"
-							id="lr-reason"
-							onChange={(e) => setDescription(e.target.value)}
-							placeholder="Optional reason for your leave…"
-							rows={3}
-							style={{ resize: "vertical" }}
-							value={description}
-						/>
-					</div>
-				</div>
-				<div className="leave-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button
 						className="btn btn-outline btn-sm"
 						onClick={onClose}
@@ -1112,11 +918,155 @@ function RequestSheet({ onClose }: { onClose: () => void }) {
 						onClick={handleSubmit}
 						type="button"
 					>
-						{saving ? "Submitting…" : "Submit request"}
+						{saving ? "Submitting..." : "Submit request"}
 					</button>
+				</>
+			}
+			icon={<CalendarDays size={18} />}
+			intro="Paid leave does not reduce your pay. Unpaid leave may affect future payroll."
+			onClose={onClose}
+			title="Request time off"
+		>
+			{noPolicyNotice ? (
+				<div className="lp-notice" role="note">
+					<span>{noPolicyNotice}</span>
+				</div>
+			) : null}
+
+			<div style={{ marginBottom: 14 }}>
+				<label className="label" htmlFor="lr-type">
+					Leave type <span style={{ color: "var(--danger)" }}>*</span>
+				</label>
+				<select
+					className="input"
+					id="lr-type"
+					onChange={(e) => setTypeId(e.target.value)}
+					style={{ height: 34 }}
+					value={typeId}
+				>
+					<option value="">Select leave type...</option>
+					{leaveTypes.map((t) => (
+						<option key={t.id} value={t.id}>
+							{t.name} {t.isPaid ? "(Paid)" : "(Unpaid)"}
+						</option>
+					))}
+				</select>
+				{selectedBalance && (
+					<p style={{ fontSize: 12, color: "var(--fg-3)", marginTop: 4 }}>
+						Available: {Number(selectedBalance.availableDays).toFixed(1)} days
+						{Number(selectedBalance.carryForwardDays) > 0
+							? ` + ${Number(selectedBalance.carryForwardDays).toFixed(1)} carry-forward`
+							: ""}
+					</p>
+				)}
+			</div>
+
+			<div
+				style={{
+					display: "grid",
+					gridTemplateColumns: "1fr 1fr",
+					gap: 10,
+					marginBottom: 14,
+				}}
+			>
+				<div>
+					<label className="label" htmlFor="lr-start">
+						Starts <span style={{ color: "var(--danger)" }}>*</span>
+					</label>
+					<input
+						className="input"
+						id="lr-start"
+						onChange={(e) => setStartDate(e.target.value)}
+						style={{ height: 34 }}
+						type="date"
+						value={startDate}
+					/>
+					<select
+						className="input"
+						onChange={(e) => setStartBd(e.target.value)}
+						style={{ height: 30, marginTop: 6, fontSize: 12 }}
+						value={startBd}
+					>
+						<option value="full_day">Full day</option>
+						<option value="first_half">Morning only</option>
+						<option value="second_half">Afternoon only</option>
+					</select>
+				</div>
+				<div>
+					<label className="label" htmlFor="lr-end">
+						Ends <span style={{ color: "var(--danger)" }}>*</span>
+					</label>
+					<input
+						className="input"
+						id="lr-end"
+						onChange={(e) => setEndDate(e.target.value)}
+						style={{ height: 34 }}
+						type="date"
+						value={endDate}
+					/>
+					<select
+						className="input"
+						onChange={(e) => setEndBd(e.target.value)}
+						style={{ height: 30, marginTop: 6, fontSize: 12 }}
+						value={endBd}
+					>
+						<option value="full_day">Full day</option>
+						<option value="first_half">Morning only</option>
+						<option value="second_half">Afternoon only</option>
+					</select>
 				</div>
 			</div>
-		</>
+
+			{estimated > 0 && (
+				<div
+					style={{
+						padding: "10px 14px",
+						borderRadius: 8,
+						background: "var(--bg-2)",
+						border: "1px solid var(--line)",
+						marginBottom: 14,
+					}}
+				>
+					<span style={{ fontSize: 13, fontWeight: 500 }}>
+						{estimated.toFixed(1)} day{estimated === 1 ? "" : "s"} requested
+					</span>
+					<span style={{ fontSize: 12, color: "var(--fg-3)", marginLeft: 8 }}>
+						(excluding weekends)
+					</span>
+				</div>
+			)}
+
+			{insufficientBalance && (
+				<div
+					style={{
+						padding: "10px 14px",
+						borderRadius: 8,
+						background: "var(--danger-soft)",
+						color: "var(--danger)",
+						fontSize: 12,
+						marginBottom: 14,
+					}}
+				>
+					You only have {availableDays?.toFixed(1)} days available but are
+					requesting {estimated.toFixed(1)} days.
+				</div>
+			)}
+
+			<div style={{ marginBottom: 14 }}>
+				<label className="label" htmlFor="lr-reason">
+					Reason
+				</label>
+				<textarea
+					className="input"
+					id="lr-reason"
+					onChange={(e) => setDescription(e.target.value)}
+					placeholder="Optional reason for your leave..."
+					rows={3}
+					style={{ resize: "vertical" }}
+					value={description}
+				/>
+			</div>
+		</Modal>
 	);
 }
 

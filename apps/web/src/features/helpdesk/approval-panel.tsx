@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/helpdesk/badge";
 import { approvalLabel, approvalTone } from "@/features/helpdesk/labels";
 import { client } from "@/utils/orpc";
@@ -25,37 +26,9 @@ function RejectDialog({
 	const [reason, setReason] = useState("");
 	const trimmed = reason.trim();
 	return (
-		<div className="hd-sheet-overlay">
-			<div
-				aria-labelledby="hd-reject-title"
-				aria-modal="true"
-				className="hd-sheet"
-				role="dialog"
-			>
-				<div className="hd-sheet-head">
-					<h2 id="hd-reject-title">Reject this request</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="hd-sheet-body">
-					<label className="hd-field" htmlFor="hd-reject-reason">
-						<span>Reason (shared with the requester)</span>
-						<textarea
-							id="hd-reject-reason"
-							onChange={(e) => setReason(e.target.value)}
-							placeholder="Explain why this can't be approved…"
-							rows={3}
-							value={reason}
-						/>
-					</label>
-				</div>
-				<div className="hd-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -67,9 +40,24 @@ function RejectDialog({
 					>
 						Reject request
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<ShieldCheck size={18} />}
+			intro="Your reason will be shared with the requester."
+			onClose={onClose}
+			title="Reject this request"
+		>
+			<label className="hd-field" htmlFor="hd-reject-reason">
+				<span>Reason (shared with the requester)</span>
+				<textarea
+					id="hd-reject-reason"
+					onChange={(e) => setReason(e.target.value)}
+					placeholder="Explain why this can't be approved…"
+					rows={3}
+					value={reason}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

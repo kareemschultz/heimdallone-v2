@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { LifeBuoy, Link2, Plus, X } from "lucide-react";
+import { LifeBuoy, Link2, MessageSquarePlus, Plus } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/helpdesk.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/helpdesk/badge";
 import { HelpdeskTabs } from "@/features/helpdesk/helpdesk-tabs";
 import {
@@ -109,76 +110,9 @@ function RequestHelpDialog({
 	const canSubmit = title.trim().length > 0 && !create.isPending;
 
 	return (
-		<div className="hd-sheet-overlay">
-			<div
-				aria-labelledby="hd-request-help-title"
-				aria-modal="true"
-				className="hd-sheet"
-				role="dialog"
-			>
-				<div className="hd-sheet-head">
-					<h2 id="hd-request-help-title">Request help</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="hd-sheet-body">
-					<label className="hd-field" htmlFor="req-category">
-						<span>What do you need help with?</span>
-						<select
-							id="req-category"
-							onChange={(e) => setCategoryId(e.target.value)}
-							value={categoryId}
-						>
-							<option value="">Not sure — pick the closest</option>
-							{cats.map((c) => (
-								<option key={c.id} value={c.id}>
-									{c.name}
-								</option>
-							))}
-						</select>
-					</label>
-					<label className="hd-field" htmlFor="req-title">
-						<span>Summary</span>
-						<input
-							id="req-title"
-							maxLength={200}
-							onChange={(e) => setTitle(e.target.value)}
-							placeholder="e.g. I can't see my latest payslip"
-							value={title}
-						/>
-					</label>
-					<label className="hd-field" htmlFor="req-desc">
-						<span>Tell us what happened</span>
-						<textarea
-							id="req-desc"
-							onChange={(e) => setDescription(e.target.value)}
-							placeholder="Add any details that would help us help you — dates, names, what you expected."
-							rows={4}
-							value={description}
-						/>
-					</label>
-					<label className="hd-field" htmlFor="req-priority">
-						<span>How urgent is this?</span>
-						<select
-							id="req-priority"
-							onChange={(e) => setPriority(e.target.value as Priority)}
-							value={priority}
-						>
-							{PRIORITY_OPTIONS.map((o) => (
-								<option key={o.value} value={o.value}>
-									{o.label}
-								</option>
-							))}
-						</select>
-					</label>
-				</div>
-				<div className="hd-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -190,9 +124,64 @@ function RequestHelpDialog({
 					>
 						Send request
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<MessageSquarePlus size={18} />}
+			intro="We'll route your request to the right team and keep you updated here."
+			onClose={onClose}
+			title="Request help"
+			wide
+		>
+			<label className="hd-field" htmlFor="req-category">
+				<span>What do you need help with?</span>
+				<select
+					id="req-category"
+					onChange={(e) => setCategoryId(e.target.value)}
+					value={categoryId}
+				>
+					<option value="">Not sure — pick the closest</option>
+					{cats.map((c) => (
+						<option key={c.id} value={c.id}>
+							{c.name}
+						</option>
+					))}
+				</select>
+			</label>
+			<label className="hd-field" htmlFor="req-title">
+				<span>Summary</span>
+				<input
+					id="req-title"
+					maxLength={200}
+					onChange={(e) => setTitle(e.target.value)}
+					placeholder="e.g. I can't see my latest payslip"
+					value={title}
+				/>
+			</label>
+			<label className="hd-field" htmlFor="req-desc">
+				<span>Tell us what happened</span>
+				<textarea
+					id="req-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					placeholder="Add any details that would help us help you — dates, names, what you expected."
+					rows={4}
+					value={description}
+				/>
+			</label>
+			<label className="hd-field" htmlFor="req-priority">
+				<span>How urgent is this?</span>
+				<select
+					id="req-priority"
+					onChange={(e) => setPriority(e.target.value as Priority)}
+					value={priority}
+				>
+					{PRIORITY_OPTIONS.map((o) => (
+						<option key={o.value} value={o.value}>
+							{o.label}
+						</option>
+					))}
+				</select>
+			</label>
+		</Modal>
 	);
 }
 

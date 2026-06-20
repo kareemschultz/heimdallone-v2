@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import "@/styles/announcements.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { canManageAnnouncements } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
@@ -375,109 +376,9 @@ function AnnouncementDialog({
 	};
 
 	return (
-		<div className="ann-dialog-backdrop">
-			<div
-				aria-labelledby="ann-dialog-title"
-				className="ann-dialog"
-				role="dialog"
-			>
-				<h2 id="ann-dialog-title">New announcement</h2>
-				<div className="ann-form-field">
-					<label htmlFor="ann-title">Title</label>
-					<input
-						id="ann-title"
-						onChange={(e) => setTitle(e.target.value)}
-						value={title}
-					/>
-				</div>
-				<div className="ann-form-field">
-					<label htmlFor="ann-body">Message</label>
-					<textarea
-						id="ann-body"
-						onChange={(e) => setBody(e.target.value)}
-						value={body}
-					/>
-				</div>
-				<div className="ann-form-row">
-					<div className="ann-form-field">
-						<label htmlFor="ann-aud">Audience</label>
-						<select
-							id="ann-aud"
-							onChange={(e) => setAudienceType(e.target.value as AudienceType)}
-							value={audienceType}
-						>
-							<option value="all_members">Everyone</option>
-							<option value="department">A department</option>
-							<option value="role">A role</option>
-						</select>
-					</div>
-					{audienceType === "department" && (
-						<div className="ann-form-field">
-							<label htmlFor="ann-dept">Department</label>
-							<select
-								id="ann-dept"
-								onChange={(e) => setAudienceDepartmentId(e.target.value)}
-								value={audienceDepartmentId}
-							>
-								<option value="">Select…</option>
-								{departments.map((d) => (
-									<option key={d.id} value={d.id}>
-										{d.name}
-									</option>
-								))}
-							</select>
-						</div>
-					)}
-					{audienceType === "role" && (
-						<div className="ann-form-field">
-							<label htmlFor="ann-role">Role</label>
-							<select
-								id="ann-role"
-								onChange={(e) => setAudienceRole(e.target.value)}
-								value={audienceRole}
-							>
-								{ROLE_OPTIONS.map((r) => (
-									<option key={r} value={r}>
-										{r.replace(/_/g, " ")}
-									</option>
-								))}
-							</select>
-						</div>
-					)}
-				</div>
-				<div className="ann-form-row" style={{ marginTop: 12 }}>
-					<label
-						style={{
-							display: "flex",
-							gap: 6,
-							alignItems: "center",
-							fontSize: 13,
-						}}
-					>
-						<input
-							checked={isPinned}
-							onChange={(e) => setIsPinned(e.target.checked)}
-							type="checkbox"
-						/>
-						Pin to top
-					</label>
-					<label
-						style={{
-							display: "flex",
-							gap: 6,
-							alignItems: "center",
-							fontSize: 13,
-						}}
-					>
-						<input
-							checked={publishNow}
-							onChange={(e) => setPublishNow(e.target.checked)}
-							type="checkbox"
-						/>
-						Publish now
-					</label>
-				</div>
-				<div className="ann-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button className="btn btn-ghost" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -489,8 +390,108 @@ function AnnouncementDialog({
 					>
 						{saveButtonLabel(saving, publishNow)}
 					</button>
-				</div>
+				</>
+			}
+			icon={<Megaphone size={18} />}
+			intro="Announcements are posted to the selected audience's feed immediately or saved as a draft."
+			onClose={onClose}
+			title="New announcement"
+		>
+			<div className="ann-form-field">
+				<label htmlFor="ann-title">Title</label>
+				<input
+					id="ann-title"
+					onChange={(e) => setTitle(e.target.value)}
+					value={title}
+				/>
 			</div>
-		</div>
+			<div className="ann-form-field">
+				<label htmlFor="ann-body">Message</label>
+				<textarea
+					id="ann-body"
+					onChange={(e) => setBody(e.target.value)}
+					value={body}
+				/>
+			</div>
+			<div className="ann-form-row">
+				<div className="ann-form-field">
+					<label htmlFor="ann-aud">Audience</label>
+					<select
+						id="ann-aud"
+						onChange={(e) => setAudienceType(e.target.value as AudienceType)}
+						value={audienceType}
+					>
+						<option value="all_members">Everyone</option>
+						<option value="department">A department</option>
+						<option value="role">A role</option>
+					</select>
+				</div>
+				{audienceType === "department" && (
+					<div className="ann-form-field">
+						<label htmlFor="ann-dept">Department</label>
+						<select
+							id="ann-dept"
+							onChange={(e) => setAudienceDepartmentId(e.target.value)}
+							value={audienceDepartmentId}
+						>
+							<option value="">Select…</option>
+							{departments.map((d) => (
+								<option key={d.id} value={d.id}>
+									{d.name}
+								</option>
+							))}
+						</select>
+					</div>
+				)}
+				{audienceType === "role" && (
+					<div className="ann-form-field">
+						<label htmlFor="ann-role">Role</label>
+						<select
+							id="ann-role"
+							onChange={(e) => setAudienceRole(e.target.value)}
+							value={audienceRole}
+						>
+							{ROLE_OPTIONS.map((r) => (
+								<option key={r} value={r}>
+									{r.replace(/_/g, " ")}
+								</option>
+							))}
+						</select>
+					</div>
+				)}
+			</div>
+			<div className="ann-form-row" style={{ marginTop: 12 }}>
+				<label
+					style={{
+						display: "flex",
+						gap: 6,
+						alignItems: "center",
+						fontSize: 13,
+					}}
+				>
+					<input
+						checked={isPinned}
+						onChange={(e) => setIsPinned(e.target.checked)}
+						type="checkbox"
+					/>
+					Pin to top
+				</label>
+				<label
+					style={{
+						display: "flex",
+						gap: 6,
+						alignItems: "center",
+						fontSize: 13,
+					}}
+				>
+					<input
+						checked={publishNow}
+						onChange={(e) => setPublishNow(e.target.checked)}
+						type="checkbox"
+					/>
+					Publish now
+				</label>
+			</div>
+		</Modal>
 	);
 }

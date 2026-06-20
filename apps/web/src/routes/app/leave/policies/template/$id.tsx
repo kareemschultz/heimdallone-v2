@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { ArrowLeft, FileCheck, X } from "lucide-react";
+import { ArrowLeft, FileCheck, FileStack } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/leave.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	accrualLabel,
 	type BadgeTone,
@@ -60,42 +61,9 @@ function AdoptDialog({
 }) {
 	const [name, setName] = useState(templateName);
 	return (
-		<div className="leave-sheet-overlay">
-			<div
-				aria-labelledby="adopt-title"
-				aria-modal="true"
-				className="leave-sheet"
-				role="dialog"
-			>
-				<div className="leave-sheet-head">
-					<h2 id="adopt-title">Use this statutory template</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="leave-sheet-body">
-					<label className="field" htmlFor="adopt-name">
-						<span>Your policy name</span>
-						<input
-							id="adopt-name"
-							onChange={(e) => setName(e.target.value)}
-							value={name}
-						/>
-					</label>
-					<p className="lp-snapshot-note">
-						This <strong>copies</strong> the rules into your company policy.
-						Later changes to the statutory template will <strong>not</strong>{" "}
-						automatically modify your adopted policy — you stay in control. The
-						new policy starts as a draft; review and activate it when ready.
-					</p>
-					<p className="lp-hint">{VERIFY_NOTICE}</p>
-				</div>
-				<div className="leave-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -107,9 +75,23 @@ function AdoptDialog({
 					>
 						Copy into a company policy
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<FileStack size={18} />}
+			intro="This copies the rules into your company policy. Later changes to the statutory template will not automatically modify your adopted policy — you stay in control. The new policy starts as a draft; review and activate it when ready."
+			onClose={onClose}
+			title="Use this statutory template"
+		>
+			<label className="field" htmlFor="adopt-name">
+				<span>Your policy name</span>
+				<input
+					id="adopt-name"
+					onChange={(e) => setName(e.target.value)}
+					value={name}
+				/>
+			</label>
+			<p className="lp-hint">{VERIFY_NOTICE}</p>
+		</Modal>
 	);
 }
 

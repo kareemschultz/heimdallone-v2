@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { Flag } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/projects/badge";
 import {
 	fmtDate,
@@ -47,45 +48,9 @@ function AddMilestoneDialog({
 	});
 
 	return (
-		<div className="pj-sheet-overlay">
-			<div
-				aria-labelledby="pj-add-milestone-title"
-				aria-modal="true"
-				className="pj-sheet"
-				role="dialog"
-			>
-				<div className="pj-sheet-head">
-					<h2 id="pj-add-milestone-title">Add a milestone</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pj-sheet-body">
-					<label className="pj-field" htmlFor="pj-milestone-name">
-						<span>Name</span>
-						<input
-							id="pj-milestone-name"
-							onChange={(e) => setName(e.target.value)}
-							placeholder="e.g. Site survey complete"
-							value={name}
-						/>
-					</label>
-					<label className="pj-field" htmlFor="pj-milestone-due">
-						<span>Due date (optional)</span>
-						<input
-							id="pj-milestone-due"
-							onChange={(e) => setDueDate(e.target.value)}
-							type="date"
-							value={dueDate}
-						/>
-					</label>
-				</div>
-				<div className="pj-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -97,9 +62,32 @@ function AddMilestoneDialog({
 					>
 						Add milestone
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<Flag size={18} />}
+			intro="Milestones mark significant checkpoints in your project timeline."
+			onClose={onClose}
+			title="Add a milestone"
+		>
+			<label className="pj-field" htmlFor="pj-milestone-name">
+				<span>Name</span>
+				<input
+					id="pj-milestone-name"
+					onChange={(e) => setName(e.target.value)}
+					placeholder="e.g. Site survey complete"
+					value={name}
+				/>
+			</label>
+			<label className="pj-field" htmlFor="pj-milestone-due">
+				<span>Due date (optional)</span>
+				<input
+					id="pj-milestone-due"
+					onChange={(e) => setDueDate(e.target.value)}
+					type="date"
+					value={dueDate}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

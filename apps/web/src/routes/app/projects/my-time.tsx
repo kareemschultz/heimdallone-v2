@@ -4,12 +4,13 @@ import {
 } from "@Heimdallone/ui/components/data-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Clock, X } from "lucide-react";
+import { Clock } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/projects.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/projects/badge";
 import {
 	fmtDate,
@@ -77,83 +78,9 @@ function LogTimeDialog({
 	const totalMinutes = Number(hours) * 60 + Number(minutes);
 
 	return (
-		<div className="pj-sheet-overlay">
-			<div
-				aria-labelledby="pj-log-time-title"
-				aria-modal="true"
-				className="pj-sheet"
-				role="dialog"
-			>
-				<div className="pj-sheet-head">
-					<h2 id="pj-log-time-title">Log time</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pj-sheet-body">
-					<label className="pj-field" htmlFor="pj-time-project">
-						<span>Project</span>
-						<select
-							id="pj-time-project"
-							onChange={(e) => setProjectId(e.target.value)}
-							value={projectId}
-						>
-							<option value="">Choose a project…</option>
-							{projectOptions.map((p) => (
-								<option key={p.id} value={p.id}>
-									{p.name}
-								</option>
-							))}
-						</select>
-					</label>
-					<label className="pj-field" htmlFor="pj-time-date">
-						<span>Date</span>
-						<input
-							id="pj-time-date"
-							onChange={(e) => setEntryDate(e.target.value)}
-							type="date"
-							value={entryDate}
-						/>
-					</label>
-					<div className="pj-field-row">
-						<label className="pj-field" htmlFor="pj-time-hours">
-							<span>Hours</span>
-							<input
-								id="pj-time-hours"
-								min="0"
-								onChange={(e) => setHours(e.target.value)}
-								type="number"
-								value={hours}
-							/>
-						</label>
-						<label className="pj-field" htmlFor="pj-time-minutes">
-							<span>Minutes</span>
-							<input
-								id="pj-time-minutes"
-								max="59"
-								min="0"
-								onChange={(e) => setMinutes(e.target.value)}
-								type="number"
-								value={minutes}
-							/>
-						</label>
-					</div>
-					<label className="pj-field" htmlFor="pj-time-desc">
-						<span>What did you work on? (optional)</span>
-						<textarea
-							id="pj-time-desc"
-							onChange={(e) => setDescription(e.target.value)}
-							rows={2}
-							value={description}
-						/>
-					</label>
-				</div>
-				<div className="pj-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -165,9 +92,71 @@ function LogTimeDialog({
 					>
 						Log time
 					</button>
-				</div>
+				</>
+			}
+			icon={<Clock size={18} />}
+			intro="Record time you have spent on project work. Entries are saved as drafts until you submit them for approval."
+			onClose={onClose}
+			title="Log time"
+			wide
+		>
+			<label className="pj-field" htmlFor="pj-time-project">
+				<span>Project</span>
+				<select
+					id="pj-time-project"
+					onChange={(e) => setProjectId(e.target.value)}
+					value={projectId}
+				>
+					<option value="">Choose a project…</option>
+					{projectOptions.map((p) => (
+						<option key={p.id} value={p.id}>
+							{p.name}
+						</option>
+					))}
+				</select>
+			</label>
+			<label className="pj-field" htmlFor="pj-time-date">
+				<span>Date</span>
+				<input
+					id="pj-time-date"
+					onChange={(e) => setEntryDate(e.target.value)}
+					type="date"
+					value={entryDate}
+				/>
+			</label>
+			<div className="pj-field-row">
+				<label className="pj-field" htmlFor="pj-time-hours">
+					<span>Hours</span>
+					<input
+						id="pj-time-hours"
+						min="0"
+						onChange={(e) => setHours(e.target.value)}
+						type="number"
+						value={hours}
+					/>
+				</label>
+				<label className="pj-field" htmlFor="pj-time-minutes">
+					<span>Minutes</span>
+					<input
+						id="pj-time-minutes"
+						max="59"
+						min="0"
+						onChange={(e) => setMinutes(e.target.value)}
+						type="number"
+						value={minutes}
+					/>
+				</label>
 			</div>
-		</div>
+			<label className="pj-field" htmlFor="pj-time-desc">
+				<span>What did you work on? (optional)</span>
+				<textarea
+					id="pj-time-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					rows={2}
+					value={description}
+				/>
+			</label>
+		</Modal>
 	);
 }
 
