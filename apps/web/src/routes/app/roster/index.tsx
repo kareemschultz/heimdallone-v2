@@ -15,6 +15,7 @@ import { toast } from "sonner";
 
 import "@/styles/roster.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	canApproveRoster,
 	canManageRoster,
@@ -375,7 +376,9 @@ function RosterPage() {
 				</div>
 			</div>
 
-			{entriesQuery.isLoading && <p className="page-sub">Loading schedule…</p>}
+			{entriesQuery.isLoading && (
+				<p className="page-sub">Loading schedule...</p>
+			)}
 			{entriesQuery.isError && (
 				<p className="page-sub" style={{ color: "var(--danger)" }}>
 					Could not load the schedule. Try again.
@@ -775,115 +778,9 @@ function EntryDialog({
 	};
 
 	return (
-		<div className="rst-dialog-backdrop">
-			<div
-				aria-labelledby="rst-dialog-title"
-				className="rst-dialog"
-				role="dialog"
-			>
-				<h2 id="rst-dialog-title">
-					{isEdit ? "Edit schedule" : "Assign shift"}
-				</h2>
-
-				{!selfOnly && (
-					<div className="rst-form-field">
-						<label htmlFor="rst-emp">Employee</label>
-						<select
-							disabled={isEdit}
-							id="rst-emp"
-							onChange={(e) => set("employeeId", e.target.value)}
-							value={form.employeeId}
-						>
-							<option value="">Select employee…</option>
-							{employees.map((emp) => (
-								<option key={emp.id} value={emp.id}>
-									{emp.firstName}
-									{emp.lastName ? ` ${emp.lastName}` : ""}
-								</option>
-							))}
-						</select>
-					</div>
-				)}
-
-				<div className="rst-form-field">
-					<label htmlFor="rst-date">Date</label>
-					<input
-						disabled={isEdit}
-						id="rst-date"
-						onChange={(e) => set("date", e.target.value)}
-						type="date"
-						value={form.date}
-					/>
-				</div>
-
-				<div className="rst-form-field">
-					<label htmlFor="rst-type">Type</label>
-					<select
-						id="rst-type"
-						onChange={(e) =>
-							set("overrideType", e.target.value as OverrideType)
-						}
-						value={form.overrideType}
-					>
-						<option value="none">Regular shift</option>
-						<option value="custom_hours">Custom hours</option>
-						<option value="day_off">Day off</option>
-						<option value="swap">Swap</option>
-					</select>
-				</div>
-
-				{form.overrideType !== "day_off" && (
-					<div className="rst-form-field">
-						<label htmlFor="rst-shift">Shift</label>
-						<select
-							id="rst-shift"
-							onChange={(e) => set("shiftId", e.target.value)}
-							value={form.shiftId}
-						>
-							<option value="">No shift / unspecified</option>
-							{shifts.map((s) => (
-								<option key={s.id} value={s.id}>
-									{s.name}
-								</option>
-							))}
-						</select>
-					</div>
-				)}
-
-				{form.overrideType === "custom_hours" && (
-					<div className="rst-form-row">
-						<div className="rst-form-field">
-							<label htmlFor="rst-start">Start</label>
-							<input
-								id="rst-start"
-								onChange={(e) => set("customStart", e.target.value)}
-								type="time"
-								value={form.customStart}
-							/>
-						</div>
-						<div className="rst-form-field">
-							<label htmlFor="rst-end">End</label>
-							<input
-								id="rst-end"
-								onChange={(e) => set("customEnd", e.target.value)}
-								type="time"
-								value={form.customEnd}
-							/>
-						</div>
-					</div>
-				)}
-
-				<div className="rst-form-field">
-					<label htmlFor="rst-note">Note</label>
-					<input
-						id="rst-note"
-						onChange={(e) => set("note", e.target.value)}
-						placeholder="Optional"
-						value={form.note}
-					/>
-				</div>
-
-				<div className="rst-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<div>
 						{isEdit &&
 							(confirmingRemove ? (
@@ -939,12 +836,116 @@ function EntryDialog({
 							onClick={save}
 							type="button"
 						>
-							{saving ? "Saving…" : "Save"}
+							{saving ? "Saving..." : "Save"}
 						</button>
 					</div>
+				</>
+			}
+			icon={<CalendarDays size={18} />}
+			intro={
+				isEdit
+					? "Update the shift assignment, override type, or custom hours."
+					: "Assign a shift to an employee for a specific date."
+			}
+			onClose={onClose}
+			title={isEdit ? "Edit schedule" : "Assign shift"}
+		>
+			{!selfOnly && (
+				<div className="rst-form-field">
+					<label htmlFor="rst-emp">Employee</label>
+					<select
+						disabled={isEdit}
+						id="rst-emp"
+						onChange={(e) => set("employeeId", e.target.value)}
+						value={form.employeeId}
+					>
+						<option value="">Select employee...</option>
+						{employees.map((emp) => (
+							<option key={emp.id} value={emp.id}>
+								{emp.firstName}
+								{emp.lastName ? ` ${emp.lastName}` : ""}
+							</option>
+						))}
+					</select>
 				</div>
+			)}
+
+			<div className="rst-form-field">
+				<label htmlFor="rst-date">Date</label>
+				<input
+					disabled={isEdit}
+					id="rst-date"
+					onChange={(e) => set("date", e.target.value)}
+					type="date"
+					value={form.date}
+				/>
 			</div>
-		</div>
+
+			<div className="rst-form-field">
+				<label htmlFor="rst-type">Type</label>
+				<select
+					id="rst-type"
+					onChange={(e) => set("overrideType", e.target.value as OverrideType)}
+					value={form.overrideType}
+				>
+					<option value="none">Regular shift</option>
+					<option value="custom_hours">Custom hours</option>
+					<option value="day_off">Day off</option>
+					<option value="swap">Swap</option>
+				</select>
+			</div>
+
+			{form.overrideType !== "day_off" && (
+				<div className="rst-form-field">
+					<label htmlFor="rst-shift">Shift</label>
+					<select
+						id="rst-shift"
+						onChange={(e) => set("shiftId", e.target.value)}
+						value={form.shiftId}
+					>
+						<option value="">No shift / unspecified</option>
+						{shifts.map((s) => (
+							<option key={s.id} value={s.id}>
+								{s.name}
+							</option>
+						))}
+					</select>
+				</div>
+			)}
+
+			{form.overrideType === "custom_hours" && (
+				<div className="rst-form-row">
+					<div className="rst-form-field">
+						<label htmlFor="rst-start">Start</label>
+						<input
+							id="rst-start"
+							onChange={(e) => set("customStart", e.target.value)}
+							type="time"
+							value={form.customStart}
+						/>
+					</div>
+					<div className="rst-form-field">
+						<label htmlFor="rst-end">End</label>
+						<input
+							id="rst-end"
+							onChange={(e) => set("customEnd", e.target.value)}
+							type="time"
+							value={form.customEnd}
+						/>
+					</div>
+				</div>
+			)}
+
+			<div className="rst-form-field">
+				<label htmlFor="rst-note">Note</label>
+				<input
+					id="rst-note"
+					onChange={(e) => set("note", e.target.value)}
+					placeholder="Optional"
+					value={form.note}
+				/>
+			</div>
+		</Modal>
 	);
 }
 
@@ -994,89 +995,9 @@ function BulkAssignDialog({
 	};
 
 	return (
-		<div className="rst-dialog-backdrop">
-			<div
-				aria-labelledby="rst-bulk-title"
-				className="rst-dialog"
-				role="dialog"
-			>
-				<h2 id="rst-bulk-title">Bulk assign shifts</h2>
-				<p className="page-sub" style={{ marginTop: 0 }}>
-					Assign one shift to an employee across a date range. Existing days are
-					skipped.
-				</p>
-				<div className="rst-form-field">
-					<label htmlFor="rst-bulk-emp">Employee</label>
-					<select
-						id="rst-bulk-emp"
-						onChange={(e) => setEmployeeId(e.target.value)}
-						value={employeeId}
-					>
-						<option value="">Select employee…</option>
-						{employees.map((emp) => (
-							<option key={emp.id} value={emp.id}>
-								{emp.firstName}
-								{emp.lastName ? ` ${emp.lastName}` : ""}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="rst-form-field">
-					<label htmlFor="rst-bulk-shift">Shift</label>
-					<select
-						id="rst-bulk-shift"
-						onChange={(e) => setShiftId(e.target.value)}
-						value={shiftId}
-					>
-						<option value="">Select shift…</option>
-						{shifts.map((s) => (
-							<option key={s.id} value={s.id}>
-								{s.name}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="rst-form-row">
-					<div className="rst-form-field">
-						<label htmlFor="rst-bulk-from">From</label>
-						<input
-							id="rst-bulk-from"
-							onChange={(e) => setFrom(e.target.value)}
-							type="date"
-							value={from}
-						/>
-					</div>
-					<div className="rst-form-field">
-						<label htmlFor="rst-bulk-to">To</label>
-						<input
-							id="rst-bulk-to"
-							onChange={(e) => setTo(e.target.value)}
-							type="date"
-							value={to}
-						/>
-					</div>
-				</div>
-				<div className="rst-form-field">
-					<span style={{ fontSize: 12, fontWeight: 500, color: "var(--fg-2)" }}>
-						Days of week
-					</span>
-					<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-						{WEEKDAY_OPTIONS.map((d) => (
-							<button
-								className={`btn btn-sm ${weekdays.includes(d.value) ? "btn-primary" : "btn-outline"}`}
-								key={d.value}
-								onClick={() => toggleDay(d.value)}
-								type="button"
-							>
-								{d.label}
-							</button>
-						))}
-					</div>
-				</div>
-				<div
-					className="rst-dialog-actions"
-					style={{ justifyContent: "flex-end" }}
-				>
+		<Modal
+			footer={
+				<>
 					<button className="btn btn-ghost" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -1086,10 +1007,83 @@ function BulkAssignDialog({
 						onClick={save}
 						type="button"
 					>
-						{saving ? "Assigning…" : "Assign"}
+						{saving ? "Assigning..." : "Assign"}
 					</button>
+				</>
+			}
+			icon={<CalendarRange size={18} />}
+			intro="Assign one shift to an employee across a date range. Existing days are skipped."
+			onClose={onClose}
+			title="Bulk assign shifts"
+		>
+			<div className="rst-form-field">
+				<label htmlFor="rst-bulk-emp">Employee</label>
+				<select
+					id="rst-bulk-emp"
+					onChange={(e) => setEmployeeId(e.target.value)}
+					value={employeeId}
+				>
+					<option value="">Select employee...</option>
+					{employees.map((emp) => (
+						<option key={emp.id} value={emp.id}>
+							{emp.firstName}
+							{emp.lastName ? ` ${emp.lastName}` : ""}
+						</option>
+					))}
+				</select>
+			</div>
+			<div className="rst-form-field">
+				<label htmlFor="rst-bulk-shift">Shift</label>
+				<select
+					id="rst-bulk-shift"
+					onChange={(e) => setShiftId(e.target.value)}
+					value={shiftId}
+				>
+					<option value="">Select shift...</option>
+					{shifts.map((s) => (
+						<option key={s.id} value={s.id}>
+							{s.name}
+						</option>
+					))}
+				</select>
+			</div>
+			<div className="rst-form-row">
+				<div className="rst-form-field">
+					<label htmlFor="rst-bulk-from">From</label>
+					<input
+						id="rst-bulk-from"
+						onChange={(e) => setFrom(e.target.value)}
+						type="date"
+						value={from}
+					/>
+				</div>
+				<div className="rst-form-field">
+					<label htmlFor="rst-bulk-to">To</label>
+					<input
+						id="rst-bulk-to"
+						onChange={(e) => setTo(e.target.value)}
+						type="date"
+						value={to}
+					/>
 				</div>
 			</div>
-		</div>
+			<div className="rst-form-field">
+				<span style={{ fontSize: 12, fontWeight: 500, color: "var(--fg-2)" }}>
+					Days of week
+				</span>
+				<div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+					{WEEKDAY_OPTIONS.map((d) => (
+						<button
+							className={`btn btn-sm ${weekdays.includes(d.value) ? "btn-primary" : "btn-outline"}`}
+							key={d.value}
+							onClick={() => toggleDay(d.value)}
+							type="button"
+						>
+							{d.label}
+						</button>
+					))}
+				</div>
+			</div>
+		</Modal>
 	);
 }

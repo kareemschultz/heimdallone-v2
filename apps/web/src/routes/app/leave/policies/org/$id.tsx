@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, GitCompare, X } from "lucide-react";
+import { ArrowLeft, GitCompare, Settings2 } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/leave.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	accrualLabel,
 	type BadgeTone,
@@ -84,64 +85,9 @@ function RuleEditDialog({
 	});
 
 	return (
-		<div className="leave-sheet-overlay">
-			<div
-				aria-labelledby="rule-title"
-				aria-modal="true"
-				className="leave-sheet"
-				role="dialog"
-			>
-				<div className="leave-sheet-head">
-					<h2 id="rule-title">Edit “{rule.leaveTypeName}”</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="leave-sheet-body">
-					<label className="field" htmlFor="rule-amount">
-						<span>Entitlement ({rule.entitlementUnit})</span>
-						<input
-							id="rule-amount"
-							inputMode="decimal"
-							onChange={(e) => setAmount(e.target.value)}
-							placeholder="e.g. 14"
-							value={amount}
-						/>
-					</label>
-					<label className="lp-check" htmlFor="rule-paid">
-						<input
-							checked={isPaid}
-							id="rule-paid"
-							onChange={(e) => setIsPaid(e.target.checked)}
-							type="checkbox"
-						/>
-						<span>Paid leave (pay preserved)</span>
-					</label>
-					<label className="lp-check" htmlFor="rule-carry">
-						<input
-							checked={carry}
-							id="rule-carry"
-							onChange={(e) => setCarry(e.target.checked)}
-							type="checkbox"
-						/>
-						<span>Carry-forward allowed</span>
-					</label>
-					<label className="field" htmlFor="rule-note">
-						<span>Override note (why you changed this)</span>
-						<textarea
-							id="rule-note"
-							onChange={(e) => setNote(e.target.value)}
-							rows={2}
-							value={note}
-						/>
-					</label>
-				</div>
-				<div className="leave-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -153,9 +99,53 @@ function RuleEditDialog({
 					>
 						Save changes
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<Settings2 size={18} />}
+			intro={`Customise the entitlement and pay settings for "${rule.leaveTypeName}". Changes override the policy baseline and feed payroll calculations.`}
+			onClose={onClose}
+			subtitle={rule.leaveTypeName}
+			title="Edit leave rule"
+			wide
+		>
+			<label className="field" htmlFor="rule-amount">
+				<span>Entitlement ({rule.entitlementUnit})</span>
+				<input
+					id="rule-amount"
+					inputMode="decimal"
+					onChange={(e) => setAmount(e.target.value)}
+					placeholder="e.g. 14"
+					value={amount}
+				/>
+			</label>
+			<label className="lp-check" htmlFor="rule-paid">
+				<input
+					checked={isPaid}
+					id="rule-paid"
+					onChange={(e) => setIsPaid(e.target.checked)}
+					type="checkbox"
+				/>
+				<span>Paid leave (pay preserved)</span>
+			</label>
+			<label className="lp-check" htmlFor="rule-carry">
+				<input
+					checked={carry}
+					id="rule-carry"
+					onChange={(e) => setCarry(e.target.checked)}
+					type="checkbox"
+				/>
+				<span>Carry-forward allowed</span>
+			</label>
+			<label className="field" htmlFor="rule-note">
+				<span>Override note (why you changed this)</span>
+				<textarea
+					id="rule-note"
+					onChange={(e) => setNote(e.target.value)}
+					rows={2}
+					value={note}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

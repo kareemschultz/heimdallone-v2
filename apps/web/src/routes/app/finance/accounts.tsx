@@ -4,12 +4,13 @@ import {
 } from "@Heimdallone/ui/components/data-table";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Landmark } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { BookOpen, Landmark } from "lucide-react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/finance.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/finance/badge";
 import { FinanceTabs } from "@/features/finance/finance-tabs";
 import {
@@ -74,16 +75,6 @@ function AccountDialog({
 	const [busy, setBusy] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => {
-			if (e.key === "Escape") {
-				onCancel();
-			}
-		};
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onCancel]);
-
 	async function handleSave() {
 		setError(null);
 		if (!(isEdit || code.trim())) {
@@ -118,103 +109,9 @@ function AccountDialog({
 	);
 
 	return (
-		<div className="fn-dialog-backdrop">
-			<div
-				aria-labelledby="fn-acct-title"
-				aria-modal="true"
-				className="fn-dialog"
-				role="dialog"
-			>
-				<h2 id="fn-acct-title">{isEdit ? "Edit account" : "New account"}</h2>
-				<p className="fn-sub">
-					Accounts make up your chart of accounts. Header accounts group detail
-					accounts; only postable accounts can carry journal lines.
-				</p>
-
-				{isEdit ? null : (
-					<div className="fn-field">
-						<label htmlFor="fn-a-code">Code</label>
-						<input
-							id="fn-a-code"
-							onChange={(e) => setCode(e.target.value)}
-							placeholder="e.g. 1000"
-							value={code}
-						/>
-					</div>
-				)}
-
-				<div className="fn-field">
-					<label htmlFor="fn-a-name">Name</label>
-					<input
-						id="fn-a-name"
-						onChange={(e) => setName(e.target.value)}
-						placeholder="e.g. Cash at bank"
-						value={name}
-					/>
-				</div>
-
-				{isEdit ? null : (
-					<div className="fn-field">
-						<label htmlFor="fn-a-type">Type</label>
-						<select
-							id="fn-a-type"
-							onChange={(e) => setType(e.target.value as GlAccountType)}
-							value={type}
-						>
-							{ACCOUNT_TYPES.map((t) => (
-								<option key={t} value={t}>
-									{accountTypeLabel(t)}
-								</option>
-							))}
-						</select>
-					</div>
-				)}
-
-				<div className="fn-field">
-					<label htmlFor="fn-a-subtype">Sub-type (optional)</label>
-					<input
-						id="fn-a-subtype"
-						onChange={(e) => setSubType(e.target.value)}
-						placeholder="e.g. Current asset"
-						value={subType}
-					/>
-				</div>
-
-				<div className="fn-field">
-					<label htmlFor="fn-a-parent">Parent account (optional)</label>
-					<select
-						id="fn-a-parent"
-						onChange={(e) => setParentAccountId(e.target.value)}
-						value={parentAccountId}
-					>
-						<option value="">None (top level)</option>
-						{parentChoices.map((a) => (
-							<option key={a.id} value={a.id}>
-								{a.code} · {a.name}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<div className="fn-field">
-					<label htmlFor="fn-a-postable">
-						<input
-							checked={isPostable}
-							id="fn-a-postable"
-							onChange={(e) => setIsPostable(e.target.checked)}
-							type="checkbox"
-						/>{" "}
-						Postable (can carry journal lines)
-					</label>
-				</div>
-
-				{error ? (
-					<p className="fn-sub" style={{ color: "var(--danger)" }}>
-						{error}
-					</p>
-				) : null}
-
-				<div className="fn-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button
 						className="fn-btn"
 						disabled={busy}
@@ -229,11 +126,98 @@ function AccountDialog({
 						onClick={handleSave}
 						type="button"
 					>
-						{busy ? "Saving…" : "Save account"}
+						{busy ? "Saving..." : "Save account"}
 					</button>
+				</>
+			}
+			icon={<BookOpen size={18} />}
+			intro="Accounts make up your chart of accounts. Header accounts group detail accounts; only postable accounts can carry journal lines."
+			onClose={onCancel}
+			title={isEdit ? "Edit account" : "New account"}
+		>
+			{isEdit ? null : (
+				<div className="fn-field">
+					<label htmlFor="fn-a-code">Code</label>
+					<input
+						id="fn-a-code"
+						onChange={(e) => setCode(e.target.value)}
+						placeholder="e.g. 1000"
+						value={code}
+					/>
 				</div>
+			)}
+
+			<div className="fn-field">
+				<label htmlFor="fn-a-name">Name</label>
+				<input
+					id="fn-a-name"
+					onChange={(e) => setName(e.target.value)}
+					placeholder="e.g. Cash at bank"
+					value={name}
+				/>
 			</div>
-		</div>
+
+			{isEdit ? null : (
+				<div className="fn-field">
+					<label htmlFor="fn-a-type">Type</label>
+					<select
+						id="fn-a-type"
+						onChange={(e) => setType(e.target.value as GlAccountType)}
+						value={type}
+					>
+						{ACCOUNT_TYPES.map((t) => (
+							<option key={t} value={t}>
+								{accountTypeLabel(t)}
+							</option>
+						))}
+					</select>
+				</div>
+			)}
+
+			<div className="fn-field">
+				<label htmlFor="fn-a-subtype">Sub-type (optional)</label>
+				<input
+					id="fn-a-subtype"
+					onChange={(e) => setSubType(e.target.value)}
+					placeholder="e.g. Current asset"
+					value={subType}
+				/>
+			</div>
+
+			<div className="fn-field">
+				<label htmlFor="fn-a-parent">Parent account (optional)</label>
+				<select
+					id="fn-a-parent"
+					onChange={(e) => setParentAccountId(e.target.value)}
+					value={parentAccountId}
+				>
+					<option value="">None (top level)</option>
+					{parentChoices.map((a) => (
+						<option key={a.id} value={a.id}>
+							{a.code} · {a.name}
+						</option>
+					))}
+				</select>
+			</div>
+
+			<div className="fn-field">
+				<label htmlFor="fn-a-postable">
+					<input
+						checked={isPostable}
+						id="fn-a-postable"
+						onChange={(e) => setIsPostable(e.target.checked)}
+						type="checkbox"
+					/>{" "}
+					Postable (can carry journal lines)
+				</label>
+			</div>
+
+			{error ? (
+				<p className="fn-sub" style={{ color: "var(--danger)" }}>
+					{error}
+				</p>
+			) : null}
+		</Modal>
 	);
 }
 

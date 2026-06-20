@@ -6,6 +6,7 @@ import {
 	Copy,
 	Mail,
 	ShieldCheck,
+	UserMinus,
 	UserPlus,
 	Users,
 	X,
@@ -15,6 +16,7 @@ import { toast } from "sonner";
 
 import "@/styles/users.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { authClient } from "@/lib/auth-client";
 import { canManageHR } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
@@ -346,7 +348,9 @@ function UsersAccessPage() {
 				<div className="card-head-row">
 					<h4 style={{ fontSize: "15px", fontWeight: 600 }}>Members</h4>
 				</div>
-				{membersQuery.isLoading && <p className="page-sub">Loading members…</p>}
+				{membersQuery.isLoading && (
+					<p className="page-sub">Loading members...</p>
+				)}
 				{membersQuery.isError && (
 					<p className="page-sub" style={{ color: "var(--danger)" }}>
 						Could not load members. Try again.
@@ -507,47 +511,9 @@ function UsersAccessPage() {
 
 			{/* Invite dialog */}
 			{inviteOpen && (
-				<div className="usr-dialog-backdrop">
-					<div
-						aria-labelledby="invite-title"
-						className="usr-dialog"
-						role="dialog"
-					>
-						<h2 id="invite-title">Invite a member</h2>
-						<p className="usr-dialog-sub">
-							They will be able to accept once they sign in with this email.
-						</p>
-						<div className="usr-form-field">
-							<label htmlFor="invite-email">Email address</label>
-							<input
-								id="invite-email"
-								onChange={(e) => setInviteEmail(e.target.value)}
-								placeholder="person@company.com"
-								type="email"
-								value={inviteEmail}
-							/>
-						</div>
-						<div className="usr-form-field">
-							<label htmlFor="invite-role">Role</label>
-							<select
-								id="invite-role"
-								onChange={(e) => setInviteRole(e.target.value)}
-								value={inviteRole}
-							>
-								{ROLE_CATALOGUE.map((r) => (
-									<option key={r.value} value={r.value}>
-										{r.label}
-									</option>
-								))}
-							</select>
-							<p className="usr-role-hint">
-								{
-									ROLE_CATALOGUE.find((r) => r.value === inviteRole)
-										?.description
-								}
-							</p>
-						</div>
-						<div className="usr-dialog-actions">
+				<Modal
+					footer={
+						<>
 							<button
 								className="btn btn-ghost"
 								onClick={() => setInviteOpen(false)}
@@ -564,27 +530,50 @@ function UsersAccessPage() {
 								type="button"
 							>
 								<Mail size={14} />
-								{inviteMember.isPending ? "Creating…" : "Create invitation"}
+								{inviteMember.isPending ? "Creating..." : "Create invitation"}
 							</button>
-						</div>
+						</>
+					}
+					icon={<UserPlus size={18} />}
+					intro="They will be able to accept once they sign in with this email. Email delivery is not configured — copy and share the invite link after creating."
+					onClose={() => setInviteOpen(false)}
+					title="Invite a member"
+				>
+					<div className="usr-form-field">
+						<label htmlFor="invite-email">Email address</label>
+						<input
+							id="invite-email"
+							onChange={(e) => setInviteEmail(e.target.value)}
+							placeholder="person@company.com"
+							type="email"
+							value={inviteEmail}
+						/>
 					</div>
-				</div>
+					<div className="usr-form-field">
+						<label htmlFor="invite-role">Role</label>
+						<select
+							id="invite-role"
+							onChange={(e) => setInviteRole(e.target.value)}
+							value={inviteRole}
+						>
+							{ROLE_CATALOGUE.map((r) => (
+								<option key={r.value} value={r.value}>
+									{r.label}
+								</option>
+							))}
+						</select>
+						<p className="usr-role-hint">
+							{ROLE_CATALOGUE.find((r) => r.value === inviteRole)?.description}
+						</p>
+					</div>
+				</Modal>
 			)}
 
 			{/* Remove confirmation */}
 			{confirmRemove && (
-				<div className="usr-dialog-backdrop">
-					<div
-						aria-labelledby="remove-title"
-						className="usr-dialog"
-						role="dialog"
-					>
-						<h2 id="remove-title">Remove member</h2>
-						<p className="usr-dialog-sub">
-							Remove <strong>{confirmRemove.email}</strong> from {org.orgName}?
-							They will lose access immediately. Their employee record is kept.
-						</p>
-						<div className="usr-dialog-actions">
+				<Modal
+					footer={
+						<>
 							<button
 								className="btn btn-ghost"
 								onClick={() => setConfirmRemove(null)}
@@ -604,9 +593,15 @@ function UsersAccessPage() {
 								<X size={14} />
 								Remove
 							</button>
-						</div>
-					</div>
-				</div>
+						</>
+					}
+					icon={<UserMinus size={18} />}
+					intro={`Remove ${confirmRemove.email} from ${org.orgName}? They will lose access immediately. Their employee record is kept.`}
+					onClose={() => setConfirmRemove(null)}
+					title="Remove member"
+				>
+					{null}
+				</Modal>
 			)}
 		</div>
 	);

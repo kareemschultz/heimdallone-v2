@@ -4,12 +4,13 @@ import {
 } from "@Heimdallone/ui/components/data-table";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import { Package, Plus, X } from "lucide-react";
+import { Package, Plus, ShoppingCart } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/assets.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	type BadgeTone,
 	fmtDate,
@@ -76,32 +77,9 @@ function RequestDialog({
 			toast.error(e?.message ?? "Could not submit your request"),
 	});
 	return (
-		<div className="asset-sheet-overlay">
-			<div aria-modal="true" className="asset-sheet" role="dialog">
-				<div className="asset-sheet-head">
-					<h2>Request an asset</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="asset-sheet-body">
-					<label className="field" htmlFor="req-desc">
-						<span>What do you need?</span>
-						<textarea
-							id="req-desc"
-							onChange={(e) => setDescription(e.target.value)}
-							placeholder="e.g. A laptop for remote work, or a replacement charger"
-							rows={3}
-							value={description}
-						/>
-					</label>
-				</div>
-				<div className="asset-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -113,9 +91,24 @@ function RequestDialog({
 					>
 						Submit request
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<ShoppingCart size={18} />}
+			intro="Describe what you need and HR or IT will review your request."
+			onClose={onClose}
+			title="Request an asset"
+		>
+			<label className="field" htmlFor="req-desc">
+				<span>What do you need?</span>
+				<textarea
+					id="req-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					placeholder="e.g. A laptop for remote work, or a replacement charger"
+					rows={3}
+					value={description}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

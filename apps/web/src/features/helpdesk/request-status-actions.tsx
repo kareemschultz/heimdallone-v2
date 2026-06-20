@@ -1,8 +1,9 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { AlertTriangle, CheckCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { Modal } from "@/components/modal";
 import { client } from "@/utils/orpc";
 
 function invalidateHelpdesk(qc: ReturnType<typeof useQueryClient>) {
@@ -29,28 +30,9 @@ function ConfirmDialog({
 	title: string;
 }) {
 	return (
-		<div className="hd-sheet-overlay">
-			<div
-				aria-labelledby="hd-confirm-title"
-				aria-modal="true"
-				className="hd-sheet"
-				role="dialog"
-			>
-				<div className="hd-sheet-head">
-					<h2 id="hd-confirm-title">{title}</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="hd-sheet-body">
-					<p className="hd-desc">{body}</p>
-				</div>
-				<div className="hd-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -62,9 +44,15 @@ function ConfirmDialog({
 					>
 						{confirmLabel}
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<AlertTriangle size={18} />}
+			intro={body}
+			onClose={onClose}
+			title={title}
+		>
+			{null}
+		</Modal>
 	);
 }
 
@@ -80,37 +68,9 @@ function ResolveDialog({
 	const [note, setNote] = useState("");
 	const trimmed = note.trim();
 	return (
-		<div className="hd-sheet-overlay">
-			<div
-				aria-labelledby="hd-resolve-title"
-				aria-modal="true"
-				className="hd-sheet"
-				role="dialog"
-			>
-				<div className="hd-sheet-head">
-					<h2 id="hd-resolve-title">Resolve request</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="hd-sheet-body">
-					<label className="hd-field" htmlFor="hd-resolve-note">
-						<span>Resolution note</span>
-						<textarea
-							id="hd-resolve-note"
-							onChange={(e) => setNote(e.target.value)}
-							placeholder="Briefly describe how this was resolved…"
-							rows={3}
-							value={note}
-						/>
-					</label>
-				</div>
-				<div className="hd-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -122,9 +82,24 @@ function ResolveDialog({
 					>
 						Resolve request
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<CheckCircle size={18} />}
+			intro="Add a note describing how this request was resolved."
+			onClose={onClose}
+			title="Resolve request"
+		>
+			<label className="hd-field" htmlFor="hd-resolve-note">
+				<span>Resolution note</span>
+				<textarea
+					id="hd-resolve-note"
+					onChange={(e) => setNote(e.target.value)}
+					placeholder="Briefly describe how this was resolved…"
+					rows={3}
+					value={note}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

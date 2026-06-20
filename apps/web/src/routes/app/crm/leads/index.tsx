@@ -5,11 +5,12 @@ import {
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Handshake } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/crm.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/crm/badge";
 import { CrmTabs } from "@/features/crm/crm-tabs";
 import {
@@ -89,12 +90,6 @@ function NewLeadDialog({ onClose }: { onClose: () => void }) {
 	const [email, setEmail] = useState("");
 	const [busy, setBusy] = useState(false);
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onClose]);
-
 	async function save() {
 		if (!name.trim()) {
 			return;
@@ -119,39 +114,9 @@ function NewLeadDialog({ onClose }: { onClose: () => void }) {
 	}
 
 	return (
-		<div className="crm-dialog-backdrop">
-			<div
-				aria-labelledby="crm-new-lead"
-				aria-modal="true"
-				className="crm-dialog"
-				role="dialog"
-			>
-				<h2 id="crm-new-lead">New lead</h2>
-				<div className="crm-form-field">
-					<label htmlFor="nl-name">Name</label>
-					<input
-						id="nl-name"
-						onChange={(e) => setName(e.target.value)}
-						value={name}
-					/>
-				</div>
-				<div className="crm-form-field">
-					<label htmlFor="nl-co">Company</label>
-					<input
-						id="nl-co"
-						onChange={(e) => setCompany(e.target.value)}
-						value={company}
-					/>
-				</div>
-				<div className="crm-form-field">
-					<label htmlFor="nl-email">Email</label>
-					<input
-						id="nl-email"
-						onChange={(e) => setEmail(e.target.value)}
-						value={email}
-					/>
-				</div>
-				<div className="crm-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button
 						className="crm-btn"
 						disabled={busy}
@@ -168,9 +133,38 @@ function NewLeadDialog({ onClose }: { onClose: () => void }) {
 					>
 						{busy ? "Saving…" : "Create lead"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<Handshake size={18} />}
+			intro="Capture a new prospect. You can fill in more detail from the lead record."
+			onClose={onClose}
+			title="New lead"
+		>
+			<div className="crm-form-field">
+				<label htmlFor="nl-name">Name</label>
+				<input
+					id="nl-name"
+					onChange={(e) => setName(e.target.value)}
+					value={name}
+				/>
 			</div>
-		</div>
+			<div className="crm-form-field">
+				<label htmlFor="nl-co">Company</label>
+				<input
+					id="nl-co"
+					onChange={(e) => setCompany(e.target.value)}
+					value={company}
+				/>
+			</div>
+			<div className="crm-form-field">
+				<label htmlFor="nl-email">Email</label>
+				<input
+					id="nl-email"
+					onChange={(e) => setEmail(e.target.value)}
+					value={email}
+				/>
+			</div>
+		</Modal>
 	);
 }
 

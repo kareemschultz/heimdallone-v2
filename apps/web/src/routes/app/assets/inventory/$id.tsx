@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ArrowLeft, X } from "lucide-react";
+import { ArrowLeft, PackageCheck, PackageOpen, Trash2 } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/assets.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import {
 	type BadgeTone,
 	conditionLabel,
@@ -98,60 +99,9 @@ function AssignDialog({
 	});
 
 	return (
-		<div className="asset-sheet-overlay">
-			<div
-				aria-labelledby="assign-title"
-				aria-modal="true"
-				className="asset-sheet"
-				role="dialog"
-			>
-				<div className="asset-sheet-head">
-					<h2 id="assign-title">Assign asset</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="asset-sheet-body">
-					<label className="field" htmlFor="assign-emp">
-						<span>Assign to</span>
-						<select
-							id="assign-emp"
-							onChange={(e) => setAssignedToId(e.target.value)}
-							value={assignedToId}
-						>
-							<option value="">Select an employee…</option>
-							{emps.map((e) => (
-								<option key={e.id} value={e.id}>
-									{e.firstName} {e.lastName ?? ""}
-								</option>
-							))}
-						</select>
-					</label>
-					<label className="field" htmlFor="assign-due">
-						<span>Return due date (optional)</span>
-						<input
-							id="assign-due"
-							onChange={(e) => setReturnDueDate(e.target.value)}
-							type="date"
-							value={returnDueDate}
-						/>
-					</label>
-					<label className="field" htmlFor="assign-notes">
-						<span>Note (optional)</span>
-						<textarea
-							id="assign-notes"
-							onChange={(e) => setNotes(e.target.value)}
-							rows={2}
-							value={notes}
-						/>
-					</label>
-				</div>
-				<div className="asset-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -163,9 +113,47 @@ function AssignDialog({
 					>
 						Assign
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<PackageOpen size={18} />}
+			intro="Choose an employee to assign this asset to. An optional return date helps track custody."
+			onClose={onClose}
+			title="Assign asset"
+		>
+			<label className="field" htmlFor="assign-emp">
+				<span>Assign to</span>
+				<select
+					id="assign-emp"
+					onChange={(e) => setAssignedToId(e.target.value)}
+					value={assignedToId}
+				>
+					<option value="">Select an employee…</option>
+					{emps.map((e) => (
+						<option key={e.id} value={e.id}>
+							{e.firstName} {e.lastName ?? ""}
+						</option>
+					))}
+				</select>
+			</label>
+			<label className="field" htmlFor="assign-due">
+				<span>Return due date (optional)</span>
+				<input
+					id="assign-due"
+					onChange={(e) => setReturnDueDate(e.target.value)}
+					type="date"
+					value={returnDueDate}
+				/>
+			</label>
+			<label className="field" htmlFor="assign-notes">
+				<span>Note (optional)</span>
+				<textarea
+					id="assign-notes"
+					onChange={(e) => setNotes(e.target.value)}
+					rows={2}
+					value={notes}
+				/>
+			</label>
+		</Modal>
 	);
 }
 
@@ -203,58 +191,9 @@ function ReturnDialog({
 	});
 
 	return (
-		<div className="asset-sheet-overlay">
-			<div
-				aria-labelledby="return-title"
-				aria-modal="true"
-				className="asset-sheet"
-				role="dialog"
-			>
-				<div className="asset-sheet-head">
-					<h2 id="return-title">Return asset</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="asset-sheet-body">
-					<label className="field" htmlFor="return-cond">
-						<span>Condition on return</span>
-						<select
-							id="return-cond"
-							onChange={(e) => setReturnCondition(e.target.value)}
-							value={returnCondition}
-						>
-							<option value="healthy">Healthy — back to available</option>
-							<option value="minor_damage">
-								Minor damage — back to available
-							</option>
-							<option value="major_damage">
-								Major damage — will retire the asset
-							</option>
-						</select>
-					</label>
-					{returnCondition === "major_damage" ? (
-						<p className="asset-warn-note">
-							A major-damage return retires this asset so it can't be
-							reassigned.
-						</p>
-					) : null}
-					<label className="field" htmlFor="return-notes">
-						<span>Note (optional)</span>
-						<textarea
-							id="return-notes"
-							onChange={(e) => setNotes(e.target.value)}
-							rows={2}
-							value={notes}
-						/>
-					</label>
-				</div>
-				<div className="asset-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -266,9 +205,42 @@ function ReturnDialog({
 					>
 						Confirm return
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<PackageCheck size={18} />}
+			intro="Record the condition the asset was returned in. Major damage will retire it."
+			onClose={onClose}
+			title="Return asset"
+		>
+			<label className="field" htmlFor="return-cond">
+				<span>Condition on return</span>
+				<select
+					id="return-cond"
+					onChange={(e) => setReturnCondition(e.target.value)}
+					value={returnCondition}
+				>
+					<option value="healthy">Healthy — back to available</option>
+					<option value="minor_damage">Minor damage — back to available</option>
+					<option value="major_damage">
+						Major damage — will retire the asset
+					</option>
+				</select>
+			</label>
+			{returnCondition === "major_damage" ? (
+				<p className="asset-warn-note">
+					A major-damage return retires this asset so it can't be reassigned.
+				</p>
+			) : null}
+			<label className="field" htmlFor="return-notes">
+				<span>Note (optional)</span>
+				<textarea
+					id="return-notes"
+					onChange={(e) => setNotes(e.target.value)}
+					rows={2}
+					value={notes}
+				/>
+			</label>
+		</Modal>
 	);
 }
 
@@ -408,26 +380,9 @@ function RetireConfirmDialog({
 	pending: boolean;
 }) {
 	return (
-		<div className="asset-sheet-overlay">
-			<div aria-modal="true" className="asset-sheet" role="dialog">
-				<div className="asset-sheet-head">
-					<h2>Retire asset</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="asset-sheet-body">
-					<p className="asset-desc">
-						Retiring marks “{assetName}” as end-of-life. It must have no open
-						assignment and can't be reassigned afterwards.
-					</p>
-				</div>
-				<div className="asset-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -439,9 +394,15 @@ function RetireConfirmDialog({
 					>
 						Retire asset
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<Trash2 size={18} />}
+			intro={`Retiring marks "${assetName}" as end-of-life. It must have no open assignment and can't be reassigned afterwards.`}
+			onClose={onClose}
+			title="Retire asset"
+		>
+			{null}
+		</Modal>
 	);
 }
 

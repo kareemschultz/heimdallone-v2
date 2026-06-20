@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { FileCheck, Plus, ShieldQuestion, X } from "lucide-react";
+import { FileCheck, FilePlus2, Plus, ShieldQuestion } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/leave.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { LeavePolicyTabs } from "@/features/leave/leave-policy-tabs";
 import {
 	type BadgeTone,
@@ -56,50 +57,9 @@ function CreatePolicyDialog({
 	});
 
 	return (
-		<div className="leave-sheet-overlay">
-			<div
-				aria-labelledby="cp-title"
-				aria-modal="true"
-				className="leave-sheet"
-				role="dialog"
-			>
-				<div className="leave-sheet-head">
-					<h2 id="cp-title">Create custom policy</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="leave-sheet-body">
-					<label className="field" htmlFor="cp-name">
-						<span>Policy name</span>
-						<input
-							id="cp-name"
-							onChange={(e) => setName(e.target.value)}
-							placeholder="e.g. Annual leave 2026"
-							value={name}
-						/>
-					</label>
-					<label className="field" htmlFor="cp-country">
-						<span>Country code</span>
-						<input
-							id="cp-country"
-							maxLength={3}
-							onChange={(e) => setCountryCode(e.target.value)}
-							placeholder="GY"
-							value={countryCode}
-						/>
-					</label>
-					<p className="lp-hint">
-						A custom policy starts empty. You can add rules, or copy from an
-						existing policy or statutory template.
-					</p>
-				</div>
-				<div className="leave-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -111,9 +71,33 @@ function CreatePolicyDialog({
 					>
 						Create
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<FilePlus2 size={18} />}
+			intro="A custom policy starts empty. You can add rules, or copy from an existing policy or statutory template."
+			onClose={onClose}
+			title="Create custom policy"
+		>
+			<label className="field" htmlFor="cp-name">
+				<span>Policy name</span>
+				<input
+					id="cp-name"
+					onChange={(e) => setName(e.target.value)}
+					placeholder="e.g. Annual leave 2026"
+					value={name}
+				/>
+			</label>
+			<label className="field" htmlFor="cp-country">
+				<span>Country code</span>
+				<input
+					id="cp-country"
+					maxLength={3}
+					onChange={(e) => setCountryCode(e.target.value)}
+					placeholder="GY"
+					value={countryCode}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

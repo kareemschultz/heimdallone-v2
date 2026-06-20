@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { UserPlus } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import type { ProjectMemberRow } from "@/features/projects/types";
 import { client, orpc } from "@/utils/orpc";
 
@@ -63,55 +64,9 @@ function AddMemberDialog({
 	});
 
 	return (
-		<div className="pj-sheet-overlay">
-			<div
-				aria-labelledby="pj-add-member-title"
-				aria-modal="true"
-				className="pj-sheet"
-				role="dialog"
-			>
-				<div className="pj-sheet-head">
-					<h2 id="pj-add-member-title">Add a team member</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pj-sheet-body">
-					{employees.isLoading ? <div className="pj-skeleton" /> : null}
-					<label className="pj-field" htmlFor="pj-member-employee">
-						<span>Employee</span>
-						<select
-							id="pj-member-employee"
-							onChange={(e) => setEmployeeId(e.target.value)}
-							value={employeeId}
-						>
-							<option value="">Choose an employee…</option>
-							{emps.map((e) => (
-								<option key={e.id} value={e.id}>
-									{e.firstName} {e.lastName ?? ""}
-								</option>
-							))}
-						</select>
-					</label>
-					<label className="pj-field" htmlFor="pj-member-role">
-						<span>Role on this project</span>
-						<select
-							id="pj-member-role"
-							onChange={(e) => setMemberRole(e.target.value)}
-							value={memberRole}
-						>
-							<option value="member">Member</option>
-							<option value="lead">Lead</option>
-							<option value="viewer">Viewer</option>
-						</select>
-					</label>
-				</div>
-				<div className="pj-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -123,9 +78,42 @@ function AddMemberDialog({
 					>
 						Add member
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<UserPlus size={18} />}
+			intro="Choose an employee and assign them a role on this project."
+			onClose={onClose}
+			title="Add a team member"
+		>
+			{employees.isLoading ? <div className="pj-skeleton" /> : null}
+			<label className="pj-field" htmlFor="pj-member-employee">
+				<span>Employee</span>
+				<select
+					id="pj-member-employee"
+					onChange={(e) => setEmployeeId(e.target.value)}
+					value={employeeId}
+				>
+					<option value="">Choose an employee…</option>
+					{emps.map((e) => (
+						<option key={e.id} value={e.id}>
+							{e.firstName} {e.lastName ?? ""}
+						</option>
+					))}
+				</select>
+			</label>
+			<label className="pj-field" htmlFor="pj-member-role">
+				<span>Role on this project</span>
+				<select
+					id="pj-member-role"
+					onChange={(e) => setMemberRole(e.target.value)}
+					value={memberRole}
+				>
+					<option value="member">Member</option>
+					<option value="lead">Lead</option>
+					<option value="viewer">Viewer</option>
+				</select>
+			</label>
+		</Modal>
 	);
 }
 

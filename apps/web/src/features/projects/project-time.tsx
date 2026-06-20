@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { X } from "lucide-react";
+import { XCircle } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge } from "@/features/projects/badge";
 import {
 	fmtDate,
@@ -31,37 +32,9 @@ function RejectDialog({
 }) {
 	const [reason, setReason] = useState("");
 	return (
-		<div className="pj-sheet-overlay">
-			<div
-				aria-labelledby="pj-reject-title"
-				aria-modal="true"
-				className="pj-sheet"
-				role="dialog"
-			>
-				<div className="pj-sheet-head">
-					<h2 id="pj-reject-title">Reject time entry</h2>
-					<button
-						aria-label="Close"
-						className="btn-icon"
-						onClick={onClose}
-						type="button"
-					>
-						<X size={16} />
-					</button>
-				</div>
-				<div className="pj-sheet-body">
-					<label className="pj-field" htmlFor="pj-reject-reason">
-						<span>Reason</span>
-						<textarea
-							id="pj-reject-reason"
-							onChange={(e) => setReason(e.target.value)}
-							placeholder="Tell them what to fix before resubmitting…"
-							rows={3}
-							value={reason}
-						/>
-					</label>
-				</div>
-				<div className="pj-sheet-foot">
+		<Modal
+			footer={
+				<>
 					<button className="btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -73,9 +46,24 @@ function RejectDialog({
 					>
 						Reject
 					</button>
-				</div>
-			</div>
-		</div>
+				</>
+			}
+			icon={<XCircle size={18} />}
+			intro="The member will see your reason and can resubmit after making corrections."
+			onClose={onClose}
+			title="Reject time entry"
+		>
+			<label className="pj-field" htmlFor="pj-reject-reason">
+				<span>Reason</span>
+				<textarea
+					id="pj-reject-reason"
+					onChange={(e) => setReason(e.target.value)}
+					placeholder="Tell them what to fix before resubmitting…"
+					rows={3}
+					value={reason}
+				/>
+			</label>
+		</Modal>
 	);
 }
 

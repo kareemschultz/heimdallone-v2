@@ -1,11 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Handshake } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { Handshake, TrendingDown } from "lucide-react";
+import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/crm.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { CrmTabs } from "@/features/crm/crm-tabs";
 import { formatMoney } from "@/features/crm/labels";
 import type { CustomerRow, DealRow, StageRow } from "@/features/crm/types";
@@ -39,12 +40,6 @@ function NewDealDialog({
 	const [value, setValue] = useState("");
 	const [busy, setBusy] = useState(false);
 
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onClose]);
-
 	async function save() {
 		if (!(title.trim() && customerId && stageId)) {
 			toast.error("Title, customer, and stage are required.");
@@ -70,62 +65,9 @@ function NewDealDialog({
 	}
 
 	return (
-		<div className="crm-dialog-backdrop">
-			<div
-				aria-labelledby="crm-new-deal"
-				aria-modal="true"
-				className="crm-dialog"
-				role="dialog"
-			>
-				<h2 id="crm-new-deal">New deal</h2>
-				<div className="crm-form-field">
-					<label htmlFor="nd-title">Title</label>
-					<input
-						id="nd-title"
-						onChange={(e) => setTitle(e.target.value)}
-						value={title}
-					/>
-				</div>
-				<div className="crm-form-field">
-					<label htmlFor="nd-cust">Customer</label>
-					<select
-						id="nd-cust"
-						onChange={(e) => setCustomerId(e.target.value)}
-						value={customerId}
-					>
-						<option value="">Select a customer…</option>
-						{customers.map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="crm-form-field">
-					<label htmlFor="nd-stage">Stage</label>
-					<select
-						id="nd-stage"
-						onChange={(e) => setStageId(e.target.value)}
-						value={stageId}
-					>
-						{stages.map((s) => (
-							<option key={s.id} value={s.id}>
-								{s.name}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="crm-form-field">
-					<label htmlFor="nd-val">Value</label>
-					<input
-						id="nd-val"
-						inputMode="decimal"
-						onChange={(e) => setValue(e.target.value)}
-						placeholder="0"
-						value={value}
-					/>
-				</div>
-				<div className="crm-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button
 						className="crm-btn"
 						disabled={busy}
@@ -142,9 +84,62 @@ function NewDealDialog({
 					>
 						{busy ? "Saving…" : "Create deal"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<Handshake size={18} />}
+			intro="Add a new deal to the pipeline and assign it to a customer and stage."
+			onClose={onClose}
+			title="New deal"
+			wide
+		>
+			<div className="crm-form-field">
+				<label htmlFor="nd-title">Title</label>
+				<input
+					id="nd-title"
+					onChange={(e) => setTitle(e.target.value)}
+					value={title}
+				/>
 			</div>
-		</div>
+			<div className="crm-form-field">
+				<label htmlFor="nd-cust">Customer</label>
+				<select
+					id="nd-cust"
+					onChange={(e) => setCustomerId(e.target.value)}
+					value={customerId}
+				>
+					<option value="">Select a customer…</option>
+					{customers.map((c) => (
+						<option key={c.id} value={c.id}>
+							{c.name}
+						</option>
+					))}
+				</select>
+			</div>
+			<div className="crm-form-field">
+				<label htmlFor="nd-stage">Stage</label>
+				<select
+					id="nd-stage"
+					onChange={(e) => setStageId(e.target.value)}
+					value={stageId}
+				>
+					{stages.map((s) => (
+						<option key={s.id} value={s.id}>
+							{s.name}
+						</option>
+					))}
+				</select>
+			</div>
+			<div className="crm-form-field">
+				<label htmlFor="nd-val">Value</label>
+				<input
+					id="nd-val"
+					inputMode="decimal"
+					onChange={(e) => setValue(e.target.value)}
+					placeholder="0"
+					value={value}
+				/>
+			</div>
+		</Modal>
 	);
 }
 
@@ -156,30 +151,10 @@ function LostReasonDialog({
 	onConfirm: (reason: string) => void;
 }) {
 	const [reason, setReason] = useState("");
-	useEffect(() => {
-		const onKey = (e: KeyboardEvent) => e.key === "Escape" && onCancel();
-		document.addEventListener("keydown", onKey);
-		return () => document.removeEventListener("keydown", onKey);
-	}, [onCancel]);
 	return (
-		<div className="crm-dialog-backdrop">
-			<div
-				aria-labelledby="crm-lost"
-				aria-modal="true"
-				className="crm-dialog"
-				role="dialog"
-			>
-				<h2 id="crm-lost">Mark deal as lost</h2>
-				<div className="crm-form-field">
-					<label htmlFor="lost-reason">Reason (required)</label>
-					<textarea
-						id="lost-reason"
-						onChange={(e) => setReason(e.target.value)}
-						rows={3}
-						value={reason}
-					/>
-				</div>
-				<div className="crm-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button className="crm-btn" onClick={onCancel} type="button">
 						Cancel
 					</button>
@@ -191,9 +166,23 @@ function LostReasonDialog({
 					>
 						Mark lost
 					</button>
-				</div>
+				</>
+			}
+			icon={<TrendingDown size={18} />}
+			intro="Provide a reason so your team can learn from it. This is required before marking the deal lost."
+			onClose={onCancel}
+			title="Mark deal as lost"
+		>
+			<div className="crm-form-field">
+				<label htmlFor="lost-reason">Reason (required)</label>
+				<textarea
+					id="lost-reason"
+					onChange={(e) => setReason(e.target.value)}
+					rows={3}
+					value={reason}
+				/>
 			</div>
-		</div>
+		</Modal>
 	);
 }
 

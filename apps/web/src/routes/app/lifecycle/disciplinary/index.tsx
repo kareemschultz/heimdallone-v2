@@ -1,10 +1,12 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ShieldAlert } from "lucide-react";
 import { useContext, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/lifecycle.css";
 import { EmptyState } from "@/components/empty-state";
+import { Modal } from "@/components/modal";
 import { Badge, disciplinaryStatusTone } from "@/features/lifecycle/badge";
 import {
 	DISCIPLINARY_STATUS_LABELS,
@@ -217,69 +219,9 @@ function NewCaseDialog({
 	};
 
 	return (
-		<div className="lc-dialog-backdrop">
-			<div
-				aria-labelledby="disc-dialog-title"
-				className="lc-dialog"
-				role="dialog"
-			>
-				<h2 id="disc-dialog-title">New disciplinary case</h2>
-				<div className="lc-form-field">
-					<label htmlFor="disc-emp">Employee</label>
-					<select
-						id="disc-emp"
-						onChange={(e) => setEmployeeId(e.target.value)}
-						value={employeeId}
-					>
-						<option value="">Select…</option>
-						{employees.map((emp) => (
-							<option key={emp.id} value={emp.id}>
-								{[emp.firstName, emp.lastName].filter(Boolean).join(" ")}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="disc-cat">Category</label>
-					<select
-						id="disc-cat"
-						onChange={(e) => setCategoryId(e.target.value)}
-						value={categoryId}
-					>
-						<option value="">None</option>
-						{categories.map((c) => (
-							<option key={c.id} value={c.id}>
-								{c.name}
-							</option>
-						))}
-					</select>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="disc-date">Incident date</label>
-					<input
-						id="disc-date"
-						onChange={(e) => setIncidentDate(e.target.value)}
-						type="date"
-						value={incidentDate}
-					/>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="disc-desc">What happened</label>
-					<textarea
-						id="disc-desc"
-						onChange={(e) => setDescription(e.target.value)}
-						value={description}
-					/>
-				</div>
-				<div className="lc-form-field">
-					<label htmlFor="disc-note">Internal note (HR only)</label>
-					<textarea
-						id="disc-note"
-						onChange={(e) => setInternalNote(e.target.value)}
-						value={internalNote}
-					/>
-				</div>
-				<div className="lc-dialog-actions">
+		<Modal
+			footer={
+				<>
 					<button className="lc-btn" onClick={onClose} type="button">
 						Cancel
 					</button>
@@ -291,8 +233,69 @@ function NewCaseDialog({
 					>
 						{saving ? "Saving…" : "Create case"}
 					</button>
-				</div>
+				</>
+			}
+			icon={<ShieldAlert size={18} />}
+			intro="Opens a new disciplinary case as a draft. The employee is not notified until you request their explanation."
+			onClose={onClose}
+			title="New disciplinary case"
+			wide
+		>
+			<div className="lc-form-field">
+				<label htmlFor="disc-emp">Employee</label>
+				<select
+					id="disc-emp"
+					onChange={(e) => setEmployeeId(e.target.value)}
+					value={employeeId}
+				>
+					<option value="">Select…</option>
+					{employees.map((emp) => (
+						<option key={emp.id} value={emp.id}>
+							{[emp.firstName, emp.lastName].filter(Boolean).join(" ")}
+						</option>
+					))}
+				</select>
 			</div>
-		</div>
+			<div className="lc-form-field">
+				<label htmlFor="disc-cat">Category</label>
+				<select
+					id="disc-cat"
+					onChange={(e) => setCategoryId(e.target.value)}
+					value={categoryId}
+				>
+					<option value="">None</option>
+					{categories.map((c) => (
+						<option key={c.id} value={c.id}>
+							{c.name}
+						</option>
+					))}
+				</select>
+			</div>
+			<div className="lc-form-field">
+				<label htmlFor="disc-date">Incident date</label>
+				<input
+					id="disc-date"
+					onChange={(e) => setIncidentDate(e.target.value)}
+					type="date"
+					value={incidentDate}
+				/>
+			</div>
+			<div className="lc-form-field">
+				<label htmlFor="disc-desc">What happened</label>
+				<textarea
+					id="disc-desc"
+					onChange={(e) => setDescription(e.target.value)}
+					value={description}
+				/>
+			</div>
+			<div className="lc-form-field">
+				<label htmlFor="disc-note">Internal note (HR only)</label>
+				<textarea
+					id="disc-note"
+					onChange={(e) => setInternalNote(e.target.value)}
+					value={internalNote}
+				/>
+			</div>
+		</Modal>
 	);
 }
