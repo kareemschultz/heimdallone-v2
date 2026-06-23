@@ -80,10 +80,13 @@ function dateOnly(d: Date): Date {
 	return new Date(d.getFullYear(), d.getMonth(), d.getDate());
 }
 
-// roster API `date` is a date column; orpc revives it as a Date, but a plain
-// string may also flow through — normalize either to a calendar YYYY-MM-DD.
+// Roster dates are a calendar `date` column and arrive as a Date at UTC
+// midnight. Reading them with LOCAL components shifts them a day west of UTC
+// (e.g. Guyana, UTC-4), so the entry would land on the previous grid column or
+// fall out of the visible week. Key the calendar day in UTC to line up with the
+// grid columns (local-midnight weekdays for the same intended calendar day).
 function keyDate(d: string | Date): string {
-	return typeof d === "string" ? d.slice(0, 10) : isoDate(d);
+	return typeof d === "string" ? d.slice(0, 10) : d.toISOString().slice(0, 10);
 }
 
 function mondayOf(d: Date): Date {
@@ -440,8 +443,12 @@ function RosterPage() {
 				<BulkAssignDialog
 					employees={employees}
 					onClose={() => setBulkOpen(false)}
-					onSaved={() => {
+					onSaved={(rangeStart) => {
 						setBulkOpen(false);
+						// Jump the weekly grid to the start of the assigned range so the
+						// newly-created entries are immediately visible (otherwise a range
+						// starting later than the current week looks like "nothing happened").
+						setWeekStart(mondayOf(new Date(`${rangeStart}T00:00:00`)));
 						invalidate();
 					}}
 					shifts={shifts}
@@ -958,7 +965,7 @@ function BulkAssignDialog({
 	shifts: ShiftRow[];
 	employees: EmployeeRow[];
 	onClose: () => void;
-	onSaved: () => void;
+	onSaved: (rangeStart: string) => void;
 }) {
 	const [employeeId, setEmployeeId] = useState("");
 	const [shiftId, setShiftId] = useState("");
@@ -975,9 +982,13 @@ function BulkAssignDialog({
 			toast.error("Pick an employee and a shift.");
 			return;
 		}
+		if (weekdays.length === 0) {
+			toast.error("Pick at least one day of the week.");
+			return;
+		}
 		setSaving(true);
 		try {
-			await client.roster.bulkAssign({
+			const res = await client.roster.bulkAssign({
 				employeeId,
 				shiftId,
 				from,
@@ -985,8 +996,20 @@ function BulkAssignDialog({
 				weekdays: weekdays.length === 7 ? undefined : weekdays,
 				skipExisting: true,
 			});
-			toast.success("Shifts assigned across the range.");
-			onSaved();
+			// Report exactly what happened — "assigned across the range" alone made a
+			// range that starts later than the current week look like nothing changed.
+			if (res.created === 0) {
+				toast.warning(
+					res.skipped > 0
+						? `No new shifts — all ${res.skipped} day(s) in range already had a shift.`
+						: "No shifts created — no selected weekdays fall in that date range."
+				);
+			} else {
+				const skippedNote =
+					res.skipped > 0 ? ` (skipped ${res.skipped} already-assigned)` : "";
+				toast.success(`Assigned ${res.created} shift(s)${skippedNote}.`);
+			}
+			onSaved(from);
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Could not assign.");
 		} finally {

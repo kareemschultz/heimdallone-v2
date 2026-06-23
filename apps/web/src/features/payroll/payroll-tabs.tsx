@@ -54,6 +54,13 @@ const TABS: Tab[] = [
 		adminOnly: true,
 	},
 	{
+		key: "periods",
+		label: "Pay periods",
+		href: "/app/payroll/periods",
+		group: "setup",
+		adminOnly: true,
+	},
+	{
 		key: "loans",
 		label: "Loans",
 		href: "/app/payroll/loans",
@@ -133,6 +140,9 @@ function resolveActiveTab(path: string): string {
 	}
 	if (clean.startsWith("/app/payroll/pay-items")) {
 		return "pay-items";
+	}
+	if (clean.startsWith("/app/payroll/periods")) {
+		return "periods";
 	}
 	if (clean.startsWith("/app/payroll/loans")) {
 		return "loans";

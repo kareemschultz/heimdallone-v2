@@ -5,6 +5,7 @@ import {
 	geofenceCheckIn,
 } from "@Heimdallone/db/schema/biometric";
 import {
+	attendanceBreak,
 	attendanceCorrection,
 	attendanceEvent,
 	attendanceRecord,
@@ -223,6 +224,19 @@ const clockCheckOut = tenantProcedure
 			})
 			.where(eq(attendanceEvent.id, openEvent.id));
 
+		// Close any break still open at check-out so it can't be orphaned (which
+		// would lose the deduction and leave currentStatus reporting onBreak on a
+		// closed event). It is then counted as completed and deducted below.
+		await db
+			.update(attendanceBreak)
+			.set({ breakOut: now })
+			.where(
+				and(
+					eq(attendanceBreak.attendanceEventId, openEvent.id),
+					sql`${attendanceBreak.breakOut} IS NULL`
+				)
+			);
+
 		await recalculateRecord(currentEmp.id, todayDate, orgId(context));
 
 		await createAuditEvent(db as never, {
@@ -271,6 +285,7 @@ const clockCurrentStatus = tenantProcedure.handler(async ({ context }) => {
 	const [todayRecord] = await db
 		.select({
 			workedMinutes: attendanceRecord.workedMinutes,
+			breakDeductedMinutes: attendanceRecord.breakDeductedMinutes,
 			status: attendanceRecord.status,
 		})
 		.from(attendanceRecord)
@@ -282,15 +297,198 @@ const clockCurrentStatus = tenantProcedure.handler(async ({ context }) => {
 		)
 		.limit(1);
 
+	// Check for an open break on the current event.
+	const openBreak = openEvent
+		? await db
+				.select({
+					id: attendanceBreak.id,
+					breakIn: attendanceBreak.breakIn,
+				})
+				.from(attendanceBreak)
+				.where(
+					and(
+						eq(attendanceBreak.attendanceEventId, openEvent.id),
+						sql`${attendanceBreak.breakOut} IS NULL`
+					)
+				)
+				.limit(1)
+				.then((rows) => rows[0] ?? null)
+		: null;
+
 	return {
 		isClockedIn: !!openEvent,
 		clockInTime: openEvent?.clockIn.toISOString() ?? null,
+		onBreak: !!openBreak,
+		breakStartTime: openBreak?.breakIn.toISOString() ?? null,
 		employee: {
 			id: currentEmp.id,
 			name: `${currentEmp.firstName} ${currentEmp.lastName ?? ""}`.trim(),
 		},
 		todayWorkedMinutes: todayRecord?.workedMinutes ?? 0,
+		todayBreakMinutes: todayRecord?.breakDeductedMinutes ?? 0,
 		todayStatus: todayRecord?.status ?? null,
+	};
+});
+
+const clockBreakStart = tenantProcedure.handler(async ({ context }) => {
+	const currentEmp = await resolveCurrentEmployee(
+		orgId(context),
+		actorId(context)
+	);
+	if (!currentEmp) {
+		throw new ORPCError("PRECONDITION_FAILED", {
+			message: "You don't have an employee profile in this organization.",
+		});
+	}
+
+	const today = new Date();
+	const todayDate = new Date(
+		today.getFullYear(),
+		today.getMonth(),
+		today.getDate()
+	);
+
+	// Must be clocked in.
+	const [openEvent] = await db
+		.select({ id: attendanceEvent.id })
+		.from(attendanceEvent)
+		.where(
+			and(
+				eq(attendanceEvent.employeeId, currentEmp.id),
+				eq(attendanceEvent.eventDate, todayDate),
+				sql`${attendanceEvent.clockOut} IS NULL`
+			)
+		)
+		.limit(1);
+
+	if (!openEvent) {
+		throw new ORPCError("PRECONDITION_FAILED", {
+			message: "You must be clocked in before starting a break.",
+		});
+	}
+
+	// Must not already have an open break.
+	const [existingBreak] = await db
+		.select({ id: attendanceBreak.id })
+		.from(attendanceBreak)
+		.where(
+			and(
+				eq(attendanceBreak.attendanceEventId, openEvent.id),
+				sql`${attendanceBreak.breakOut} IS NULL`
+			)
+		)
+		.limit(1);
+
+	if (existingBreak) {
+		throw new ORPCError("CONFLICT", {
+			message: "You are already on a break. End your current break first.",
+		});
+	}
+
+	const now = new Date();
+	const breakId = createId();
+	await db.insert(attendanceBreak).values({
+		id: breakId,
+		organizationId: orgId(context),
+		attendanceEventId: openEvent.id,
+		employeeId: currentEmp.id,
+		breakIn: now,
+	});
+
+	return { breakId, breakIn: now.toISOString() };
+});
+
+const clockBreakEnd = tenantProcedure.handler(async ({ context }) => {
+	const currentEmp = await resolveCurrentEmployee(
+		orgId(context),
+		actorId(context)
+	);
+	if (!currentEmp) {
+		throw new ORPCError("PRECONDITION_FAILED", {
+			message: "You don't have an employee profile in this organization.",
+		});
+	}
+
+	const today = new Date();
+	const todayDate = new Date(
+		today.getFullYear(),
+		today.getMonth(),
+		today.getDate()
+	);
+
+	// Find the open event so we can scope the break lookup.
+	const [openEvent] = await db
+		.select({ id: attendanceEvent.id })
+		.from(attendanceEvent)
+		.where(
+			and(
+				eq(attendanceEvent.employeeId, currentEmp.id),
+				eq(attendanceEvent.eventDate, todayDate),
+				sql`${attendanceEvent.clockOut} IS NULL`
+			)
+		)
+		.limit(1);
+
+	if (!openEvent) {
+		throw new ORPCError("PRECONDITION_FAILED", {
+			message: "You are not clocked in.",
+		});
+	}
+
+	// Find the open break.
+	const [openBreak] = await db
+		.select({
+			id: attendanceBreak.id,
+			breakIn: attendanceBreak.breakIn,
+		})
+		.from(attendanceBreak)
+		.where(
+			and(
+				eq(attendanceBreak.attendanceEventId, openEvent.id),
+				sql`${attendanceBreak.breakOut} IS NULL`
+			)
+		)
+		.limit(1);
+
+	if (!openBreak) {
+		throw new ORPCError("NOT_FOUND", {
+			message: "You are not currently on a break.",
+		});
+	}
+
+	const now = new Date();
+	const thisDurationMinutes = Math.round(
+		(now.getTime() - openBreak.breakIn.getTime()) / 60_000
+	);
+
+	await db
+		.update(attendanceBreak)
+		.set({ breakOut: now })
+		.where(eq(attendanceBreak.id, openBreak.id));
+
+	const [todayRecord] = await db
+		.select({ payrollStatus: attendanceRecord.payrollStatus })
+		.from(attendanceRecord)
+		.where(
+			and(
+				eq(attendanceRecord.employeeId, currentEmp.id),
+				eq(attendanceRecord.date, todayDate)
+			)
+		)
+		.limit(1);
+
+	if (todayRecord) {
+		assertNotLocked(todayRecord);
+	}
+
+	// recalculateRecord self-sources completed breaks from attendance_break, so
+	// the break just closed is deducted from payable time without passing it in.
+	await recalculateRecord(currentEmp.id, todayDate, orgId(context));
+
+	return {
+		breakId: openBreak.id,
+		breakOut: now.toISOString(),
+		durationMinutes: thisDurationMinutes,
 	};
 });
 
@@ -1359,6 +1557,8 @@ export const attendanceRouter = {
 		checkIn: clockCheckIn,
 		checkOut: clockCheckOut,
 		currentStatus: clockCurrentStatus,
+		breakStart: clockBreakStart,
+		breakEnd: clockBreakEnd,
 	},
 	records: {
 		list: recordsList,

@@ -36,6 +36,7 @@ import {
 	Network,
 	Package,
 	PanelLeft,
+	Receipt,
 	Search,
 	Settings,
 	Shield,
@@ -53,8 +54,13 @@ import {
 	useCallback,
 	useContext,
 	useEffect,
+	useMemo,
 	useState,
 } from "react";
+import {
+	type CommandNavItem,
+	CommandPalette,
+} from "@/components/command-palette";
 import { FirstLoginModal } from "@/features/migration/first-login-modal";
 import { getUser } from "@/functions/get-user";
 import { authClient } from "@/lib/auth-client";
@@ -87,8 +93,13 @@ export const OrgCtx = createContext<OrgContext>({
 const EMPLOYEE_VISIBLE_KEYS = new Set([
 	"overview",
 	"contracts",
+	// Self-service time: My timesheet + clock in/out/break (the attendance page is
+	// server-scoped to the caller's own records for non-manage roles).
+	"attendance",
 	"leave",
 	"roster",
+	// Self-service pay: My payslips (the payslips page uses getOwn for employees).
+	"my-payslips",
 	"documents",
 	"helpdesk",
 	"projects",
@@ -106,6 +117,8 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"attendance",
 	"roster",
 	"leave",
+	// Managers see their own payslips via the self-service getOwn page.
+	"my-payslips",
 	"documents",
 	"helpdesk",
 	"projects",
@@ -295,6 +308,14 @@ export const NAV = [
 				label: "Payroll",
 				icon: Wallet,
 				href: "/app/payroll",
+			},
+			{
+				// Self-service "My payslips" — distinct from the admin Payroll hub so
+				// employees/managers reach their own slips without the admin surface.
+				key: "my-payslips",
+				label: "My payslips",
+				icon: Receipt,
+				href: "/app/payroll/payslips",
 			},
 			{
 				key: "contracts",
@@ -955,7 +976,13 @@ function relativeTime(value: string | Date): string {
 	return new Date(value).toLocaleDateString();
 }
 
-function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
+function AppTopbar({
+	onToggleSidebar,
+	onOpenCommand,
+}: {
+	onOpenCommand: () => void;
+	onToggleSidebar: () => void;
+}) {
 	const org = useContext(OrgCtx);
 	const queryClient = useQueryClient();
 	const [_theme, setTheme] = useState("dark");
@@ -1019,7 +1046,7 @@ function AppTopbar({ onToggleSidebar }: { onToggleSidebar: () => void }) {
 			>
 				<PanelLeft size={16} />
 			</button>
-			<button className="cmd-trigger" type="button">
+			<button className="cmd-trigger" onClick={onOpenCommand} type="button">
 				<Search size={15} />
 				<span>Find anyone, anything…</span>
 				<span className="right">
@@ -1268,6 +1295,37 @@ function AppLayout() {
 		userName: session?.user?.name ?? "User",
 		userEmail: session?.user?.email ?? "",
 	});
+	const [cmdOpen, setCmdOpen] = useState(false);
+
+	// Global ⌘K / Ctrl+K opens the command palette from anywhere in the app.
+	useEffect(() => {
+		const handler = (e: KeyboardEvent) => {
+			if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+				e.preventDefault();
+				setCmdOpen((prev) => !prev);
+			}
+		};
+		document.addEventListener("keydown", handler);
+		return () => document.removeEventListener("keydown", handler);
+	}, []);
+
+	const commandNavItems = useMemo<CommandNavItem[]>(() => {
+		const out: CommandNavItem[] = [];
+		for (const group of NAV) {
+			for (const item of group.items) {
+				if (isNavItemVisible(item.key, orgCtx.memberRole)) {
+					out.push({
+						key: item.key,
+						label: item.label,
+						group: group.group,
+						href: item.href,
+						icon: item.icon,
+					});
+				}
+			}
+		}
+		return out;
+	}, [orgCtx.memberRole]);
 
 	useEffect(() => {
 		if (activeOrg.data) {
@@ -1301,10 +1359,18 @@ function AppLayout() {
 					type="button"
 				/>
 				<main>
-					<AppTopbar onToggleSidebar={handleToggleSidebar} />
+					<AppTopbar
+						onOpenCommand={() => setCmdOpen(true)}
+						onToggleSidebar={handleToggleSidebar}
+					/>
 					<FirstLoginModal />
 					<Outlet />
 				</main>
+				<CommandPalette
+					navItems={commandNavItems}
+					onClose={() => setCmdOpen(false)}
+					open={cmdOpen}
+				/>
 			</div>
 		</OrgCtx.Provider>
 	);
