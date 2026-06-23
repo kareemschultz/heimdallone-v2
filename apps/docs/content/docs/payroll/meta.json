@@ -3,6 +3,7 @@
   "icon": "Banknote",
   "pages": [
     "index",
+    "pay-periods",
     "payroll-runs",
     "payslips",
     "corrections",
