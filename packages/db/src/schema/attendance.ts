@@ -15,6 +15,27 @@ import {
 import { user } from "./auth";
 import { cuid, employeeProfile, orgRef, shift, timestamps } from "./hr-core";
 
+export const attendanceBreak = pgTable(
+	"attendance_break",
+	{
+		id: cuid(),
+		organizationId: orgRef(),
+		attendanceEventId: text("attendance_event_id")
+			.notNull()
+			.references(() => attendanceEvent.id, { onDelete: "cascade" }),
+		employeeId: text("employee_id")
+			.notNull()
+			.references(() => employeeProfile.id, { onDelete: "restrict" }),
+		breakIn: timestamp("break_in", { withTimezone: true }).notNull(),
+		breakOut: timestamp("break_out", { withTimezone: true }),
+		createdAt: timestamp("created_at").defaultNow().notNull(),
+	},
+	(t) => [
+		index("att_break_event_idx").on(t.attendanceEventId),
+		index("att_break_emp_idx").on(t.employeeId),
+	]
+);
+
 export const attendanceSourceEnum = pgEnum("attendance_source", [
 	"manual",
 	"biometric",
@@ -237,6 +258,20 @@ export const attendanceCorrectionRelations = relations(
 		attendanceRecord: one(attendanceRecord, {
 			fields: [attendanceCorrection.attendanceRecordId],
 			references: [attendanceRecord.id],
+		}),
+	})
+);
+
+export const attendanceBreakRelations = relations(
+	attendanceBreak,
+	({ one }) => ({
+		attendanceEvent: one(attendanceEvent, {
+			fields: [attendanceBreak.attendanceEventId],
+			references: [attendanceEvent.id],
+		}),
+		employee: one(employeeProfile, {
+			fields: [attendanceBreak.employeeId],
+			references: [employeeProfile.id],
 		}),
 	})
 );

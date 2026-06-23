@@ -232,6 +232,13 @@
       "when": 1781823048866,
       "tag": "0032_strong_venom",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1781961372757,
+      "tag": "0033_harsh_chameleon",
+      "breakpoints": true
     }
   ]
 }

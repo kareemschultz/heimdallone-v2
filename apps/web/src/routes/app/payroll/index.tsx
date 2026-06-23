@@ -598,7 +598,7 @@ function buildChecklist(
 					: "Create a pay period",
 			status: openPeriods.length > 0 ? "done" : "todo",
 			required: true,
-			href: "/app/payroll/settings",
+			href: "/app/payroll/periods",
 			why: "A pay period defines the date range for each payroll run.",
 		},
 		{

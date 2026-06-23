@@ -425,10 +425,13 @@ function AttendancePage() {
 						<span className="sep">/</span>
 						<span>Attendance</span>
 					</div>
-					<h1 className="page-title">Attendance</h1>
+					<h1 className="page-title">
+						{canEdit || canPayroll ? "Attendance" : "My timesheet"}
+					</h1>
 					<p className="page-sub">
-						{total} record{total === 1 ? "" : "s"}
-						{lens === "All" ? "" : ` · ${lens.toLowerCase()}`}
+						{canEdit || canPayroll
+							? `${total} record${total === 1 ? "" : "s"}${lens === "All" ? "" : ` · ${lens.toLowerCase()}`}`
+							: "Clock in, take breaks, and see your hours"}
 					</p>
 				</div>
 				<div style={{ display: "flex", gap: 8 }}>
@@ -444,7 +447,7 @@ function AttendancePage() {
 				</div>
 			</div>
 
-			<ClockPanel />
+			<ClockPanel memberRole={org.memberRole} />
 
 			<div className="toolbar">
 				<div className="search-wrap">
@@ -850,7 +853,50 @@ function BulkActionBar({
 	);
 }
 
-function ClockPanel() {
+function clockDotState(onBreak: boolean, isClockedIn: boolean): string {
+	if (onBreak) {
+		return "break";
+	}
+	return isClockedIn ? "in" : "out";
+}
+
+function ClockStatusLabel({
+	isClockedIn,
+	onBreak,
+	isEmployee,
+	clockInTime,
+}: {
+	isClockedIn: boolean;
+	onBreak: boolean;
+	isEmployee: boolean;
+	clockInTime: string | null;
+}) {
+	if (!isClockedIn) {
+		return <>You have not checked in today</>;
+	}
+	if (onBreak) {
+		return (
+			<>
+				<strong>On break</strong>
+				{isEmployee ? " — break time is unpaid" : ""}
+			</>
+		);
+	}
+	return (
+		<>
+			<strong>Checked in</strong> since{" "}
+			{clockInTime
+				? new Date(clockInTime).toLocaleTimeString("en-US", {
+						hour: "numeric",
+						minute: "2-digit",
+						hour12: true,
+					})
+				: "—"}
+		</>
+	);
+}
+
+function ClockPanel({ memberRole }: { memberRole: string }) {
 	const { data, isLoading, refetch } = useQuery(
 		orpc.attendance.clock.currentStatus.queryOptions({
 			input: undefined as never,
@@ -860,7 +906,10 @@ function ClockPanel() {
 	const [elapsed, setElapsed] = useState("");
 
 	const isClockedIn = data?.isClockedIn ?? false;
+	const onBreak = (data as { onBreak?: boolean })?.onBreak ?? false;
 	const clockInTime = data?.clockInTime ?? null;
+	const todayBreakMinutes =
+		(data as { todayBreakMinutes?: number })?.todayBreakMinutes ?? 0;
 
 	useEffect(() => {
 		if (!(isClockedIn && clockInTime)) {
@@ -913,6 +962,34 @@ function ClockPanel() {
 		}
 	}
 
+	async function handleBreakStart() {
+		try {
+			await client.attendance.clock.breakStart({});
+			toast.success("Break started");
+			refetch();
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : "Could not start break";
+			toast.error(msg);
+		}
+	}
+
+	async function handleBreakEnd() {
+		try {
+			const result = await client.attendance.clock.breakEnd({});
+			const dur = (result as { durationMinutes?: number }).durationMinutes ?? 0;
+			toast.success(`Break ended — ${dur}m recorded as unpaid break`);
+			refetch();
+		} catch (e: unknown) {
+			const msg = e instanceof Error ? e.message : "Could not end break";
+			toast.error(msg);
+		}
+	}
+
+	// Role-aware label: employees see "My timesheet" rather than management copy.
+	const isEmployee = !(
+		canCorrectAttendance(memberRole) || canManagePayroll(memberRole)
+	);
+
 	if (isLoading) {
 		return (
 			<div className="clock-panel">
@@ -931,48 +1008,68 @@ function ClockPanel() {
 	return (
 		<div className="clock-panel">
 			<div className="clock-status">
-				<div className={`clock-dot ${isClockedIn ? "in" : "out"}`} />
+				<div className={`clock-dot ${clockDotState(onBreak, isClockedIn)}`} />
 				<div>
 					<div className="clock-label">
-						{isClockedIn ? (
-							<>
-								<strong>Checked in</strong> since{" "}
-								{clockInTime
-									? new Date(clockInTime).toLocaleTimeString("en-US", {
-											hour: "numeric",
-											minute: "2-digit",
-											hour12: true,
-										})
-									: "—"}
-							</>
-						) : (
-							"You have not checked in today"
-						)}
+						<ClockStatusLabel
+							clockInTime={clockInTime}
+							isClockedIn={isClockedIn}
+							isEmployee={isEmployee}
+							onBreak={onBreak}
+						/>
 					</div>
-					{isClockedIn && elapsed && (
+					{isClockedIn && !onBreak && elapsed && (
 						<div className="clock-elapsed">{elapsed} elapsed</div>
+					)}
+					{todayBreakMinutes > 0 && (
+						<div className="clock-elapsed" style={{ color: "var(--fg-3)" }}>
+							{todayBreakMinutes}m break deducted today
+						</div>
 					)}
 				</div>
 			</div>
-			{isClockedIn ? (
-				<button
-					className="btn btn-outline btn-sm"
-					onClick={handleCheckOut}
-					type="button"
-				>
-					<Clock size={13} />
-					Check out
-				</button>
-			) : (
-				<button
-					className="btn btn-primary btn-sm"
-					onClick={handleCheckIn}
-					type="button"
-				>
-					<Clock size={13} />
-					Check in
-				</button>
-			)}
+			<div style={{ display: "flex", gap: 8 }}>
+				{isClockedIn ? (
+					<>
+						{onBreak ? (
+							<button
+								className="btn btn-primary btn-sm"
+								onClick={handleBreakEnd}
+								type="button"
+							>
+								<Clock size={13} />
+								End break
+							</button>
+						) : (
+							<button
+								className="btn btn-outline btn-sm"
+								onClick={handleBreakStart}
+								type="button"
+							>
+								<Clock size={13} />
+								Start break
+							</button>
+						)}
+						<button
+							className="btn btn-outline btn-sm"
+							onClick={handleCheckOut}
+							type="button"
+						>
+							<Clock size={13} />
+							Check out
+						</button>
+					</>
+				) : (
+					<button
+						className="btn btn-primary btn-sm"
+						onClick={handleCheckIn}
+						type="button"
+					>
+						<Clock size={13} />
+						Check in
+					</button>
+				)}
+			</div>
 		</div>
 	);
 }

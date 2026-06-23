@@ -7,6 +7,7 @@
  */
 import { db } from "@Heimdallone/db";
 import {
+	attendanceBreak,
 	attendanceEvent,
 	attendanceRecord,
 	employeeWorkInfo,
@@ -169,11 +170,66 @@ function computeLateMinutes(
 	return actualStart > schedStart ? actualStart - schedStart : 0;
 }
 
+/**
+ * Sum the completed (started AND ended) explicit breaks for an employee on a
+ * given day. Open breaks (breakOut IS NULL) are excluded. Scoped via the linked
+ * attendance_event's eventDate so it covers every event on the day.
+ */
+async function sumManualBreakMinutes(
+	employeeId: string,
+	eventDate: Date,
+	organizationId: string
+): Promise<number> {
+	const breaks = await db
+		.select({
+			breakIn: attendanceBreak.breakIn,
+			breakOut: attendanceBreak.breakOut,
+		})
+		.from(attendanceBreak)
+		.innerJoin(
+			attendanceEvent,
+			eq(attendanceBreak.attendanceEventId, attendanceEvent.id)
+		)
+		.where(
+			and(
+				eq(attendanceBreak.employeeId, employeeId),
+				eq(attendanceBreak.organizationId, organizationId),
+				eq(attendanceEvent.eventDate, eventDate)
+			)
+		);
+	let total = 0;
+	for (const b of breaks) {
+		if (b.breakOut) {
+			total += Math.max(
+				0,
+				Math.round((b.breakOut.getTime() - b.breakIn.getTime()) / 60_000)
+			);
+		}
+	}
+	return total;
+}
+
+/**
+ * Recalculate the attendance_record for a given employee+date.
+ *
+ * Explicit employee breaks (recorded in attendance_break) are sourced HERE from
+ * the table — never passed in — so every caller (check-out, end-break, manual
+ * entry, the biometric processor) produces an identical, correct deduction and
+ * no caller can "forget" to pass it. The summed manual-break minutes are ADDED
+ * to any schedule-rule auto-deduction; both flow into the same
+ * `breakDeductedMinutes` column and therefore the same payroll deduction. Days
+ * with no explicit breaks sum to 0 and behave byte-identically to before.
+ */
 export async function recalculateRecord(
 	employeeId: string,
 	eventDate: Date,
 	organizationId: string
 ): Promise<void> {
+	const manualBreakMinutes = await sumManualBreakMinutes(
+		employeeId,
+		eventDate,
+		organizationId
+	);
 	const events = await db
 		.select({
 			clockIn: attendanceEvent.clockIn,
@@ -206,10 +262,13 @@ export async function recalculateRecord(
 		eventDate
 	);
 
-	const breakDed =
+	const autoBreakDed =
 		rule.autoDeductBreak && totalWorked > rule.minBreakDeductionMinutes
 			? rule.breakMinutes
 			: 0;
+	// Manual breaks (explicitly started/ended by the employee) are additive with
+	// the auto-deduction so both paths flow into the same payroll column.
+	const breakDed = autoBreakDed + manualBreakMinutes;
 	let netWorked = Math.max(0, totalWorked - breakDed);
 	// A daily paid-minutes cap (rule-only) bounds the recorded worked minutes.
 	if (rule.capDailyPaidMinutes !== null) {
