@@ -9,6 +9,7 @@ icon: Clock
   <Tag>Manager</Tag>
   <Tag>HR</Tag>
   <Tag>Payroll</Tag>
+  <Tag>Self-Service</Tag>
   <Tag>Live</Tag>
 </Tags>
 
@@ -33,6 +34,33 @@ and mobile/GPS check-ins also create punches — they all arrive in the same pla
   flow. See [Biometric devices & attendance sync](/docs/time/biometric-devices)
   for how those devices feed into this view.
 </Callout>
+
+## Breaks (unpaid)
+
+Once you're clocked in, you can record breaks directly from the clock panel on the
+Attendance page. Breaks are **self-service** — any employee records their own.
+
+<Steps>
+<Step>While clocked in, select **Start break**. The system timestamps the start of the break.</Step>
+<Step>Select **End break** when you return. The completed break is recorded with its start and end times.</Step>
+<Step>The clock panel shows **today's total break minutes** so you can see how much time you've taken.</Step>
+</Steps>
+
+<Callout type="warn" title="Breaks are unpaid">
+  Completed breaks are **deducted from your worked time**. The deduction reduces
+  **overtime first** — once your worked time drops below the standard day, further
+  break time reduces **paid minutes**. Your daily record's **payable minutes**
+  always reflect the break deduction.
+</Callout>
+
+A few details to keep in mind:
+
+- **Checking out while on break** automatically ends the open break — you never have
+  to remember to close it first.
+- Only **completed** breaks are deducted. A break that's still open (started but not
+  ended) isn't subtracted until it closes (or check-out closes it for you).
+- The **server is the source of truth**. Break times are recorded server-side and
+  the daily record's payable minutes are recalculated from them.
 
 ## Reading a record
 
@@ -189,3 +217,10 @@ record is pending for an extended period.
 If the button isn't available, you may already have an open punch (clocked in with
 no clock-out) or a closed one for the day. Check your record for today and contact
 HR if the status looks incorrect.
+
+**My break wasn't deducted**
+
+Only completed breaks are deducted. If you started a break but never ended it, it
+stays open and isn't subtracted — though checking out automatically closes any open
+break. Check your record for today: if a break is still open, end it (or clock out)
+and the payable minutes will recalculate.

@@ -1,0 +1,105 @@
+---
+title: Pay periods
+description: How to create the pay period that a payroll run uses — frequency, start and end dates, and expected hours.
+icon: CalendarRange
+---
+
+<Tags>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Tenant Configurable</Tag>
+  <Tag>Effective Dated</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+A **pay period** defines the window of time a payroll run is built for: its
+frequency, its start and end dates, and the expected hours for the period. You
+create the pay period **first**, then run payroll against it.
+
+<Callout type="info" title="Who can manage pay periods">
+  Payroll Admin and Tenant Owner / Admin can create and manage pay periods. This
+  is where you set up a new period before [running payroll](/docs/payroll/payroll-runs).
+</Callout>
+
+## Creating a pay period
+
+Navigate to **Payroll** and open the **Pay periods** tab.
+
+<Steps>
+<Step>
+**Choose the frequency.**
+
+Pick how often this period recurs: **weekly**, **fortnightly**, **semi-monthly**,
+or **monthly**. The frequency determines how statutory amounts (PAYE, NIS,
+allowances) are prorated when payroll runs.
+</Step>
+<Step>
+**Set the start and end dates.**
+
+Enter the period's start and end dates. These define the window of attendance and
+contract data the payroll run will draw on.
+</Step>
+<Step>
+**Set the expected hours.**
+
+Enter the expected hours for the period. This is the baseline the run uses for
+employees who are paid against a standard period.
+</Step>
+<Step>
+**Save the period.**
+
+The period is now available to select when you create a payroll run.
+</Step>
+</Steps>
+
+## Frequencies
+
+| Frequency | Period length |
+| --- | --- |
+| Weekly | One week. |
+| Fortnightly | Two weeks. |
+| Semi-monthly | Twice per month (typically two fixed periods per calendar month). |
+| Monthly | One calendar month. |
+
+<Callout title="Effective-dated statutory rules">
+  Statutory amounts are stored as annual figures and **prorated per pay frequency**.
+  A fortnightly period uses a fortnightly share of the annual allowance, a monthly
+  period uses a monthly share, and so on. The rule set itself is resolved by the
+  run's pay date — see [Effective-dated rules](/docs/payroll/effective-dating).
+</Callout>
+
+## How pay periods connect to runs
+
+A pay period is the input a payroll run is built against. The workflow is:
+
+<Steps>
+<Step>**Create the pay period** — set frequency, start and end dates, and expected hours (this page).</Step>
+<Step>**Create a payroll run** for that period — Heimdallone resolves the statutory rule whose validity window contains the period's pay date and pins it to the run.</Step>
+<Step>**Generate, review, confirm** — see [Running payroll](/docs/payroll/payroll-runs).</Step>
+</Steps>
+
+## What to check
+
+- **The right frequency** — the frequency drives proration. A period set to the wrong
+  frequency will prorate statutory amounts incorrectly.
+- **Dates align with the cycle** — start and end dates should match your
+  organisation's intended pay cycle so attendance for the right window is picked up.
+- **Expected hours are set** — a missing or incorrect expected-hours value can throw
+  off period-based pay calculations.
+
+## Troubleshooting
+
+**I can't find where to create a payroll period**
+
+Pay periods are created under **Payroll → Pay periods**. You must have Payroll Admin
+or Tenant Owner / Admin access for the tab to appear.
+
+**My period isn't available when I create a run**
+
+Confirm the period was saved and that its dates and frequency are set. Runs select
+from existing pay periods.
+
+**Statutory amounts look too high or too low for the period**
+
+Check the period's frequency. Statutory amounts are prorated by frequency, so a
+fortnightly period set as monthly (or vice versa) will produce the wrong share.

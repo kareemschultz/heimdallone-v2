@@ -57,6 +57,39 @@ and show up in attendance, but they can't sign in. **No placeholder email addres
 are ever created.** To give someone access, add their **real** email on their
 employee record and invite them.
 
+## Creating a login for a staff member
+
+<Tags>
+  <Tag>HR Admin</Tag>
+  <Tag>Admin</Tag>
+</Tags>
+
+When someone has **no account** — a no-login employee who now needs access, or
+someone who lost access after the migration — HR or Admin can create a login for
+them directly from the **Migration status** page.
+
+<Steps>
+<Step>Go to **App → Migration status** and find the person (they'll be in a **No login** state).</Step>
+<Step>Choose **Create login** for that employee.</Step>
+<Step>**Supply or override the email.** If the employee's profile already has an email it's used; you can override it. If the profile has **no email**, you must supply a real one — it becomes their sign-in identity.</Step>
+<Step>**Pick the portal role** that controls what they can do once signed in.</Step>
+<Step>Confirm. A **one-time temporary password** is generated and shown **once**.</Step>
+</Steps>
+
+<Callout type="warn" title="The temporary password is shown only once">
+  The temporary password appears **a single time** on screen. Copy it and share it
+  with the person **out of band** (in person, or over a secure channel — not in an
+  email or ticket). It is **never logged or stored in plain text**, so it can't be
+  retrieved later. If it's lost, create the login again or use a password reset.
+</Callout>
+
+- **Idempotent** — if the employee already has a login, creating one again won't
+  produce a duplicate account.
+- **Tenant-scoped** — the login is created within your organisation; it doesn't grant
+  cross-organisation access.
+- **Real emails only** — no placeholder addresses are ever created. If a profile has
+  no email, you must provide a genuine one.
+
 ## Invite or reset a user
 
 <Steps>
