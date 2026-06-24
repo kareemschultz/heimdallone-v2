@@ -119,6 +119,79 @@ describe("calculatePayroll", () => {
 		expect(calculatePayroll(hourlyWithOvertime).overtimePay).toBeGreaterThan(0);
 	});
 
+	test("overtimeHandling 'none' caps hourly base pay at scheduled (payable) minutes", () => {
+		const straight = calculatePayroll({
+			...hourlyWithOvertime,
+			settings: {
+				...hourlyWithOvertime.settings,
+				overtimeHandling: "straight_time",
+			},
+		});
+		const capped = calculatePayroll({
+			...hourlyWithOvertime,
+			// 9 600 payable (160h) vs 10 560 worked (176h)
+			attendance: {
+				...hourlyWithOvertime.attendance,
+				totalPayableMinutes: 9600,
+			},
+			settings: { ...hourlyWithOvertime.settings, overtimeHandling: "none" },
+		});
+		expect(capped.overtimePay).toBe(0);
+		// Capped pays only the scheduled hours — strictly less than straight time
+		// (which pays every worked hour flat), and still positive.
+		expect(capped.basePay).toBeGreaterThan(0);
+		expect(capped.basePay).toBeLessThan(straight.basePay);
+	});
+
+	test("hourly OT at 1.0× multiplier adds no premium (double-count fixed)", () => {
+		// Hourly base already pays the OT hours flat; a 1.0× multiplier means the
+		// premium delta is 0, so no extra is paid. Under the old bug this paid the
+		// hours a second time.
+		const r = calculatePayroll({
+			...hourlyWithOvertime,
+			settings: {
+				...hourlyWithOvertime.settings,
+				overtimeMultipliers: {
+					weekday: 1,
+					saturday: 1,
+					sunday: 1,
+					publicHoliday: 1,
+					nightShift: 1,
+				},
+			},
+		});
+		expect(r.overtimePay).toBe(0);
+	});
+
+	test("monthly OT at 1.0× still pays the full multiplier (base excludes OT hours)", () => {
+		// Monthly base is the fixed salary and does NOT include the OT hours, so the
+		// full multiplier applies (delta logic must NOT touch monthly).
+		const r = calculatePayroll({
+			...monthlySalariedNormal,
+			attendance: {
+				...monthlySalariedNormal.attendance,
+				totalApprovedOvertimeMinutes: 480,
+				overtimeByDayType: {
+					weekday: 480,
+					saturday: 0,
+					sunday: 0,
+					holiday: 0,
+				},
+			},
+			settings: {
+				...monthlySalariedNormal.settings,
+				overtimeMultipliers: {
+					weekday: 1,
+					saturday: 1,
+					sunday: 1,
+					publicHoliday: 1,
+					nightShift: 1,
+				},
+			},
+		});
+		expect(r.overtimePay).toBeGreaterThan(0);
+	});
+
 	test("employee with unpaid leave", () => {
 		const result = calculatePayroll(withUnpaidLeave);
 		const normalResult = calculatePayroll(monthlySalariedNormal);

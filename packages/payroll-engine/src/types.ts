@@ -84,6 +84,10 @@ export interface AttendanceInput {
 	overtimeByDayType: OvertimeByDayType;
 	pendingItems: number;
 	totalApprovedOvertimeMinutes: number;
+	// Sum of per-day payable (scheduled-capped) minutes. Used as the hourly base
+	// when overtimeHandling = "none" (cap at shift). Optional so existing
+	// callers/fixtures are unaffected; falls back to totalWorkedMinutes.
+	totalPayableMinutes?: number;
 	totalWorkedMinutes: number;
 	unprocessedPunches?: number;
 }

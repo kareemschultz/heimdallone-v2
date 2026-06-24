@@ -92,10 +92,14 @@ New org-level setting `payroll_setting.overtimeHandling` (enum, default `premium
   `totalApprovedOvertimeMinutes` when mode ≠ `premium`; payslip/run/estimate hide the OT
   line at 0; settings UI selector; Fumadocs. Engine unit test per mode. Gates +
   reconcile 46/46. **Netsurf → `straight_time` via the in-app setting (operator/admin).**
-- **Slice 2:** `none` cap for hourly (base sums payable, not worked); hourly OT
-  double-count fix (premium-delta only); TOIL accrual + lieu draw-down (new
-  `attendance_record` lieu fields or a `toil_ledger`), tenant-configurable. Scratch QA on
-  a prod clone; reconcile 46/46.
+- **Slice 2a (done):** `none` cap for hourly — base sums `payable` (scheduled-capped)
+  minutes via the new `AttendanceInput.totalPayableMinutes`, not worked; `none`
+  re-exposed in the UI/docs. Hourly OT **double-count fixed** — `computeOvertime`
+  pays only the premium delta (`multiplier − 1`) for hourly, full multiplier for
+  monthly/daily. Engine tests 66/66. Reconcile-neutral (monthly + statutory-only).
+- **Slice 2b:** TOIL accrual + lieu draw-down (new `attendance_record` lieu fields
+  or a `toil_ledger`), tenant-configurable, so an hourly long day banks hours that
+  fund a paid lieu day. Scratch QA on a prod clone; reconcile 46/46.
 - **Slice 3:** per-shift override of the policy via `shift_rule` (office capped, field
   banks) resolved by pay date (reuse 21J resolver). Scratch QA.
 
