@@ -204,6 +204,11 @@ export const payrollSetting = pgTable(
 		defaultPayFrequency: text("default_pay_frequency")
 			.default("monthly")
 			.notNull(),
+		// Operational IANA timezone for the org. Attendance clock times, the "today"
+		// boundary, and lateness are rendered/bucketed in THIS zone (not the server
+		// process TZ). Default America/Guyana (UTC-4, no DST). See #181 +
+		// docs/architecture/device-timezone-hardening-plan.md.
+		timeZone: text("time_zone").default("America/Guyana").notNull(),
 		weekdayOvertimeMultiplier: numeric("weekday_overtime_multiplier", {
 			precision: 3,
 			scale: 2,

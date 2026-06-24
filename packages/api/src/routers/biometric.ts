@@ -35,6 +35,35 @@ import {
 	resolveEmployeeArrangement,
 	resolveWorkSiteForEmployee,
 } from "../utils/geofence";
+import { wallClockToUtc } from "../utils/timezone";
+
+// A trailing Z or a ±HH:MM offset marks an absolute (zoned) timestamp.
+const TZ_DESIGNATOR_RE = /[zZ]$|[+-]\d{2}:?\d{2}$/;
+
+/**
+ * Parse a device punch timestamp to a true UTC instant. A string that already
+ * carries a zone designator (e.g. the on-site bridge sends UTC "…T16:45:12Z") is
+ * absolute and parsed directly; a NAIVE wall-clock string (no zone) is
+ * interpreted in the device timezone so the stored instant is correct regardless
+ * of the server process TZ (#181). Returns null on an unparseable value.
+ */
+function parsePunchInstant(
+	rawTimestamp: string,
+	deviceTz: string
+): Date | null {
+	const raw = rawTimestamp.trim();
+	let t: Date;
+	if (TZ_DESIGNATOR_RE.test(raw)) {
+		t = new Date(raw);
+	} else {
+		try {
+			t = wallClockToUtc(raw, deviceTz);
+		} catch {
+			return null;
+		}
+	}
+	return Number.isNaN(t.getTime()) ? null : t;
+}
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -880,11 +909,10 @@ const ingestSubmit = publicProcedure
 		let duplicate = 0;
 		let errored = 0;
 		const candidates: (typeof attendancePunch.$inferInsert)[] = [];
+		const deviceTz = device.timeZone ?? "America/Guyana";
 		for (const p of input.punches) {
-			const t = new Date(
-				p.timestamp.includes("T") ? p.timestamp : p.timestamp.replace(" ", "T")
-			);
-			if (Number.isNaN(t.getTime())) {
+			const t = parsePunchInstant(p.timestamp, deviceTz);
+			if (!t) {
 				errored += 1;
 				continue;
 			}
