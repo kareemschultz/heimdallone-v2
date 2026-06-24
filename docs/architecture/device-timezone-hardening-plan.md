@@ -1,8 +1,27 @@
 # Device Timezone Hardening + Backfill — Implementation Plan
 
-Status: **Spec (A-phase).** Foundation (pure `timezone.ts` util + tests) landed; the
-pipeline cutover + backfill below is NOT yet implemented and must ship as its own
-reviewed, scratch-tested change. Task **#181**.
+Status: **In progress.** Foundation (`timezone.ts` util + tests) landed earlier.
+**Slice A (this branch) implemented:** `payroll_setting.timeZone` setting (migration
+`0035`, default `America/Guyana`); `recalculateRecord` now renders `firstClockIn` /
+`lastClockOut` and computes lateness in the **tenant timezone** (fixes the reported
+"clock-in shows 11/12 instead of 7/8" on the timesheet — the server was rendering
+the true-UTC instant with UTC getters); biometric **ingest stores true UTC**
+(`wallClockToUtc(naive, device.timeZone)`). Task **#181**.
+
+> **Rollout is GATED on prod data composition** (run the diagnostic query in §3.1).
+> - In-app clock-ins store *true UTC* → the render fix is correct with **no instant
+>   backfill**; existing rows just need a one-time **recalc** to regenerate the
+>   `firstClockIn`/`lastClockOut` strings (new clock-ins are correct immediately).
+> - Any existing **device/imported** punches were stored as *wall-clock-as-UTC* →
+>   they need the **source-targeted +offset backfill** (§3) BEFORE the render flip,
+>   or they shift the wrong way. Scratch-first, guarded, reversible.
+
+### 3.1 Diagnostic (run on prod, read-only)
+
+```sql
+SELECT source, COUNT(*) FROM attendance_punch GROUP BY source;
+```
+Only `biometric`/`import` rows need the instant backfill; `manual`/web rows do not.
 
 ## 1. Problem
 

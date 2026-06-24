@@ -35,6 +35,7 @@ import {
 	resolveEmployeeArrangement,
 	resolveWorkSiteForEmployee,
 } from "../utils/geofence";
+import { wallClockToUtc } from "../utils/timezone";
 
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 const actorId = (ctx: { session: { user: { id: string } } }) =>
@@ -880,10 +881,18 @@ const ingestSubmit = publicProcedure
 		let duplicate = 0;
 		let errored = 0;
 		const candidates: (typeof attendancePunch.$inferInsert)[] = [];
+		const deviceTz = device.timeZone ?? "America/Guyana";
 		for (const p of input.punches) {
-			const t = new Date(
-				p.timestamp.includes("T") ? p.timestamp : p.timestamp.replace(" ", "T")
-			);
+			// Device timestamps are NAIVE wall-clock in the device's local zone.
+			// Convert to the true UTC instant using the device timezone, so the
+			// stored instant is correct regardless of the server process TZ (#181).
+			let t: Date;
+			try {
+				t = wallClockToUtc(p.timestamp, deviceTz);
+			} catch {
+				errored += 1;
+				continue;
+			}
 			if (Number.isNaN(t.getTime())) {
 				errored += 1;
 				continue;

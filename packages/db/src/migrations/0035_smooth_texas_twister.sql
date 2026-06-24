@@ -1,0 +1,1 @@
+ALTER TABLE "payroll_setting" ADD COLUMN "time_zone" text DEFAULT 'America/Guyana' NOT NULL;

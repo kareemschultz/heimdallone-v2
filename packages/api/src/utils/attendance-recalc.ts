@@ -18,10 +18,29 @@ import {
 import { and, eq } from "drizzle-orm";
 import { type HolidayWindow, isHolidayOn } from "./leave-days";
 import { resolveScheduleConfig } from "./shift-rule-resolver";
+import { utcToZonedParts, zonedHm } from "./timezone";
 
 const DEFAULT_MIN_MINUTES = 495;
 const DEFAULT_WEEKEND_DAYS = [6, 7]; // ISO: Sat, Sun
 const DEFAULT_SHIFT_START_HOUR = 8;
+const DEFAULT_TIME_ZONE = "America/Guyana";
+
+/**
+ * The org's operational IANA timezone (payroll_setting.timeZone). Clock times and
+ * lateness are rendered in THIS zone, not the server process TZ — so an 08:00
+ * Guyana punch reads "08:00" even when the container runs UTC. Defaults to
+ * America/Guyana when unset. See #181.
+ */
+export async function resolveOrgTimeZone(
+	organizationId: string
+): Promise<string> {
+	const [row] = await db
+		.select({ tz: payrollSetting.timeZone })
+		.from(payrollSetting)
+		.where(eq(payrollSetting.organizationId, organizationId))
+		.limit(1);
+	return row?.tz ?? DEFAULT_TIME_ZONE;
+}
 
 export async function getEmployeeShiftInfo(
 	employeeId: string
@@ -148,17 +167,19 @@ function aggregateEvents(
 	return { totalWorked, firstIn, lastOut };
 }
 
-function fmtHm(d: Date | null): string | null {
+function fmtHm(d: Date | null, timeZone: string): string | null {
 	if (!d) {
 		return null;
 	}
-	return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+	// Render the instant in the tenant timezone (not the server process TZ).
+	return zonedHm(d, timeZone);
 }
 
 function computeLateMinutes(
 	schedule: { startTime: string } | null,
 	firstIn: Date | null,
-	graceMin: number
+	graceMin: number,
+	timeZone: string
 ): number {
 	if (!(schedule && firstIn)) {
 		return 0;
@@ -166,7 +187,10 @@ function computeLateMinutes(
 	const [sh, sm] = schedule.startTime.split(":").map(Number);
 	const schedStart =
 		(sh ?? DEFAULT_SHIFT_START_HOUR) * 60 + (sm ?? 0) + graceMin;
-	const actualStart = firstIn.getHours() * 60 + firstIn.getMinutes();
+	// Compare against the actual clock-in wall time IN THE TENANT ZONE, so a punch
+	// is judged late against the local schedule rather than the server clock.
+	const parts = utcToZonedParts(firstIn, timeZone);
+	const actualStart = parts.hour * 60 + parts.minute;
 	return actualStart > schedStart ? actualStart - schedStart : 0;
 }
 
@@ -225,6 +249,7 @@ export async function recalculateRecord(
 	eventDate: Date,
 	organizationId: string
 ): Promise<void> {
+	const timeZone = await resolveOrgTimeZone(organizationId);
 	const manualBreakMinutes = await sumManualBreakMinutes(
 		employeeId,
 		eventDate,
@@ -279,13 +304,18 @@ export async function recalculateRecord(
 		rule.standardDailyMinutes ??
 		schedule?.minimumWorkMinutes ??
 		DEFAULT_MIN_MINUTES;
-	const lateMin = computeLateMinutes(schedule, firstIn, rule.graceMinutesLate);
+	const lateMin = computeLateMinutes(
+		schedule,
+		firstIn,
+		rule.graceMinutesLate,
+		timeZone
+	);
 
 	await db
 		.update(attendanceRecord)
 		.set({
-			firstClockIn: fmtHm(firstIn),
-			lastClockOut: fmtHm(lastOut),
+			firstClockIn: fmtHm(firstIn, timeZone),
+			lastClockOut: fmtHm(lastOut, timeZone),
 			workedMinutes: netWorked,
 			minimumMinutes: minMinutes,
 			payableMinutes: Math.min(netWorked, minMinutes),
