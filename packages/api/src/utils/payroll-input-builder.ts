@@ -578,7 +578,13 @@ function aggregateAttendance(
 
 	for (const r of records) {
 		totalWorkedMinutes += r.workedMinutes;
-		totalPayableMinutes += r.payableMinutes;
+		// payable_minutes is NOT NULL default 0; a row that was never recalc'd
+		// (legacy/imported/manually edited) can hold 0 while still having worked
+		// minutes. recalc always sets payable = min(netWorked, minMinutes) > 0 when
+		// worked > 0, so payable=0 with worked>0 means "no cap data" — fall back to
+		// worked rather than silently paying $0 under the "none" cap mode.
+		totalPayableMinutes +=
+			r.payableMinutes > 0 ? r.payableMinutes : r.workedMinutes;
 		if (r.isOvertimeApproved && r.payrollStatus === "approved") {
 			totalApprovedOvertimeMinutes += r.overtimeMinutes;
 			const dtype = r.dayType as keyof typeof overtimeByDayType;
