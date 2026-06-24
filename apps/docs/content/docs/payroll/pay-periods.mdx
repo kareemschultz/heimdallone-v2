@@ -103,3 +103,13 @@ from existing pay periods.
 
 Check the period's frequency. Statutory amounts are prorated by frequency, so a
 fortnightly period set as monthly (or vice versa) will produce the wrong share.
+
+## Auto-open the next period
+
+<Callout type="tip" title="Skip the manual step">
+  Turn on **Payroll → Settings → Automation → "Auto-open the next pay period on
+  close"** and the system opens the next period for you whenever you close one —
+  same frequency and length, dates rolled forward with no gap. It's idempotent (it
+  won't create a duplicate if that period already exists) and is **off by
+  default**, so nothing changes until an admin enables it.
+</Callout>
