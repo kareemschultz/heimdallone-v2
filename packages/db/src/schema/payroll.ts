@@ -110,6 +110,18 @@ export const payslipCorrectionGlStatusEnum = pgEnum(
 	["not_required", "pending", "posted", "failed"]
 );
 
+// Tenant-configurable overtime/hours handling (default = today's behavior).
+//   premium       — approved OT paid at the configured multipliers (no change).
+//   straight_time — no OT premium; hours are still paid flat (hourly) / salary
+//                   fixed (monthly). The OT line is suppressed.
+//   none          — no OT AND paid hours are capped at the scheduled shift.
+// See docs/architecture/hours-overtime-policy-plan.md.
+export const overtimeHandlingEnum = pgEnum("overtime_handling", [
+	"premium",
+	"straight_time",
+	"none",
+]);
+
 // ─── Tables ──────────────────────────────────────────
 
 export const countryPayrollProfile = pgTable(
@@ -239,6 +251,10 @@ export const payrollSetting = pgTable(
 		}),
 		paidHolidaysForHourly: boolean("paid_holidays_for_hourly")
 			.default(true)
+			.notNull(),
+		// Tenant overtime/hours policy. Default `premium` = unchanged behavior.
+		overtimeHandling: overtimeHandlingEnum("overtime_handling")
+			.default("premium")
 			.notNull(),
 		autoGenerateEnabled: boolean("auto_generate_enabled")
 			.default(false)

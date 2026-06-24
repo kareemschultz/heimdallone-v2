@@ -405,10 +405,14 @@ function PayslipDetailPage() {
 						<span className="k">Worked hours</span>
 						<span className="v">{Number(slip.workedHours).toFixed(1)}h</span>
 					</div>
-					<div>
-						<span className="k">Overtime</span>
-						<span className="v">{Number(slip.overtimeHours).toFixed(1)}h</span>
-					</div>
+					{Number(slip.overtimeHours) > 0 && (
+						<div>
+							<span className="k">Overtime</span>
+							<span className="v">
+								{Number(slip.overtimeHours).toFixed(1)}h
+							</span>
+						</div>
+					)}
 					<div>
 						<span className="k">Paid leave</span>
 						<span className="v">{slip.paidLeaveDays as string} days</span>

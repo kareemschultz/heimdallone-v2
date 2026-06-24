@@ -4,6 +4,7 @@
   "pages": [
     "index",
     "pay-periods",
+    "overtime",
     "payroll-runs",
     "payslips",
     "corrections",

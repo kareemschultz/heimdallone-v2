@@ -202,6 +202,20 @@ export async function buildPayrollInput(
 	);
 	const settingsInput = buildSettings(settings);
 
+	// Tenant policy: when overtime is not "premium", no OT is paid AND no OT is
+	// surfaced on the payslip. Zero the aggregates here (defense-in-depth with the
+	// engine's suppression) so `overtimeHours` (= totalApprovedOvertimeMinutes/60)
+	// reads 0 regardless of whether any record was flagged approved.
+	if (settingsInput.overtimeHandling !== "premium") {
+		attendance.totalApprovedOvertimeMinutes = 0;
+		attendance.overtimeByDayType = {
+			weekday: 0,
+			saturday: 0,
+			sunday: 0,
+			holiday: 0,
+		};
+	}
+
 	// Org policy: do open attendance exceptions block payroll? (default true)
 	const [attSetting] = await db
 		.select({ block: attendanceSetting.blockPayrollOnOpenExceptions })
@@ -405,6 +419,7 @@ function buildSettings(
 		minimumNetPayThreshold: settings?.minimumNetPayThreshold
 			? toCents(Number(settings.minimumNetPayThreshold))
 			: null,
+		overtimeHandling: settings?.overtimeHandling ?? "premium",
 	};
 }
 

@@ -69,6 +69,10 @@ function PayrollSettingsPage() {
 				standardHoursPerDay: String(val("standardHoursPerDay", "8.00")),
 				lunchDeductionMinutes: Number(val("lunchDeductionMinutes", 0)),
 				paidHolidaysForHourly: Boolean(val("paidHolidaysForHourly", true)),
+				overtimeHandling: String(val("overtimeHandling", "premium")) as
+					| "premium"
+					| "straight_time"
+					| "none",
 			});
 			toast.success("Payroll settings updated");
 			qc.invalidateQueries();
@@ -197,11 +201,33 @@ function PayrollSettingsPage() {
 					</SettingsSection>
 
 					<SettingsSection title="Overtime">
+						<SettingsField
+							helper="How time worked beyond the scheduled shift is paid. 'Pay premium' uses the multipliers below. 'Straight time' pays the hours flat with no premium (hourly) or leaves the salary unchanged (monthly), and hides the overtime line on payslips."
+							label="Overtime handling"
+						>
+							<select
+								className="emp-search"
+								disabled={!canManage}
+								onChange={(e) => set("overtimeHandling", e.target.value)}
+								style={{ width: "100%" }}
+								value={String(val("overtimeHandling", "premium"))}
+							>
+								<option value="premium">Pay overtime premium</option>
+								<option value="straight_time">
+									Straight time — no premium
+								</option>
+							</select>
+						</SettingsField>
 						<div
 							style={{
 								display: "grid",
 								gridTemplateColumns: "1fr 1fr",
 								gap: 14,
+								marginTop: 14,
+								opacity:
+									String(val("overtimeHandling", "premium")) === "premium"
+										? 1
+										: 0.5,
 							}}
 						>
 							<SettingsField helper="Standard overtime rate" label="Weekday">
