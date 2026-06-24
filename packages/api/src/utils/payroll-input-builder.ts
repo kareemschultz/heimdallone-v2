@@ -432,6 +432,7 @@ async function buildAttendanceInput(
 	const records = await db
 		.select({
 			workedMinutes: attendanceRecord.workedMinutes,
+			payableMinutes: attendanceRecord.payableMinutes,
 			overtimeMinutes: attendanceRecord.overtimeMinutes,
 			dayType: attendanceRecord.dayType,
 			status: attendanceRecord.status,
@@ -556,6 +557,7 @@ async function buildExceptionReview(
 function aggregateAttendance(
 	records: Array<{
 		workedMinutes: number;
+		payableMinutes: number;
 		overtimeMinutes: number;
 		dayType: string;
 		status: string;
@@ -565,6 +567,7 @@ function aggregateAttendance(
 	}>
 ): AttendanceInput {
 	let totalWorkedMinutes = 0;
+	let totalPayableMinutes = 0;
 	let totalApprovedOvertimeMinutes = 0;
 	const overtimeByDayType = { weekday: 0, saturday: 0, sunday: 0, holiday: 0 };
 	let daysPresent = 0;
@@ -575,6 +578,13 @@ function aggregateAttendance(
 
 	for (const r of records) {
 		totalWorkedMinutes += r.workedMinutes;
+		// payable_minutes is NOT NULL default 0; a row that was never recalc'd
+		// (legacy/imported/manually edited) can hold 0 while still having worked
+		// minutes. recalc always sets payable = min(netWorked, minMinutes) > 0 when
+		// worked > 0, so payable=0 with worked>0 means "no cap data" — fall back to
+		// worked rather than silently paying $0 under the "none" cap mode.
+		totalPayableMinutes +=
+			r.payableMinutes > 0 ? r.payableMinutes : r.workedMinutes;
 		if (r.isOvertimeApproved && r.payrollStatus === "approved") {
 			totalApprovedOvertimeMinutes += r.overtimeMinutes;
 			const dtype = r.dayType as keyof typeof overtimeByDayType;
@@ -598,6 +608,7 @@ function aggregateAttendance(
 
 	return {
 		totalWorkedMinutes,
+		totalPayableMinutes,
 		totalApprovedOvertimeMinutes,
 		overtimeByDayType,
 		daysPresent,
@@ -612,6 +623,7 @@ function aggregateAttendance(
 function emptyAttendance(): AttendanceInput {
 	return {
 		totalWorkedMinutes: 0,
+		totalPayableMinutes: 0,
 		totalApprovedOvertimeMinutes: 0,
 		overtimeByDayType: { weekday: 0, saturday: 0, sunday: 0, holiday: 0 },
 		daysPresent: 0,

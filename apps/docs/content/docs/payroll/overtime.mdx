@@ -22,18 +22,13 @@ Set it under **Payroll → Settings → Overtime → Overtime handling**.
   applies to the whole organization.
 </Callout>
 
-## The modes
+## The three modes
 
 | Mode | What it does | Hourly staff | Monthly (salaried) staff |
 |------|--------------|--------------|--------------------------|
-| **Pay overtime premium** *(default)* | Approved overtime is paid using the multipliers below (weekday, Saturday, Sunday, public holiday). | Extra hours paid at the multiplier. | Premium added on top of the fixed salary. |
+| **Pay overtime premium** *(default)* | Approved overtime is paid using the multipliers below (weekday, Saturday, Sunday, public holiday). | The premium is added on top of the flat hours already paid (so an OT hour reaches the full multiple, never more). | Premium added on top of the fixed salary. |
 | **Straight time — no premium** | No overtime premium is paid, and the overtime line is **hidden** on payslips. | Hours are still paid, but at the **flat** rate (no extra). | Salary is unchanged. |
-
-<Callout type="info" title="Coming next — cap at shift">
-  A third mode, **No overtime — cap at shift** (pay only the scheduled hours and
-  not time worked past shift end), is planned. It is not selectable yet because
-  it changes hourly pay and is being validated against real payroll data first.
-</Callout>
+| **No overtime — cap at shift** | No premium **and** paid hours are capped at the scheduled shift. | Only the scheduled hours are paid; time worked past shift end is not paid. | Salary is unchanged. |
 
 <Callout type="tip" title="Example — a 'no overtime' company">
   A company that does not do overtime sets **Straight time — no premium**. An

@@ -103,7 +103,14 @@ const computeBasePay = (ctx: CalcContext): number => {
 		baseSalary,
 		Math.round(period.workingDays * settings.standardHoursPerDay * 100) / 100
 	);
-	const workedHours = attendance.totalWorkedMinutes / 60;
+	// "none" caps paid hours at the scheduled shift: pay the per-day payable
+	// (capped) minutes, not the raw worked minutes. Other modes pay all worked
+	// hours flat. Falls back to worked minutes when payable is not supplied.
+	const paidMinutes =
+		(settings.overtimeHandling ?? "premium") === "none"
+			? (attendance.totalPayableMinutes ?? attendance.totalWorkedMinutes)
+			: attendance.totalWorkedMinutes;
+	const workedHours = paidMinutes / 60;
 	const pay = Math.round(hourlyRate * workedHours);
 	addExplanation(
 		ctx,
@@ -167,17 +174,25 @@ const computeOvertime = (
 	const mults = settings.overtimeMultipliers;
 	const ot = attendance.overtimeByDayType;
 
+	// Hourly base pay already pays every worked minute (incl. OT minutes) at the
+	// flat rate, so the OT premium must add only the DELTA above straight time
+	// (multiplier − 1) to reach the intended multiple — otherwise OT hours are
+	// double-paid (~2.5× for a 1.5× weekday). Monthly/daily base does NOT include
+	// the OT hours, so they get the full multiplier.
+	const premiumFactor = (m: number): number =>
+		contract.wageType === "hourly" ? Math.max(0, m - 1) : m;
+
 	const weekdayOT = Math.round(
-		(ot.weekday / 60) * hourlyRateForOT * mults.weekday
+		(ot.weekday / 60) * hourlyRateForOT * premiumFactor(mults.weekday)
 	);
 	const saturdayOT = Math.round(
-		(ot.saturday / 60) * hourlyRateForOT * mults.saturday
+		(ot.saturday / 60) * hourlyRateForOT * premiumFactor(mults.saturday)
 	);
 	const sundayOT = Math.round(
-		(ot.sunday / 60) * hourlyRateForOT * mults.sunday
+		(ot.sunday / 60) * hourlyRateForOT * premiumFactor(mults.sunday)
 	);
 	const holidayOT = Math.round(
-		(ot.holiday / 60) * hourlyRateForOT * mults.publicHoliday
+		(ot.holiday / 60) * hourlyRateForOT * premiumFactor(mults.publicHoliday)
 	);
 	const total = weekdayOT + saturdayOT + sundayOT + holidayOT;
 

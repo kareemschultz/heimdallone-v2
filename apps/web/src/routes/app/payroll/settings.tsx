@@ -202,7 +202,7 @@ function PayrollSettingsPage() {
 
 					<SettingsSection title="Overtime">
 						<SettingsField
-							helper="How time worked beyond the scheduled shift is paid. 'Pay premium' uses the multipliers below. 'Straight time' pays the hours flat with no premium (hourly) or leaves the salary unchanged (monthly), and hides the overtime line on payslips."
+							helper="How time worked beyond the scheduled shift is paid. 'Pay premium' uses the multipliers below. 'Straight time' pays the hours flat with no premium (hourly) or leaves the salary unchanged (monthly). 'No overtime' also caps paid hours at the scheduled shift. Straight time and No overtime hide the overtime line on payslips."
 							label="Overtime handling"
 						>
 							<select
@@ -216,6 +216,7 @@ function PayrollSettingsPage() {
 								<option value="straight_time">
 									Straight time — no premium
 								</option>
+								<option value="none">No overtime — cap at shift</option>
 							</select>
 						</SettingsField>
 						<div

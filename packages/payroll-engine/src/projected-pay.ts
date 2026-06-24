@@ -49,7 +49,14 @@ export const calculateProjectedPay = (
 		payFrequency: input.contract.payFrequency,
 
 		hours: {
-			regularHours: round2(a.totalWorkedMinutes / 60),
+			// Under the "none" cap mode the paid base reflects capped (payable)
+			// hours, so report those — otherwise the estimate's "regular hours" would
+			// exceed the hours actually paid. Other modes pay all worked hours.
+			regularHours: round2(
+				(input.settings.overtimeHandling === "none"
+					? (a.totalPayableMinutes ?? a.totalWorkedMinutes)
+					: a.totalWorkedMinutes) / 60
+			),
 			overtimeHours: round2(a.totalApprovedOvertimeMinutes / 60),
 		},
 		days: {
