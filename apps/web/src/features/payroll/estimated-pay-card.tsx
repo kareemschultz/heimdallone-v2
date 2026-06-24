@@ -193,7 +193,9 @@ export function EstimatedPayCard() {
 
 			<div style={STAT_GRID}>
 				<Stat label="Regular hours" value={`${p.hours.regularHours}h`} />
-				<Stat label="Overtime" value={`${p.hours.overtimeHours}h`} />
+				{p.hours.overtimeHours > 0 && (
+					<Stat label="Overtime" value={`${p.hours.overtimeHours}h`} />
+				)}
 				<Stat label="Days worked" value={`${p.days.workedDays}`} />
 				<Stat label="Paid leave" value={`${p.days.approvedLeaveDays} day(s)`} />
 				{p.days.unpaidLeaveDays > 0 && (

@@ -82,6 +82,43 @@ describe("calculatePayroll", () => {
 		expect(otLines.length).toBeGreaterThan(0);
 	});
 
+	test("overtimeHandling 'straight_time' suppresses the OT premium but keeps base pay", () => {
+		const premium = calculatePayroll(hourlyWithOvertime);
+		const straight: PayrollInput = {
+			...hourlyWithOvertime,
+			settings: {
+				...hourlyWithOvertime.settings,
+				overtimeHandling: "straight_time",
+			},
+		};
+		const result = calculatePayroll(straight);
+
+		// No OT premium and no OT line items …
+		expect(result.overtimePay).toBe(0);
+		expect(
+			result.lineItems.filter(
+				(l) => l.code === "OT_NON_TAXABLE" || l.code === "OT_TAXABLE"
+			)
+		).toHaveLength(0);
+		// … but the hours are still paid flat in base pay (unchanged from premium).
+		expect(result.basePay).toBe(premium.basePay);
+		expect(result.grossPay).toBe(result.basePay);
+	});
+
+	test("overtimeHandling 'none' also suppresses the OT premium", () => {
+		const result = calculatePayroll({
+			...hourlyWithOvertime,
+			settings: { ...hourlyWithOvertime.settings, overtimeHandling: "none" },
+		});
+		expect(result.overtimePay).toBe(0);
+	});
+
+	test("overtimeHandling defaults to premium (omitted = unchanged behavior)", () => {
+		// The fixture omits overtimeHandling; OT must still be paid.
+		expect(hourlyWithOvertime.settings.overtimeHandling).toBeUndefined();
+		expect(calculatePayroll(hourlyWithOvertime).overtimePay).toBeGreaterThan(0);
+	});
+
 	test("employee with unpaid leave", () => {
 		const result = calculatePayroll(withUnpaidLeave);
 		const normalResult = calculatePayroll(monthlySalariedNormal);

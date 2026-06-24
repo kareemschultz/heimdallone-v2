@@ -1,0 +1,71 @@
+---
+title: Overtime handling
+description: Choose how time worked beyond the scheduled shift is paid — pay a premium, pay straight time with no premium, or cap paid hours at the scheduled shift.
+icon: Timer
+---
+
+<Tags>
+  <Tag>Payroll Admin</Tag>
+  <Tag>Admin</Tag>
+  <Tag>Tenant Configurable</Tag>
+  <Tag>Live</Tag>
+</Tags>
+
+Not every business pays overtime, and not every business pays it the same way.
+**Overtime handling** is a single tenant-wide setting that decides what happens
+to time worked beyond an employee's scheduled shift.
+
+Set it under **Payroll → Settings → Overtime → Overtime handling**.
+
+<Callout type="info" title="Who can change this">
+  Only Payroll Admin and Tenant Owner / Admin can change overtime handling. It
+  applies to the whole organization.
+</Callout>
+
+## The modes
+
+| Mode | What it does | Hourly staff | Monthly (salaried) staff |
+|------|--------------|--------------|--------------------------|
+| **Pay overtime premium** *(default)* | Approved overtime is paid using the multipliers below (weekday, Saturday, Sunday, public holiday). | Extra hours paid at the multiplier. | Premium added on top of the fixed salary. |
+| **Straight time — no premium** | No overtime premium is paid, and the overtime line is **hidden** on payslips. | Hours are still paid, but at the **flat** rate (no extra). | Salary is unchanged. |
+
+<Callout type="info" title="Coming next — cap at shift">
+  A third mode, **No overtime — cap at shift** (pay only the scheduled hours and
+  not time worked past shift end), is planned. It is not selectable yet because
+  it changes hourly pay and is being validated against real payroll data first.
+</Callout>
+
+<Callout type="tip" title="Example — a 'no overtime' company">
+  A company that does not do overtime sets **Straight time — no premium**. An
+  hourly employee who works extra is still paid for the hours they worked, but
+  with no 1.5× premium, and no overtime line appears on the payslip.
+</Callout>
+
+## Long days and time off in lieu (TOIL)
+
+A common field-work pattern is a very long day followed by a day off to balance
+the period (for example, 17 hours one day, then the next day off).
+
+- **Monthly (salaried) staff:** pay is the fixed salary, so a long day and a
+  lieu day off **balance automatically**. Record the real hours on the long day,
+  and mark the next day as an **approved day off** so it is not counted as an
+  unpaid absence.
+- **Hourly staff:** under **Straight time**, the long day is paid flat and the
+  lieu day is unpaid. A built-in **lieu-hours bank** that carries the surplus
+  onto a paid lieu day is a planned enhancement.
+
+<Callout type="warning" title="Never enter a fabricated shift">
+  Do not record a fake "8-hour shift" for a day someone did not work, or a fake
+  shift for a long day. Record the **real** hours and mark rest / lieu days as
+  approved days off. Fabricated attendance breaks the audit trail.
+</Callout>
+
+## Notes
+
+- The default is **Pay overtime premium**, so existing organizations are
+  unchanged unless an admin selects another mode.
+- The overtime multipliers (weekday / Saturday / Sunday / public holiday) only
+  apply in **Pay overtime premium** mode.
+- This setting is organization-wide. Per-shift overtime rules (for example,
+  office staff capped at shift while field staff bank long days) are a planned
+  enhancement.

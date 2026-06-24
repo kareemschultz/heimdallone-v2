@@ -153,6 +153,12 @@ const computeOvertime = (
 	ctx: CalcContext
 ): { total: number; taxable: number; nonTaxable: number } => {
 	const { attendance, settings, period, contract } = ctx.input;
+	// Tenant policy: only the default "premium" mode pays an overtime premium.
+	// Under "straight_time"/"none" the OT line is suppressed entirely (hourly
+	// hours are still paid flat inside base pay; monthly is the fixed salary).
+	if ((settings.overtimeHandling ?? "premium") !== "premium") {
+		return { total: 0, taxable: 0, nonTaxable: 0 };
+	}
 	const baseSalary = toCents(contract.baseSalary);
 	const hourlyRateForOT = divideCents(
 		baseSalary,

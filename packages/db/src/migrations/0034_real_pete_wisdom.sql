@@ -1,0 +1,2 @@
+CREATE TYPE "public"."overtime_handling" AS ENUM('premium', 'straight_time', 'none');--> statement-breakpoint
+ALTER TABLE "payroll_setting" ADD COLUMN "overtime_handling" "overtime_handling" DEFAULT 'premium' NOT NULL;

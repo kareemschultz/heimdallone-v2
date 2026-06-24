@@ -171,9 +171,15 @@ export interface CountryPayrollProfileInput {
 	taxBrackets: TaxBracket[];
 }
 
+// Tenant overtime/hours policy (default "premium" = unchanged behavior).
+export type OvertimeHandling = "premium" | "straight_time" | "none";
+
 export interface PayrollSettingInput {
 	lunchDeductionMinutes: number;
 	minimumNetPayThreshold: number | null;
+	// Tenant overtime/hours policy. Defaults to "premium" when omitted so
+	// existing callers and fixtures are byte-identical.
+	overtimeHandling?: OvertimeHandling;
 	overtimeMultipliers: OvertimeMultipliers;
 	standardHoursPerDay: number;
 }

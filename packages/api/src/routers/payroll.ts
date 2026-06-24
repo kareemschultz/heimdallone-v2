@@ -113,6 +113,7 @@ const settingsUpdate = authorizedProcedure("payroll", "update")
 			lunchDeductionMinutes: z.number().int().optional(),
 			minimumNetPayThreshold: z.string().nullable().optional(),
 			paidHolidaysForHourly: z.boolean().optional(),
+			overtimeHandling: z.enum(["premium", "straight_time", "none"]).optional(),
 		})
 	)
 	.handler(async ({ context, input }) => {

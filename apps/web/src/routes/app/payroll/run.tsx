@@ -1071,12 +1071,14 @@ function PayslipDetailStep({
 										{Number(slip.workedHours).toFixed(1)}h
 									</span>
 								</div>
-								<div className="fact-row">
-									<span className="k">Overtime hours</span>
-									<span className="v">
-										{Number(slip.overtimeHours).toFixed(1)}h
-									</span>
-								</div>
+								{Number(slip.overtimeHours) > 0 && (
+									<div className="fact-row">
+										<span className="k">Overtime hours</span>
+										<span className="v">
+											{Number(slip.overtimeHours).toFixed(1)}h
+										</span>
+									</div>
+								)}
 								<div className="fact-row">
 									<span className="k">Paid leave</span>
 									<span className="v">{slip.paidLeaveDays as string} days</span>
