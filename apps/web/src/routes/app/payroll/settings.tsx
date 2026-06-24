@@ -69,6 +69,7 @@ function PayrollSettingsPage() {
 				standardHoursPerDay: String(val("standardHoursPerDay", "8.00")),
 				lunchDeductionMinutes: Number(val("lunchDeductionMinutes", 0)),
 				paidHolidaysForHourly: Boolean(val("paidHolidaysForHourly", true)),
+				autoGenerateEnabled: Boolean(val("autoGenerateEnabled", false)),
 				overtimeHandling: String(val("overtimeHandling", "premium")) as
 					| "premium"
 					| "straight_time"
@@ -349,6 +350,32 @@ function PayrollSettingsPage() {
 									type="checkbox"
 								/>
 								Yes, pay holidays for hourly employees
+							</label>
+						</SettingsField>
+					</SettingsSection>
+
+					<SettingsSection title="Automation">
+						<SettingsField
+							helper="When you close a pay period, the next one (same frequency and length) is opened automatically — no need to create it by hand."
+							label="Auto-open the next pay period on close"
+						>
+							<label
+								style={{
+									display: "flex",
+									alignItems: "center",
+									gap: 8,
+									fontSize: 13,
+								}}
+							>
+								<input
+									checked={Boolean(val("autoGenerateEnabled", false))}
+									disabled={!canManage}
+									onChange={(e) =>
+										set("autoGenerateEnabled", e.target.checked ? 1 : 0)
+									}
+									type="checkbox"
+								/>
+								Automatically open the next pay period when one is closed
 							</label>
 						</SettingsField>
 					</SettingsSection>
