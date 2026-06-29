@@ -58,7 +58,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 		],
 		scripts: [
 			{
-				children: `(function(){try{var t=localStorage.getItem("heimdall.theme");document.documentElement.setAttribute("data-theme",t||"dark")}catch(e){document.documentElement.setAttribute("data-theme","dark")}})()`,
+				children: `(function(){try{var t=localStorage.getItem("heimdall.theme");document.documentElement.setAttribute("data-theme",t||"light")}catch(e){document.documentElement.setAttribute("data-theme","light")}})()`,
 			},
 		],
 	}),
@@ -68,7 +68,7 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
 
 function RootDocument() {
 	return (
-		<html data-theme="dark" lang="en">
+		<html data-theme="light" lang="en">
 			<head>
 				<HeadContent />
 			</head>
