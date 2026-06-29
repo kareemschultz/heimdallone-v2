@@ -8,7 +8,7 @@ import {
 	Search,
 	SkipForward,
 } from "lucide-react";
-import { useContext, useState } from "react";
+import { useContext, useMemo, useState } from "react";
 import { toast } from "sonner";
 
 import "@/styles/employees.css";
@@ -33,6 +33,30 @@ export const Route = createFileRoute("/app/payroll/loans")({
 });
 
 type LoanFilter = "active" | "settled" | "advances" | "written_off" | "all";
+
+interface EmployeeOption {
+	badgeId?: string | null;
+	departmentName?: string | null;
+	email?: string | null;
+	firstName: string;
+	id: string;
+	jobPositionName?: string | null;
+	lastName?: string | null;
+}
+
+function employeeName(employee: EmployeeOption): string {
+	return `${employee.firstName} ${employee.lastName ?? ""}`.trim();
+}
+
+function loanEmployeeName(loan: Record<string, unknown>): string {
+	return `${loan.employeeFirstName ?? ""} ${loan.employeeLastName ?? ""}`.trim();
+}
+
+function loanEmployeeLabel(loan: Record<string, unknown>): string {
+	const name = loanEmployeeName(loan);
+	const badge = loan.employeeBadgeId as string | null | undefined;
+	return [name || "Employee", badge].filter(Boolean).join(" · ");
+}
 
 function LoansPage() {
 	const org = useContext(OrgCtx);
@@ -60,6 +84,26 @@ function LoansPage() {
 	const loans = isAdvancesFilter
 		? rawLoans.filter((l) => (l.type as string) === "advance")
 		: rawLoans;
+	const filteredLoans = useMemo(() => {
+		const q = search.trim().toLowerCase();
+		if (!q) {
+			return loans;
+		}
+		return loans.filter((loan) =>
+			[
+				loan.title,
+				loan.type,
+				loan.status,
+				loan.employeeFirstName,
+				loan.employeeLastName,
+				loan.employeeBadgeId,
+			]
+				.filter(Boolean)
+				.join(" ")
+				.toLowerCase()
+				.includes(q)
+		);
+	}, [loans, search]);
 	const total = data?.total ?? 0;
 	const totalPages = Math.ceil(total / 50);
 
@@ -180,7 +224,7 @@ function LoansPage() {
 									))}
 								</tr>
 							))}
-						{!isLoading && loans.length === 0 && (
+						{!isLoading && filteredLoans.length === 0 && (
 							<tr>
 								<td colSpan={canManage ? 8 : 7} style={{ padding: 0 }}>
 									<EmptyState
@@ -200,8 +244,8 @@ function LoansPage() {
 							</tr>
 						)}
 						{!isLoading &&
-							loans.length > 0 &&
-							loans.map((loan: Record<string, unknown>) => (
+							filteredLoans.length > 0 &&
+							filteredLoans.map((loan: Record<string, unknown>) => (
 								<tr key={loan.id as string}>
 									<td>
 										<div style={{ fontWeight: 500 }}>
@@ -214,8 +258,8 @@ function LoansPage() {
 												marginTop: 1,
 											}}
 										>
-											{loan.currency as string} · Started{" "}
-											{formatDate(loan.providedDate as string)}
+											{loanEmployeeLabel(loan)} · {loan.currency as string} ·
+											Started {formatDate(loan.providedDate as string)}
 										</div>
 									</td>
 									<td>
@@ -551,6 +595,7 @@ function InstallmentsPanel({
 function CreateLoanDialog({ onClose }: { onClose: () => void }) {
 	const [type, setType] = useState<"loan" | "advance" | "fine">("loan");
 	const [employeeId, setEmployeeId] = useState("");
+	const [employeeSearch, setEmployeeSearch] = useState("");
 	const [title, setTitle] = useState("");
 	const [amount, setAmount] = useState("");
 	const [totalInstallments, setTotalInstallments] = useState("12");
@@ -560,6 +605,20 @@ function CreateLoanDialog({ onClose }: { onClose: () => void }) {
 		new Date().toISOString().split("T")[0] ?? ""
 	);
 	const [saving, setSaving] = useState(false);
+	const { data: employeesData, isLoading: employeesLoading } = useQuery(
+		orpc.hrCore.employees.list.queryOptions({
+			input: {
+				isActive: true,
+				page: 1,
+				pageSize: 100,
+				search: employeeSearch.trim() || undefined,
+			},
+		})
+	);
+	const employees = (employeesData?.data ?? []) as EmployeeOption[];
+	const selectedEmployee = employees.find(
+		(employee) => employee.id === employeeId
+	);
 
 	async function handleSubmit() {
 		if (
@@ -636,14 +695,49 @@ function CreateLoanDialog({ onClose }: { onClose: () => void }) {
 							<option value="fine">Fine/penalty</option>
 						</select>
 					</FieldWrap>
-					<FieldWrap label="Employee ID">
-						<input
-							className="emp-search"
-							onChange={(e) => setEmployeeId(e.target.value)}
-							placeholder="Enter employee ID"
-							style={{ width: "100%" }}
-							value={employeeId}
-						/>
+					<FieldWrap label="Employee">
+						<div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+							<input
+								className="emp-search"
+								onChange={(e) => setEmployeeSearch(e.target.value)}
+								placeholder="Search employee by name or ID"
+								style={{ width: "100%" }}
+								value={employeeSearch}
+							/>
+							<select
+								className="emp-search"
+								onChange={(e) => setEmployeeId(e.target.value)}
+								style={{ width: "100%" }}
+								value={employeeId}
+							>
+								<option value="">
+									{employeesLoading
+										? "Loading employees..."
+										: "Select employee"}
+								</option>
+								{employees.map((employee) => {
+									const name = employeeName(employee);
+									const details = [employee.badgeId, employee.jobPositionName]
+										.filter(Boolean)
+										.join(" · ");
+									return (
+										<option key={employee.id} value={employee.id}>
+											{[name || employee.email || "Employee", details]
+												.filter(Boolean)
+												.join(" — ")}
+										</option>
+									);
+								})}
+							</select>
+							{selectedEmployee && (
+								<div style={{ color: "var(--fg-3)", fontSize: 11 }}>
+									Selected: {employeeName(selectedEmployee) || "Employee"}
+									{selectedEmployee.badgeId
+										? ` · ${selectedEmployee.badgeId}`
+										: ""}
+								</div>
+							)}
+						</div>
 					</FieldWrap>
 					<FieldWrap label="Title">
 						<input

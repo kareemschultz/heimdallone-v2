@@ -164,6 +164,18 @@ function EmployeeProfilePage() {
 	};
 
 	const workInfo = emp?.workInfo ?? null;
+	const editableWorkInfo = workInfo ?? {
+		basicSalary: null,
+		departmentId: null,
+		employeeTypeId: null,
+		joiningDate: null,
+		jobPositionId: null,
+		reportingManagerId: null,
+		salaryCurrency: "GYD",
+		shiftId: null,
+		workLocation: null,
+		workTypeId: null,
+	};
 
 	if (isLoading) {
 		return (
@@ -518,7 +530,7 @@ function EmployeeProfilePage() {
 										<span className="k">Joined</span>
 										<span className="v">
 											{workInfo?.joiningDate
-												? new Date(workInfo.joiningDate)
+												? new Date(editableWorkInfo.joiningDate)
 														.toISOString()
 														.slice(0, 10)
 												: "—"}
@@ -528,7 +540,7 @@ function EmployeeProfilePage() {
 										<span className="k">Salary</span>
 										<span className="v">
 											{workInfo?.basicSalary
-												? `${Number(workInfo.basicSalary).toLocaleString()} ${workInfo.salaryCurrency}`
+												? `${Number(editableWorkInfo.basicSalary).toLocaleString()} ${editableWorkInfo.salaryCurrency}`
 												: "—"}
 										</span>
 									</div>
@@ -1713,13 +1725,13 @@ function EmployeeProfilePage() {
 				/>
 			)}
 
-			{editSection === "work" && workInfo && (
+			{editSection === "work" && (
 				<EditSheet
 					fields={[
 						{
 							key: "departmentId",
 							label: "Department",
-							value: workInfo.departmentId ?? "",
+							value: editableWorkInfo.departmentId ?? "",
 							type: "select",
 							options: [
 								{ v: "", l: "Not assigned" },
@@ -1731,7 +1743,7 @@ function EmployeeProfilePage() {
 						{
 							key: "jobPositionId",
 							label: "Position",
-							value: workInfo.jobPositionId ?? "",
+							value: editableWorkInfo.jobPositionId ?? "",
 							type: "select",
 							options: [
 								{ v: "", l: "Not assigned" },
@@ -1743,7 +1755,7 @@ function EmployeeProfilePage() {
 						{
 							key: "shiftId",
 							label: "Shift",
-							value: workInfo.shiftId ?? "",
+							value: editableWorkInfo.shiftId ?? "",
 							type: "select",
 							options: [
 								{ v: "", l: "Not assigned" },
@@ -1755,7 +1767,7 @@ function EmployeeProfilePage() {
 						{
 							key: "workTypeId",
 							label: "Work Arrangement",
-							value: workInfo.workTypeId ?? "",
+							value: editableWorkInfo.workTypeId ?? "",
 							type: "select",
 							options: [
 								{ v: "", l: "Not assigned" },
@@ -1767,7 +1779,7 @@ function EmployeeProfilePage() {
 						{
 							key: "employeeTypeId",
 							label: "Employment Type",
-							value: workInfo.employeeTypeId ?? "",
+							value: editableWorkInfo.employeeTypeId ?? "",
 							type: "select",
 							options: [
 								{ v: "", l: "Not assigned" },
@@ -1779,7 +1791,7 @@ function EmployeeProfilePage() {
 						{
 							key: "reportingManagerId",
 							label: "Reports To",
-							value: workInfo.reportingManagerId ?? "",
+							value: editableWorkInfo.reportingManagerId ?? "",
 							type: "select",
 							options: [
 								{ v: "", l: "No manager" },
@@ -1804,25 +1816,27 @@ function EmployeeProfilePage() {
 						{
 							key: "workLocation",
 							label: "Location",
-							value: workInfo.workLocation ?? "",
+							value: editableWorkInfo.workLocation ?? "",
 						},
 						{
 							key: "joiningDate",
 							label: "Joining Date",
-							value: workInfo.joiningDate
-								? new Date(workInfo.joiningDate).toISOString().slice(0, 10)
+							value: editableWorkInfo.joiningDate
+								? new Date(editableWorkInfo.joiningDate)
+										.toISOString()
+										.slice(0, 10)
 								: "",
 							type: "date",
 						},
 						{
 							key: "basicSalary",
 							label: "Base Salary",
-							value: workInfo.basicSalary ?? "",
+							value: editableWorkInfo.basicSalary ?? "",
 						},
 						{
 							key: "salaryCurrency",
 							label: "Currency",
-							value: workInfo.salaryCurrency ?? "GYD",
+							value: editableWorkInfo.salaryCurrency ?? "GYD",
 							type: "select",
 							options: [
 								{ v: "GYD", l: "GYD" },

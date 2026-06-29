@@ -34,6 +34,7 @@ import {
 	eq,
 	getTableColumns,
 	inArray,
+	or,
 	sql,
 } from "drizzle-orm";
 import { z } from "zod";
@@ -192,7 +193,12 @@ const settingsListCountryProfiles = authorizedProcedure(
 const payPeriodsList = authorizedProcedure("payroll", "read")
 	.input(
 		z.object({
-			status: z.enum(["open", "processing", "closed"]).optional(),
+			status: z
+				.union([
+					z.enum(["open", "processing", "closed"]),
+					z.array(z.enum(["open", "processing", "closed"])).min(1),
+				])
+				.optional(),
 			page: z.number().int().min(1).default(1),
 			pageSize: z.number().int().min(1).max(100).default(50),
 		})
@@ -200,7 +206,11 @@ const payPeriodsList = authorizedProcedure("payroll", "read")
 	.handler(async ({ context, input }) => {
 		const conditions = [eq(payPeriod.organizationId, orgId(context))];
 		if (input.status) {
-			conditions.push(eq(payPeriod.status, input.status));
+			conditions.push(
+				Array.isArray(input.status)
+					? inArray(payPeriod.status, input.status)
+					: eq(payPeriod.status, input.status)
+			);
 		}
 		const where = and(...conditions);
 		const [totalResult] = await db
@@ -929,8 +939,14 @@ const loansList = authorizedProcedure("payroll", "read")
 			.where(where);
 		const offset = (input.page - 1) * input.pageSize;
 		const data = await db
-			.select()
+			.select({
+				...getTableColumns(loan),
+				employeeFirstName: employeeProfile.firstName,
+				employeeLastName: employeeProfile.lastName,
+				employeeBadgeId: employeeProfile.badgeId,
+			})
 			.from(loan)
+			.leftJoin(employeeProfile, eq(loan.employeeId, employeeProfile.id))
 			.where(where)
 			.orderBy(desc(loan.createdAt))
 			.limit(input.pageSize)
@@ -978,13 +994,17 @@ const loansCreate = authorizedProcedure("payroll", "create")
 		if (!canManagePayroll(role(context))) {
 			throw new ORPCError("FORBIDDEN", { message: "Insufficient permission." });
 		}
+		const employeeLookup = input.employeeId.trim();
 		const [emp] = await db
 			.select()
 			.from(employeeProfile)
 			.where(
 				and(
-					eq(employeeProfile.id, input.employeeId),
-					eq(employeeProfile.organizationId, orgId(context))
+					eq(employeeProfile.organizationId, orgId(context)),
+					or(
+						eq(employeeProfile.id, employeeLookup),
+						eq(employeeProfile.badgeId, employeeLookup)
+					)
 				)
 			)
 			.limit(1);
@@ -996,7 +1016,7 @@ const loansCreate = authorizedProcedure("payroll", "create")
 		await db.insert(loan).values({
 			id: loanId,
 			organizationId: orgId(context),
-			employeeId: input.employeeId,
+			employeeId: emp.id,
 			type: input.type,
 			title: input.title,
 			amount: input.amount,
@@ -1030,7 +1050,7 @@ const loansCreate = authorizedProcedure("payroll", "create")
 			entityId: loanId,
 			action: "create",
 			actorId: actorId(context),
-			metadata: { employeeId: input.employeeId, amount: input.amount },
+			metadata: { employeeId: emp.id, amount: input.amount },
 		});
 
 		return { id: loanId };

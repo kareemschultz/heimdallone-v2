@@ -1462,14 +1462,25 @@ const workInfoUpdate = authorizedProcedure("employee", "update")
 				}
 			}
 		}
+
+		// Some migrated/no-login employees can legitimately have a profile without the
+		// one-to-one work-info satellite row. Treat "edit work info" as an upsert so
+		// HR staff can repair the record from the profile screen instead of being
+		// blocked by a NOT_FOUND from the update path.
+		const insertValues = {
+			id: createId(),
+			employeeId,
+			salaryCurrency: "GYD",
+			...updates,
+		};
 		const [updated] = await db
-			.update(schema.employeeWorkInfo)
-			.set(updates)
-			.where(eq(schema.employeeWorkInfo.employeeId, employeeId))
+			.insert(schema.employeeWorkInfo)
+			.values(insertValues)
+			.onConflictDoUpdate({
+				target: schema.employeeWorkInfo.employeeId,
+				set: updates,
+			})
 			.returning();
-		if (!updated) {
-			throw new Error("NOT_FOUND");
-		}
 		await createAuditEvent(db as never, {
 			organizationId: orgId(context),
 			entityType: "employee_work_info",
@@ -1557,7 +1568,7 @@ const bankDetailsUpdate = authorizedProcedure("employee", "update")
 			.where(eq(schema.employeeBankDetails.employeeId, employeeId))
 			.limit(1);
 
-		let result;
+		let result: (typeof existing)[number] | undefined;
 		if (existing.length === 0) {
 			[result] = await db
 				.insert(schema.employeeBankDetails)

@@ -1,0 +1,44 @@
+---
+title: Loans & salary advances
+description: Create and track employee loans, salary advances, fines, and payroll deductions.
+---
+
+# Loans & salary advances
+
+Use the loans page to record money that should be deducted from an employee's future pay, such as a salary advance, staff loan, or fine.
+
+## Who can use this
+
+- Payroll admins, HR admins, tenant admins, and tenant owners can create and manage loans and advances.
+- Other payroll readers can review loan records when their role allows access.
+
+## Creating a salary advance
+
+1. Open **Payroll → Loans & advances**.
+2. Select **Create loan**.
+3. Choose the type, such as **Salary advance**.
+4. Search for the employee by name, email, or staff badge/employee number.
+5. Pick the employee from the dropdown. The selected employee's name and badge are shown before saving.
+6. Enter the title, total amount, number of installments, installment amount, provided date, and first installment date.
+7. Select **Create**.
+
+The employee selector stores the internal employee profile link even when staff search by a visible badge such as `HR-EMP-00021`. This prevents "employee not found" errors caused by typing the display badge into a field that expects the internal record ID.
+
+## Payslip deductions
+
+Active loan and advance installments are included in payroll calculation as deductions for the relevant pay period. The deduction appears on the employee's payslip when the installment date falls inside the pay run window and the loan remains active.
+
+## Finding existing records
+
+The list can be searched by:
+
+- Loan or advance title
+- Type and status
+- Employee first or last name
+- Employee badge/ID
+
+Each row shows the employee name and badge alongside the loan dates so payroll staff can confirm the right employee without relying on raw database IDs.
+
+## Settling a loan
+
+Settling a loan stops future deductions. Review skipped or pending installments before settling so the employee's payslip history stays accurate.

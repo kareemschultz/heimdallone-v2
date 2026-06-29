@@ -278,7 +278,7 @@ function PeriodStep({
 
 	const { data, isLoading } = useQuery(
 		orpc.payroll.payPeriods.list.queryOptions({
-			input: { status: "open", page: 1, pageSize: 20 },
+			input: { status: ["open", "processing"], page: 1, pageSize: 20 },
 		})
 	);
 
