@@ -23,6 +23,32 @@
 	flex: 1;
 }
 
+/* Span control (1 week / 2 weeks / 4 weeks) — reuses the global .segmented
+   look as an aria-pressed toggle group (.active highlight comes from the
+   shared .segmented button.active rule); add a focus-visible ring for a11y. */
+.rst-span-seg button:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 1px;
+}
+
+/* Multi-week stack — one 7-column week grid per week, stacked vertically. */
+.rst-weeks {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+.rst-week-heading {
+	padding: 8px 12px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--fg-2);
+	border-bottom: 1px solid var(--line);
+}
+.rst-week-heading.rst-week-heading-flush {
+	padding: 0 0 8px;
+	margin-bottom: 8px;
+}
+
 /* Calendar week grid */
 .rst-grid-wrap {
 	overflow-x: auto;

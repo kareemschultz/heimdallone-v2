@@ -43,6 +43,30 @@ const WEEKDAY_OPTIONS = [
 	{ value: 0, label: "Sun" },
 ];
 
+const DAYS_PER_WEEK = 7;
+const MS_PER_DAY = 86_400_000;
+
+// How many weeks the grid shows at once. People assign by pay period
+// (fortnight/month), so the grid must be able to show the whole period — a
+// single-week grid made multi-week bulk assignments look like they only took
+// for the visible days.
+type RosterSpan = 1 | 2 | 4;
+const SPAN_OPTIONS: { value: RosterSpan; label: string; aria: string }[] = [
+	{ value: 1, label: "1 week", aria: "Show one week" },
+	{ value: 2, label: "2 weeks", aria: "Show two weeks (fortnight)" },
+	{ value: 4, label: "4 weeks", aria: "Show four weeks" },
+];
+
+function spanFromWeekCount(weekCount: number): RosterSpan {
+	if (weekCount >= 4) {
+		return 4;
+	}
+	if (weekCount >= 2) {
+		return 2;
+	}
+	return 1;
+}
+
 interface RosterEntry {
 	customEndMinutes: number | null;
 	customStartMinutes: number | null;
@@ -121,9 +145,69 @@ function parseTime(value: string): number | null {
 }
 
 function weekLabel(monday: Date): string {
-	const end = addDays(monday, 6);
+	const end = addDays(monday, DAYS_PER_WEEK - 1);
 	const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
 	return `${monday.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, { ...opts, year: "numeric" })}`;
+}
+
+// Label for the whole visible span (one week → weekLabel; otherwise the full
+// first-day → last-day range).
+function spanLabel(start: Date, span: RosterSpan): string {
+	if (span === 1) {
+		return weekLabel(start);
+	}
+	const end = addDays(start, span * DAYS_PER_WEEK - 1);
+	const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+	return `${start.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, { ...opts, year: "numeric" })}`;
+}
+
+function rangeText(fromIso: string, toIso: string): string {
+	const opts: Intl.DateTimeFormatOptions = { day: "numeric", month: "short" };
+	const start = new Date(`${fromIso}T00:00:00`);
+	const end = new Date(`${toIso}T00:00:00`);
+	return `${start.toLocaleDateString(undefined, opts)} – ${end.toLocaleDateString(undefined, { ...opts, year: "numeric" })}`;
+}
+
+// Number of calendar weeks an inclusive date range touches (counting partial
+// weeks at each end), used to pick the smallest span that shows the range.
+function weeksInRange(fromIso: string, toIso: string): number {
+	const a = mondayOf(new Date(`${fromIso}T00:00:00`));
+	const b = mondayOf(new Date(`${toIso}T00:00:00`));
+	return (
+		Math.round((b.getTime() - a.getTime()) / (DAYS_PER_WEEK * MS_PER_DAY)) + 1
+	);
+}
+
+function bulkNoCreateMessage(skipped: number): string {
+	return skipped > 0
+		? `No new shifts — all ${skipped} day(s) in range already had a shift.`
+		: "No shifts created — no selected weekdays fall in that date range.";
+}
+
+// Human summary naming the full date range + multi-week span, so a fortnight or
+// month assignment never looks like only the first visible week took.
+function bulkAssignMessage(args: {
+	created: number;
+	skipped: number;
+	who: string;
+	from: string;
+	to: string;
+}): string {
+	const skippedNote =
+		args.skipped > 0 ? ` (skipped ${args.skipped} already-assigned)` : "";
+	const span = weeksInRange(args.from, args.to);
+	const spanNote =
+		span > 1
+			? ` (${span} weeks) — showing the ${spanFromWeekCount(span)}-week view so you can see them all`
+			: "";
+	return `Assigned ${args.created} shift(s) for ${args.who}, ${rangeText(args.from, args.to)}${spanNote}${skippedNote}.`;
+}
+
+function fullEmployeeName(emp: EmployeeRow | undefined): string {
+	if (!emp) {
+		return "employee";
+	}
+	return `${emp.firstName}${emp.lastName ? ` ${emp.lastName}` : ""}`;
 }
 
 function entryLabel(e: RosterEntry): string {
@@ -161,15 +245,27 @@ function RosterPage() {
 
 	const [view, setView] = useState<RosterView>("calendar");
 	const [weekStart, setWeekStart] = useState<Date>(() => mondayOf(new Date()));
+	const [spanWeeks, setSpanWeeks] = useState<RosterSpan>(1);
 	const [dialog, setDialog] = useState<DialogState | null>(null);
 	const [bulkOpen, setBulkOpen] = useState(false);
 
-	const weekDays = useMemo(
-		() => Array.from({ length: 7 }, (_, i) => addDays(weekStart, i)),
-		[weekStart]
+	const spanDays = spanWeeks * DAYS_PER_WEEK;
+	// Every day in the visible span, then grouped into Mon→Sun weeks so each
+	// week renders as its own 7-column grid (a "sensible multi-week layout"
+	// that keeps weekday alignment without a very wide single table).
+	const days = useMemo(
+		() => Array.from({ length: spanDays }, (_, i) => addDays(weekStart, i)),
+		[weekStart, spanDays]
 	);
-	const from = isoDate(weekDays[0]);
-	const to = isoDate(weekDays[6]);
+	const weeks = useMemo(
+		() =>
+			Array.from({ length: spanWeeks }, (_, w) =>
+				days.slice(w * DAYS_PER_WEEK, w * DAYS_PER_WEEK + DAYS_PER_WEEK)
+			),
+		[days, spanWeeks]
+	);
+	const from = isoDate(days[0]);
+	const to = isoDate(addDays(weekStart, spanDays - 1));
 	const todayIso = isoDate(new Date());
 
 	const entriesQuery = useQuery(
@@ -323,18 +419,20 @@ function RosterPage() {
 			<div className="rst-toolbar">
 				<div className="rst-week-nav">
 					<button
-						aria-label="Previous week"
+						aria-label="Previous period"
 						className="btn btn-ghost btn-sm"
-						onClick={() => setWeekStart(addDays(weekStart, -7))}
+						onClick={() => setWeekStart(addDays(weekStart, -spanDays))}
 						type="button"
 					>
 						<ChevronLeft size={15} />
 					</button>
-					<span className="rst-week-label">{weekLabel(weekStart)}</span>
+					<span className="rst-week-label">
+						{spanLabel(weekStart, spanWeeks)}
+					</span>
 					<button
-						aria-label="Next week"
+						aria-label="Next period"
 						className="btn btn-ghost btn-sm"
-						onClick={() => setWeekStart(addDays(weekStart, 7))}
+						onClick={() => setWeekStart(addDays(weekStart, spanDays))}
 						type="button"
 					>
 						<ChevronRight size={15} />
@@ -346,6 +444,20 @@ function RosterPage() {
 					>
 						Today
 					</button>
+				</div>
+				<div className="segmented rst-span-seg">
+					{SPAN_OPTIONS.map((opt) => (
+						<button
+							aria-label={opt.aria}
+							aria-pressed={spanWeeks === opt.value}
+							className={spanWeeks === opt.value ? "active" : ""}
+							key={opt.value}
+							onClick={() => setSpanWeeks(opt.value)}
+							type="button"
+						>
+							{opt.label}
+						</button>
+					))}
 				</div>
 				<div className="rst-spacer" />
 				<div className="segmented" role="tablist">
@@ -404,11 +516,11 @@ function RosterPage() {
 							}}
 							rows={rows}
 							todayIso={todayIso}
-							weekDays={weekDays}
+							weeks={weeks}
 						/>
 					)}
 					{view === "timeline" && (
-						<TimelineView byKey={byKey} rows={rows} weekDays={weekDays} />
+						<TimelineView byKey={byKey} rows={rows} weeks={weeks} />
 					)}
 					{view === "list" && (
 						<ListView
@@ -443,12 +555,14 @@ function RosterPage() {
 				<BulkAssignDialog
 					employees={employees}
 					onClose={() => setBulkOpen(false)}
-					onSaved={(rangeStart) => {
+					onSaved={(rangeStart, rangeEnd) => {
 						setBulkOpen(false);
-						// Jump the weekly grid to the start of the assigned range so the
-						// newly-created entries are immediately visible (otherwise a range
-						// starting later than the current week looks like "nothing happened").
+						// Jump the grid to the start of the assigned range AND widen the
+						// span to cover the whole range, so every newly-created entry is
+						// immediately visible (otherwise a fortnight/month assignment looks
+						// like only the first visible week took).
 						setWeekStart(mondayOf(new Date(`${rangeStart}T00:00:00`)));
+						setSpanWeeks(spanFromWeekCount(weeksInRange(rangeStart, rangeEnd)));
 						invalidate();
 					}}
 					shifts={shifts}
@@ -458,13 +572,14 @@ function RosterPage() {
 	);
 }
 
-function CalendarView({
+function WeekGrid({
 	rows,
 	weekDays,
 	byKey,
 	todayIso,
 	canManage,
 	onCellClick,
+	showHeading,
 }: {
 	rows: { id: string; name: string }[];
 	weekDays: Date[];
@@ -472,18 +587,13 @@ function CalendarView({
 	todayIso: string;
 	canManage: boolean;
 	onCellClick: (empId: string, date: string) => void;
+	showHeading: boolean;
 }) {
-	if (rows.length === 0) {
-		return (
-			<EmptyState
-				description="Add active employees in Settings to build a roster."
-				icon={<CalendarDays size={28} />}
-				title="No employees to schedule"
-			/>
-		);
-	}
 	return (
 		<div className="card" style={{ padding: 0 }}>
+			{showHeading && (
+				<div className="rst-week-heading">{weekLabel(weekDays[0])}</div>
+			)}
 			<div className="rst-grid-wrap">
 				<table className="rst-grid">
 					<thead>
@@ -550,26 +660,67 @@ function CalendarView({
 	);
 }
 
-function TimelineView({
+function CalendarView({
 	rows,
-	weekDays,
+	weeks,
 	byKey,
+	todayIso,
+	canManage,
+	onCellClick,
 }: {
 	rows: { id: string; name: string }[];
-	weekDays: Date[];
+	weeks: Date[][];
 	byKey: Map<string, RosterEntry>;
+	todayIso: string;
+	canManage: boolean;
+	onCellClick: (empId: string, date: string) => void;
 }) {
 	if (rows.length === 0) {
 		return (
 			<EmptyState
 				description="Add active employees in Settings to build a roster."
-				icon={<CalendarRange size={28} />}
+				icon={<CalendarDays size={28} />}
 				title="No employees to schedule"
 			/>
 		);
 	}
+	const multiWeek = weeks.length > 1;
+	return (
+		<div className="rst-weeks">
+			{weeks.map((weekDays) => (
+				<WeekGrid
+					byKey={byKey}
+					canManage={canManage}
+					key={isoDate(weekDays[0])}
+					onCellClick={onCellClick}
+					rows={rows}
+					showHeading={multiWeek}
+					todayIso={todayIso}
+					weekDays={weekDays}
+				/>
+			))}
+		</div>
+	);
+}
+
+function TimelineWeek({
+	rows,
+	weekDays,
+	byKey,
+	showHeading,
+}: {
+	rows: { id: string; name: string }[];
+	weekDays: Date[];
+	byKey: Map<string, RosterEntry>;
+	showHeading: boolean;
+}) {
 	return (
 		<div className="card card-pad">
+			{showHeading && (
+				<div className="rst-week-heading rst-week-heading-flush">
+					{weekLabel(weekDays[0])}
+				</div>
+			)}
 			{rows.map((row) => (
 				<div className="rst-timeline-row" key={row.id}>
 					<div className="rst-timeline-emp">{row.name}</div>
@@ -594,6 +745,40 @@ function TimelineView({
 	);
 }
 
+function TimelineView({
+	rows,
+	weeks,
+	byKey,
+}: {
+	rows: { id: string; name: string }[];
+	weeks: Date[][];
+	byKey: Map<string, RosterEntry>;
+}) {
+	if (rows.length === 0) {
+		return (
+			<EmptyState
+				description="Add active employees in Settings to build a roster."
+				icon={<CalendarRange size={28} />}
+				title="No employees to schedule"
+			/>
+		);
+	}
+	const multiWeek = weeks.length > 1;
+	return (
+		<div className="rst-weeks">
+			{weeks.map((weekDays) => (
+				<TimelineWeek
+					byKey={byKey}
+					key={isoDate(weekDays[0])}
+					rows={rows}
+					showHeading={multiWeek}
+					weekDays={weekDays}
+				/>
+			))}
+		</div>
+	);
+}
+
 function ListView({
 	entries,
 	selfOnly,
@@ -612,7 +797,7 @@ function ListView({
 	if (entries.length === 0) {
 		return (
 			<EmptyState
-				description="No shifts are scheduled for this week."
+				description="No shifts are scheduled for this period."
 				icon={<List size={28} />}
 				title="Nothing scheduled"
 			/>
@@ -965,12 +1150,14 @@ function BulkAssignDialog({
 	shifts: ShiftRow[];
 	employees: EmployeeRow[];
 	onClose: () => void;
-	onSaved: (rangeStart: string) => void;
+	onSaved: (rangeStart: string, rangeEnd: string) => void;
 }) {
 	const [employeeId, setEmployeeId] = useState("");
 	const [shiftId, setShiftId] = useState("");
 	const [from, setFrom] = useState(isoDate(new Date()));
-	const [to, setTo] = useState(isoDate(addDays(new Date(), 13)));
+	const [to, setTo] = useState(
+		isoDate(addDays(new Date(), DAYS_PER_WEEK * 2 - 1))
+	);
 	const [weekdays, setWeekdays] = useState<number[]>([1, 2, 3, 4, 5]);
 	const [saving, setSaving] = useState(false);
 
@@ -993,23 +1180,26 @@ function BulkAssignDialog({
 				shiftId,
 				from,
 				to,
-				weekdays: weekdays.length === 7 ? undefined : weekdays,
+				weekdays: weekdays.length === DAYS_PER_WEEK ? undefined : weekdays,
 				skipExisting: true,
 			});
-			// Report exactly what happened — "assigned across the range" alone made a
-			// range that starts later than the current week look like nothing changed.
+			// Report exactly what happened — naming the full date range + week span
+			// stops a fortnight/month assignment from looking like only the first
+			// visible week took (the grid jumps to cover the range too).
 			if (res.created === 0) {
-				toast.warning(
-					res.skipped > 0
-						? `No new shifts — all ${res.skipped} day(s) in range already had a shift.`
-						: "No shifts created — no selected weekdays fall in that date range."
-				);
+				toast.warning(bulkNoCreateMessage(res.skipped));
 			} else {
-				const skippedNote =
-					res.skipped > 0 ? ` (skipped ${res.skipped} already-assigned)` : "";
-				toast.success(`Assigned ${res.created} shift(s)${skippedNote}.`);
+				toast.success(
+					bulkAssignMessage({
+						created: res.created,
+						skipped: res.skipped,
+						who: fullEmployeeName(employees.find((e) => e.id === employeeId)),
+						from,
+						to,
+					})
+				);
 			}
-			onSaved(from);
+			onSaved(from, to);
 		} catch (err) {
 			toast.error(err instanceof Error ? err.message : "Could not assign.");
 		} finally {
