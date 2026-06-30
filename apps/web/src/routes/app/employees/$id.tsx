@@ -4,7 +4,6 @@ import {
 	Activity,
 	Archive,
 	ArrowRight,
-	ArrowUp,
 	Briefcase,
 	Calendar,
 	Check,
@@ -26,7 +25,7 @@ import { toast } from "sonner";
 import "@/styles/employee-profile.css";
 import "@/styles/contracts.css";
 import { type PayFrequency, payFrequencyLabel } from "@/lib/pay-frequency";
-import { canManageHR, canManagePayroll } from "@/lib/rbac";
+import { canManageHR, canManagePayroll, canViewPayroll } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { client, orpc } from "@/utils/orpc";
 
@@ -42,38 +41,103 @@ type ProfileTab =
 	| "documents"
 	| "activity";
 
-const ATT_DAYS = [
-	"weekend",
-	"full",
-	"full",
-	"late",
-	"full",
-	"full",
-	"full",
-	"weekend",
-	"weekend",
-	"full",
-	"full",
-	"full",
-	"full",
-	"full-2",
-	"weekend",
-	"weekend",
-	"full",
-	"full",
-	"full",
-	"full",
-	"full",
-	"weekend",
-	"weekend",
-	"full",
-	"late",
-	"full",
-	"full",
-	"full",
-	"weekend",
-	"weekend",
+const HEATMAP_DAYS = 30;
+const MS_PER_DAY = 86_400_000;
+
+function pad2(n: number): string {
+	return String(n).padStart(2, "0");
+}
+
+function toYmd(d: Date): string {
+	return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+}
+
+/** Money values arrive as numeric strings (e.g. "265000.00"). */
+function formatMoneyValue(value: string | null | undefined): string {
+	if (value === null || value === undefined || value === "") {
+		return "—";
+	}
+	const n = Number(value);
+	return Number.isFinite(n) ? n.toLocaleString() : "—";
+}
+
+const SHORT_MONTHS = [
+	"Jan",
+	"Feb",
+	"Mar",
+	"Apr",
+	"May",
+	"Jun",
+	"Jul",
+	"Aug",
+	"Sep",
+	"Oct",
+	"Nov",
+	"Dec",
 ];
+
+function shortMonthYear(d: Date): string {
+	return `${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+type AttendanceDay = {
+	date: string;
+	cls: string;
+	label: string;
+};
+
+type AttendanceRecordRow = {
+	date: string | Date;
+	status: string | null;
+	lateMinutes: number | null;
+};
+
+/** Build the last-N-days heatmap from real attendance records (oldest→newest). */
+function buildHeatmap(
+	records: AttendanceRecordRow[],
+	today: Date
+): AttendanceDay[] {
+	const byDate = new Map<string, AttendanceRecordRow>();
+	for (const r of records) {
+		byDate.set(toYmd(new Date(r.date)), r);
+	}
+	const todayYmd = toYmd(today);
+	const days: AttendanceDay[] = [];
+	for (let i = HEATMAP_DAYS - 1; i >= 0; i--) {
+		const d = new Date(today.getTime() - i * MS_PER_DAY);
+		const ymd = toYmd(d);
+		const rec = byDate.get(ymd);
+		const isWeekend = d.getDay() === 0 || d.getDay() === 6;
+		let cls = "";
+		let label = "No record";
+		if (ymd > todayYmd) {
+			cls = "future";
+			label = "Upcoming";
+		} else if (rec) {
+			if (rec.status === "absent") {
+				cls = "absent";
+				label = "Absent";
+			} else if (rec.status === "present" && (rec.lateMinutes ?? 0) > 0) {
+				cls = "late";
+				label = "Late";
+			} else if (rec.status === "present") {
+				cls = "full";
+				label = "Present";
+			} else if (rec.status === "half_day") {
+				cls = "full-2";
+				label = "Half day";
+			} else if (rec.status === "holiday") {
+				cls = "weekend";
+				label = "Holiday";
+			}
+		} else if (isWeekend) {
+			cls = "weekend";
+			label = "Weekend";
+		}
+		days.push({ date: ymd, cls, label });
+	}
+	return days;
+}
 
 type EditSection = "personal" | "work" | "bank" | null;
 
@@ -132,6 +196,58 @@ function EmployeeProfilePage() {
 
 	const { data: contractsData } = useQuery(
 		orpc.contracts.getByEmployeeId.queryOptions({ input: { employeeId: id } })
+	);
+
+	// --- Live Overview dashboard data (replaces former hardcoded mock stats) ---
+	const canSeePay = canViewPayroll(org.memberRole);
+	const today = new Date();
+	const heatmapStart = new Date(
+		today.getTime() - (HEATMAP_DAYS - 1) * MS_PER_DAY
+	);
+
+	const {
+		data: payslipPage,
+		isLoading: payslipLoading,
+		isError: payslipError,
+	} = useQuery({
+		...orpc.payroll.payslips.list.queryOptions({
+			input: { employeeId: id, page: 1, pageSize: 1 },
+		}),
+		enabled: canSeePay,
+	});
+
+	const {
+		data: attSummary,
+		isLoading: attSummaryLoading,
+		isError: attSummaryError,
+	} = useQuery(
+		orpc.attendance.summary.monthly.queryOptions({
+			input: {
+				employeeId: id,
+				month: today.getMonth() + 1,
+				year: today.getFullYear(),
+			},
+		})
+	);
+
+	const {
+		data: leaveBalances,
+		isLoading: leaveLoading,
+		isError: leaveError,
+	} = useQuery(
+		orpc.leave.balances.list.queryOptions({ input: { employeeId: id } })
+	);
+
+	const { data: attRecords } = useQuery(
+		orpc.attendance.records.list.queryOptions({
+			input: {
+				employeeId: id,
+				startDate: toYmd(heatmapStart),
+				endDate: toYmd(today),
+				page: 1,
+				pageSize: 50,
+			},
+		})
 	);
 
 	const handleArchive = async () => {
@@ -250,6 +366,52 @@ function EmployeeProfilePage() {
 	const fullName = `${emp.firstName}${emp.lastName ? ` ${emp.lastName}` : ""}`;
 	const initials =
 		`${emp.firstName.charAt(0)}${emp.lastName ? emp.lastName.charAt(0) : ""}`.toUpperCase();
+
+	// --- Derived Overview values from live queries ---
+	const EM_DASH = "—";
+	const attRow =
+		attSummary?.find((r) => r.employeeId === id) ?? attSummary?.[0] ?? null;
+	const attHasData = !(attSummaryLoading || attSummaryError) && attRow !== null;
+
+	const daysPresent = attRow?.daysPresent ?? 0;
+	const daysAbsent = attRow?.daysAbsent ?? 0;
+	const daysHoliday = attRow?.daysHoliday ?? 0;
+	const lateCount = attRow?.lateCount ?? 0;
+	const approvedOtMinutes = attRow?.totalApprovedOtMinutes ?? 0;
+	const rawOtMinutes = attRow?.totalOvertimeMinutes ?? 0;
+	const pendingOtMinutes = Math.max(0, rawOtMinutes - approvedOtMinutes);
+
+	const attendanceDenominator = daysPresent + daysAbsent;
+	const attendancePct =
+		attendanceDenominator > 0
+			? Math.round((daysPresent / attendanceDenominator) * 1000) / 10
+			: null;
+
+	const otHours = approvedOtMinutes / 60;
+	const pendingOtHours = pendingOtMinutes / 60;
+
+	const latestPayslip = payslipPage?.data?.[0] ?? null;
+
+	// Leave balance card + widget: prefer an annual-type balance, else aggregate.
+	const annualBalance =
+		leaveBalances?.find((b) => /annual/i.test(b.leaveTypeName ?? "")) ?? null;
+	const leaveCardAvailable = annualBalance
+		? Number(annualBalance.availableDays)
+		: (leaveBalances ?? []).reduce(
+				(sum, b) => sum + Number(b.availableDays),
+				0
+			);
+	const leaveCardUsed = annualBalance
+		? Number(annualBalance.usedDays)
+		: (leaveBalances ?? []).reduce((sum, b) => sum + Number(b.usedDays), 0);
+	const leaveCardTotal = leaveCardAvailable + leaveCardUsed;
+	const hasLeaveData = (leaveBalances?.length ?? 0) > 0;
+
+	const heatmap = buildHeatmap(
+		(attRecords?.data ?? []) as AttendanceRecordRow[],
+		today
+	);
+
 	return (
 		<div className="page" data-tab-scope>
 			<div className="crumbs">
@@ -611,35 +773,83 @@ function EmployeeProfilePage() {
 						<div className="right">
 							<div className="stat-row">
 								<div className="stat-card">
-									<div className="l">Attendance · 30d</div>
-									<div className="v">94.8%</div>
-									<div className="delta up">
-										<ArrowUp size={10} />
-										+1.2pp · 2 late · 0 absent
+									<div className="l">Attendance · {shortMonthYear(today)}</div>
+									<div className="v">
+										{attSummaryLoading ||
+										attSummaryError ||
+										attendancePct === null
+											? EM_DASH
+											: `${attendancePct}%`}
+									</div>
+									<div className="delta">
+										{attSummaryLoading || attSummaryError
+											? "No data"
+											: `${lateCount} late · ${daysAbsent} absent`}
 									</div>
 								</div>
 								<div className="stat-card">
 									<div className="l">Leave balance</div>
 									<div className="v">
-										15
-										<span style={{ fontSize: "14px", color: "var(--fg-3)" }}>
-											{" "}
-											/ 18
-										</span>
+										{leaveLoading || leaveError || !hasLeaveData ? (
+											EM_DASH
+										) : (
+											<>
+												{leaveCardAvailable}
+												<span
+													style={{ fontSize: "14px", color: "var(--fg-3)" }}
+												>
+													{" "}
+													/ {leaveCardTotal}
+												</span>
+											</>
+										)}
 									</div>
-									<div className="delta">3 days taken · FY 2026</div>
-								</div>
-								<div className="stat-card">
-									<div className="l">Net pay · Sep</div>
-									<div className="v" style={{ color: "var(--accent)" }}>
-										265.0k
+									<div className="delta">
+										{leaveLoading || leaveError || !hasLeaveData
+											? "No balances"
+											: `${leaveCardUsed} days taken${
+													annualBalance ? "" : " · all types"
+												}`}
 									</div>
-									<div className="delta">GYD · gross 342.0k</div>
 								</div>
+								{canSeePay && (
+									<div className="stat-card">
+										<div className="l">
+											Net pay
+											{latestPayslip
+												? ` · ${shortMonthYear(new Date(latestPayslip.periodEnd))}`
+												: ""}
+										</div>
+										<div className="v" style={{ color: "var(--accent)" }}>
+											{payslipLoading || payslipError || !latestPayslip
+												? EM_DASH
+												: formatMoneyValue(latestPayslip.netPay)}
+										</div>
+										<div className="delta">
+											{payslipLoading || payslipError
+												? "No data"
+												: latestPayslip
+													? `${latestPayslip.currency} · gross ${formatMoneyValue(
+															latestPayslip.grossPay
+														)}`
+													: "No payslips yet"}
+										</div>
+									</div>
+								)}
 								<div className="stat-card">
-									<div className="l">Overtime · 30d</div>
-									<div className="v">14.5 h</div>
-									<div className="delta warn">+ 6.5h pending approval</div>
+									<div className="l">Overtime · {shortMonthYear(today)}</div>
+									<div className="v">
+										{attSummaryLoading || attSummaryError
+											? EM_DASH
+											: `${otHours.toFixed(1)} h`}
+									</div>
+									<div className={pendingOtHours > 0 ? "delta warn" : "delta"}>
+										{attSummaryLoading || attSummaryError
+											? "No data"
+											: pendingOtHours > 0
+												? `+ ${pendingOtHours.toFixed(1)}h pending approval`
+												: "Approved this month"}
+									</div>
 								</div>
 							</div>
 
@@ -698,119 +908,67 @@ function EmployeeProfilePage() {
 												flexWrap: "wrap",
 											}}
 										>
-											<div>
-												<span
-													style={{
-														fontSize: "11px",
-														color: "var(--fg-3)",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em",
-													}}
-												>
-													Full days
-												</span>
-												<div
-													className="mono"
-													style={{
-														fontSize: "16px",
-														fontWeight: 600,
-													}}
-												>
-													22
+											{[
+												{
+													label: "Full days",
+													value: attHasData ? String(daysPresent) : EM_DASH,
+													color: undefined,
+												},
+												{
+													label: "Late",
+													value: attHasData ? String(lateCount) : EM_DASH,
+													color: "var(--warning)",
+												},
+												{
+													label: "Absent",
+													value: attHasData ? String(daysAbsent) : EM_DASH,
+													color: "var(--danger)",
+												},
+												{
+													label: "Holiday",
+													value: attHasData ? String(daysHoliday) : EM_DASH,
+													color: undefined,
+												},
+												{
+													label: "OT",
+													value: attHasData
+														? `${otHours.toFixed(1)}h`
+														: EM_DASH,
+													color: "var(--accent)",
+												},
+											].map((stat) => (
+												<div key={stat.label}>
+													<span
+														style={{
+															fontSize: "11px",
+															color: "var(--fg-3)",
+															textTransform: "uppercase",
+															letterSpacing: "0.05em",
+														}}
+													>
+														{stat.label}
+													</span>
+													<div
+														className="mono"
+														style={{
+															fontSize: "16px",
+															fontWeight: 600,
+															color: stat.color,
+														}}
+													>
+														{stat.value}
+													</div>
 												</div>
-											</div>
-											<div>
-												<span
-													style={{
-														fontSize: "11px",
-														color: "var(--fg-3)",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em",
-													}}
-												>
-													Late
-												</span>
-												<div
-													className="mono"
-													style={{
-														fontSize: "16px",
-														fontWeight: 600,
-														color: "var(--warning)",
-													}}
-												>
-													2
-												</div>
-											</div>
-											<div>
-												<span
-													style={{
-														fontSize: "11px",
-														color: "var(--fg-3)",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em",
-													}}
-												>
-													Absent
-												</span>
-												<div
-													className="mono"
-													style={{
-														fontSize: "16px",
-														fontWeight: 600,
-														color: "var(--danger)",
-													}}
-												>
-													0
-												</div>
-											</div>
-											<div>
-												<span
-													style={{
-														fontSize: "11px",
-														color: "var(--fg-3)",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em",
-													}}
-												>
-													Leave
-												</span>
-												<div
-													className="mono"
-													style={{
-														fontSize: "16px",
-														fontWeight: 600,
-													}}
-												>
-													3
-												</div>
-											</div>
-											<div>
-												<span
-													style={{
-														fontSize: "11px",
-														color: "var(--fg-3)",
-														textTransform: "uppercase",
-														letterSpacing: "0.05em",
-													}}
-												>
-													OT
-												</span>
-												<div
-													className="mono"
-													style={{
-														fontSize: "16px",
-														fontWeight: 600,
-														color: "var(--accent)",
-													}}
-												>
-													14.5h
-												</div>
-											</div>
+											))}
 										</div>
 									</div>
 									<div className="att-cal">
-										{ATT_DAYS.map((day, i) => (
-											<div className={`att-day ${day}`} key={i} />
+										{heatmap.map((day) => (
+											<div
+												className={`att-day ${day.cls}`.trim()}
+												key={day.date}
+												title={`${day.date} · ${day.label}`}
+											/>
 										))}
 									</div>
 									<div
@@ -888,7 +1046,7 @@ function EmployeeProfilePage() {
 													background: "var(--bg-3)",
 												}}
 											/>
-											Leave
+											No record
 										</span>
 										<span
 											style={{
@@ -914,46 +1072,73 @@ function EmployeeProfilePage() {
 							{/* Leave widget */}
 							<div className="widget">
 								<div className="widget-head">
-									<span className="ttl">Leave balances · FY 2026</span>
-									<a
-										href="#"
+									<span className="ttl">Leave balances</span>
+									<Link
 										style={{ fontSize: "11.5px", color: "var(--accent)" }}
+										to="/app/leave"
 									>
-										Request leave
-									</a>
+										View leave
+									</Link>
 								</div>
 								<div className="widget-body">
-									<div className="leave-row">
-										<span className="lbl">Annual</span>
-										<div className="pbar">
-											<div className="pbar-fill" style={{ width: "16.6%" }} />
+									{leaveLoading && (
+										<div
+											style={{
+												fontSize: "12.5px",
+												color: "var(--fg-3)",
+												padding: "8px 0",
+											}}
+										>
+											Loading leave balances…
 										</div>
-										<span className="nums">3 / 18 used</span>
-									</div>
-									<div className="leave-row">
-										<span className="lbl">Sick</span>
-										<div className="pbar">
-											<div
-												className="pbar-fill warning"
-												style={{ width: "14.3%" }}
-											/>
+									)}
+									{!leaveLoading && leaveError && (
+										<div
+											style={{
+												fontSize: "12.5px",
+												color: "var(--fg-3)",
+												padding: "8px 0",
+											}}
+										>
+											Couldn't load leave balances.
 										</div>
-										<span className="nums">2 / 14 used</span>
-									</div>
-									<div className="leave-row">
-										<span className="lbl">Compassionate</span>
-										<div className="pbar">
-											<div className="pbar-fill" style={{ width: "0%" }} />
+									)}
+									{!(leaveLoading || leaveError || hasLeaveData) && (
+										<div
+											style={{
+												fontSize: "12.5px",
+												color: "var(--fg-3)",
+												padding: "8px 0",
+											}}
+										>
+											No leave balances configured.
 										</div>
-										<span className="nums">0 / 3 used</span>
-									</div>
-									<div className="leave-row">
-										<span className="lbl">Study</span>
-										<div className="pbar">
-											<div className="pbar-fill" style={{ width: "40%" }} />
-										</div>
-										<span className="nums">2 / 5 used</span>
-									</div>
+									)}
+									{!(leaveLoading || leaveError) &&
+										hasLeaveData &&
+										(leaveBalances ?? []).map((bal) => {
+											const used = Number(bal.usedDays);
+											const available = Number(bal.availableDays);
+											const total = used + available;
+											const pct =
+												total > 0
+													? Math.min(100, Math.max(0, (used / total) * 100))
+													: 0;
+											return (
+												<div className="leave-row" key={bal.id}>
+													<span className="lbl">{bal.leaveTypeName}</span>
+													<div className="pbar">
+														<div
+															className="pbar-fill"
+															style={{ width: `${pct}%` }}
+														/>
+													</div>
+													<span className="nums">
+														{used} / {total} used
+													</span>
+												</div>
+											);
+										})}
 								</div>
 							</div>
 

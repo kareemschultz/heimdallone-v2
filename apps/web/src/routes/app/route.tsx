@@ -13,6 +13,7 @@ import {
 	Briefcase,
 	Calendar,
 	CalendarClock,
+	CalendarRange,
 	ChevronDown,
 	ClipboardList,
 	Clock,
@@ -97,6 +98,7 @@ const EMPLOYEE_VISIBLE_KEYS = new Set([
 	// Self-service time: My timesheet + clock in/out/break (the attendance page is
 	// server-scoped to the caller's own records for non-manage roles).
 	"attendance",
+	"timesheets",
 	"leave",
 	"roster",
 	// Self-service pay: My payslips (the payslips page uses getOwn for employees).
@@ -116,6 +118,7 @@ const MANAGER_VISIBLE_KEYS = new Set([
 	"org-chart",
 	"contracts",
 	"attendance",
+	"timesheets",
 	"roster",
 	"leave",
 	// Managers see their own payslips via the self-service getOwn page.
@@ -173,6 +176,7 @@ const PROJECT_MANAGER_VISIBLE_KEYS = new Set([
 	"employees",
 	"contracts",
 	"attendance",
+	"timesheets",
 	"leave",
 	"assets",
 	"helpdesk",
@@ -274,6 +278,12 @@ export const NAV = [
 				label: "Attendance",
 				icon: Clock,
 				href: "/app/attendance",
+			},
+			{
+				key: "timesheets",
+				label: "Timesheets",
+				icon: CalendarRange,
+				href: "/app/attendance/timesheets",
 			},
 			{
 				key: "roster",

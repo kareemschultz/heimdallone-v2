@@ -1495,6 +1495,213 @@ const summaryMonthly = authorizedProcedure("attendance", "read")
 			);
 	});
 
+// ── injection-safe CSV (mirrors finance/payroll encoder) ──
+const CSV_FORMULA_TRIGGER = /^[=+\-@\t\r]/;
+const CSV_NEEDS_QUOTE = /[",\n\r]/;
+function csvCell(value: unknown): string {
+	let s = String(value ?? "");
+	if (CSV_FORMULA_TRIGGER.test(s)) {
+		s = `'${s}`;
+	}
+	s = s.replace(/"/g, '""');
+	if (CSV_NEEDS_QUOTE.test(s)) {
+		return `"${s}"`;
+	}
+	return s;
+}
+function csvRows(rows: unknown[][]): string {
+	return rows.map((r) => r.map(csvCell).join(",")).join("\r\n");
+}
+
+// ── range summary (arbitrary period, optional week/fortnight/month buckets) ──
+const summaryRangeInput = z.object({
+	startDate: z.string(),
+	endDate: z.string(),
+	employeeId: z.string().optional(),
+	departmentId: z.string().optional(),
+	groupBy: z.enum(["none", "week", "fortnight", "month"]).default("none"),
+});
+
+type SummaryRangeInput = z.infer<typeof summaryRangeInput>;
+
+function bucketExpr(groupBy: SummaryRangeInput["groupBy"]) {
+	if (groupBy === "month") {
+		return sql<string>`date_trunc('month', ${attendanceRecord.date})::date`;
+	}
+	if (groupBy === "week") {
+		return sql<string>`date_trunc('week', ${attendanceRecord.date})::date`;
+	}
+	// fortnight: 14-day buckets anchored to a Monday (1970-01-05)
+	return sql<string>`(DATE '1970-01-05' + (FLOOR((${attendanceRecord.date} - DATE '1970-01-05') / 14) * 14) * INTERVAL '1 day')::date`;
+}
+
+type SummaryRangeRow = {
+	employeeId: string;
+	employeeFirstName: string | null;
+	employeeLastName: string | null;
+	bucketStart: string | null;
+	totalWorkedMinutes: number;
+	totalOvertimeMinutes: number;
+	totalApprovedOtMinutes: number;
+	totalPayableMinutes: number;
+	daysPresent: number;
+	daysHalfDay: number;
+	daysAbsent: number;
+	daysHoliday: number;
+	totalLateMinutes: number;
+	lateCount: number;
+};
+
+type ScopeContext = {
+	organizationId: string;
+	session: { user: { id: string } };
+};
+
+async function buildSummaryRangeRows(
+	context: ScopeContext,
+	input: SummaryRangeInput
+): Promise<SummaryRangeRow[]> {
+	const scope = await scopedEmployeeIds(
+		orgId(context),
+		actorId(context),
+		role(context)
+	);
+
+	if (scope !== "all" && scope.length === 0) {
+		return [];
+	}
+
+	const conditions = [
+		eq(attendanceRecord.organizationId, orgId(context)),
+		gte(attendanceRecord.date, new Date(input.startDate)),
+		lte(attendanceRecord.date, new Date(input.endDate)),
+	];
+
+	if (input.employeeId) {
+		conditions.push(eq(attendanceRecord.employeeId, input.employeeId));
+	}
+
+	if (scope !== "all") {
+		conditions.push(
+			sql`${attendanceRecord.employeeId} IN (${sql.join(
+				scope.map((id) => sql`${id}`),
+				sql`, `
+			)})`
+		);
+	}
+
+	if (input.departmentId) {
+		conditions.push(
+			sql`${attendanceRecord.employeeId} IN (
+				SELECT ${employeeWorkInfo.employeeId} FROM ${employeeWorkInfo}
+				WHERE ${employeeWorkInfo.departmentId} = ${input.departmentId}
+			)`
+		);
+	}
+
+	const aggregates = {
+		totalWorkedMinutes: sql<number>`COALESCE(SUM(${attendanceRecord.workedMinutes}), 0)`,
+		totalOvertimeMinutes: sql<number>`COALESCE(SUM(${attendanceRecord.overtimeMinutes}), 0)`,
+		totalApprovedOtMinutes: sql<number>`COALESCE(SUM(${attendanceRecord.approvedOvertimeMinutes}), 0)`,
+		totalPayableMinutes: sql<number>`COALESCE(SUM(${attendanceRecord.payableMinutes}), 0)`,
+		daysPresent: sql<number>`COUNT(*) FILTER (WHERE ${attendanceRecord.status} = 'present')`,
+		daysHalfDay: sql<number>`COUNT(*) FILTER (WHERE ${attendanceRecord.status} = 'half_day')`,
+		daysAbsent: sql<number>`COUNT(*) FILTER (WHERE ${attendanceRecord.status} = 'absent')`,
+		daysHoliday: sql<number>`COUNT(*) FILTER (WHERE ${attendanceRecord.status} = 'holiday')`,
+		totalLateMinutes: sql<number>`COALESCE(SUM(${attendanceRecord.lateMinutes}), 0)`,
+		lateCount: sql<number>`COUNT(*) FILTER (WHERE ${attendanceRecord.lateMinutes} > 0)`,
+	};
+
+	if (input.groupBy === "none") {
+		const rows = await db
+			.select({
+				employeeId: attendanceRecord.employeeId,
+				employeeFirstName: employeeProfile.firstName,
+				employeeLastName: employeeProfile.lastName,
+				...aggregates,
+			})
+			.from(attendanceRecord)
+			.leftJoin(
+				employeeProfile,
+				eq(attendanceRecord.employeeId, employeeProfile.id)
+			)
+			.where(and(...conditions))
+			.groupBy(
+				attendanceRecord.employeeId,
+				employeeProfile.firstName,
+				employeeProfile.lastName
+			)
+			.orderBy(employeeProfile.firstName, employeeProfile.lastName);
+		return rows.map((r) => ({ ...r, bucketStart: null }));
+	}
+
+	const bucket = bucketExpr(input.groupBy);
+	return db
+		.select({
+			employeeId: attendanceRecord.employeeId,
+			employeeFirstName: employeeProfile.firstName,
+			employeeLastName: employeeProfile.lastName,
+			bucketStart: bucket,
+			...aggregates,
+		})
+		.from(attendanceRecord)
+		.leftJoin(
+			employeeProfile,
+			eq(attendanceRecord.employeeId, employeeProfile.id)
+		)
+		.where(and(...conditions))
+		.groupBy(
+			attendanceRecord.employeeId,
+			employeeProfile.firstName,
+			employeeProfile.lastName,
+			bucket
+		)
+		.orderBy(employeeProfile.firstName, employeeProfile.lastName, bucket);
+}
+
+const summaryRange = authorizedProcedure("attendance", "read")
+	.input(summaryRangeInput)
+	.handler(({ context, input }) => buildSummaryRangeRows(context, input));
+
+const summaryExportCsv = authorizedProcedure("attendance", "read")
+	.input(summaryRangeInput)
+	.handler(async ({ context, input }) => {
+		const rows = await buildSummaryRangeRows(context, input);
+		const grouped = input.groupBy !== "none";
+
+		const header = [
+			"Employee",
+			...(grouped ? ["Period"] : []),
+			"Worked hours",
+			"Overtime hours",
+			"Days present",
+			"Days absent",
+			"Late (minutes)",
+		];
+
+		const body = csvRows([
+			header,
+			...rows.map((r) => {
+				const name =
+					`${r.employeeFirstName ?? ""} ${r.employeeLastName ?? ""}`.trim();
+				return [
+					name,
+					...(grouped ? [r.bucketStart ?? ""] : []),
+					(Number(r.totalWorkedMinutes) / 60).toFixed(2),
+					(Number(r.totalOvertimeMinutes) / 60).toFixed(2),
+					Number(r.daysPresent),
+					Number(r.daysAbsent),
+					Number(r.totalLateMinutes),
+				];
+			}),
+		]);
+
+		return {
+			filename: `timesheets-${input.startDate}-to-${input.endDate}.csv`,
+			csv: body,
+		};
+	});
+
 async function checkScopeForMutation(
 	context: {
 		organizationId: string;
@@ -1584,6 +1791,8 @@ export const attendanceRouter = {
 	},
 	summary: {
 		monthly: summaryMonthly,
+		range: summaryRange,
+		exportCsv: summaryExportCsv,
 	},
 	// v1-compat device ingest (Phase 21V interim shim) — the on-site Pi posts
 	// these v1 paths with Bearer device-key auth; see attendance-device-compat.ts.
