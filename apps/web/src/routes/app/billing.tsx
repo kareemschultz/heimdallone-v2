@@ -17,7 +17,7 @@ import { canManageHR } from "@/lib/rbac";
 import { OrgCtx } from "@/routes/app/route";
 import { orpc } from "@/utils/orpc";
 
-export const Route = createFileRoute("/app/settings/billing")({
+export const Route = createFileRoute("/app/billing")({
 	component: BillingPage,
 });
 

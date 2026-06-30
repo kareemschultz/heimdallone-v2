@@ -404,7 +404,7 @@ export const NAV = [
 				key: "billing",
 				label: "Billing",
 				icon: CreditCard,
-				href: "/app/settings/billing",
+				href: "/app/billing",
 			},
 			{
 				key: "setup",

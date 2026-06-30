@@ -41,6 +41,17 @@ services:
       # Transactional email (Resend) — invitations etc. Falls back to logging if unset.
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_FROM: ${EMAIL_FROM:-Heimdallone <noreply@heimdallone.com>}
+      # Stripe subscription billing (reused from v1). Display (plans/usage) works
+      # without these; checkout/portal/webhook activate when set. Secrets live in
+      # deploy/.env.v2 (gitignored).
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      STRIPE_PUBLISHABLE_KEY: ${STRIPE_PUBLISHABLE_KEY:-}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
+      STRIPE_PRICE_STARTER: ${STRIPE_PRICE_STARTER:-}
+      STRIPE_PRICE_STARTER_YEARLY: ${STRIPE_PRICE_STARTER_YEARLY:-}
+      STRIPE_PRICE_BUSINESS: ${STRIPE_PRICE_BUSINESS:-}
+      STRIPE_PRICE_BUSINESS_YEARLY: ${STRIPE_PRICE_BUSINESS_YEARLY:-}
+      STRIPE_PORTAL_RETURN_URL: ${STRIPE_PORTAL_RETURN_URL:-https://app.heimdallone.com/app/settings/billing}
     # db → reach postgres-central; heimdallone-v2 → web↔server; pangolin → Traefik
     # ingress. External pangolin keeps the stack reachable across `compose up`
     # recreates (a recreate without it drops the network → Traefik 502).

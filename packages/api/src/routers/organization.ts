@@ -27,7 +27,7 @@ import {
 const orgId = (ctx: { organizationId: string }) => ctx.organizationId;
 
 const DAY_MS = 1000 * 60 * 60 * 24;
-const DEFAULT_RETURN_URL = "https://app.heimdallone.com/app/settings/billing";
+const DEFAULT_RETURN_URL = "https://app.heimdallone.com/app/billing";
 
 function parseMeta(raw: string | null): Record<string, unknown> {
 	if (!raw) {
