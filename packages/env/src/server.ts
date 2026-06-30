@@ -21,6 +21,17 @@ export const env = createEnv({
 		// must use a Resend-verified domain.
 		RESEND_API_KEY: z.string().optional(),
 		EMAIL_FROM: z.string().default("Heimdallone <noreply@heimdallone.com>"),
+		// Stripe billing (optional). When STRIPE_SECRET_KEY is unset, billing
+		// DISPLAY still works (plans, current plan, usage); only checkout/portal/
+		// invoices require live keys. Price IDs map plan+cycle → Stripe price.
+		STRIPE_SECRET_KEY: z.string().optional(),
+		STRIPE_PUBLISHABLE_KEY: z.string().optional(),
+		STRIPE_WEBHOOK_SECRET: z.string().optional(),
+		STRIPE_PRICE_STARTER: z.string().optional(),
+		STRIPE_PRICE_STARTER_YEARLY: z.string().optional(),
+		STRIPE_PRICE_BUSINESS: z.string().optional(),
+		STRIPE_PRICE_BUSINESS_YEARLY: z.string().optional(),
+		STRIPE_PORTAL_RETURN_URL: z.string().optional(),
 		NODE_ENV: z
 			.enum(["development", "production", "test"])
 			.default("development"),

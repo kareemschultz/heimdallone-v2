@@ -23,6 +23,7 @@ import { migrationRouter } from "./migration";
 import { notificationsRouter } from "./notifications";
 import { offboardingRouter } from "./offboarding";
 import { onboardingRouter } from "./onboarding";
+import { organizationRouter } from "./organization";
 import { payrollRouter } from "./payroll";
 import { performanceRouter } from "./performance";
 import { projectsRouter } from "./projects";
@@ -56,6 +57,7 @@ export const appRouter = {
 	lifecycle: lifecycleRouter,
 	migration: migrationRouter,
 	notifications: notificationsRouter,
+	organization: organizationRouter,
 	payroll: payrollRouter,
 	performance: performanceRouter,
 	projects: projectsRouter,

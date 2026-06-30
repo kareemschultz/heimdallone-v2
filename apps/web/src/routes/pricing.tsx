@@ -329,6 +329,24 @@ function PricingPage() {
 									<span className="ck">
 										<Check size={14} />
 									</span>
+									<span>Inventory management</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Bonded warehouse &amp; customs tracking</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
+									<span>Warehouse management</span>
+								</div>
+								<div className="plan-feat">
+									<span className="ck">
+										<Check size={14} />
+									</span>
 									<span>
 										Chat support · <span className="v">4h</span> SLA
 									</span>

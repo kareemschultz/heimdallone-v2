@@ -18,6 +18,7 @@ import {
 	Clock,
 	Command,
 	Cpu,
+	CreditCard,
 	DatabaseBackup,
 	FileText,
 	FolderKanban,
@@ -400,6 +401,12 @@ export const NAV = [
 				href: "/app/settings",
 			},
 			{
+				key: "billing",
+				label: "Billing",
+				icon: CreditCard,
+				href: "/app/settings/billing",
+			},
+			{
 				key: "setup",
 				label: "Setup center",
 				icon: Wrench,
@@ -516,6 +523,11 @@ export function isNavItemVisible(key: string, role: string): boolean {
 	// Better Auth `member` grant maps exactly to canManageHR; gate BEFORE the
 	// canViewPayroll see-all branch so payroll/auditor don't see a 403-only entry.
 	if (key === "users") {
+		return canManageHR(role);
+	}
+	// Billing/subscription — owner/admin/hr_admin only (canManageHR). Gate BEFORE
+	// the canViewPayroll see-all branch so payroll/auditor don't see a 403 entry.
+	if (key === "billing") {
 		return canManageHR(role);
 	}
 	// Preview/scaffold modules: admin-only (QA), hidden from everyone else.

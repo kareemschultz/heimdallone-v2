@@ -22,7 +22,8 @@
     "@paralleldrive/cuid2": "^3.3.0",
     "dotenv": "catalog:",
     "drizzle-orm": "^0.45.2",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "stripe": "^18.5.0"
   },
   "devDependencies": {
     "@Heimdallone/config": "workspace:*",
