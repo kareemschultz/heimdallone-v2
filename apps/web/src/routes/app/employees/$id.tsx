@@ -80,6 +80,166 @@ function shortMonthYear(d: Date): string {
 	return `${SHORT_MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+const WEEKDAY_SHORT = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+function weekdayShort(d: Date): string {
+	return WEEKDAY_SHORT[d.getDay()] ?? "—";
+}
+
+/**
+ * Clock instants are persisted by attendance recalc as tenant-timezone "HH:mm"
+ * strings (America/Guyana by default). Render them as 12-hour wall-clock — never
+ * re-derive from a UTC instant here.
+ */
+function fmtClock(hm: string | null | undefined): string {
+	if (!hm) {
+		return "—";
+	}
+	const [h, m] = hm.split(":");
+	const hour = Number(h);
+	if (!Number.isFinite(hour)) {
+		return "—";
+	}
+	const ampm = hour >= 12 ? "PM" : "AM";
+	const h12 = hour % 12 || 12;
+	return `${h12}:${m} ${ampm}`;
+}
+
+/** Minutes → "9h 44m" (or "44m" / "—"). */
+function fmtHm(minutes: number | null | undefined): string {
+	if (!minutes || minutes <= 0) {
+		return "—";
+	}
+	const h = Math.floor(minutes / 60);
+	const m = minutes % 60;
+	return h === 0 ? `${m}m` : `${h}h ${pad2(m)}m`;
+}
+
+const ATT_SOURCE_LABELS: Record<string, string> = {
+	manual: "Manual entry",
+	biometric: "Biometric device",
+	device: "Biometric device",
+	mobile: "Mobile GPS check-in",
+	import: "File import",
+	admin: "Admin adjustment",
+	mixed: "Mixed sources",
+	none: "—",
+};
+
+function attSourceLabel(key: string | null | undefined): string {
+	return ATT_SOURCE_LABELS[key ?? "none"] ?? key ?? "—";
+}
+
+interface AttendanceTabRow {
+	approvedOvertimeMinutes: number | null;
+	date: string | Date;
+	dayType: string | null;
+	firstClockIn: string | null;
+	id: string;
+	lastClockOut: string | null;
+	lateMinutes: number | null;
+	overtimeMinutes: number | null;
+	source?: string | null;
+	status: string | null;
+	workedMinutes: number | null;
+}
+
+type AttPillTone = "active" | "notice" | "muted";
+
+function tonePillClass(tone: AttPillTone): string {
+	if (tone === "active") {
+		return "pill-status active";
+	}
+	if (tone === "notice") {
+		return "pill-status notice";
+	}
+	return "pill-status";
+}
+
+/** Shared status pill — avoids repeating tone→class/dot logic per tab. */
+function StatusPill({ tone, label }: { tone: AttPillTone; label: string }) {
+	return (
+		<span
+			className={tonePillClass(tone)}
+			style={tone === "muted" ? { background: "var(--bg-3)" } : undefined}
+		>
+			{tone === "active" && <span className="badge-dot" />}
+			{label}
+		</span>
+	);
+}
+
+/** Derive the per-day attendance status pill from a real record. */
+function attRowStatus(row: AttendanceTabRow): {
+	label: string;
+	tone: AttPillTone;
+} {
+	if (row.status === "absent") {
+		return { label: "Absent", tone: "notice" };
+	}
+	if (row.dayType === "holiday" || row.status === "holiday") {
+		return { label: "Holiday", tone: "muted" };
+	}
+	if (row.dayType === "saturday" || row.dayType === "sunday") {
+		return { label: "Weekend", tone: "muted" };
+	}
+	if ((row.lateMinutes ?? 0) > 0) {
+		return { label: `Late · ${row.lateMinutes}m`, tone: "notice" };
+	}
+	const ot = (row.approvedOvertimeMinutes ?? 0) || (row.overtimeMinutes ?? 0);
+	if (ot > 0) {
+		return { label: `OT ${(ot / 60).toFixed(1)}h`, tone: "active" };
+	}
+	return { label: "Full", tone: "active" };
+}
+
+const LEAVE_STATUS_LABELS: Record<string, string> = {
+	requested: "Pending",
+	approved: "Approved",
+	rejected: "Rejected",
+	cancelled: "Cancelled",
+};
+
+function leaveStatusTone(status: string): AttPillTone {
+	if (status === "approved") {
+		return "active";
+	}
+	if (status === "requested") {
+		return "notice";
+	}
+	return "muted";
+}
+
+function payslipPill(ps: { isReversed: boolean; status: string }): {
+	label: string;
+	tone: AttPillTone;
+} {
+	if (ps.isReversed) {
+		return { label: "Reversed", tone: "muted" };
+	}
+	if (ps.status === "draft") {
+		return { label: "Draft", tone: "notice" };
+	}
+	return { label: ps.status === "paid" ? "Paid" : "Confirmed", tone: "active" };
+}
+
+const CSV_INJECTION = /^[=+\-@]/;
+
+function csvCell(value: string): string {
+	const safe = CSV_INJECTION.test(value) ? `'${value}` : value;
+	return `"${safe.replace(/"/g, '""')}"`;
+}
+
+function downloadCsv(filename: string, csv: string): void {
+	const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+	const url = URL.createObjectURL(blob);
+	const a = document.createElement("a");
+	a.href = url;
+	a.download = filename;
+	a.click();
+	URL.revokeObjectURL(url);
+}
+
 type AttendanceDay = {
 	date: string;
 	cls: string;
@@ -249,6 +409,49 @@ function EmployeeProfilePage() {
 			},
 		})
 	);
+
+	// --- Attendance tab: real per-day log for the current month ---
+	const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+	const {
+		data: attTabData,
+		isLoading: attTabLoading,
+		isError: attTabError,
+	} = useQuery({
+		...orpc.attendance.records.list.queryOptions({
+			input: {
+				employeeId: id,
+				startDate: toYmd(monthStart),
+				endDate: toYmd(today),
+				page: 1,
+				pageSize: 50,
+			},
+		}),
+		enabled: profileTab === "attendance",
+	});
+
+	// --- Payroll tab: real payslip history (payroll-gated) ---
+	const {
+		data: payslipTabData,
+		isLoading: payslipTabLoading,
+		isError: payslipTabError,
+	} = useQuery({
+		...orpc.payroll.payslips.list.queryOptions({
+			input: { employeeId: id, page: 1, pageSize: 20 },
+		}),
+		enabled: canSeePay && profileTab === "payroll",
+	});
+
+	// --- Leave tab: real leave requests ---
+	const {
+		data: leaveRequestsData,
+		isLoading: leaveRequestsLoading,
+		isError: leaveRequestsError,
+	} = useQuery({
+		...orpc.leave.requests.list.queryOptions({
+			input: { employeeId: id, page: 1, pageSize: 20 },
+		}),
+		enabled: profileTab === "leave",
+	});
 
 	const handleArchive = async () => {
 		setSaving(true);
@@ -467,13 +670,6 @@ function EmployeeProfilePage() {
 								<span className="badge-dot" />
 								{emp.isActive ? "Active" : "Archived"}
 							</span>
-							<span className="badge" style={{ height: "22px", gap: "6px" }}>
-								<span
-									className="badge-dot"
-									style={{ background: "var(--success)" }}
-								/>
-								Synced 14:42
-							</span>
 						</div>
 					</div>
 					<div className="profile-actions">
@@ -543,11 +739,7 @@ function EmployeeProfilePage() {
 								{
 									key: "payroll",
 									icon: <Wallet size={13} />,
-									label: (
-										<>
-											Payroll <span className="count">9</span>
-										</>
-									),
+									label: "Payroll",
 								},
 								{
 									key: "documents",
@@ -1177,246 +1369,150 @@ function EmployeeProfilePage() {
 				<div className="tab-panel active">
 					<div className="widget">
 						<div className="widget-head">
-							<span className="ttl">Time activity log · September 2026</span>
-							<div style={{ display: "flex", gap: "6px" }}>
-								<button className="btn btn-ghost btn-sm" type="button">
-									<Filter size={11} />
-									Filter
-								</button>
-								<button className="btn btn-ghost btn-sm" type="button">
+							<span className="ttl">
+								Time activity log · {shortMonthYear(today)}
+							</span>
+							{(attTabData?.data?.length ?? 0) > 0 && (
+								<button
+									className="btn btn-ghost btn-sm"
+									onClick={() => {
+										const header = [
+											"Date",
+											"Day",
+											"Check in",
+											"Check out",
+											"Hours",
+											"Source",
+											"Status",
+										];
+										const lines = [header.map(csvCell).join(",")];
+										for (const r of (attTabData?.data ??
+											[]) as AttendanceTabRow[]) {
+											const d = new Date(r.date);
+											lines.push(
+												[
+													toYmd(d),
+													weekdayShort(d),
+													fmtClock(r.firstClockIn),
+													fmtClock(r.lastClockOut),
+													fmtHm(r.workedMinutes),
+													attSourceLabel(r.source),
+													attRowStatus(r).label,
+												]
+													.map(csvCell)
+													.join(",")
+											);
+										}
+										downloadCsv(
+											`attendance-${emp.badgeId ?? id}-${toYmd(today)}.csv`,
+											lines.join("\n")
+										);
+									}}
+									type="button"
+								>
 									<Download size={11} />
 									Export
 								</button>
-							</div>
+							)}
 						</div>
 						<div className="widget-body" style={{ padding: 0 }}>
-							<table className="pay-list">
-								<thead>
-									<tr>
-										<th>Date</th>
-										<th>Day</th>
-										<th>Check in</th>
-										<th>Check out</th>
-										<th style={{ textAlign: "right" }}>Hours</th>
-										<th>Source</th>
-										<th>Status</th>
-									</tr>
-								</thead>
-								<tbody>
-									<tr>
-										<td className="mono">2026-09-27</td>
-										<td>Mon</td>
-										<td className="mono">07:48</td>
-										<td className="mono">17:32</td>
-										<td className="num">9h 44m</td>
-										<td>
-											<span
-												className="source-tag"
-												style={{ color: "var(--fg-3)" }}
-											>
-												<span
-													style={{
-														width: "5px",
-														height: "5px",
-														borderRadius: "50%",
-														background: "var(--success)",
-														display: "inline-block",
-													}}
-												/>
-												ZK-DEV-GT-01
-											</span>
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												OT 1.7h
-											</span>
-										</td>
-									</tr>
-									<tr>
-										<td className="mono">2026-09-26</td>
-										<td>Sun</td>
-										<td>—</td>
-										<td>—</td>
-										<td className="num" style={{ color: "var(--fg-4)" }}>
-											—
-										</td>
-										<td>
-											<span
-												style={{
-													color: "var(--fg-4)",
-													fontSize: "11px",
-												}}
-											>
-												weekend
-											</span>
-										</td>
-										<td>
-											<span
-												className="pill-status"
-												style={{ background: "var(--bg-3)" }}
-											>
-												Weekend
-											</span>
-										</td>
-									</tr>
-									<tr>
-										<td className="mono">2026-09-25</td>
-										<td>Fri</td>
-										<td className="mono">08:02</td>
-										<td className="mono">17:14</td>
-										<td className="num">9h 12m</td>
-										<td>
-											<span
-												className="source-tag"
-												style={{ color: "var(--fg-3)" }}
-											>
-												<span
-													style={{
-														width: "5px",
-														height: "5px",
-														borderRadius: "50%",
-														background: "var(--success)",
-														display: "inline-block",
-													}}
-												/>
-												ZK-DEV-GT-01
-											</span>
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												OT 1.2h
-											</span>
-										</td>
-									</tr>
-									<tr>
-										<td className="mono">2026-09-24</td>
-										<td>Thu</td>
-										<td className="mono">08:24</td>
-										<td className="mono">17:00</td>
-										<td className="num">8h 36m</td>
-										<td>
-											<span
-												className="source-tag"
-												style={{ color: "var(--fg-3)" }}
-											>
-												<span
-													style={{
-														width: "5px",
-														height: "5px",
-														borderRadius: "50%",
-														background: "var(--warning)",
-														display: "inline-block",
-													}}
-												/>
-												manual
-											</span>
-										</td>
-										<td>
-											<span
-												className="pill-status notice"
-												style={{
-													background: "var(--warning-soft)",
-													color: "var(--warning)",
-												}}
-											>
-												Late · 24m
-											</span>
-										</td>
-									</tr>
-									<tr>
-										<td className="mono">2026-09-23</td>
-										<td>Wed</td>
-										<td className="mono">07:56</td>
-										<td className="mono">16:58</td>
-										<td className="num">9h 02m</td>
-										<td>
-											<span
-												className="source-tag"
-												style={{ color: "var(--fg-3)" }}
-											>
-												<span
-													style={{
-														width: "5px",
-														height: "5px",
-														borderRadius: "50%",
-														background: "var(--success)",
-														display: "inline-block",
-													}}
-												/>
-												ZK-DEV-GT-01
-											</span>
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												Full
-											</span>
-										</td>
-									</tr>
-									<tr>
-										<td className="mono">2026-09-22</td>
-										<td>Tue</td>
-										<td className="mono">07:50</td>
-										<td className="mono">17:18</td>
-										<td className="num">9h 28m</td>
-										<td>
-											<span
-												className="source-tag"
-												style={{ color: "var(--fg-3)" }}
-											>
-												<span
-													style={{
-														width: "5px",
-														height: "5px",
-														borderRadius: "50%",
-														background: "var(--success)",
-														display: "inline-block",
-													}}
-												/>
-												ZK-DEV-GT-01
-											</span>
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												OT 1.5h
-											</span>
-										</td>
-									</tr>
-									<tr>
-										<td className="mono">2026-09-21</td>
-										<td>Mon</td>
-										<td className="mono">07:44</td>
-										<td className="mono">17:00</td>
-										<td className="num">9h 16m</td>
-										<td>
-											<span
-												className="source-tag"
-												style={{ color: "var(--fg-3)" }}
-											>
-												<span
-													style={{
-														width: "5px",
-														height: "5px",
-														borderRadius: "50%",
-														background: "var(--success)",
-														display: "inline-block",
-													}}
-												/>
-												ZK-DEV-GT-01
-											</span>
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												Full
-											</span>
-										</td>
-									</tr>
-								</tbody>
-							</table>
+							{attTabLoading && (
+								<div
+									style={{
+										padding: "32px 16px",
+										textAlign: "center",
+										color: "var(--fg-3)",
+										fontSize: 12.5,
+									}}
+								>
+									Loading attendance…
+								</div>
+							)}
+							{!attTabLoading && attTabError && (
+								<div
+									style={{
+										padding: "32px 16px",
+										textAlign: "center",
+										color: "var(--fg-3)",
+										fontSize: 12.5,
+									}}
+								>
+									Couldn't load attendance records.
+								</div>
+							)}
+							{!(attTabLoading || attTabError) &&
+								(attTabData?.data?.length ?? 0) === 0 && (
+									<div
+										style={{
+											padding: "32px 16px",
+											textAlign: "center",
+											color: "var(--fg-3)",
+											fontSize: 12.5,
+										}}
+									>
+										<Clock size={18} style={{ opacity: 0.5 }} />
+										<div style={{ marginTop: 6 }}>
+											No attendance records for {shortMonthYear(today)} yet.
+										</div>
+									</div>
+								)}
+							{!(attTabLoading || attTabError) &&
+								(attTabData?.data?.length ?? 0) > 0 && (
+									<table className="pay-list">
+										<thead>
+											<tr>
+												<th>Date</th>
+												<th>Day</th>
+												<th>Check in</th>
+												<th>Check out</th>
+												<th style={{ textAlign: "right" }}>Hours</th>
+												<th>Source</th>
+												<th>Status</th>
+											</tr>
+										</thead>
+										<tbody>
+											{((attTabData?.data ?? []) as AttendanceTabRow[]).map(
+												(r) => {
+													const d = new Date(r.date);
+													const st = attRowStatus(r);
+													return (
+														<tr key={r.id}>
+															<td className="mono">{toYmd(d)}</td>
+															<td>{weekdayShort(d)}</td>
+															<td className="mono">
+																{fmtClock(r.firstClockIn)}
+															</td>
+															<td className="mono">
+																{fmtClock(r.lastClockOut)}
+															</td>
+															<td className="num">{fmtHm(r.workedMinutes)}</td>
+															<td>
+																<span
+																	className="source-tag"
+																	style={{ color: "var(--fg-3)" }}
+																>
+																	<span
+																		style={{
+																			width: "5px",
+																			height: "5px",
+																			borderRadius: "50%",
+																			background: "var(--fg-4)",
+																			display: "inline-block",
+																		}}
+																	/>
+																	{attSourceLabel(r.source)}
+																</span>
+															</td>
+															<td>
+																<StatusPill label={st.label} tone={st.tone} />
+															</td>
+														</tr>
+													);
+												}
+											)}
+										</tbody>
+									</table>
+								)}
 						</div>
 					</div>
 				</div>
@@ -1431,119 +1527,151 @@ function EmployeeProfilePage() {
 					>
 						<div className="widget">
 							<div className="widget-head">
-								<span className="ttl">Balances · FY 2026</span>
+								<span className="ttl">Leave balances</span>
 							</div>
 							<div className="widget-body">
-								<div className="leave-row">
-									<span className="lbl">Annual</span>
-									<div className="pbar">
-										<div className="pbar-fill" style={{ width: "16.6%" }} />
+								{leaveLoading && (
+									<div
+										style={{
+											fontSize: "12.5px",
+											color: "var(--fg-3)",
+											padding: "8px 0",
+										}}
+									>
+										Loading leave balances…
 									</div>
-									<span className="nums">3 / 18 used</span>
-								</div>
-								<div className="leave-row">
-									<span className="lbl">Sick</span>
-									<div className="pbar">
-										<div
-											className="pbar-fill warning"
-											style={{ width: "14.3%" }}
-										/>
+								)}
+								{!leaveLoading && leaveError && (
+									<div
+										style={{
+											fontSize: "12.5px",
+											color: "var(--fg-3)",
+											padding: "8px 0",
+										}}
+									>
+										Couldn't load leave balances.
 									</div>
-									<span className="nums">2 / 14 used</span>
-								</div>
-								<div className="leave-row">
-									<span className="lbl">Compassionate</span>
-									<div className="pbar">
-										<div className="pbar-fill" style={{ width: "0%" }} />
+								)}
+								{!(leaveLoading || leaveError || hasLeaveData) && (
+									<div
+										style={{
+											fontSize: "12.5px",
+											color: "var(--fg-3)",
+											padding: "8px 0",
+										}}
+									>
+										No leave balances configured.
 									</div>
-									<span className="nums">0 / 3 used</span>
-								</div>
-								<div className="leave-row">
-									<span className="lbl">Study</span>
-									<div className="pbar">
-										<div className="pbar-fill" style={{ width: "40%" }} />
-									</div>
-									<span className="nums">2 / 5 used</span>
-								</div>
+								)}
+								{!(leaveLoading || leaveError) &&
+									hasLeaveData &&
+									(leaveBalances ?? []).map((bal) => {
+										const used = Number(bal.usedDays);
+										const available = Number(bal.availableDays);
+										const total = used + available;
+										const pct =
+											total > 0
+												? Math.min(100, Math.max(0, (used / total) * 100))
+												: 0;
+										return (
+											<div className="leave-row" key={bal.id}>
+												<span className="lbl">{bal.leaveTypeName}</span>
+												<div className="pbar">
+													<div
+														className="pbar-fill"
+														style={{ width: `${pct}%` }}
+													/>
+												</div>
+												<span className="nums">
+													{used} / {total} used
+												</span>
+											</div>
+										);
+									})}
 							</div>
 						</div>
 						<div className="widget">
 							<div className="widget-head">
 								<span className="ttl">Recent requests</span>
-								<a
-									href="#"
+								<Link
 									style={{ fontSize: "11.5px", color: "var(--accent)" }}
+									to="/app/leave"
 								>
 									Request leave
-								</a>
+								</Link>
 							</div>
 							<div className="widget-body">
-								<div
-									className="leave-row"
-									style={{ gridTemplateColumns: "1fr auto" }}
-								>
-									<div>
-										<div style={{ fontSize: "13px", fontWeight: 500 }}>
-											Annual leave · 4 days
-										</div>
+								{leaveRequestsLoading && (
+									<div
+										style={{
+											fontSize: "12.5px",
+											color: "var(--fg-3)",
+											padding: "8px 0",
+										}}
+									>
+										Loading leave requests…
+									</div>
+								)}
+								{!leaveRequestsLoading && leaveRequestsError && (
+									<div
+										style={{
+											fontSize: "12.5px",
+											color: "var(--fg-3)",
+											padding: "8px 0",
+										}}
+									>
+										Couldn't load leave requests.
+									</div>
+								)}
+								{!(leaveRequestsLoading || leaveRequestsError) &&
+									(leaveRequestsData?.data?.length ?? 0) === 0 && (
 										<div
 											style={{
-												fontSize: "11.5px",
+												fontSize: "12.5px",
 												color: "var(--fg-3)",
-												marginTop: "3px",
+												padding: "8px 0",
 											}}
 										>
-											2–5 October · awaiting approval
+											No leave requests on file.
 										</div>
-									</div>
-									<span className="pill-status notice">Pending</span>
-								</div>
-								<div
-									className="leave-row"
-									style={{ gridTemplateColumns: "1fr auto" }}
-								>
-									<div>
-										<div style={{ fontSize: "13px", fontWeight: 500 }}>
-											Sick leave · 1 day
-										</div>
-										<div
-											style={{
-												fontSize: "11.5px",
-												color: "var(--fg-3)",
-												marginTop: "3px",
-											}}
-										>
-											14 Aug · medical attached
-										</div>
-									</div>
-									<span className="pill-status active">
-										<span className="badge-dot" />
-										Approved
-									</span>
-								</div>
-								<div
-									className="leave-row"
-									style={{ gridTemplateColumns: "1fr auto" }}
-								>
-									<div>
-										<div style={{ fontSize: "13px", fontWeight: 500 }}>
-											Annual leave · 3 days
-										</div>
-										<div
-											style={{
-												fontSize: "11.5px",
-												color: "var(--fg-3)",
-												marginTop: "3px",
-											}}
-										>
-											21–23 May
-										</div>
-									</div>
-									<span className="pill-status active">
-										<span className="badge-dot" />
-										Approved
-									</span>
-								</div>
+									)}
+								{!(leaveRequestsLoading || leaveRequestsError) &&
+									(leaveRequestsData?.data ?? []).map((req) => {
+										const tone = leaveStatusTone(req.status);
+										return (
+											<div
+												className="leave-row"
+												key={req.id}
+												style={{ gridTemplateColumns: "1fr auto" }}
+											>
+												<div>
+													<div style={{ fontSize: "13px", fontWeight: 500 }}>
+														{req.leaveTypeName} · {Number(req.requestedDays)}{" "}
+														{Number(req.requestedDays) === 1 ? "day" : "days"}
+													</div>
+													<div
+														style={{
+															fontSize: "11.5px",
+															color: "var(--fg-3)",
+															marginTop: "3px",
+														}}
+													>
+														{toYmd(new Date(req.startDate))}
+														{toYmd(new Date(req.startDate)) !==
+															toYmd(new Date(req.endDate)) &&
+															` – ${toYmd(new Date(req.endDate))}`}
+														{req.status === "rejected" && req.rejectReason
+															? ` · ${req.rejectReason}`
+															: ""}
+													</div>
+												</div>
+												<StatusPill
+													label={LEAVE_STATUS_LABELS[req.status] ?? req.status}
+													tone={tone}
+												/>
+											</div>
+										);
+									})}
 							</div>
 						</div>
 					</div>
@@ -1563,233 +1691,123 @@ function EmployeeProfilePage() {
 					/>
 					<div className="widget">
 						<div className="widget-head">
-							<span className="ttl">Pay-run history · 9 runs</span>
-							<div className="segmented">
-								<button className="active" type="button">
-									12m
-								</button>
-								<button type="button">YTD</button>
-								<button type="button">All</button>
-							</div>
+							<span className="ttl">
+								Payslip history
+								{canSeePay && (payslipTabData?.total ?? 0) > 0
+									? ` · ${payslipTabData?.total} ${
+											payslipTabData?.total === 1 ? "payslip" : "payslips"
+										}`
+									: ""}
+							</span>
 						</div>
 						<div className="widget-body" style={{ padding: 0 }}>
-							<table className="pay-list">
-								<thead>
-									<tr>
-										<th>Period</th>
-										<th>Country</th>
-										<th style={{ textAlign: "right" }}>Gross</th>
-										<th style={{ textAlign: "right" }}>PAYE</th>
-										<th style={{ textAlign: "right" }}>NIS</th>
-										<th style={{ textAlign: "right" }}>Other</th>
-										<th style={{ textAlign: "right" }}>Net</th>
-										<th>Status</th>
-										<th />
-									</tr>
-								</thead>
-								<tbody>
-									<tr>
-										<td>
-											<strong>September 2026</strong>
-										</td>
-										<td>
-											<span className="cc-badge" style={{ height: "22px" }}>
-												<span style={{ fontSize: "11px" }}>GY</span>
-												GY
-											</span>
-										</td>
-										<td className="num">342,000.00</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−58,140.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−18,810.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											0.00
-										</td>
-										<td
-											className="num"
-											style={{
-												fontWeight: 600,
-												color: "var(--accent)",
-											}}
-										>
-											265,050.00
-										</td>
-										<td>
-											<span className="pill-status notice">Ready</span>
-										</td>
-										<td>
-											<a
-												href="#"
-												style={{
-													color: "var(--accent)",
-													fontSize: "12px",
-												}}
-											>
-												Payslip
-											</a>
-										</td>
-									</tr>
-									<tr>
-										<td>August 2026</td>
-										<td>
-											<span className="cc-badge" style={{ height: "22px" }}>
-												<span style={{ fontSize: "11px" }}>GY</span>
-												GY
-											</span>
-										</td>
-										<td className="num">342,000.00</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−58,140.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−18,810.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											0.00
-										</td>
-										<td className="num" style={{ fontWeight: 600 }}>
-											265,050.00
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												Sealed
-											</span>
-										</td>
-										<td>
-											<a
-												href="#"
-												style={{
-													color: "var(--accent)",
-													fontSize: "12px",
-												}}
-											>
-												Payslip
-											</a>
-										</td>
-									</tr>
-									<tr>
-										<td>July 2026</td>
-										<td>
-											<span className="cc-badge" style={{ height: "22px" }}>
-												<span style={{ fontSize: "11px" }}>GY</span>
-												GY
-											</span>
-										</td>
-										<td className="num">342,000.00</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−58,140.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−18,810.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−2,500.00
-										</td>
-										<td className="num" style={{ fontWeight: 600 }}>
-											262,550.00
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												Sealed
-											</span>
-										</td>
-										<td>
-											<a
-												href="#"
-												style={{
-													color: "var(--accent)",
-													fontSize: "12px",
-												}}
-											>
-												Payslip
-											</a>
-										</td>
-									</tr>
-									<tr>
-										<td>June 2026</td>
-										<td>
-											<span className="cc-badge" style={{ height: "22px" }}>
-												<span style={{ fontSize: "11px" }}>GY</span>
-												GY
-											</span>
-										</td>
-										<td className="num">315,500.00</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−51,870.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−17,353.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											0.00
-										</td>
-										<td className="num" style={{ fontWeight: 600 }}>
-											246,277.00
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												Sealed
-											</span>
-										</td>
-										<td>
-											<a
-												href="#"
-												style={{
-													color: "var(--accent)",
-													fontSize: "12px",
-												}}
-											>
-												Payslip
-											</a>
-										</td>
-									</tr>
-									<tr>
-										<td>May 2026</td>
-										<td>
-											<span className="cc-badge" style={{ height: "22px" }}>
-												<span style={{ fontSize: "11px" }}>GY</span>
-												GY
-											</span>
-										</td>
-										<td className="num">315,500.00</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−51,870.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											−17,353.00
-										</td>
-										<td className="num" style={{ color: "var(--fg-3)" }}>
-											0.00
-										</td>
-										<td className="num" style={{ fontWeight: 600 }}>
-											246,277.00
-										</td>
-										<td>
-											<span className="pill-status active">
-												<span className="badge-dot" />
-												Sealed
-											</span>
-										</td>
-										<td>
-											<a
-												href="#"
-												style={{
-													color: "var(--accent)",
-													fontSize: "12px",
-												}}
-											>
-												Payslip
-											</a>
-										</td>
-									</tr>
-								</tbody>
-							</table>
+							{!canSeePay && (
+								<div
+									style={{
+										padding: "32px 16px",
+										textAlign: "center",
+										color: "var(--fg-3)",
+										fontSize: 12.5,
+									}}
+								>
+									<Wallet size={18} style={{ opacity: 0.5 }} />
+									<div style={{ marginTop: 6 }}>
+										Payslips are visible only to authorized payroll staff.
+									</div>
+								</div>
+							)}
+							{canSeePay && payslipTabLoading && (
+								<div
+									style={{
+										padding: "32px 16px",
+										textAlign: "center",
+										color: "var(--fg-3)",
+										fontSize: 12.5,
+									}}
+								>
+									Loading payslips…
+								</div>
+							)}
+							{canSeePay && !payslipTabLoading && payslipTabError && (
+								<div
+									style={{
+										padding: "32px 16px",
+										textAlign: "center",
+										color: "var(--fg-3)",
+										fontSize: 12.5,
+									}}
+								>
+									Couldn't load payslips.
+								</div>
+							)}
+							{canSeePay &&
+								!(payslipTabLoading || payslipTabError) &&
+								(payslipTabData?.data?.length ?? 0) === 0 && (
+									<div
+										style={{
+											padding: "32px 16px",
+											textAlign: "center",
+											color: "var(--fg-3)",
+											fontSize: 12.5,
+										}}
+									>
+										<Wallet size={18} style={{ opacity: 0.5 }} />
+										<div style={{ marginTop: 6 }}>
+											No payslips generated for this employee yet.
+										</div>
+									</div>
+								)}
+							{canSeePay &&
+								!(payslipTabLoading || payslipTabError) &&
+								(payslipTabData?.data?.length ?? 0) > 0 && (
+									<table className="pay-list">
+										<thead>
+											<tr>
+												<th>Period</th>
+												<th style={{ textAlign: "right" }}>Gross</th>
+												<th style={{ textAlign: "right" }}>Deductions</th>
+												<th style={{ textAlign: "right" }}>Net</th>
+												<th>Status</th>
+											</tr>
+										</thead>
+										<tbody>
+											{(payslipTabData?.data ?? []).map((ps) => {
+												const pill = payslipPill(ps);
+												return (
+													<tr key={ps.id}>
+														<td>
+															<strong>
+																{toYmd(new Date(ps.periodStart))} –{" "}
+																{toYmd(new Date(ps.periodEnd))}
+															</strong>
+														</td>
+														<td className="num">
+															{formatMoneyValue(ps.grossPay)}
+														</td>
+														<td
+															className="num"
+															style={{ color: "var(--fg-3)" }}
+														>
+															{formatMoneyValue(ps.totalDeductions)}
+														</td>
+														<td
+															className="num"
+															style={{
+																fontWeight: 600,
+																color: "var(--accent)",
+															}}
+														>
+															{formatMoneyValue(ps.netPay)}
+														</td>
+														<td>
+															<StatusPill label={pill.label} tone={pill.tone} />
+														</td>
+													</tr>
+												);
+											})}
+										</tbody>
+									</table>
+								)}
 						</div>
 					</div>
 				</div>
