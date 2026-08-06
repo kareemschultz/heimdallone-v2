@@ -66,13 +66,14 @@
 
 /* Table */
 .emp-list {
-	overflow: hidden;
+	overflow-x: auto;
 	background: var(--bg-1);
 	border: 1px solid var(--line);
 	border-radius: 16px;
 }
 .emp-list table {
 	width: 100%;
+	min-width: 720px;
 	border-collapse: collapse;
 }
 .emp-list thead th {

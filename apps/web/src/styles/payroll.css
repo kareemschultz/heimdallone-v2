@@ -239,12 +239,17 @@
 
 /* Employees table */
 .emp-table {
-	overflow: hidden;
+	overflow-x: auto;
 	background: var(--bg-1);
 	border: 1px solid var(--line);
 	border-radius: 16px;
 }
+.emp-table > table {
+	min-width: 720px;
+}
 .emp-head {
+	position: sticky;
+	left: 0;
 	display: flex;
 	align-items: center;
 	justify-content: space-between;

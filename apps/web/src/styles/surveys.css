@@ -157,7 +157,7 @@
 	border-radius: 8px;
 }
 .sv-rating-btn.active {
-	color: #fff;
+	color: var(--accent-ink);
 	background: var(--accent);
 	border-color: var(--accent);
 }

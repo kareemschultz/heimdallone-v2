@@ -48,43 +48,44 @@
 	color-scheme: dark;
 }
 
-/* ---------- TOKENS — LIGHT (Meridian cool-neutral) ---------- */
+/* ---------- TOKENS — LIGHT (clean neutral SaaS, default) ---------- */
 [data-theme="light"] {
-	--bg: #f4f7f7;
+	--bg: #f7f8fa;
 	--bg-1: #ffffff;
-	--bg-2: #ffffff;
-	--bg-3: #eef2f2;
-	--bg-4: #e4eaea;
-	--line: #e2e8e8;
-	--line-2: #cdd6d6;
-	--line-strong: #aab6b6;
+	--bg-2: #f4f6f9;
+	--bg-3: #eceff4;
+	--bg-4: #e3e8ef;
+	--line: #e9ecf1;
+	--line-2: #dde1e8;
+	--line-strong: #c3cad5;
 
-	--fg: #131718;
-	--fg-2: #495257;
-	--fg-3: #6c757b;
-	--fg-4: #98a1a6;
+	--fg: #0d1117;
+	--fg-2: #4a5260;
+	--fg-3: #717a89;
+	--fg-4: #9aa3b2;
 
 	--accent: var(--primary);
 	--accent-2: var(--primary);
 	--accent-ink: var(--primary-foreground);
-	--accent-soft: color-mix(in oklab, var(--primary) 12%, transparent);
-	--accent-ring: color-mix(in oklab, var(--primary) 25%, transparent);
+	--accent-soft: color-mix(in oklab, var(--primary) 10%, transparent);
+	--accent-ring: color-mix(in oklab, var(--primary) 22%, transparent);
 
 	--success: #16a34a;
 	--success-soft: rgba(22, 163, 74, 0.1);
-	--warning: #b45309;
-	--warning-soft: rgba(180, 83, 9, 0.1);
-	--danger: #b91c1c;
-	--danger-soft: rgba(185, 28, 28, 0.1);
+	--warning: #d97706;
+	--warning-soft: rgba(217, 119, 6, 0.12);
+	--danger: #dc2626;
+	--danger-soft: rgba(220, 38, 38, 0.1);
 	--info: #2563eb;
 	--info-soft: rgba(37, 99, 235, 0.1);
 
-	--shadow-sm: 0 1px 2px rgba(20, 22, 28, 0.06);
-	--shadow-md: 0 8px 24px -8px rgba(20, 22, 28, 0.12);
-	--shadow-lg: 0 24px 60px -20px rgba(20, 22, 28, 0.18);
+	--shadow-sm: 0 1px 2px rgba(13, 17, 23, 0.05);
+	--shadow-md: 0 4px 16px -4px rgba(13, 17, 23, 0.1);
+	--shadow-lg: 0 16px 48px -16px rgba(13, 17, 23, 0.16);
 
-	--grid-fill: rgba(20, 22, 28, 0.025);
-	--grid-line: rgba(20, 22, 28, 0.045);
+	--grid-fill: rgba(13, 17, 23, 0.02);
+	--grid-line: rgba(13, 17, 23, 0.04);
+
 
 	color-scheme: light;
 }
@@ -116,10 +117,17 @@ body {
 	background: var(--bg);
 }
 
-.mono,
-.num {
+/* Codes / IDs / technical strings keep monospace */
+.mono {
 	font-family: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
 	font-feature-settings: "zero", "ss01";
+	letter-spacing: -0.01em;
+}
+/* Metrics use proportional sans with tabular figures */
+.num {
+	font-family: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+	font-variant-numeric: tabular-nums;
+	font-feature-settings: "tnum", "cv11";
 	letter-spacing: -0.01em;
 }
 .tabular {
@@ -341,6 +349,7 @@ button {
 	background: var(--bg-2);
 	border: 1px solid var(--line);
 	border-radius: 16px;
+	box-shadow: var(--shadow-sm);
 }
 .card-pad {
 	padding: 20px;
@@ -449,6 +458,20 @@ button {
 	font-weight: 500;
 	color: var(--fg-2);
 	letter-spacing: -0.005em;
+}
+
+/* ---------- GLOBAL KEYBOARD FOCUS (a11y) ---------- */
+.btn:focus-visible,
+.btn-primary:focus-visible,
+.nav-item:focus-visible,
+.icon-btn:focus-visible,
+.cmd-trigger:focus-visible,
+.tenant-switcher:focus-visible,
+.tab:focus-visible,
+a:focus-visible {
+	outline: 2px solid var(--accent);
+	outline-offset: 2px;
+	border-radius: 8px;
 }
 
 /* ---------- KBD ---------- */
@@ -619,9 +642,9 @@ button {
 	background: var(--bg-2);
 }
 .nav-item.active {
-	font-weight: 500;
-	color: var(--fg);
-	background: var(--bg-3);
+	font-weight: 550;
+	color: var(--accent);
+	background: color-mix(in oklab, var(--primary) 14%, var(--bg-1));
 }
 .nav-item.active .nav-icon {
 	color: var(--accent);
@@ -637,8 +660,9 @@ button {
 }
 .nav-item .nav-meta {
 	margin-left: auto;
-	font-family: "JetBrains Mono", monospace;
-	font-size: 10.5px;
+	font-variant-numeric: tabular-nums;
+	font-size: 11px;
+	font-weight: 500;
 	color: var(--fg-4);
 }
 .nav-item.active .nav-meta {
@@ -1013,7 +1037,7 @@ button {
 	border-bottom: 0;
 }
 .tbl tr:hover td {
-	background: var(--bg-2);
+	background: var(--bg-3);
 }
 
 /* ---------- CHECKLIST ---------- */
@@ -1059,7 +1083,7 @@ button {
 	height: 12px;
 	overflow: hidden;
 	background: var(--bg-3);
-	border: 1px solid rgba(255, 255, 255, 0.05);
+	border: 1px solid var(--line);
 	border-radius: 2px;
 }
 
