@@ -1,7 +1,7 @@
 name: Docker Images (v2)
 
 # Builds the v2 container images (server / web / docs) and pushes them to GHCR.
-# - push to master / PR / manual: BUILD (validates the Dockerfiles + cache warm).
+# - push to master / manual: BUILD (validates the Dockerfiles + cache warm).
 # - manual dispatch with push=true: also PUSH to GHCR.
 # Pushing is gated to a manual run on purpose so images are only published after
 # local smoke tests pass — there is NO automatic deploy here (no SSH, no compose
@@ -9,8 +9,6 @@ name: Docker Images (v2)
 
 on:
   push:
-    branches: [master]
-  pull_request:
     branches: [master]
   workflow_dispatch:
     inputs:

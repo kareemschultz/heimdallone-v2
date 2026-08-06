@@ -1,6 +1,6 @@
 # DB-backed verification (Phase 20B-6). Runs the permission audit + DB verify
 # scripts against a fresh Postgres + seeded schema. Kept OFF the blocking PR
-# path (heavy + DB-dependent) — nightly + manual dispatch only.
+# path (heavy + DB-dependent) — manual dispatch only.
 #
 # NOTE: the seed ordering below mirrors module dependencies (hr-core →
 # contracts → projects → performance/crm/finance). It may need tuning on the
@@ -8,8 +8,7 @@
 name: verify-db
 
 on:
-  schedule:
-    - cron: "0 6 * * *" # daily 06:00 UTC
+  # Owner-triggered only; no unattended schedule.
   workflow_dispatch: {}
 
 jobs:
